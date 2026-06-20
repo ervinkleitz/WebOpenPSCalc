@@ -58,6 +58,11 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
+      - name: Ensure deploy directories exist
+        run: |
+          ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
+            "mkdir -p ${{ secrets.EC2_DEPLOY_PATH }}/backend ${{ secrets.EC2_DEPLOY_PATH }}/frontend/dist"
+
       - name: Sync backend source
         run: |
           rsync -az --delete \
