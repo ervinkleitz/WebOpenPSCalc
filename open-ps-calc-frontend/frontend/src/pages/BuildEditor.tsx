@@ -1,0 +1,562 @@
+import { useEffect, useCallback, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { api } from "../api/client";
+import SearchPicker from "../components/SearchPicker";
+import DamageSummary from "../components/DamageSummary";
+import Panel from "../components/Panel";
+import {
+  BuildData, SkillState, CustomTarget, TargetMode,
+  UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
+} from "../types";
+
+const STATS = ["str", "agi", "vit", "int", "dex", "luk"] as const;
+
+const EQUIP_SLOTS = [
+  { key: "right_hand", label: "Right hand (weapon)", itemType: "IT_WEAPON", refineable: true },
+  { key: "left_hand", label: "Left hand (shield / weapon)", itemType: "IT_ARMOR", loc: "EQP_SHIELD", dualWield: true, refineable: true },
+  { key: "head_top", label: "Headgear (top)", itemType: "IT_ARMOR", loc: "EQP_HEAD_TOP", refineable: false },
+  { key: "armor", label: "Armor", itemType: "IT_ARMOR", loc: "EQP_ARMOR", refineable: true },
+  { key: "garment", label: "Garment", itemType: "IT_ARMOR", loc: "EQP_GARMENT", refineable: false },
+  { key: "shoes", label: "Shoes", itemType: "IT_ARMOR", loc: "EQP_SHOES", refineable: true },
+  { key: "accessory_left", label: "Accessory (left)", itemType: "IT_ARMOR", loc: "EQP_ACC", refineable: false },
+  { key: "accessory_right", label: "Accessory (right)", itemType: "IT_ARMOR", loc: "EQP_ACC", refineable: false },
+  { key: "ammo", label: "Ammo", itemType: "IT_AMMO", refineable: false },
+] as const;
+
+const DEFAULT_BUILD: BuildData = {
+  name: "New Build",
+  job_name: '',
+  job_id: 0,
+  base_level: 1,
+  job_level: 1,
+  base_stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 },
+  bonus_stats: {},
+  equipped: {},
+  refine: {},
+  target_mob_id: null,
+  server: "payon_stories",
+  consumable_buffs: {},
+};
+
+const ASPD_POTION_LABELS = [
+  "None",
+  "Concentration Potion (+10%)",
+  "Awakening Potion (+15%)",
+  "Berserk Potion (+20%)",
+];
+
+const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack" };
+
+const DEFAULT_CUSTOM_TARGET: CustomTarget = {
+  def_: 0, mdef_: 0, vit: 1, level: 1, size: "Medium", race: "Formless",
+  element: 0, element_level: 1, is_boss: false, luk: 0, agi: 0, int_: 0,
+};
+
+function encodeState(state: UrlEditorState): string {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+}
+
+function decodeState(encoded: string): UrlEditorState | null {
+  try {
+    return JSON.parse(decodeURIComponent(escape(atob(encoded))));
+  } catch {
+    return null;
+  }
+}
+
+export default function BuildEditor() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialState = (() => {
+    const encoded = searchParams.get("b");
+    if (encoded) {
+      const s = decodeState(encoded);
+      if (s) return s;
+    }
+    return null;
+  })();
+
+  const [data, setData] = useState<BuildData>(initialState?.build ?? DEFAULT_BUILD);
+  const [skill, setSkill] = useState<SkillState>(initialState?.skill ?? DEFAULT_SKILL);
+  const [targetMode, setTargetMode] = useState<TargetMode>(initialState?.targetMode ?? "monster");
+  const [customTarget, setCustomTarget] = useState<CustomTarget>(initialState?.customTarget ?? DEFAULT_CUSTOM_TARGET);
+
+  const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
+  const [passiveSkills, setPassiveSkills] = useState<PassiveSkill[]>([]);
+  const [itemCache, setItemCache] = useState<Record<number, EquippedItemInfo>>({});
+  const [mobInfo, setMobInfo] = useState<{ name: string; level: number } | null>(null);
+
+  const [calcResult, setCalcResult] = useState<any>(null);
+  const [calculating, setCalculating] = useState(false);
+  const [calcError, setCalcError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => { api.listJobs().then(setJobs).catch(() => {}); }, []);
+
+  // Keep URL in sync with editor state (debounced 400ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const state: UrlEditorState = { build: data, skill, targetMode, customTarget };
+      setSearchParams({ b: encodeState(state) }, { replace: true });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [data, skill, targetMode, customTarget]);
+
+  // Resolve names for already-equipped items
+  useEffect(() => {
+    const ids = Object.values(data.equipped).filter((v): v is number => v != null);
+    ids.forEach((itemId) => {
+      if (itemCache[itemId]) return;
+      api.getItem(itemId, data.server)
+        .then((item) => setItemCache((prev) => ({ ...prev, [itemId]: item })))
+        .catch(() => {});
+    });
+  }, [data.equipped, data.server]);
+
+  // Fetch passive skills when job changes
+  useEffect(() => {
+    if (!data.job_id) { setPassiveSkills([]); return; }
+    api.getJobPassives(data.job_id).then(setPassiveSkills).catch(() => setPassiveSkills([]));
+  }, [data.job_id]);
+
+  // Resolve mob display info
+  useEffect(() => {
+    if (!data.target_mob_id) { setMobInfo(null); return; }
+    fetch(`/api/data/mobs/${data.target_mob_id}?server=${data.server}`)
+      .then((r) => r.json())
+      .then(setMobInfo)
+      .catch(() => setMobInfo(null));
+  }, [data.target_mob_id, data.server]);
+
+  const updateField = useCallback((path: string[], value: unknown) => {
+    setData((prev) => {
+      const next = structuredClone(prev) as any;
+      let obj = next;
+      for (let i = 0; i < path.length - 1; i++) obj = obj[path[i]];
+      obj[path[path.length - 1]] = value;
+      return next;
+    });
+  }, []);
+
+  const updateConsumable = useCallback((key: keyof ConsumableBuffs, value: number | boolean | undefined) => {
+    setData((prev) => {
+      const next = { ...(prev.consumable_buffs || {}) } as any;
+      if (value === undefined || value === 0 || value === false) delete next[key];
+      else next[key] = value;
+      return { ...prev, consumable_buffs: next };
+    });
+  }, []);
+
+  async function onCalculate() {
+    setCalculating(true);
+    setCalcError("");
+    try {
+      const target = targetMode === "monster"
+        ? { mob_id: data.target_mob_id }
+        : customTarget;
+      const payload = { build: data, skill: { id: skill.id, level: skill.level }, target };
+      const res = await api.calculate(payload);
+      setCalcResult(res);
+    } catch (e: any) {
+      setCalcError(e.message);
+    } finally {
+      setCalculating(false);
+    }
+  }
+
+  function onCopyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const itemSearch = useCallback(
+    (itemType: string, loc?: string) => (query: string): Promise<SearchResult[]> =>
+      api.searchItems({ type: itemType, ...(loc ? { loc } : {}), q: query, limit: 12, server: data.server })
+        .then((r) => r.items.map((it: any) => ({ id: it.id, label: it.name, sublabel: `#${it.id}` }))),
+    [data.server],
+  );
+
+  const leftHandSearch = useCallback(
+    (query: string): Promise<SearchResult[]> =>
+      Promise.all([
+        api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: 12, server: data.server }),
+        api.searchItems({ type: "IT_WEAPON", q: query, limit: 12, server: data.server }),
+      ]).then(([shields, weapons]) => [
+        ...shields.items.map((it: any) => ({ id: it.id, label: it.name, sublabel: `Shield #${it.id}` })),
+        ...weapons.items.map((it: any) => ({ id: it.id, label: it.name, sublabel: `Weapon #${it.id}` })),
+      ]),
+    [data.server],
+  );
+
+  const mobSearch = useCallback(
+    (query: string): Promise<SearchResult[]> =>
+      api.searchMobs({ q: query, limit: 12, server: data.server })
+        .then((r) => r.items.map((m: any) => ({ id: m.id, label: m.name, sublabel: `Lv${m.level}` }))),
+    [data.server],
+  );
+
+  const skillSearch = useCallback(
+    (query: string): Promise<SearchResult[]> =>
+      api.searchSkills({ q: query, limit: 12, server: data.server })
+        .then((r) => r.items.map((s: any) => ({ id: s.id, label: s.display_name || s.name || `Skill ${s.id}`, sublabel: s.name }))),
+    [data.server],
+  );
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>{data.name}</h1>
+        </div>
+        <div className="field-row" style={{ alignItems: "flex-end" }}>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Server</label>
+            <select value={data.server} onChange={(e) => updateField(["server"], e.target.value)}>
+              <option value="payon_stories">Payon Stories</option>
+              <option value="standard">Standard pre-renewal</option>
+            </select>
+          </div>
+          <button onClick={onCopyLink}>{copied ? "Copied!" : "Copy share link"}</button>
+        </div>
+      </div>
+
+      <div className="editor-grid">
+        <div>
+          <Panel eyebrow="01" title="Character">
+            <div className="field-row">
+              <div className="field">
+                <label>Build name</label>
+                <input value={data.name} onChange={(e) => updateField(["name"], e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Job</label>
+                <select
+                  value={data.job_id}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    const job = jobs.find((j) => j.id === id);
+                    setData((prev) => ({ ...prev, job_id: id, job_name: job?.name ?? "" }));
+                  }}
+                >
+                  {jobs.length === 0 && <option value={data.job_id}>{data.job_name || `Job ${data.job_id}`}</option>}
+                  {jobs.map((j) => <option key={j.id} value={j.id}>{j.name}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="field-row">
+              <div className="field">
+                <label>Base level</label>
+                <input className="mono" type="number" min={1} max={99} value={data.base_level} onChange={(e) => updateField(["base_level"], Number(e.target.value))} />
+              </div>
+              <div className="field">
+                <label>Job level</label>
+                <input className="mono" type="number" min={1} max={70} value={data.job_level} onChange={(e) => updateField(["job_level"], Number(e.target.value))} />
+              </div>
+            </div>
+            <label style={{ marginTop: "0.3rem" }}>Base stats</label>
+            <div className="stat-grid">
+              {STATS.map((s) => (
+                <div className="field" key={s}>
+                  <label>{s.toUpperCase()}</label>
+                  <input
+                    className="mono"
+                    type="number"
+                    min={1}
+                    max={130}
+                    value={data.base_stats[s] ?? 1}
+                    onChange={(e) => updateField(["base_stats", s], Number(e.target.value))}
+                  />
+                </div>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel eyebrow="02" title="Equipment">
+            <div className="equip-grid">
+              {EQUIP_SLOTS.map((slot) => {
+                const equippedId = data.equipped[slot.key] as number | null | undefined;
+                const item = equippedId != null ? itemCache[equippedId] : null;
+                const cardSlotCount = item?.slots ?? 0;
+                return (
+                  <div key={slot.key} className="field">
+                    <label>{slot.label}</label>
+                    {equippedId != null ? (
+                      <div className="selected-pill">
+                        <span>
+                          {item ? item.name : `Item #${equippedId}`}
+                          {slot.refineable ? ` +${data.refine[slot.key] || 0}` : ""}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setData((prev) => {
+                              const next = structuredClone(prev) as any;
+                              next.equipped[slot.key] = null;
+                              for (let i = 1; i <= 4; i++) delete next.equipped[`${slot.key}_card${i}`];
+                              return next;
+                            });
+                          }}
+                        >
+                          Unequip
+                        </button>
+                      </div>
+                    ) : (
+                      <SearchPicker
+                        placeholder={`Search ${slot.label.toLowerCase()}…`}
+                        search={"dualWield" in slot && slot.dualWield ? leftHandSearch : itemSearch(slot.itemType, "loc" in slot ? slot.loc : undefined)}
+                        onSelect={(r) => {
+                          updateField(["equipped", slot.key], r.id);
+                          api.getItem(r.id, data.server)
+                            .then((full) => setItemCache((prev) => ({ ...prev, [r.id]: full })))
+                            .catch(() => setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } })));
+                        }}
+                      />
+                    )}
+                    {slot.refineable && equippedId != null && (
+                      <input
+                        className="mono"
+                        type="number"
+                        min={0}
+                        max={20}
+                        style={{ marginTop: "0.4rem" }}
+                        value={data.refine[slot.key] || 0}
+                        onChange={(e) => updateField(["refine", slot.key], Number(e.target.value))}
+                        title="Refine level"
+                      />
+                    )}
+                    {cardSlotCount > 0 && (
+                      <div className="card-slots">
+                        {Array.from({ length: cardSlotCount }, (_, i) => {
+                          const cardKey = `${slot.key}_card${i + 1}`;
+                          const cardId = data.equipped[cardKey] as number | null | undefined;
+                          const card = cardId != null ? itemCache[cardId] : null;
+                          return (
+                            <div key={cardKey} className="card-slot">
+                              {cardId != null ? (
+                                <div className="selected-pill">
+                                  <span>{card ? card.name : `Card #${cardId}`}</span>
+                                  <button onClick={() => updateField(["equipped", cardKey], null)}>×</button>
+                                </div>
+                              ) : (
+                                <SearchPicker
+                                  placeholder={`Card slot ${i + 1}…`}
+                                  search={itemSearch("IT_CARD")}
+                                  onSelect={(r) => {
+                                    setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } }));
+                                    updateField(["equipped", cardKey], r.id);
+                                  }}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Panel>
+        </div>
+
+        <div>
+          <Panel eyebrow="03" title="Passive skills">
+            {passiveSkills.length === 0 ? (
+              <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
+                {data.job_id ? "No passive skills for this job." : "Select a job to see passive skills."}
+              </p>
+            ) : (
+              <div className="passive-grid">
+                {passiveSkills.map((ps) => (
+                  <div className="field" key={ps.name}>
+                    <label title={ps.name}>{ps.description}</label>
+                    <input
+                      className="mono"
+                      type="number"
+                      min={0}
+                      max={ps.max_level}
+                      value={(data.mastery_levels || {})[ps.mastery_key] ?? 0}
+                      onChange={(e) => {
+                        const lv = Math.max(0, Math.min(ps.max_level, Number(e.target.value)));
+                        setData((prev) => ({
+                          ...prev,
+                          mastery_levels: { ...(prev.mastery_levels || {}), [ps.mastery_key]: lv },
+                        }));
+                      }}
+                    />
+                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted, #888)" }}>/ {ps.max_level}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          <Panel eyebrow="04" title="Consumables">
+            <div className="field">
+              <label>ASPD potion</label>
+              <select
+                value={data.consumable_buffs?.aspd_potion ?? 0}
+                onChange={(e) => updateConsumable("aspd_potion", Number(e.target.value) || undefined)}
+              >
+                {ASPD_POTION_LABELS.map((label, i) => <option key={i} value={i}>{label}</option>)}
+              </select>
+            </div>
+            <div className="field-row" style={{ marginTop: "0.6rem" }}>
+              <div className="field">
+                <label>ATK item (flat BATK)</label>
+                <input
+                  className="mono"
+                  type="number"
+                  min={0}
+                  value={data.consumable_buffs?.atk_item ?? 0}
+                  onChange={(e) => updateConsumable("atk_item", Number(e.target.value) || undefined)}
+                />
+              </div>
+              <div className="field">
+                <label>MATK item (flat MATK)</label>
+                <input
+                  className="mono"
+                  type="number"
+                  min={0}
+                  value={data.consumable_buffs?.matk_item ?? 0}
+                  onChange={(e) => updateConsumable("matk_item", Number(e.target.value) || undefined)}
+                />
+              </div>
+            </div>
+          </Panel>
+
+          <Panel eyebrow="05" title="Skill">
+            <div className="selected-pill" style={{ marginBottom: "0.6rem" }}>
+              <span>{skill.label}{skill.id !== 0 ? ` Lv.${skill.level}` : ""}</span>
+              {skill.id !== 0 && (
+                <input
+                  className="mono"
+                  type="number"
+                  min={1}
+                  max={10}
+                  style={{ width: 60 }}
+                  value={skill.level}
+                  onChange={(e) => setSkill((s) => ({ ...s, level: Number(e.target.value) }))}
+                />
+              )}
+            </div>
+            <div className="field-row">
+              <button onClick={() => setSkill(DEFAULT_SKILL)}>Use normal attack</button>
+            </div>
+            <div className="field" style={{ marginTop: "0.6rem" }}>
+              <label>Or search a skill</label>
+              <SearchPicker
+                placeholder="Search skills…"
+                search={skillSearch}
+                onSelect={(r) => setSkill({ id: r.id, level: 1, label: r.label })}
+              />
+            </div>
+          </Panel>
+
+          <Panel eyebrow="06" title="Target">
+            <div className="tabs">
+              <button className={targetMode === "monster" ? "active" : ""} onClick={() => setTargetMode("monster")}>Monster</button>
+              <button className={targetMode === "custom" ? "active" : ""} onClick={() => setTargetMode("custom")}>Custom stats</button>
+            </div>
+
+            {targetMode === "monster" && (
+              <>
+                {data.target_mob_id != null ? (
+                  <div className="selected-pill">
+                    <span>
+                      {mobInfo ? mobInfo.name : `Mob #${data.target_mob_id}`}
+                      {mobInfo ? ` (Lv.${mobInfo.level})` : ""}
+                    </span>
+                    <button onClick={() => updateField(["target_mob_id"], null)}>Change</button>
+                  </div>
+                ) : (
+                  <SearchPicker placeholder="Search monsters…" search={mobSearch} onSelect={(r) => updateField(["target_mob_id"], r.id)} />
+                )}
+              </>
+            )}
+
+            {targetMode === "custom" && (
+              <>
+                <div className="field-row">
+                  <div className="field">
+                    <label>DEF</label>
+                    <input className="mono" type="number" value={customTarget.def_} onChange={(e) => setCustomTarget((t) => ({ ...t, def_: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label>MDEF</label>
+                    <input className="mono" type="number" value={customTarget.mdef_} onChange={(e) => setCustomTarget((t) => ({ ...t, mdef_: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label>VIT</label>
+                    <input className="mono" type="number" value={customTarget.vit} onChange={(e) => setCustomTarget((t) => ({ ...t, vit: Number(e.target.value) }))} />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <label>Level</label>
+                    <input className="mono" type="number" value={customTarget.level} onChange={(e) => setCustomTarget((t) => ({ ...t, level: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label>AGI</label>
+                    <input className="mono" type="number" value={customTarget.agi} onChange={(e) => setCustomTarget((t) => ({ ...t, agi: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label>LUK</label>
+                    <input className="mono" type="number" value={customTarget.luk} onChange={(e) => setCustomTarget((t) => ({ ...t, luk: Number(e.target.value) }))} />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <label>Size</label>
+                    <select value={customTarget.size} onChange={(e) => setCustomTarget((t) => ({ ...t, size: e.target.value }))}>
+                      <option>Small</option><option>Medium</option><option>Large</option>
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>Race</label>
+                    <select value={customTarget.race} onChange={(e) => setCustomTarget((t) => ({ ...t, race: e.target.value }))}>
+                      {["Formless", "Undead", "Brute", "Plant", "Insect", "Fish", "Demon", "Demi-Human", "Angel", "Dragon"].map((r) => (
+                        <option key={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <label>Element</label>
+                    <select className="mono" value={customTarget.element} onChange={(e) => setCustomTarget((t) => ({ ...t, element: Number(e.target.value) }))}>
+                      {["Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Dark", "Ghost", "Undead"].map((name, idx) => (
+                        <option key={idx} value={idx}>{name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>Element level</label>
+                    <input className="mono" type="number" min={1} max={4} value={customTarget.element_level} onChange={(e) => setCustomTarget((t) => ({ ...t, element_level: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label>Boss?</label>
+                    <select value={customTarget.is_boss ? "yes" : "no"} onChange={(e) => setCustomTarget((t) => ({ ...t, is_boss: e.target.value === "yes" }))}>
+                      <option value="no">No</option><option value="yes">Yes</option>
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
+          </Panel>
+
+          <div className="panel">
+            <button className="primary" style={{ width: "100%" }} onClick={onCalculate} disabled={calculating}>
+              {calculating ? "Calculating…" : "Calculate damage"}
+            </button>
+          </div>
+
+          <Panel eyebrow="07" title="Damage breakdown" collapsible={false} highlight>
+            <DamageSummary calcResult={calcResult} calculating={calculating} error={calcError} />
+          </Panel>
+        </div>
+      </div>
+    </div>
+  );
+}

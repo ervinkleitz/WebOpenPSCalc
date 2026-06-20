@@ -1,0 +1,280 @@
+/**
+ * serverProfiles.js — JS port of core/server_profiles.py
+ *
+ * ServerProfile holds all server-specific deviations from vanilla Hercules,
+ * as override dicts keyed by skill/SC name. An empty dict means vanilla
+ * behaviour applies for all keys not present — every modifier in this engine
+ * checks `profile.someDict[key]` first and falls back to a vanilla constant,
+ * so an incomplete profile degrades gracefully rather than crashing.
+ *
+ * NOT FULLY PORTED: the original PAYON_STORIES profile populates several
+ * hundred lines of per-skill weapon_ratios / magic_ratios / mastery overrides
+ * that were not all transcribed here (the upstream file is ~1000 lines of
+ * dense, skill-specific tuning). What IS ported below: the full ServerProfile
+ * shape, the complete STANDARD (vanilla) profile, and the PS deviations that
+ * were directly verified from source during this port (passive resists,
+ * per-job stat bonuses, ASPD quicken overrides, proc rate overrides, the
+ * SC_STEELBODY DEF/MDEF formula, and the Super Novice HP/SP bonus tables).
+ * Skills without an explicit PS override fall back to vanilla ratios in
+ * skillRatio.js, which is the same fallback behaviour the original code uses
+ * for unaudited skills (it just also emits a warning step in that case).
+ */
+
+function emptyProfile(name, overrides = {}) {
+  return {
+    name,
+    use_ps_data: false,
+    use_ps_skill_names: false,
+    weapon_ratios: {},
+    weapon_hit_counts: {},
+    rate_bonuses: {},
+    magic_ratios: {},
+    magic_hit_counts: {},
+    magic_wave_ratios: {},
+    misc_formulas: {},
+    skill_elements: {},
+    mastery_per_level: {},
+    mastery_ctx_overrides: {},
+    gc_mastery_overrides: {},
+    mechanic_flags: new Set(),
+    passive_overrides: {},
+    aspd_buffs: {},
+    proc_rate_overrides: {},
+    steelbody_override: null,
+    sn_hp_bonus: {},
+    sn_sp_bonus: {},
+    weapon_vanilla_ok: new Set(),
+    magic_vanilla_ok: new Set(),
+    tick_hp_stand: 6, tick_hp_sit: 4, tick_sp_stand: 8, tick_sp_sit: 6, tick_skill: 5,
+    skill_min_period_ms: {},
+    ps_skill_delay_fn: {},
+    ps_acd_zero: new Set(),
+    ps_zero_cast: new Set(),
+    ps_attack_interval: {},
+    skill_level_cap_overrides: {},
+    passive_resists: {},
+    ps_job_bonuses: {},
+    ps_mastery_weapon_map: {},
+    param_skill_flat_adds: {},
+    weapon_avg_hits_by_zone: {},
+    ...overrides,
+  };
+}
+
+const STANDARD = emptyProfile("standard", { use_ps_data: false });
+
+// ---------------------------------------------------------------------
+// Payon Stories verified deviations
+// ---------------------------------------------------------------------
+const PS_PASSIVE_RESISTS = {
+  GS_FULLBUSTER: { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun"], max_level: 10 },
+  GS_SPREADATTACK: { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun"], max_level: 10 },
+};
+
+const PS_JOB_BONUSES = {
+  24: [ // Gunslinger
+    [1, "dex"], [2, "luk"], [3, "agi"], [4, "luk"],
+    [6, "dex"], [7, "dex"], [11, "dex"], [12, "luk"],
+    [13, "agi"], [17, "dex"], [21, "luk"], [25, "dex"],
+    [30, "dex"], [31, "luk"], [32, "str_"], [36, "agi"],
+    [36, "dex"], [41, "str_"], [45, "dex"], [47, "dex"],
+    [50, "str_"], [51, "luk"], [52, "int_"], [55, "dex"],
+    [59, "agi"], [60, "vit"], [61, "int_"], [62, "dex"],
+    [63, "luk"], [64, "str_"], [66, "agi"], [70, "dex"],
+  ],
+};
+
+const PS_ASPD_BUFFS = {
+  SC_TWOHANDQUICKEN: { quicken: { "2HSword": () => 300, "1HSword": () => 100 } },
+  SC_SPEARQUICKEN: { quicken: { "2HSpear": (lv) => 200 + 15 * lv, "1HSpear": (lv) => 75 + 5 * lv } },
+  BA_MUSICALLESSON: { lv10_rate: { MusicalInstrument: -100 } },
+  AM_AXEMASTERY: { lv10_rate: { Axe: -80, "2HAxe": -80 } },
+  PR_MACEMASTERY: { lv10_rate: { Mace: -120, Book: -120 } },
+  SC_GS_GATLINGFEVER: { sc_quicken: { flee_suppress: true } },
+  SC_GS_MADNESSCANCEL: { sc_quicken: { quicken_floor: 20 } },
+};
+
+const PS_PROC_RATE_OVERRIDES = {
+  TF_DOUBLE: 7.0,
+  GS_CHAINACTION: 7.0,
+  AC_VULTURE: 7.0,
+  SM_SWORD: 7.0,
+};
+
+const PS_STEELBODY_OVERRIDE = [
+  (d) => Math.min(90, d * 2), // DEF
+  (d) => Math.min(90, d * 4), // MDEF
+];
+
+const PS_SN_HP_BONUS = { 40: 100, 50: 150, 60: 200, 70: 250, 80: 300, 90: 400, 99: 1000 };
+const PS_SN_SP_BONUS = { 20: 10, 30: 10, 40: 10, 50: 10, 60: 10, 70: 10, 80: 10, 90: 10, 99: 30 };
+
+// Rate bonuses replacing vanilla flat-BATK SCs with a % damage bonus on PS.
+const PS_RATE_BONUSES = {
+  SC_GS_GATLINGFEVER: 40,
+  SC_GS_MADNESSCANCEL: 30,
+};
+
+// Mechanic flag sentinels — checked by individual modifiers across the engine.
+// Source: core/server_profiles.py's _PS_MECHANIC_FLAGS (StatGameDev/Open_PS_Calc,
+// MIT licensed — the reference implementation this whole port tracks against).
+// Only flags with an existing consumer in this JS port are enabled below; the
+// remaining upstream flags have no ported consumer yet (see ROADMAP.md).
+const PS_MECHANIC_FLAGS = new Set([
+  "PS_CRIT_SHIELD_DISABLED",
+  "AS_KATAR_KATAR_CRIT_DMG_BONUS",
+  "GROUND_EFFECT_PS_VALUES",
+  "GS_GS_ADJUSTMENT_SKIP_HIT_PENALTY",
+  "PR_MACEMASTERY_EXPANDED_WEAPON_TYPES",
+  // wiki.payonstories.com/Grand_Cross: weapon masteries (and Demon Bane's flat
+  // bonus) DO count toward Grand Cross's ATK component on PS, unlike vanilla
+  // Hercules where CR_GRANDCROSS is in masteryFix.js's MASTERY_EXEMPT_SKILLS.
+  "PS_GRANDCROSS_MASTERY_APPLIES",
+  // Below: confirmed present in upstream _PS_MECHANIC_FLAGS, consumed by
+  // existing code in this port (skillRatio.js's Overthrust check / the
+  // generic `${skillName}_NK_IGNORE_FLEE` lookup in battlePipeline.js).
+  "BS_OVERTHRUST_PARTY_FULL_BONUS",
+  "CR_SHIELDBOOMERANG_NK_IGNORE_FLEE",
+  "CR_SHIELDCHARGE_NK_IGNORE_FLEE",
+  "RG_BACKSTAP_NK_IGNORE_FLEE",
+]);
+
+// Helper arrays for NJ_KASUMIKIRI / NJ_KIRIKAGE (core/server_profiles.py).
+const NJ_KASUMIKIRI_RATIOS = [100, 125, 150, 175, 200, 250, 275, 300, 325, 375];
+const NJ_KIRIKAGE_HIDE_ON = [100, 200, 400, 600, 800];
+const NJ_KIRIKAGE_HIDE_OFF = [100, 190, 280, 360, 450];
+
+// core/server_profiles.py's _PS_BF_WEAPON_RATIOS — verified BF_WEAPON skill-ratio
+// overrides for Payon Stories. PS_RG_TRICKARROW / PS_RG_QUICKSTEP / PS_PR_HOLYSTRIKE
+// are PS-custom skills (ps_custom_constants.json IDs 2631/2633/2622) that this
+// engine's dataLoader.getSkill() can't resolve yet (it only reads vanilla
+// db/skills.json) — see ROADMAP.md. Data kept here so the ratios are ready once
+// that lookup gap is fixed.
+const PS_BF_WEAPON_RATIOS = {
+  KN_BOWLINGBASH: () => 400,
+  KN_BRANDISHSPEAR: (lv, tgt, ctx) => {
+    const dist = ctx ? (ctx.skill_params.KN_BRANDISHSPEAR_dist ?? 4) : 4;
+    const mult = { 1: 11 / 6, 2: 1.75, 3: 1.5, 4: 1.0 }[dist] ?? 1.0;
+    return Math.trunc((100 + 20 * lv) * mult);
+  },
+  AS_SONICBLOW: (lv) => 500 + 40 * lv,
+  KN_AUTOCOUNTER: () => 200,
+  KN_SPEARSTAB: (lv) => 100 + 40 * lv,
+  CR_HOLYCROSS: (lv) => 300 + 25 * lv,
+  RG_RAID: (lv) => 100 + 100 * lv,
+  AM_ACIDTERROR: (lv) => 100 + 80 * lv,
+  RG_BACKSTAP: (lv) => 200 + 40 * lv,
+  AS_SPLASHER: (lv, tgt, ctx) => {
+    const poisonLv = ctx ? (ctx.skill_params.AS_SPLASHER_poison_react_lv ?? 0) : 0;
+    return 500 + 50 * lv + 30 * poisonLv;
+  },
+  CR_SHIELDBOOMERANG: (lv) => 100 + 40 * lv,
+  CR_SHIELDCHARGE: (lv) => 200 + 20 * lv,
+  MC_CARTREVOLUTION: () => 250,
+  MC_MAMMONITE: (lv, tgt, ctx) => {
+    const zenyPincher = !!(ctx && ctx.skill_params.PS_BS_ZENYPINCHER_active);
+    return Math.trunc((100 + 50 * lv) * (zenyPincher ? 0.4 : 1.0));
+  },
+  MO_CHAINCOMBO: (lv) => 160 + 80 * lv,
+  MO_COMBOFINISH: (lv) => 255 + 85 * lv,
+  PS_RG_TRICKARROW: () => 100,
+  PS_RG_QUICKSTEP: () => 10,
+  PS_PR_HOLYSTRIKE: (lv, tgt, ctx) => 101 + (ctx ? ctx.base_str : 0) + (ctx ? ctx.base_level : 0),
+  AM_DEMONSTRATION: (lv) => 200 + 40 * lv,
+  HT_FREEZINGTRAP: (lv) => 25 + 25 * lv,
+  BA_MUSICALSTRIKE: (lv) => 175 + 25 * lv,
+  DC_THROWARROW: (lv) => 175 + 25 * lv,
+  GS_TRIPLEACTION: () => 140,
+  GS_TRACKING: (lv) => 100 + 160 * lv,
+  GS_DESPERADO: (lv) => 100 + 20 * lv,
+  GS_DUST: (lv) => 100 + 30 * lv,
+  GS_FULLBUSTER: (lv) => 350 + 75 * lv,
+  GS_SPREADATTACK: (lv) => 200 + 20 * lv,
+  GS_GROUNDDRIFT: (lv) => 200 + 60 * lv,
+  GS_PIERCINGSHOT: (lv) => 100 + 20 * lv,
+  GS_BULLSEYE: () => 100,
+  GS_MAGICALBULLET: (lv, tgt, ctx) => 50 + (ctx ? ctx.dex : 0) + (ctx ? ctx.base_level : 0),
+  NJ_KIRIKAGE: (lv, tgt, ctx) => {
+    const hiding = !!(ctx && ctx.skill_params.NJ_KIRIKAGE_hiding);
+    const rangePp = ctx ? (ctx.skill_params.NJ_KIRIKAGE_range_pp ?? 0) : 0;
+    const base = hiding
+      ? NJ_KIRIKAGE_HIDE_ON[lv - 1]
+      : Math.max(0, NJ_KIRIKAGE_HIDE_OFF[lv - 1] - 10 * rangePp);
+    const shadowsWithin = !!(ctx && ctx.skill_params.PS_NJ_SHADOWSWITHIN_active);
+    return base + (shadowsWithin ? 25 + 5 * lv : 0);
+  },
+  NJ_KASUMIKIRI: (lv, tgt, ctx) => {
+    const hiding = !!(ctx && ctx.skill_params.NJ_KASUMIKIRI_hiding);
+    return Math.trunc(NJ_KASUMIKIRI_RATIOS[lv - 1] * (hiding ? 1.4 : 1.0));
+  },
+  NJ_HUUMA: (lv) => 200 + 150 * lv,
+};
+
+// core/server_profiles.py's _PS_WEAPON_VANILLA_OK — skills confirmed to match
+// vanilla exactly on PS (suppresses skillRatio.js's "PS unaudited" warning).
+const PS_WEAPON_VANILLA_OK = new Set([
+  "SM_BASH", "SM_MAGNUM", "KN_SPEARSTAB", "KN_SPEARBOOMERANG", "KN_PIERCE",
+  "KN_CHARGEATK", "TF_SPRINKLESAND", "AS_GRIMTOOTH", "AS_VENOMKNIFE",
+  "RG_INTIMIDATE", "AC_SHOWER", "AC_CHARGEARROW", "HT_PHANTASMIC",
+  "MO_BALKYOUNG", "MO_FINGEROFFENSIVE", "MO_INVESTIGATE", "TK_STORMKICK",
+  "TK_DOWNKICK", "TK_TURNKICK", "TK_COUNTER", "TK_JUMPKICK", "NJ_KUNAI",
+  "NJ_ISSEN", "NJ_SYURIKEN",
+]);
+
+// core/server_profiles.py's _PS_BF_MAGIC_RATIOS.
+const PS_BF_MAGIC_RATIOS = {
+  MG_FIREBALL: (lv) => 40 + 30 * lv,
+  WZ_EARTHSPIKE: () => 140,
+  WZ_HEAVENDRIVE: () => 140,
+  NJ_HYOUSENSOU: () => 85,
+  NJ_RAIGEKISAI: (lv) => 150 + 60 * lv,
+  AL_HOLYLIGHT: (lv, tgt, ctx) => 101 + (ctx ? ctx.base_level : 125),
+  WZ_FROSTNOVA: (lv, tgt, ctx) => {
+    const frostdiverLv = ctx ? (ctx.skill_params.WZ_FROSTNOVA_frostdiver_lv ?? 0) : 0;
+    return 50 * lv + 10 * frostdiverLv;
+  },
+  PR_MAGNUS: (lv, tgt) => (tgt && (tgt.element === 9 || tgt.race === "Demon")) ? 100 : 50,
+  WZ_FIREPILLAR: (lv, tgt, ctx) => {
+    const firewallLv = ctx ? (ctx.skill_params.WZ_FIREPILLAR_firewall_lv ?? 0) : 0;
+    return (2 + 2 * lv) * (70 + 2 * firewallLv);
+  },
+  WZ_SIGHTRASHER: (lv) => 100 + 75 * lv,
+};
+
+// core/server_profiles.py's _PS_MAGIC_VANILLA_OK.
+const PS_MAGIC_VANILLA_OK = new Set([
+  "MG_NAPALMBEAT", "MG_SOULSTRIKE", "MG_FIREWALL", "MG_THUNDERSTORM",
+  "MG_FROSTDIVER", "MG_COLDBOLT", "MG_FIREBOLT", "MG_LIGHTNINGBOLT",
+  "WZ_SIGHTBLASTER", "WZ_WATERBALL", "WZ_STORMGUST", "WZ_JUPITEL",
+  "WZ_METEOR", "HW_NAPALMVULCAN", "AL_RUWACH", "NJ_KOUENKA", "NJ_KAENSIN",
+  "NJ_HYOUSYOURAKU", "NJ_KAMAITACHI", "NJ_HUUJIN",
+]);
+
+const PAYON_STORIES = emptyProfile("payon_stories", {
+  use_ps_data: true,
+  use_ps_skill_names: true,
+  rate_bonuses: PS_RATE_BONUSES,
+  mechanic_flags: PS_MECHANIC_FLAGS,
+  aspd_buffs: PS_ASPD_BUFFS,
+  proc_rate_overrides: PS_PROC_RATE_OVERRIDES,
+  steelbody_override: PS_STEELBODY_OVERRIDE,
+  sn_hp_bonus: PS_SN_HP_BONUS,
+  sn_sp_bonus: PS_SN_SP_BONUS,
+  passive_resists: PS_PASSIVE_RESISTS,
+  ps_job_bonuses: PS_JOB_BONUSES,
+  weapon_ratios: PS_BF_WEAPON_RATIOS,
+  weapon_vanilla_ok: PS_WEAPON_VANILLA_OK,
+  magic_ratios: PS_BF_MAGIC_RATIOS,
+  magic_vanilla_ok: PS_MAGIC_VANILLA_OK,
+});
+
+const PROFILES = {
+  standard: STANDARD,
+  payon_stories: PAYON_STORIES,
+};
+
+function getProfile(server) {
+  return PROFILES[server] || STANDARD;
+}
+
+module.exports = { STANDARD, PAYON_STORIES, getProfile, emptyProfile };

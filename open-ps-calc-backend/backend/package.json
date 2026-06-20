@@ -1,0 +1,26 @@
+{
+  "name": "open-ps-calc-backend",
+  "version": "1.0.0",
+  "description": "Backend API for the Open PS Calc damage calculator (Node/Express port of the Python core engine)",
+  "main": "src/server.ts",
+  "type": "commonjs",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.3",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

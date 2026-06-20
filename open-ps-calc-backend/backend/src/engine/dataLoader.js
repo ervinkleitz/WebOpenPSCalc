@@ -1,0 +1,652 @@
+/**
+ * dataLoader.js — JS port of core/data_loader.py
+ *
+ * Loads item/mob/skill databases from engine/data/pre-re/ (mirrors Hercules DB
+ * structure). PS server data is layered on top via ps_item_overrides.json and
+ * ps_item_manual.json. Exposes a singleton `loader` the same way the Python
+ * module exposes a module-level `loader = DataLoader()`.
+ *
+ * NOT YET PORTED relative to data_loader.py: hide/unhide item-mutation helpers
+ * (hidden_items.json is read-only here; toggling hidden status would require
+ * per-user state, which doesn't fit a shared static data file in a multi-user
+ * server). is_item_hidden / is_mob_hidden are still provided for filtering.
+ */
+const fs = require("fs");
+const path = require("path");
+
+const DATA_ROOT = path.join(__dirname, "data");
+const PRE_RE = path.join(DATA_ROOT, "pre-re");
+const PS_DIR = path.join(DATA_ROOT, "ps");
+
+const ELEMENT_NAMES = {
+  0: "Neutral", 1: "Water", 2: "Earth", 3: "Fire", 4: "Wind",
+  5: "Poison", 6: "Holy", 7: "Dark", 8: "Ghost", 9: "Undead",
+};
+
+function readJsonSafe(filePath, fallback) {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch {
+    return fallback;
+  }
+}
+
+class DataLoader {
+  constructor() {
+    this._cache = {};
+    this._skillNameToId = null;
+    this._profile = null; // set via setProfile(); null => vanilla-only
+  }
+
+  setProfile(profile) {
+    this._profile = profile;
+  }
+
+  get _usePsData() {
+    return this._profile != null && this._profile.use_ps_data;
+  }
+
+  _loadJson(relPath) {
+    if (this._cache[relPath]) return this._cache[relPath];
+    const full = path.join(PRE_RE, relPath);
+    if (!fs.existsSync(full)) throw new Error(`Missing required data file: ${full}`);
+    const data = JSON.parse(fs.readFileSync(full, "utf-8"));
+    this._cache[relPath] = data;
+    return data;
+  }
+
+  // ---------------------------------------------------------------
+  // PS layers
+  // ---------------------------------------------------------------
+  _loadPsItemOverrides() {
+    if (!this.__psItemOverrides) {
+      this.__psItemOverrides = readJsonSafe(path.join(PS_DIR, "ps_item_overrides.json"), {});
+    }
+    return this.__psItemOverrides;
+  }
+
+  _loadPsItemManual() {
+    if (!this.__psItemManual) {
+      this.__psItemManual = readJsonSafe(path.join(PS_DIR, "ps_item_manual.json"), {});
+    }
+    return this.__psItemManual;
+  }
+
+  static _normalizeItem(item) {
+    if (item == null) return null;
+    const loc = item.loc || [];
+    if ((loc.includes("EQP_HEAD_MID") || loc.includes("EQP_HEAD_LOW")) && (item.refineable ?? true)) {
+      return { ...item, refineable: false };
+    }
+    return item;
+  }
+
+  _applyPsItemLayers(strId, base) {
+    const STRIP = new Set(["_ps_custom", "_renewal_base", "description"]);
+    const REMAP = { weapon_level: "level" };
+
+    if (!this._usePsData) return base;
+
+    const override = this._loadPsItemOverrides()[strId] || {};
+    const manual = this._loadPsItemManual()[strId] || {};
+    if (Object.keys(override).length === 0 && Object.keys(manual).length === 0) return base;
+
+    let result = base ? { ...base } : {};
+    if (Object.keys(result).length === 0) result.id = Number(strId);
+
+    for (const src of [override, manual]) {
+      for (const [k, v] of Object.entries(src)) {
+        if (STRIP.has(k)) continue;
+        result[REMAP[k] || k] = v;
+      }
+    }
+    return Object.keys(result).length ? result : null;
+  }
+
+  getConvenienceCards() {
+    if (!this.__convenienceCards) {
+      this.__convenienceCards = readJsonSafe(path.join(DATA_ROOT, "convenience_cards.json"), []);
+    }
+    return this.__convenienceCards;
+  }
+
+  getItem(itemId) {
+    if (itemId < 0) {
+      return this.getConvenienceCards().find((c) => c.id === itemId) || null;
+    }
+    const strId = String(itemId);
+    let base = null;
+    try {
+      const data = this._loadJson("db/item_db.json");
+      base = (data.items || {})[strId] || null;
+    } catch {
+      base = null;
+    }
+    return DataLoader._normalizeItem(this._applyPsItemLayers(strId, base));
+  }
+
+  getItemsByType(itemType) {
+    let vanilla = {};
+    try {
+      const data = this._loadJson("db/item_db.json");
+      for (const [k, v] of Object.entries(data.items || {})) {
+        if (v.type === itemType) vanilla[k] = v;
+      }
+    } catch {
+      vanilla = {};
+    }
+
+    const results = {};
+    for (const [strId, base] of Object.entries(vanilla)) {
+      const merged = DataLoader._normalizeItem(this._applyPsItemLayers(strId, base));
+      if (merged) results[strId] = merged;
+    }
+
+    if (!this._usePsData) return Object.values(results);
+
+    const manual = this._loadPsItemManual();
+    for (const [strId, man] of Object.entries(manual)) {
+      if (results[strId]) continue;
+      if (man.type === itemType) {
+        const merged = DataLoader._normalizeItem(this._applyPsItemLayers(strId, null));
+        if (merged) results[strId] = merged;
+      }
+    }
+
+    if (itemType === "IT_CARD") {
+      return [...Object.values(results), ...this.getConvenienceCards()];
+    }
+    return Object.values(results);
+  }
+
+  getItemByAegis(aegisName) {
+    if (!this.__aegisToItem) {
+      this.__aegisToItem = {};
+      try {
+        const data = this._loadJson("db/item_db.json");
+        for (const v of Object.values(data.items || {})) {
+          if (v && v.aegis_name) this.__aegisToItem[v.aegis_name] = v;
+        }
+      } catch {
+        this.__aegisToItem = {};
+      }
+    }
+    return this.__aegisToItem[aegisName] || null;
+  }
+
+  // ---------------------------------------------------------------
+  // Item combo database
+  // ---------------------------------------------------------------
+  _loadItemComboDb() {
+    if (!this.__itemComboDb) {
+      try {
+        this.__itemComboDb = this._loadJson("db/item_combo_db.json");
+      } catch {
+        this.__itemComboDb = [];
+      }
+    }
+    return this.__itemComboDb;
+  }
+
+  _loadPsItemComboDb() {
+    if (!this.__psItemComboDb) {
+      this.__psItemComboDb = readJsonSafe(path.join(PS_DIR, "ps_item_combo_db.json"), []);
+    }
+    return this.__psItemComboDb;
+  }
+
+  getActiveCombos(equippedAegisSet, profile = null) {
+    let combos = this._loadItemComboDb();
+    if (profile != null && profile.use_ps_data) {
+      combos = [...combos, ...this._loadPsItemComboDb()];
+    }
+    return combos.filter((c) => c.items.every((item) => equippedAegisSet.has(item)));
+  }
+
+  // ---------------------------------------------------------------
+  // Monster database
+  // ---------------------------------------------------------------
+  _loadPsMobDb() {
+    if (!this.__psMobDb) {
+      const data = readJsonSafe(path.join(PS_DIR, "ps_mob_db.json"), { mobs: {} });
+      this.__psMobDb = data.mobs || {};
+    }
+    return this.__psMobDb;
+  }
+
+  getMonsterData(mobId) {
+    if (this._usePsData) {
+      return this._loadPsMobDb()[String(mobId)] || null;
+    }
+    try {
+      const data = this._loadJson("db/mob_db.json");
+      return (data.mobs || {})[String(mobId)] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  getMonster(mobId) {
+    const { createTarget } = require("./models");
+    const entry = this.getMonsterData(mobId);
+    if (entry == null) {
+      return createTarget();
+    }
+    const stats = entry.stats || {};
+    const level = entry.level;
+    const agi = stats.agi || 0;
+    const dex = stats.dex || 0;
+    return createTarget({
+      def_: entry.def_,
+      vit: stats.vit ?? entry.vit ?? 0,
+      luk: stats.luk || 0,
+      agi,
+      str: stats.str || 0,
+      dex,
+      flee: level + agi,
+      hit: level + dex,
+      size: entry.size,
+      race: entry.race,
+      element: entry.element,
+      element_level: entry.element_level,
+      is_boss: entry.is_boss,
+      level,
+      mdef_: entry.mdef || 0,
+      int_: stats.int || 0,
+    });
+  }
+
+  getAllMonsters() {
+    if (this._usePsData) return Object.values(this._loadPsMobDb());
+    try {
+      const data = this._loadJson("db/mob_db.json");
+      return Object.values(data.mobs || {});
+    } catch {
+      return [];
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Job database
+  // ---------------------------------------------------------------
+  getAllJobs() {
+    try {
+      const data = this._loadJson("tables/job_db.json");
+      return Object.entries(data.jobs || {}).map(([id, entry]) => ({
+        id: Number(id),
+        name: entry.name || `Job ${id}`,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  getJobEntry(jobId) {
+    try {
+      const data = this._loadJson("tables/job_db.json");
+      return (data.jobs || {})[String(jobId)] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  getAspdBase(jobId, weaponType) {
+    const entry = this.getJobEntry(jobId);
+    if (!entry) return 2000;
+    return (entry.aspd_base || {})[weaponType] ?? 2000;
+  }
+
+  getHpAtLevel(jobId, level) {
+    const entry = this.getJobEntry(jobId);
+    if (!entry) throw new Error(`job_id ${jobId} not found in job_db`);
+    const table = entry.hp_table || [];
+    if (!table.length) throw new Error(`hp_table empty for job_id ${jobId}`);
+    const idx = Math.max(0, Math.min(level - 1, table.length - 1));
+    return table[idx];
+  }
+
+  getSpAtLevel(jobId, level) {
+    const entry = this.getJobEntry(jobId);
+    if (!entry) throw new Error(`job_id ${jobId} not found in job_db`);
+    const table = entry.sp_table || [];
+    if (!table.length) throw new Error(`sp_table empty for job_id ${jobId}`);
+    const idx = Math.max(0, Math.min(level - 1, table.length - 1));
+    return table[idx];
+  }
+
+  // ---------------------------------------------------------------
+  // Skills
+  // ---------------------------------------------------------------
+  getSkill(skillId) {
+    try {
+      const data = this._loadJson("db/skills.json");
+      return (data.skills || {})[String(skillId)] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  getAllSkills() {
+    try {
+      const data = this._loadJson("db/skills.json");
+      return Object.values(data.skills || {});
+    } catch {
+      return [];
+    }
+  }
+
+  getPassiveSkillsForJob(jobId) {
+    // Skills the engine actually reads from mastery_levels and which affect
+    // ATK, MATK, hit chance, crit rate, or ASPD.
+    const DAMAGE_RELEVANT = new Set([
+      // Weapon masteries (flat ATK via masteryFix / mastery_weapon_map)
+      "SM_SWORD", "SM_TWOHAND", "KN_SPEARMASTERY", "AM_AXEMASTERY",
+      "PR_MACEMASTERY", "MO_IRONHAND", "BA_MUSICALLESSON", "DC_DANCINGLESSON",
+      "SA_ADVANCEDBOOK", "AS_KATAR", "ASC_KATAR",
+      // Conditional ATK bonuses
+      "AL_DEMONBANE", "HT_BEASTBANE", "BS_WEAPONRESEARCH", "NJ_TOBIDOUGU",
+      // Stat boosts that raise BATK / MATK
+      "BS_HILTBINDING", "SA_DRAGONOLOGY", "AC_OWL",
+      // HIT rate → hit chance → effective DPS
+      "AC_VULTURE", "GS_SINGLEACTION", "GS_SNAKEEYE",
+      // ASPD → attack period → DPS
+      "KN_CAVALIERMASTERY",
+    ]);
+    // Some skill DB names differ from the key masteryFix.js looks up.
+    const MASTERY_KEY_OVERRIDE = { "SM_TWOHAND": "SM_TWOHANDSWORD" };
+
+    try {
+      const treeData = this._loadJson("tables/skill_tree.json");
+      const skillNames = (treeData.jobs || {})[String(jobId)] || [];
+      if (skillNames.length === 0) return [];
+      const skillData = this._loadJson("db/skills.json");
+      const byName = {};
+      for (const s of Object.values(skillData.skills || {})) {
+        if (s && s.name) byName[s.name] = s;
+      }
+      return skillNames
+        .filter((n) => DAMAGE_RELEVANT.has(n))
+        .map((n) => byName[n])
+        .filter((s) => s && Array.isArray(s.skill_type) && s.skill_type.length === 0 && s.max_level > 0)
+        .map((s) => ({
+          name: s.name,
+          mastery_key: MASTERY_KEY_OVERRIDE[s.name] ?? s.name,
+          description: s.description || s.name,
+          max_level: s.max_level,
+        }));
+    } catch {
+      return [];
+    }
+  }
+
+  getSkillIdByName(name) {
+    if (this._skillNameToId == null) {
+      const mapping = {};
+      try {
+        const data = this._loadJson("db/skills.json");
+        for (const [sid, sdata] of Object.entries(data.skills || {})) {
+          if (sdata.name) mapping[sdata.name] = Number(sid);
+        }
+      } catch {
+        // ignore
+      }
+      this._skillNameToId = mapping;
+    }
+    return this._skillNameToId[name] ?? null;
+  }
+
+  getSkillsForJob(jobId) {
+    try {
+      const data = this._loadJson("tables/skill_tree.json");
+      return new Set((data.jobs || {})[String(jobId)] || []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Tables
+  // ---------------------------------------------------------------
+  getSizeFixMultiplier(weaponType, targetSize) {
+    const data = this._loadJson("tables/size_fix.json");
+    const wIdx = data.weapon_types.indexOf(weaponType);
+    const sIdx = data.sizes.indexOf(targetSize);
+    if (wIdx === -1 || sIdx === -1) return 100;
+    return data.table[sIdx][wIdx];
+  }
+
+  getRefineBonus(weaponLevel, refine) {
+    if (weaponLevel < 1 || weaponLevel > 4 || refine < 0) return 0;
+    const data = this._loadJson("tables/refine_weapon.json");
+    const rate = data.bonus[weaponLevel];
+    return rate * refine;
+  }
+
+  getOverrefine(weaponLevel, refine) {
+    if (weaponLevel < 1 || weaponLevel > 4 || refine <= 0) return 0;
+    const data = this._loadJson("tables/refine_weapon.json");
+    const safeStart = data.safe_refine_start[weaponLevel];
+    const rndBonusV = data.random_bonus_value[weaponLevel];
+    if (safeStart === 0 || rndBonusV === 0 || refine < safeStart) return 0;
+    const randombonusMax = rndBonusV * (refine - safeStart + 1);
+    return Math.floor(randombonusMax / 100);
+  }
+
+  getArmorRefineUnits(refine) {
+    if (refine <= 0) return 0;
+    const data = this._loadJson("tables/refine_armor.json");
+    return refine * data.stats_per_level;
+  }
+
+  getMasteryMultiplier(masteryKey, build) {
+    const data = this._loadJson("tables/mastery_fix.json");
+    const mastery = (data.masteries || {})[masteryKey];
+    if (!mastery) return 1;
+    if (build.is_riding_peco && "riding_peco" in mastery) return mastery.riding_peco;
+    return mastery.default ?? 1;
+  }
+
+  getElementName(elementId) {
+    return ELEMENT_NAMES[elementId] ?? "Neutral";
+  }
+
+  getAttrFixMultiplier(weaponElement, targetElement, elementLevel) {
+    const data = this._loadJson("tables/attr_fix.json");
+    const level = String(elementLevel || 1);
+    return ((((data.table || {})[targetElement] || {})[level] || {})[weaponElement]) ?? 100;
+  }
+
+  getMasteryWeaponMap() {
+    const data = this._loadJson("tables/mastery_weapon_map.json");
+    return data.mapping || {};
+  }
+
+  getActiveStatusConfig(statusKey) {
+    const data = this._loadJson("tables/active_status_bonus.json");
+    return (data.bonuses || {})[statusKey] || {};
+  }
+
+  // ---------------------------------------------------------------
+  // Item / skill descriptions
+  // ---------------------------------------------------------------
+  getItemDescription(itemId) {
+    if (itemId < 0) {
+      const card = this.getConvenienceCards().find((c) => c.id === itemId);
+      if (!card) return null;
+      return { name: card.name, description: card.description, compound_on: card.compound_on };
+    }
+    const strId = String(itemId);
+    let base = {};
+    try {
+      const data = this._loadJson("db/item_descriptions.json");
+      base = { ...((data.items || {})[strId] || {}) };
+    } catch {
+      base = {};
+    }
+    for (const src of [this._loadPsItemOverrides(), this._loadPsItemManual()]) {
+      const entry = src[strId] || {};
+      if ("description" in entry) base.description = entry.description;
+      if ("name" in entry) base.name = entry.name;
+    }
+    return Object.keys(base).length ? base : null;
+  }
+
+  getSkillDescription(skillConstant) {
+    try {
+      const data = this._loadJson("db/skill_descriptions.json");
+      return (data.skills || {})[skillConstant] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  getSkillDisplayName(constant, profile = null, short = false) {
+    if (profile != null && profile.use_ps_skill_names) {
+      const psEntry = this.getPsSkill(constant);
+      if (psEntry && psEntry.name) return psEntry.name;
+    }
+    const desc = this.getSkillDescription(constant);
+    if (desc) {
+      if (short && desc.short_name) return desc.short_name;
+      if (desc.name) return desc.name;
+    }
+    return constant;
+  }
+
+  // ---------------------------------------------------------------
+  // Job stat bonuses
+  // ---------------------------------------------------------------
+  static get JOBL_UPPER_JOBS() {
+    const s = new Set();
+    for (let i = 4001; i <= 4022; i++) s.add(i);
+    return s;
+  }
+
+  _parseJobBonusTable() {
+    if (!this.__jobBonusTable) {
+      const data = this._loadJson("tables/job_bonus_table.json");
+      const out = {};
+      for (const [k, v] of Object.entries(data.job_bonuses || {})) out[Number(k)] = v;
+      this.__jobBonusTable = out;
+    }
+    return this.__jobBonusTable;
+  }
+
+  getJobBonusStats(jobId, jobLevel) {
+    const table = this._parseJobBonusTable();
+    const codes = table[jobId] || [];
+    const result = { str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 };
+    const codeToKey = { 1: "str_", 2: "agi", 3: "vit", 4: "int_", 5: "dex", 6: "luk" };
+    for (const code of codes.slice(0, jobLevel)) {
+      const key = codeToKey[code];
+      if (key) result[key] += 1;
+    }
+    return result;
+  }
+
+  _parseStatpointTable() {
+    if (!this.__statpointTable) {
+      const data = this._loadJson("tables/statpoint_table.json");
+      this.__statpointTable = data.stat_points;
+    }
+    return this.__statpointTable;
+  }
+
+  getStatPointsAtLevel(baseLevel, jobId) {
+    const table = this._parseStatpointTable();
+    const idx = Math.min(Math.max(baseLevel, 1), table.length) - 1;
+    let points = table.length ? table[idx] : 48;
+    if (DataLoader.JOBL_UPPER_JOBS.has(jobId)) points += 52;
+    return points;
+  }
+
+  // ---------------------------------------------------------------
+  // PS skill database
+  // ---------------------------------------------------------------
+  _loadPsSkillDb() {
+    if (this.__psSkillDb) return this.__psSkillDb;
+    const raw = readJsonSafe(path.join(PS_DIR, "ps_skill_db.json"), {});
+    const result = {};
+    for (const record of Object.values(raw)) {
+      const constant = record.constant;
+      if (constant) result[constant] = record;
+    }
+    const overrides = readJsonSafe(path.join(PS_DIR, "ps_skill_desc_overrides.json"), {});
+    for (const [constant, patch] of Object.entries(overrides)) {
+      if (constant.startsWith("_comment")) continue;
+      if (result[constant]) result[constant] = { ...result[constant], ...patch };
+      else result[constant] = patch;
+    }
+    this.__psSkillDb = result;
+    return result;
+  }
+
+  getPsSkill(skillName) {
+    return this._loadPsSkillDb()[skillName] || null;
+  }
+
+  getPsCustomSkills() {
+    const customPath = path.join(PS_DIR, "ps_custom_constants.json");
+    const jobById = {};
+    const raw = readJsonSafe(customPath, {});
+    for (const [sid, value] of Object.entries(raw)) {
+      const skillId = Number(sid);
+      if (Number.isNaN(skillId)) continue;
+      if (value && typeof value === "object") jobById[skillId] = value.job || [];
+    }
+    const result = [];
+    for (const record of Object.values(this._loadPsSkillDb())) {
+      if (!(record.constant || "").startsWith("PS_")) continue;
+      result.push({ ...record, job: jobById[record.id ?? -1] || [] });
+    }
+    return result;
+  }
+
+  // ---------------------------------------------------------------
+  // Hidden item/mob filters (read-only — toggling not exposed via API)
+  // ---------------------------------------------------------------
+  _loadHiddenItems() {
+    if (!this.__hiddenItems) {
+      this.__hiddenItems = readJsonSafe(path.join(PRE_RE, "db/hidden_items.json"), []);
+    }
+    return this.__hiddenItems;
+  }
+
+  _loadHiddenMobs() {
+    if (!this.__hiddenMobs) {
+      this.__hiddenMobs = readJsonSafe(path.join(PRE_RE, "db/hidden_mobs.json"), []);
+    }
+    return this.__hiddenMobs;
+  }
+
+  _loadPsHiddenItems() {
+    if (!this.__psHiddenItems) {
+      this.__psHiddenItems = readJsonSafe(path.join(PS_DIR, "ps_hidden_items.json"), []);
+    }
+    return this.__psHiddenItems;
+  }
+
+  _loadPsHiddenMobs() {
+    if (!this.__psHiddenMobs) {
+      this.__psHiddenMobs = readJsonSafe(path.join(PS_DIR, "ps_hidden_mobs.json"), []);
+    }
+    return this.__psHiddenMobs;
+  }
+
+  isItemHidden(itemId) {
+    if (this._loadHiddenItems().includes(itemId)) return true;
+    if (this._usePsData && this._loadPsHiddenItems().includes(itemId)) return true;
+    return false;
+  }
+
+  isMobHidden(mobId) {
+    if (this._loadHiddenMobs().includes(mobId)) return true;
+    if (this._usePsData && this._loadPsHiddenMobs().includes(mobId)) return true;
+    return false;
+  }
+}
+
+const loader = new DataLoader();
+
+module.exports = { DataLoader, loader };

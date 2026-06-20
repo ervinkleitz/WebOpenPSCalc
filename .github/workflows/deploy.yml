@@ -1,0 +1,84 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Backend install + typecheck
+        working-directory: open-ps-calc-backend/backend
+        run: |
+          npm ci
+          npx tsc --noEmit
+
+      - name: Frontend install + build
+        working-directory: open-ps-calc-frontend/frontend
+        run: |
+          npm ci
+          npm run build
+
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build frontend
+        working-directory: open-ps-calc-frontend/frontend
+        env:
+          VITE_API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Trust EC2 host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync backend source
+        run: |
+          rsync -az --delete \
+            --exclude 'node_modules' \
+            --exclude '.git' \
+            --exclude '.env' \
+            open-ps-calc-backend/backend/ \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_DEPLOY_PATH }}/backend/"
+
+      - name: Sync frontend build
+        run: |
+          rsync -az --delete \
+            open-ps-calc-frontend/frontend/dist/ \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_DEPLOY_PATH }}/frontend/dist/"
+
+      - name: Sync pm2 ecosystem config
+        run: |
+          rsync -az \
+            deploy/ecosystem.config.js \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_DEPLOY_PATH }}/ecosystem.config.js"
+
+      - name: Install backend deps & restart via pm2
+        run: |
+          ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" 'bash -s' -- "${{ secrets.EC2_DEPLOY_PATH }}" < deploy/remote-deploy.sh

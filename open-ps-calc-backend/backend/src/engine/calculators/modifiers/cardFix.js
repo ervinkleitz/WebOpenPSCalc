@@ -1,0 +1,122 @@
+/**
+ * cardFix.js — JS port of core/calculators/modifiers/card_fix.py
+ */
+const { scaleFloor, pmfStats } = require("../../pmf");
+
+const RACE_TO_RC = {
+  Formless: "RC_Formless", Undead: "RC_Undead", Brute: "RC_Brute",
+  Plant: "RC_Plant", Insect: "RC_Insect", Fish: "RC_Fish",
+  Demon: "RC_Demon", "Demi-Human": "RC_DemiHuman", Angel: "RC_Angel", Dragon: "RC_Dragon",
+};
+const ELE_TO_KEY = {
+  0: "Ele_Neutral", 1: "Ele_Water", 2: "Ele_Earth", 3: "Ele_Fire",
+  4: "Ele_Wind", 5: "Ele_Poison", 6: "Ele_Holy", 7: "Ele_Dark", 8: "Ele_Ghost", 9: "Ele_Undead",
+};
+const SIZE_TO_KEY = { Small: "Size_Small", Medium: "Size_Medium", Large: "Size_Large" };
+
+function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf, result) {
+  const raceRc = RACE_TO_RC[target.race] || "";
+  const bossRc = target.is_boss ? "RC_Boss" : "RC_NonBoss";
+  const eleKey = ELE_TO_KEY[target.element] || "";
+  const sizeKey = SIZE_TO_KEY[target.size] || "";
+  const atkEleKey = ELE_TO_KEY[atkElement] || "Ele_Neutral";
+
+  const addRace = gearBonuses.add_race;
+  const addEle = gearBonuses.add_ele;
+  const addSize = gearBonuses.add_size;
+
+  const raceBonus = addRace[raceRc] || 0;
+  const eleBonus = (addEle[eleKey] || 0) + (addEle.Ele_All || 0);
+  const sizeBonus = (addSize[sizeKey] || 0) + (addSize.Size_All || 0);
+  const bossBonus = addRace[bossRc] || 0;
+  const longBonus = isRanged ? gearBonuses.long_atk_rate : 0;
+  const atkEleBonus = gearBonuses.add_atk_ele[atkEleKey] || 0;
+
+  const [, , avIn] = pmfStats(pmf);
+
+  for (const bonus of [raceBonus, eleBonus, sizeBonus, bossBonus, longBonus, atkEleBonus]) {
+    if (bonus) pmf = scaleFloor(pmf, 100 + bonus, 100);
+  }
+
+  if (target.is_pc) {
+    const tEle = (target.sub_ele[atkEleKey] || 0) + (target.sub_ele.Ele_All || 0);
+    const tSize = target.sub_size.Size_Medium || 0;
+    const tRace = target.sub_race.RC_DemiHuman || 0;
+    const tNearLong = isRanged ? target.long_attack_def_rate : target.near_attack_def_rate;
+    for (const reduction of [tEle, tSize, tRace, tNearLong]) {
+      if (reduction) pmf = scaleFloor(pmf, 100 - reduction, 100);
+    }
+  }
+
+  const [mn, mx, av] = pmfStats(pmf);
+  const multiplier = avIn ? av / avIn : 1.0;
+  result.add_step({
+    name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier,
+    note: `Race ${raceRc}+${raceBonus}%  ${target.is_boss ? "Boss" : "NonBoss"}+${bossBonus}%  Ele+${addEle[eleKey] || 0}%  Size+${addSize[sizeKey] || 0}%${isRanged ? `  LongAtk+${longBonus}%` : ""}`,
+    formula: `dmg × multiple race/ele/size/boss/long/atk-ele factors`,
+    hercules_ref: "battle.c:1183-1198",
+  });
+
+  return pmf;
+}
+
+function calculateCardFixMagic(target, magicEleName, pmf, result, gearBonuses = null) {
+  const [, , avIn] = pmfStats(pmf);
+  let raceBonus = 0, bossBonus = 0, raceRc = "";
+  if (gearBonuses != null) {
+    const mar = gearBonuses.magic_add_race;
+    raceRc = RACE_TO_RC[target.race] || "";
+    const bossRc = target.is_boss ? "RC_Boss" : "RC_NonBoss";
+    raceBonus = mar[raceRc] || 0;
+    bossBonus = mar[bossRc] || 0;
+    for (const bonus of [raceBonus, bossBonus]) {
+      if (bonus) pmf = scaleFloor(pmf, 100 + bonus, 100);
+    }
+  }
+
+  let [mn, mx, av] = pmfStats(pmf);
+  if (!target.is_pc) {
+    const multiplier = avIn ? av / avIn : 1.0;
+    result.add_step({ name: "Card Fix (Magic)", value: av, min_value: mn, max_value: mx, multiplier, note: (raceBonus || bossBonus) ? `MagicRace ${raceRc}+${raceBonus}%` : "no magic card bonuses", formula: "dmg × race/boss factors", hercules_ref: "battle.c:1072-1085" });
+    return pmf;
+  }
+
+  const tEle = (target.sub_ele[magicEleName] || 0) + (target.sub_ele.Ele_All || 0);
+  const tRace = target.sub_race.RC_DemiHuman || 0;
+  const tMagicDef = target.magic_def_rate;
+  for (const reduction of [tEle, tRace, tMagicDef]) {
+    if (reduction) pmf = scaleFloor(pmf, 100 - reduction, 100);
+  }
+
+  [mn, mx, av] = pmfStats(pmf);
+  const multiplier = avIn ? av / avIn : 1.0;
+  result.add_step({ name: "Card Fix (Magic)", value: av, min_value: mn, max_value: mx, multiplier, note: `MagicRace+${raceBonus}%  Ele-${tEle}%  Race-${tRace}%  MagicDef-${tMagicDef}%`, formula: "dmg × race/boss/ele/race/magicdef factors", hercules_ref: "battle.c:1072-1143" });
+  return pmf;
+}
+
+// NOT YET WIRED INTO battlePipeline.js: incoming (mob -> player) card fix variants.
+// Ported here for completeness/future use by an incoming-damage pipeline.
+function calculateIncomingPhysical(mobRace, mobElement, mobSize, isRanged, playerTarget, pmf, result) {
+  let [mn, mx, av] = pmfStats(pmf);
+  if (!playerTarget.is_pc) {
+    result.add_step({ name: "Card Fix (Incoming Physical)", value: av, min_value: mn, max_value: mx, multiplier: 1.0, note: "target is not a player", formula: "no change", hercules_ref: "battle.c battle_calc_cardfix" });
+    return pmf;
+  }
+  const eleKey = ELE_TO_KEY[mobElement] || "Ele_Neutral";
+  const raceRc = RACE_TO_RC[mobRace] || "";
+  const sizeKey = SIZE_TO_KEY[mobSize] || "";
+  const [, , avIn] = pmfStats(pmf);
+  const tEle = (playerTarget.sub_ele[eleKey] || 0) + (playerTarget.sub_ele.Ele_All || 0);
+  const tSize = playerTarget.sub_size[sizeKey] || 0;
+  const tRace = playerTarget.sub_race[raceRc] || 0;
+  const tNearLong = isRanged ? playerTarget.long_attack_def_rate : playerTarget.near_attack_def_rate;
+  for (const reduction of [tEle, tSize, tRace, tNearLong]) {
+    if (reduction) pmf = scaleFloor(pmf, 100 - reduction, 100);
+  }
+  [mn, mx, av] = pmfStats(pmf);
+  const multiplier = avIn ? av / avIn : 1.0;
+  result.add_step({ name: "Card Fix (Incoming Physical)", value: av, min_value: mn, max_value: mx, multiplier, note: `Ele-${tEle}% Size-${tSize}% Race-${tRace}% Def-${tNearLong}%`, formula: "dmg × resist factors", hercules_ref: "battle.c:1269-1341" });
+  return pmf;
+}
+
+module.exports = { calculateCardFix, calculateCardFixMagic, calculateIncomingPhysical };
