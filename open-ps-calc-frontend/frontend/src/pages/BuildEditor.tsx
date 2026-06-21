@@ -251,11 +251,11 @@ export default function BuildEditor() {
               target, and see the full step-by-step damage breakdown.
               <span className="tooltip-row">
                 <span>Based on</span>
-                <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">StatGameDev/Open_PS_Calc</a>
+                <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
               </span>
               <span className="tooltip-row">
                 <span>This repo</span>
-                <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">ervinkleitz/WebOpenPSCalc</a>
+                <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">WebOpenPSCalc</a>
               </span>
             </InfoTooltip>
           </h1>
