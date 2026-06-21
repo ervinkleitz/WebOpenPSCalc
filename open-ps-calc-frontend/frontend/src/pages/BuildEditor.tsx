@@ -12,16 +12,19 @@ import {
 
 const STATS = ["str", "agi", "vit", "int", "dex", "luk"] as const;
 
+// Whether a slot can be refined depends on the specific equipped item, not
+// the slot itself (e.g. most headgears ARE refineable, but not all; same
+// for every other armor slot) -- see item.refineable, checked at render time.
 const EQUIP_SLOTS = [
-  { key: "right_hand", label: "Right hand (weapon)", itemType: "IT_WEAPON", refineable: true },
-  { key: "left_hand", label: "Left hand (shield / weapon)", itemType: "IT_ARMOR", loc: "EQP_SHIELD", dualWield: true, refineable: true },
-  { key: "head_top", label: "Headgear (top)", itemType: "IT_ARMOR", loc: "EQP_HEAD_TOP", refineable: false },
-  { key: "armor", label: "Armor", itemType: "IT_ARMOR", loc: "EQP_ARMOR", refineable: true },
-  { key: "garment", label: "Garment", itemType: "IT_ARMOR", loc: "EQP_GARMENT", refineable: false },
-  { key: "shoes", label: "Shoes", itemType: "IT_ARMOR", loc: "EQP_SHOES", refineable: true },
-  { key: "accessory_left", label: "Accessory (left)", itemType: "IT_ARMOR", loc: "EQP_ACC", refineable: false },
-  { key: "accessory_right", label: "Accessory (right)", itemType: "IT_ARMOR", loc: "EQP_ACC", refineable: false },
-  { key: "ammo", label: "Ammo", itemType: "IT_AMMO", refineable: false },
+  { key: "right_hand", label: "Right hand (weapon)", itemType: "IT_WEAPON" },
+  { key: "left_hand", label: "Left hand (shield / weapon)", itemType: "IT_ARMOR", loc: "EQP_SHIELD", dualWield: true },
+  { key: "head_top", label: "Headgear (top)", itemType: "IT_ARMOR", loc: "EQP_HEAD_TOP" },
+  { key: "armor", label: "Armor", itemType: "IT_ARMOR", loc: "EQP_ARMOR" },
+  { key: "garment", label: "Garment", itemType: "IT_ARMOR", loc: "EQP_GARMENT" },
+  { key: "shoes", label: "Shoes", itemType: "IT_ARMOR", loc: "EQP_SHOES" },
+  { key: "accessory_left", label: "Accessory (left)", itemType: "IT_ARMOR", loc: "EQP_ACC" },
+  { key: "accessory_right", label: "Accessory (right)", itemType: "IT_ARMOR", loc: "EQP_ACC" },
+  { key: "ammo", label: "Ammo", itemType: "IT_AMMO" },
 ] as const;
 
 const DEFAULT_BUILD: BuildData = {
@@ -49,25 +52,33 @@ const ASPD_POTION_LABELS = [
 ];
 
 // Damage/ASPD-relevant active buffs the engine already reads from
-// build.active_buffs / build.song_state, with no UI before now.
+// build.active_buffs / build.song_state, with no UI before now. `jobs` is
+// the actual job_id list each skill belongs to (derived from skills.json's
+// status_change field + skill_tree.json, not guessed) -- the panel below
+// filters to whichever job is currently selected.
 const SELF_BUFFS = [
-  { key: "SC_TWOHANDQUICKEN", label: "Two-Hand Quicken", max: 10 },
-  { key: "SC_ONEHANDQUICKEN", label: "One-Hand Quicken", max: 10 },
-  { key: "SC_SPEARQUICKEN", label: "Spear Quicken", max: 10 },
-  { key: "SC_ADRENALINE", label: "Adrenaline Rush", max: 2 },
-  { key: "SC_MAXIMIZEPOWER", label: "Maximize Power", max: 1 },
-  { key: "SC_EXPLOSIONSPIRITS", label: "Fury", max: 5 },
-  { key: "SC_OVERTHRUST", label: "Overthrust", max: 10 },
-  { key: "SC_OVERTHRUSTMAX", label: "Overthrust Max", max: 5 },
-  { key: "SC_IMPOSITIO", label: "Impositio Manus", max: 5 },
+  { key: "SC_TWOHANDQUICKEN", label: "Two-Hand Quicken", max: 10, jobs: [7, 4008] },
+  { key: "SC_ONEHANDQUICKEN", label: "One-Hand Quicken", max: 10, jobs: [7, 4008] },
+  { key: "SC_SPEARQUICKEN", label: "Spear Quicken", max: 10, jobs: [14, 4015] },
+  { key: "SC_ADRENALINE", label: "Adrenaline Rush", max: 2, jobs: [10, 4011] },
+  { key: "SC_MAXIMIZEPOWER", label: "Maximize Power", max: 1, jobs: [10, 4011] },
+  { key: "SC_EXPLOSIONSPIRITS", label: "Fury", max: 5, jobs: [15, 4016] },
+  { key: "SC_OVERTHRUST", label: "Overthrust", max: 10, jobs: [10, 4011] },
+  { key: "SC_OVERTHRUSTMAX", label: "Overthrust Max", max: 5, jobs: [4011] },
+  { key: "SC_IMPOSITIO", label: "Impositio Manus", max: 5, jobs: [8, 4009] },
+  // PS renames these two displays ("Barrage" / "Run and Gun") but the
+  // underlying constants are the vanilla Gunslinger ones; both are
+  // presence-only (level doesn't change the magnitude in statusCalculator.js).
+  { key: "SC_GS_MADNESSCANCEL", label: "Barrage", max: 1, jobs: [24] },
+  { key: "SC_GS_ADJUSTMENT", label: "Run and Gun", max: 1, jobs: [24] },
 ] as const;
 
 const SONG_BUFFS = [
-  { key: "SC_DRUMBATTLE", label: "Battle Theme (Drum)", max: 10 },
-  { key: "SC_NIBELUNGEN", label: "Ring of Nibelungen", max: 10 },
-  { key: "SC_ASSNCROS", label: "Assassin Cross of Sunset", max: 10 },
-  { key: "SC_HUMMING", label: "Humming", max: 10 },
-  { key: "SC_FORTUNE", label: "Fortune's Kiss", max: 10 },
+  { key: "SC_DRUMBATTLE", label: "Battle Theme (Drum)", max: 10, jobs: [19, 20, 4020, 4021] },
+  { key: "SC_NIBELUNGEN", label: "Ring of Nibelungen", max: 10, jobs: [19, 20, 4020, 4021] },
+  { key: "SC_ASSNCROS", label: "Assassin Cross of Sunset", max: 10, jobs: [19, 4020] },
+  { key: "SC_HUMMING", label: "Humming", max: 10, jobs: [20, 4021] },
+  { key: "SC_FORTUNE", label: "Fortune's Kiss", max: 10, jobs: [20, 4021] },
 ] as const;
 
 const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack" };
@@ -142,6 +153,34 @@ export default function BuildEditor() {
   useEffect(() => {
     if (!data.job_id) { setPassiveSkills([]); return; }
     api.getJobPassives(data.job_id).then(setPassiveSkills).catch(() => setPassiveSkills([]));
+  }, [data.job_id]);
+
+  // Hiding a buff from the panel on job change isn't enough on its own --
+  // a stale value left in active_buffs/song_state from a previous job
+  // would still be sent to the backend and silently applied. Strip
+  // anything that doesn't belong to the now-selected job.
+  useEffect(() => {
+    setData((prev) => {
+      const allSelfKeys: readonly string[] = SELF_BUFFS.map((b) => b.key);
+      const allSongKeys: readonly string[] = SONG_BUFFS.map((b) => b.key);
+      const keepSelf = new Set<string>(SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(prev.job_id)).map((b) => b.key));
+      const keepSong = new Set<string>(SONG_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(prev.job_id)).map((b) => b.key));
+      const prevActive = prev.active_buffs || {};
+      const prevSong = prev.song_state || {};
+      const nextActive: Record<string, number> = {};
+      for (const [k, v] of Object.entries(prevActive)) {
+        if (!allSelfKeys.includes(k) || keepSelf.has(k)) nextActive[k] = v;
+      }
+      const nextSong: Record<string, number> = {};
+      for (const [k, v] of Object.entries(prevSong)) {
+        if (!allSongKeys.includes(k) || keepSong.has(k)) nextSong[k] = v;
+      }
+      if (Object.keys(nextActive).length === Object.keys(prevActive).length &&
+          Object.keys(nextSong).length === Object.keys(prevSong).length) {
+        return prev;
+      }
+      return { ...prev, active_buffs: nextActive, song_state: nextSong };
+    });
   }, [data.job_id]);
 
   // Resolve mob display info
@@ -329,6 +368,7 @@ export default function BuildEditor() {
                 const equippedId = data.equipped[slot.key] as number | null | undefined;
                 const item = equippedId != null ? itemCache[equippedId] : null;
                 const cardSlotCount = item?.slots ?? 0;
+                const isRefineable = item?.refineable ?? false;
                 return (
                   <div key={slot.key} className="field">
                     <label>{slot.label}</label>
@@ -336,7 +376,7 @@ export default function BuildEditor() {
                       <div className="selected-pill">
                         <span>
                           {item ? item.name : `Item #${equippedId}`}
-                          {slot.refineable ? ` +${data.refine[slot.key] || 0}` : ""}
+                          {isRefineable ? ` +${data.refine[slot.key] || 0}` : ""}
                         </span>
                         <button
                           onClick={() => {
@@ -363,7 +403,7 @@ export default function BuildEditor() {
                         }}
                       />
                     )}
-                    {slot.refineable && equippedId != null && (
+                    {isRefineable && equippedId != null && (
                       <input
                         className="mono"
                         type="number"
@@ -477,38 +517,61 @@ export default function BuildEditor() {
           </Panel>
 
           <Panel eyebrow="05" title="Buffs">
-            <label>Self buffs</label>
-            <div className="passive-grid">
-              {SELF_BUFFS.map((b) => (
-                <div className="field" key={b.key}>
-                  <label title={b.key}>{b.label}</label>
-                  <input
-                    className="mono"
-                    type="number"
-                    min={0}
-                    max={b.max}
-                    value={data.active_buffs?.[b.key] ?? 0}
-                    onChange={(e) => updateBuffField("active_buffs", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
-                  />
-                </div>
-              ))}
-            </div>
-            <label style={{ marginTop: "0.6rem" }}>Bard / Dancer songs</label>
-            <div className="passive-grid">
-              {SONG_BUFFS.map((b) => (
-                <div className="field" key={b.key}>
-                  <label title={b.key}>{b.label}</label>
-                  <input
-                    className="mono"
-                    type="number"
-                    min={0}
-                    max={b.max}
-                    value={data.song_state?.[b.key] ?? 0}
-                    onChange={(e) => updateBuffField("song_state", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
-                  />
-                </div>
-              ))}
-            </div>
+            {(() => {
+              const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id));
+              const songBuffs = SONG_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id));
+              if (selfBuffs.length === 0 && songBuffs.length === 0) {
+                return (
+                  <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
+                    {data.job_id ? "No class-specific buffs modeled for this job yet." : "Select a job to see its buffs."}
+                  </p>
+                );
+              }
+              return (
+                <>
+                  {selfBuffs.length > 0 && (
+                    <>
+                      <label>Self buffs</label>
+                      <div className="passive-grid">
+                        {selfBuffs.map((b) => (
+                          <div className="field" key={b.key}>
+                            <label title={b.key}>{b.label}</label>
+                            <input
+                              className="mono"
+                              type="number"
+                              min={0}
+                              max={b.max}
+                              value={data.active_buffs?.[b.key] ?? 0}
+                              onChange={(e) => updateBuffField("active_buffs", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {songBuffs.length > 0 && (
+                    <>
+                      <label style={{ marginTop: "0.6rem" }}>Bard / Dancer songs</label>
+                      <div className="passive-grid">
+                        {songBuffs.map((b) => (
+                          <div className="field" key={b.key}>
+                            <label title={b.key}>{b.label}</label>
+                            <input
+                              className="mono"
+                              type="number"
+                              min={0}
+                              max={b.max}
+                              value={data.song_state?.[b.key] ?? 0}
+                              onChange={(e) => updateBuffField("song_state", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              );
+            })()}
           </Panel>
 
           <Panel eyebrow="06" title="Skill">

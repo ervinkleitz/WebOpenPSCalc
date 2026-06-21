@@ -68,6 +68,7 @@ export interface EquippedItemInfo {
   id: number;
   name: string;
   slots?: number;
+  refineable?: boolean;
 }
 
 export interface SearchResult {

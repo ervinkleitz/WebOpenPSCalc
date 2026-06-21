@@ -117,6 +117,22 @@ without re-auditing everything from scratch.
   implemented".
 - `GS_CHAINACTION` / `MO_TRIPLEATTACK` procs — same mechanic shape as the
   now-implemented `TF_DOUBLE`, not yet ported.
+- Gunslinger's coin economy (Flip the Coin / `GS_GLITTERING`, and every
+  skill whose damage or effect scales with coins held — e.g. PS's
+  `GS_BULLSEYE` bleed chance is explicitly different "with coins") has no
+  representation anywhere in the engine — no build field for coin count,
+  no skill_ratio entries reading one. Surfaced by a user report asking for
+  "Coin amount" in the buffs panel; not implemented since there's nothing
+  in the engine yet to wire a UI control to.
+- `GS_FULLBUSTER` / `GS_SPREADATTACK` grant a passive elemental resist at
+  skill level 10 with a Shotgun equipped (`profile.passive_resists` in
+  `serverProfiles.js` — already engine-supported). Not surfaced in the
+  passive-skill panel because both are active attack skills
+  (`skill_type` non-empty), not true passives, and the panel's resist
+  scope is damage-relevant masteries only, not defensive bonuses. Likely
+  what a user report meant by "Shotgun passives" being missing; flagging
+  here rather than silently expanding the passive panel's scope without
+  confirming that's actually wanted.
 - GUI parity: the original has 15 sections and 6 dialogs (combat controls,
   equipment/monster/skill browsers with rich filtering, build-vs-build
   comparison). The web frontend now covers stats, equipment with card
