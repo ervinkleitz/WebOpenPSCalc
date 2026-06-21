@@ -362,3 +362,81 @@ label {
 .tabs { display: flex; gap: 0.3rem; border-bottom: 1px solid var(--border-soft); margin-bottom: 1.2rem; }
 .tabs button { border: none; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; padding: 0.6rem 0.2rem; margin-right: 1.2rem; color: var(--text-dim); font-size: 0.88rem; }
 .tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ---------------- Modal ---------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 9, 14, 0.72);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 2rem 1rem;
+}
+.modal-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--accent-soft);
+  max-width: 640px;
+  width: 100%;
+  max-height: min(80vh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.4rem;
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+.modal-header h2 { font-size: 1.15rem; color: var(--accent); }
+.modal-header button {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0.1rem 0.4rem;
+  cursor: pointer;
+}
+.modal-header button:hover { color: var(--text); }
+.modal-body {
+  padding: 1.2rem 1.4rem 1.6rem;
+  overflow-y: auto;
+}
+
+.changelog-body h3 {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--text);
+  margin-top: 1.6rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border-soft);
+}
+.changelog-body h3:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.changelog-body h4 {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-dim);
+  margin-top: 0.9rem;
+}
+.changelog-body ul { margin: 0.4rem 0 0.9rem; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.changelog-body li { font-size: 0.85rem; line-height: 1.55; color: var(--text-dim); }
+.changelog-body li strong { color: var(--text); }
+.changelog-body li code {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: 3px;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+.changelog-body p { font-size: 0.85rem; color: var(--text-dim); margin: 0.4rem 0; }

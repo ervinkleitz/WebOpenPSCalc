@@ -5,6 +5,7 @@ import SearchPicker from "../components/SearchPicker";
 import DamageSummary from "../components/DamageSummary";
 import Panel from "../components/Panel";
 import InfoTooltip from "../components/InfoTooltip";
+import ChangelogModal from "../components/ChangelogModal";
 import {
   BuildData, SkillState, CustomTarget, TargetMode,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
@@ -52,20 +53,19 @@ const ASPD_POTION_LABELS = [
 ];
 
 // Damage/ASPD-relevant active buffs the engine already reads from
-// build.active_buffs / build.song_state, with no UI before now. `jobs` is
-// the actual job_id list each skill belongs to (derived from skills.json's
-// status_change field + skill_tree.json, not guessed) -- the panel below
-// filters to whichever job is currently selected.
+// build.active_buffs / build.support_buffs / build.song_state, with no UI
+// before now. `jobs` is the actual job_id list each skill belongs to
+// (derived from skills.json's status_change field + skill_tree.json, not
+// guessed) -- only used to filter SELF_BUFFS, since those only make sense
+// if your own build can cast them on itself. Party buffs and songs come
+// from OTHER players, so they're never filtered by your own job -- any
+// class could be standing in a Priest/Blacksmith/Bard's range.
 const SELF_BUFFS = [
   { key: "SC_TWOHANDQUICKEN", label: "Two-Hand Quicken", max: 10, jobs: [7, 4008] },
   { key: "SC_ONEHANDQUICKEN", label: "One-Hand Quicken", max: 10, jobs: [7, 4008] },
   { key: "SC_SPEARQUICKEN", label: "Spear Quicken", max: 10, jobs: [14, 4015] },
-  { key: "SC_ADRENALINE", label: "Adrenaline Rush", max: 2, jobs: [10, 4011] },
   { key: "SC_MAXIMIZEPOWER", label: "Maximize Power", max: 1, jobs: [10, 4011] },
   { key: "SC_EXPLOSIONSPIRITS", label: "Fury", max: 5, jobs: [15, 4016] },
-  { key: "SC_OVERTHRUST", label: "Overthrust", max: 10, jobs: [10, 4011] },
-  { key: "SC_OVERTHRUSTMAX", label: "Overthrust Max", max: 5, jobs: [4011] },
-  { key: "SC_IMPOSITIO", label: "Impositio Manus", max: 5, jobs: [8, 4009] },
   // PS renames these two displays ("Barrage" / "Run and Gun") but the
   // underlying constants are the vanilla Gunslinger ones; both are
   // presence-only (level doesn't change the magnitude in statusCalculator.js).
@@ -73,10 +73,22 @@ const SELF_BUFFS = [
   { key: "SC_GS_ADJUSTMENT", label: "Run and Gun", max: 1, jobs: [24] },
 ] as const;
 
+// Received from a party member rather than self-cast -- battle.c treats
+// these differently in some cases (e.g. SC_OVERTHRUST from support_buffs
+// uses a flatter, weaker formula than the self-cast active_buffs version;
+// see skillRatio.js). Grouped by source class for the UI, but every entry
+// here writes to build.support_buffs regardless of group.
+const PARTY_BUFFS = [
+  { key: "SC_IMPOSITIO", label: "Impositio Manus", max: 5, source: "Priest" },
+  { key: "SC_OVERTHRUST", label: "Overthrust", max: 10, source: "Blacksmith" },
+  { key: "SC_OVERTHRUSTMAX", label: "Overthrust Max", max: 5, source: "Blacksmith" },
+  { key: "SC_ADRENALINE", label: "Adrenaline Rush", max: 2, source: "Blacksmith" },
+] as const;
+
 const SONG_BUFFS = [
-  { key: "SC_DRUMBATTLE", label: "Battle Theme (Drum)", max: 10, jobs: [19, 20, 4020, 4021] },
-  { key: "SC_NIBELUNGEN", label: "Ring of Nibelungen", max: 10, jobs: [19, 20, 4020, 4021] },
-  { key: "SC_ASSNCROS", label: "Assassin Cross of Sunset", max: 10, jobs: [19, 4020] },
+  { key: "SC_DRUMBATTLE", label: "Battle Theme (Drum)", max: 10 },
+  { key: "SC_NIBELUNGEN", label: "Ring of Nibelungen", max: 10 },
+  { key: "SC_ASSNCROS", label: "Assassin Cross of Sunset", max: 10 },
   { key: "SC_HUMMING", label: "Humming", max: 10, jobs: [20, 4021] },
   { key: "SC_FORTUNE", label: "Fortune's Kiss", max: 10, jobs: [20, 4021] },
 ] as const;
@@ -126,6 +138,7 @@ export default function BuildEditor() {
   const [calculating, setCalculating] = useState(false);
   const [calcError, setCalcError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   useEffect(() => { api.listJobs().then(setJobs).catch(() => {}); }, []);
 
@@ -155,31 +168,22 @@ export default function BuildEditor() {
     api.getJobPassives(data.job_id).then(setPassiveSkills).catch(() => setPassiveSkills([]));
   }, [data.job_id]);
 
-  // Hiding a buff from the panel on job change isn't enough on its own --
-  // a stale value left in active_buffs/song_state from a previous job
-  // would still be sent to the backend and silently applied. Strip
-  // anything that doesn't belong to the now-selected job.
+  // Hiding a self-buff from the panel on job change isn't enough on its own --
+  // a stale value left in active_buffs from a previous job would still be
+  // sent to the backend and silently applied. Strip anything that doesn't
+  // belong to the now-selected job. Party buffs/songs are never filtered by
+  // job (they come from other players), so they're left untouched here.
   useEffect(() => {
     setData((prev) => {
       const allSelfKeys: readonly string[] = SELF_BUFFS.map((b) => b.key);
-      const allSongKeys: readonly string[] = SONG_BUFFS.map((b) => b.key);
       const keepSelf = new Set<string>(SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(prev.job_id)).map((b) => b.key));
-      const keepSong = new Set<string>(SONG_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(prev.job_id)).map((b) => b.key));
       const prevActive = prev.active_buffs || {};
-      const prevSong = prev.song_state || {};
       const nextActive: Record<string, number> = {};
       for (const [k, v] of Object.entries(prevActive)) {
         if (!allSelfKeys.includes(k) || keepSelf.has(k)) nextActive[k] = v;
       }
-      const nextSong: Record<string, number> = {};
-      for (const [k, v] of Object.entries(prevSong)) {
-        if (!allSongKeys.includes(k) || keepSong.has(k)) nextSong[k] = v;
-      }
-      if (Object.keys(nextActive).length === Object.keys(prevActive).length &&
-          Object.keys(nextSong).length === Object.keys(prevSong).length) {
-        return prev;
-      }
-      return { ...prev, active_buffs: nextActive, song_state: nextSong };
+      if (Object.keys(nextActive).length === Object.keys(prevActive).length) return prev;
+      return { ...prev, active_buffs: nextActive };
     });
   }, [data.job_id]);
 
@@ -211,12 +215,43 @@ export default function BuildEditor() {
     });
   }, []);
 
-  const updateBuffField = useCallback((group: "active_buffs" | "song_state", key: string, level: number) => {
+  const updateBuffField = useCallback((group: "active_buffs" | "song_state" | "support_buffs", key: string, level: number) => {
     setData((prev) => {
-      const next = { ...(prev[group] || {}) };
+      const next: Record<string, unknown> = { ...((prev[group] as Record<string, unknown>) || {}) };
       if (level <= 0) delete next[key];
       else next[key] = level;
       return { ...prev, [group]: next };
+    });
+  }, []);
+
+  // SC_VOLCANO is the only damage-relevant ground effect (Deluge/Violent
+  // Gale are HP/Flee, out of this panel's scope) -- it's a single
+  // mutually-exclusive slot (support_buffs.ground_effect + ..._lv), not a
+  // per-key level like everything else here.
+  const updateVolcano = useCallback((level: number) => {
+    setData((prev) => {
+      const next: Record<string, unknown> = { ...(prev.support_buffs || {}) };
+      if (level <= 0) {
+        delete next.ground_effect;
+        delete next.ground_effect_lv;
+      } else {
+        next.ground_effect = "SC_VOLCANO";
+        next.ground_effect_lv = level;
+      }
+      return { ...prev, support_buffs: next };
+    });
+  }, []);
+
+  // Priest weapon endow -- also a single mutually-exclusive slot
+  // (support_buffs.weapon_endow_sc, or the boolean SC_ASPERSIO for Holy).
+  const updateWeaponEndow = useCallback((value: string) => {
+    setData((prev) => {
+      const next: Record<string, unknown> = { ...(prev.support_buffs || {}) };
+      delete next.weapon_endow_sc;
+      delete next.SC_ASPERSIO;
+      if (value === "SC_ASPERSIO") next.SC_ASPERSIO = true;
+      else if (value) next.weapon_endow_sc = value;
+      return { ...prev, support_buffs: next };
     });
   }, []);
 
@@ -307,9 +342,12 @@ export default function BuildEditor() {
               <option value="standard">Standard pre-renewal</option>
             </select>
           </div>
+          <button onClick={() => setChangelogOpen(true)}>Changelog</button>
           <button onClick={onCopyLink}>{copied ? "Copied!" : "Copy share link"}</button>
         </div>
       </div>
+
+      <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)} />
 
       <div className="editor-grid">
         <div>
@@ -519,17 +557,16 @@ export default function BuildEditor() {
           <Panel eyebrow="05" title="Buffs">
             {(() => {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id));
-              const songBuffs = SONG_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id));
-              if (selfBuffs.length === 0 && songBuffs.length === 0) {
-                return (
-                  <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
-                    {data.job_id ? "No class-specific buffs modeled for this job yet." : "Select a job to see its buffs."}
-                  </p>
-                );
-              }
+              const supportBuffs = (data.support_buffs || {}) as Record<string, unknown>;
+              const volcanoLv = Number(supportBuffs.ground_effect === "SC_VOLCANO" ? supportBuffs.ground_effect_lv || 0 : 0);
+              const endowValue = supportBuffs.SC_ASPERSIO ? "SC_ASPERSIO" : (supportBuffs.weapon_endow_sc as string) || "";
               return (
                 <>
-                  {selfBuffs.length > 0 && (
+                  {selfBuffs.length === 0 ? (
+                    <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
+                      {data.job_id ? "No self-cast buffs modeled for this job yet." : "Select a job to see its self buffs."}
+                    </p>
+                  ) : (
                     <>
                       <label>Self buffs</label>
                       <div className="passive-grid">
@@ -549,26 +586,64 @@ export default function BuildEditor() {
                       </div>
                     </>
                   )}
-                  {songBuffs.length > 0 && (
-                    <>
-                      <label style={{ marginTop: "0.6rem" }}>Bard / Dancer songs</label>
-                      <div className="passive-grid">
-                        {songBuffs.map((b) => (
-                          <div className="field" key={b.key}>
-                            <label title={b.key}>{b.label}</label>
-                            <input
-                              className="mono"
-                              type="number"
-                              min={0}
-                              max={b.max}
-                              value={data.song_state?.[b.key] ?? 0}
-                              onChange={(e) => updateBuffField("song_state", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
-                            />
-                          </div>
-                        ))}
+
+                  <label style={{ marginTop: "0.6rem" }} title="From a party member, not self-cast — never filtered by your own job">
+                    Party buffs
+                  </label>
+                  <div className="passive-grid">
+                    {PARTY_BUFFS.map((b) => (
+                      <div className="field" key={b.key}>
+                        <label title={`${b.key} (${b.source})`}>{b.label} <span style={{ color: "var(--text-faint, #777)" }}>({b.source})</span></label>
+                        <input
+                          className="mono"
+                          type="number"
+                          min={0}
+                          max={b.max}
+                          value={(data.support_buffs as Record<string, number> | undefined)?.[b.key] ?? 0}
+                          onChange={(e) => updateBuffField("support_buffs", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
+                        />
                       </div>
-                    </>
-                  )}
+                    ))}
+                    <div className="field">
+                      <label title="SC_VOLCANO (Mage/Wizard ground spell)">Volcano <span style={{ color: "var(--text-faint, #777)" }}>(Mage/Wizard)</span></label>
+                      <input
+                        className="mono"
+                        type="number"
+                        min={0}
+                        max={5}
+                        value={volcanoLv}
+                        onChange={(e) => updateVolcano(Math.max(0, Math.min(5, Number(e.target.value))))}
+                      />
+                    </div>
+                    <div className="field">
+                      <label title="Priest weapon endow / Aspersio">Weapon endow <span style={{ color: "var(--text-faint, #777)" }}>(Priest)</span></label>
+                      <select value={endowValue} onChange={(e) => updateWeaponEndow(e.target.value)}>
+                        <option value="">None</option>
+                        <option value="SC_ASPERSIO">Aspersio (Holy)</option>
+                        <option value="SC_PROPERTYFIRE">Endow Fire</option>
+                        <option value="SC_PROPERTYWATER">Endow Water</option>
+                        <option value="SC_PROPERTYWIND">Endow Wind</option>
+                        <option value="SC_PROPERTYGROUND">Endow Ground</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <label style={{ marginTop: "0.6rem" }} title="From a party member, never filtered by your own job">Bard / Dancer songs</label>
+                  <div className="passive-grid">
+                    {SONG_BUFFS.map((b) => (
+                      <div className="field" key={b.key}>
+                        <label title={b.key}>{b.label}</label>
+                        <input
+                          className="mono"
+                          type="number"
+                          min={0}
+                          max={b.max}
+                          value={data.song_state?.[b.key] ?? 0}
+                          onChange={(e) => updateBuffField("song_state", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </>
               );
             })()}

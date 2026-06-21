@@ -1,9 +1,26 @@
 # Changelog
 
 All notable changes to this project are documented here. Format loosely
-follows [Keep a Changelog](https://keepachangelog.com/).
+follows [Keep a Changelog](https://keepachangelog.com/). This project
+deploys continuously (no version numbers), so entries are grouped by date
+instead of release version. Dates are taken from actual git commit history.
 
-## [Unreleased]
+## 2026-06-21
+
+### Added
+
+- **Party buffs section** in the Buffs panel, distinct from self-cast
+  buffs: Impositio Manus (Priest), Overthrust/Overthrust Max/Adrenaline
+  Rush (Blacksmith), Volcano (Mage/Wizard ground spell), and a weapon
+  endow dropdown (Priest: Aspersio/Endow Fire/Water/Wind/Ground). Unlike
+  self buffs, none of these are filtered by your own job — any class can
+  be standing in another player's buff range. Verified the engine treats
+  party-received Overthrust differently from self-cast Overthrust (flat
+  +5% vs full per-level scaling — battle.c's actual distinction, not an
+  approximation), and that Volcano/weapon endow both move the calculation
+  correctly.
+- In-app changelog viewer (this document, rendered from a modal in the
+  header).
 
 ### Fixed
 
@@ -29,33 +46,8 @@ follows [Keep a Changelog](https://keepachangelog.com/).
   pieces are. The backend already read each item's own `refineable` flag
   correctly; this was a frontend-only bug. The input now checks the
   actual equipped item instead of a static per-slot guess.
-- CI: `npm ci --omit=dev` on the EC2 box was skipping `tsx`, which is
-  miscategorized as a `devDependency` despite being required at runtime
-  (this project runs TypeScript directly via `tsx`, no compile step).
-  Moved to `dependencies`.
-- CI: rsync failed with "No such file or directory" deploying the
-  frontend build if `EC2_DEPLOY_PATH`'s parent directories didn't already
-  exist on the box. The pipeline now creates them itself before syncing.
-- CI: a fresh TypeScript install in CI hard-errored on the deprecated
-  `moduleResolution: "node"` setting instead of just warning (newer
-  TypeScript than what's pinned locally). Silenced via
-  `ignoreDeprecations` rather than switching resolution strategy.
-- nginx returned 500/Permission denied serving the frontend even though
-  every directory's own permissions looked correct — Ubuntu's default
-  home directory permissions (`750`) block `www-data` from traversing
-  into it at all. Fixed in `setup-ec2.sh` going forward.
-- Equipment search returned every item of a given type regardless of
-  slot (e.g. shoes appearing in the headgear search); `left_hand`
-  excluded shields entirely. Search is now filtered by the item's actual
-  `loc` field per slot, and `left_hand` searches both shields and
-  off-hand weapons.
-- `buildManager.js`'s `playerBuildToTarget` set the player's own race to
-  `"DemiHuman"` while every race lookup table elsewhere in the engine
-  uses the hyphenated `"Demi-Human"` — found while wiring up the incoming
-  damage pipeline, which is the first consumer of that function.
-- Skill search/dropdown showed the internal engine constant (e.g.
-  `MG_FIREBALL`) instead of a human-readable name. Backend now resolves
-  a `display_name` (PS-aware) for every skill.
+
+## 2026-06-20
 
 ### Added
 
@@ -90,3 +82,33 @@ follows [Keep a Changelog](https://keepachangelog.com/).
   sslip.io (no domain required).
 - TypeScript migration (frontend + backend entry points/routes); removed
   account/login system in favor of stateless URL-encoded build sharing.
+
+### Fixed
+
+- CI: `npm ci --omit=dev` on the EC2 box was skipping `tsx`, which is
+  miscategorized as a `devDependency` despite being required at runtime
+  (this project runs TypeScript directly via `tsx`, no compile step).
+  Moved to `dependencies`.
+- CI: rsync failed with "No such file or directory" deploying the
+  frontend build if `EC2_DEPLOY_PATH`'s parent directories didn't already
+  exist on the box. The pipeline now creates them itself before syncing.
+- CI: a fresh TypeScript install in CI hard-errored on the deprecated
+  `moduleResolution: "node"` setting instead of just warning (newer
+  TypeScript than what's pinned locally). Silenced via
+  `ignoreDeprecations` rather than switching resolution strategy.
+- nginx returned 500/Permission denied serving the frontend even though
+  every directory's own permissions looked correct — Ubuntu's default
+  home directory permissions (`750`) block `www-data` from traversing
+  into it at all. Fixed in `setup-ec2.sh` going forward.
+- Equipment search returned every item of a given type regardless of
+  slot (e.g. shoes appearing in the headgear search); `left_hand`
+  excluded shields entirely. Search is now filtered by the item's actual
+  `loc` field per slot, and `left_hand` searches both shields and
+  off-hand weapons.
+- `buildManager.js`'s `playerBuildToTarget` set the player's own race to
+  `"DemiHuman"` while every race lookup table elsewhere in the engine
+  uses the hyphenated `"Demi-Human"` — found while wiring up the incoming
+  damage pipeline, which is the first consumer of that function.
+- Skill search/dropdown showed the internal engine constant (e.g.
+  `MG_FIREBALL`) instead of a human-readable name. Backend now resolves
+  a `display_name` (PS-aware) for every skill.
