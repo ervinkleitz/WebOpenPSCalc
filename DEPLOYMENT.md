@@ -11,6 +11,10 @@ GitHub push to main
   -> verify job: npm ci + tsc --noEmit (backend), npm ci + vite build (frontend)
   -> deploy job (only on main):
        - vite build frontend
+       - ssh into EC2: mkdir -p $EC2_DEPLOY_PATH/{backend,frontend/dist}
+         (rsync can create the final dir but not missing parents, so this
+         runs unconditionally rather than assuming setup-ec2.sh already
+         created them with a matching path)
        - rsync backend source -> EC2:$EC2_DEPLOY_PATH/backend
        - rsync frontend dist  -> EC2:$EC2_DEPLOY_PATH/frontend/dist
        - rsync ecosystem.config.js -> EC2:$EC2_DEPLOY_PATH/ecosystem.config.js
@@ -91,6 +95,59 @@ workflow's rsync step excludes `.env`, so redeploys never touch it.
 - **Logs on the box**: `pm2 logs openpscalc-backend`, `pm2 status`.
 - **Rollback**: there's no automated rollback — `git revert` the bad commit
   (or push an older commit to `main`) and let the pipeline redeploy it.
+
+## Troubleshooting (issues actually hit standing this up)
+
+These are already fixed in the scripts/configs in this repo, but the *why*
+is worth knowing if something similar resurfaces:
+
+- **`npm: command not found` in the "Install backend deps & restart via
+  pm2" step.** Node/npm was never installed on the box — `setup-ec2.sh`
+  hadn't been run yet (or was run as a different user than `EC2_USER`).
+  Run it; `which npm` over SSH should return something non-interactively
+  before re-running the workflow.
+
+- **`rsync: mkdir ".../frontend/dist" failed: No such file or directory`.**
+  rsync creates the final directory in a path but not missing *parent*
+  directories. Happens if `EC2_DEPLOY_PATH` doesn't match whatever path
+  `setup-ec2.sh` actually created, or it was never run. Fixed permanently
+  by adding an explicit `mkdir -p` over SSH before the rsync steps (see
+  the architecture diagram above) — the pipeline no longer depends on
+  that one-time setup step having used a matching path.
+
+- **`pm2: Script not found: .../node_modules/.bin/tsx`, app stuck
+  `errored`.** `remote-deploy.sh` runs `npm ci --omit=dev` on the box.
+  `tsx` was originally listed under `devDependencies` in
+  `backend/package.json` — but this project runs TypeScript directly via
+  `tsx` in production (no compile step), so it's actually a *runtime*
+  dependency. Moved it to `dependencies`. If you ever add another
+  CLI tool the running app needs (not just CI/local-dev tooling), it
+  needs to live in `dependencies`, not `devDependencies`, for the same
+  reason.
+
+- **nginx returns 500, error log shows
+  `stat() ".../frontend/dist/index.html" failed (13: Permission denied)`
+  even though the file's own permissions look fine.** Ubuntu's default
+  home directory permissions (`drwxr-x---`) block `www-data` (nginx's
+  user) from traversing into `/home/<user>/...` at all, regardless of
+  permissions further down the tree. Fixed by `chmod o+x "$HOME"` in
+  `setup-ec2.sh` — grants traversal to named paths only, not directory
+  listing, so it doesn't expose anything else in the home directory.
+  Only matters if `EC2_DEPLOY_PATH` is under a home directory (it is, by
+  default).
+
+- **Site unreachable from outside, but `curl http://localhost/` on the
+  box itself works fine.** Security group, not nginx — port 80 (and 443
+  if applicable) needs an inbound rule. Nothing in this repo can fix that
+  for you; it's an AWS Console / IaC change outside the instance itself.
+
+- **TS5107 `'moduleResolution=node10' is deprecated`, only in CI, not
+  locally.** CI's `npm ci` installs whatever the `^` range in
+  `package.json` resolves to *today*, which can be newer than what's in
+  your local `node_modules`. A newer TypeScript treated the deprecation
+  as a hard error instead of a warning. Fixed with
+  `"ignoreDeprecations": "6.0"` in `tsconfig.json` rather than switching
+  `moduleResolution` outright, to avoid any behavior change.
 
 ## Local dry-run of the remote script
 
