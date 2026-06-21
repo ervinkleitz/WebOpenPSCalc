@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import SearchPicker from "../components/SearchPicker";
 import DamageSummary from "../components/DamageSummary";
 import Panel from "../components/Panel";
+import InfoTooltip from "../components/InfoTooltip";
 import {
   BuildData, SkillState, CustomTarget, TargetMode,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
@@ -241,7 +242,23 @@ export default function BuildEditor() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h1>{data.name}</h1>
+          <h1>
+            {data.name}
+            <InfoTooltip>
+              <strong>Open PS Calc</strong>
+              A pre-renewal Ragnarok Online damage calculator for vanilla
+              and Payon Stories servers — equip gear, pick a skill and
+              target, and see the full step-by-step damage breakdown.
+              <span className="tooltip-row">
+                <span>Based on</span>
+                <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">StatGameDev/Open_PS_Calc</a>
+              </span>
+              <span className="tooltip-row">
+                <span>This repo</span>
+                <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">ervinkleitz/WebOpenPSCalc</a>
+              </span>
+            </InfoTooltip>
+          </h1>
         </div>
         <div className="field-row" style={{ alignItems: "flex-end" }}>
           <div className="field" style={{ marginBottom: 0 }}>
