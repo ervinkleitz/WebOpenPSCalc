@@ -352,6 +352,8 @@ class DataLoader {
       "AC_VULTURE", "GS_SINGLEACTION", "GS_SNAKEEYE",
       // ASPD → attack period → DPS
       "KN_CAVALIERMASTERY",
+      // Proc-based extra hits on normal attacks (battlePipeline.js#calculate)
+      "TF_DOUBLE",
     ]);
     // Some skill DB names differ from the key masteryFix.js looks up.
     const MASTERY_KEY_OVERRIDE = { "SM_TWOHAND": "SM_TWOHANDSWORD" };

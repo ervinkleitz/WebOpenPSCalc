@@ -34,7 +34,7 @@ that host proxy `/api/*` to wherever the backend runs — see the repo-root
 - `src/api/client.ts` — fetch wrapper; attaches `X-API-Key` from
   `VITE_API_KEY` if set
 - `src/pages/BuildEditor.tsx` — the entire app: character/equipment/passive
-  skills/consumables/skill/target panels plus the damage breakdown
+  skills/consumables/buffs/skill/target panels plus the damage breakdown
 - `src/components/Panel.tsx` — collapsible section wrapper used for every
   panel in the editor; the damage-breakdown panel sets `collapsible={false}
   highlight` to stay pinned and visually distinct as the actual result

@@ -43,10 +43,15 @@ motivated several changes beyond a straight 1:1 port:
 - **Card slot UI** (up to 4 per item, filtered to `IT_CARD`), a **passive
   skill panel** (filtered to an explicit allowlist of masteries that
   actually affect damage — not every passive in a job's skill tree does),
-  and a **consumables panel** (ASPD potions, ATK/MATK items) — none of
-  these existed in the original web port's first pass; built incrementally
-  by finding cases where the engine already supported the mechanic but no
-  UI exposed it.
+  a **consumables panel** (ASPD potions, ATK/MATK items), and a **buffs
+  panel** (quickens, Impositio Manus, Overthrust, Bard/Dancer songs) — none
+  of these existed in the original web port's first pass; built
+  incrementally by finding cases where the engine already supported the
+  mechanic but no UI exposed it.
+- **`TF_DOUBLE` (Double Attack) proc implemented** — the engine had
+  placeholder result fields for it (`proc_chance`, `double_hit`) but the
+  pipeline never actually computed them. Dagger-only, mutually exclusive
+  with crit, proc rate read from the PS/vanilla profile tables.
 - **Filled in larger chunks of `PAYON_STORIES`'s skill-ratio/mastery
   overrides** in `serverProfiles.js` than the original port carried over
   initially, pulled directly from the upstream Python source.

@@ -20,13 +20,13 @@ export interface BuildData {
   target_mob_id: number | null;
   server: string;
   weapon_element?: string;
-  active_buffs?: Record<string, unknown>;
+  active_buffs?: Record<string, number>;
   mastery_levels?: Record<string, number>;
   flags?: Record<string, unknown>;
   manual_adj?: Record<string, unknown>;
   support_buffs?: Record<string, unknown>;
   player_active_scs?: Record<string, unknown>;
-  song_state?: Record<string, unknown>;
+  song_state?: Record<string, number>;
   consumable_buffs?: ConsumableBuffs;
 }
 

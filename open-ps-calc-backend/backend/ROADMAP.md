@@ -95,26 +95,37 @@ without re-auditing everything from scratch.
 
 - **`core/calculators/battle_pipeline.py` → `.../calculators/battlePipeline.js`**
   — covers normal attacks and BF_WEAPON skills end-to-end (the single most
-  important path). See the file's header comment for the itemized list of
-  what's deferred: katar second-hit, dual-wield left hand, TF_DOUBLE/
-  GS_CHAINACTION procs, MO_TRIPLEATTACK proc, item autocasts, NJ_ISSEN's
+  important path). **`TF_DOUBLE` (Double Attack) proc now implemented**
+  (battle.c:4926 — dagger-only, normal attacks only, mutually exclusive
+  with crit; proc rate from `profile.proc_rate_overrides.TF_DOUBLE` with a
+  vanilla default of 5%/level, 7%/level on PS; verified end-to-end that DPS
+  scales correctly and that non-dagger weapons correctly get 0% proc despite
+  having skill levels set). Still deferred: katar second-hit, dual-wield
+  left hand, `GS_CHAINACTION`/`MO_TRIPLEATTACK` procs (same shape as
+  Double Attack but not yet ported), item autocasts, NJ_ISSEN's
   fixed-damage formula, CR_SHIELDBOOMERANG's special case, several small
   PS-only multiplicative bonuses (Cloaking, Lex Aeterna, Mailbreaker/Venom
-  Dust/Raided, Backstab Opportunity, "performing" bonuses), and `bWeaponAtk`
-  (needs a weapon-type → Hercules `W_*` constant table not transcribed here).
+  Dust/Raided, Backstab Opportunity, "performing" bonuses), `bDoubleRate`
+  gear bonus (cards/items that add to Double Attack's proc chance — no
+  consumer in `gearBonusAggregator.js` yet), and `bWeaponAtk` (needs a
+  weapon-type → Hercules `W_*` constant table not transcribed here).
 
 ## Not yet started
 
 - BF_MISC skills beyond Grand Cross (HT_LANDMINE, TF_THROWSTONE,
   NJ_ZENYNAGE, GS_FLING, BA_DISSONANCE, etc.) — still return "not yet
   implemented".
-- GUI parity: the original has 15 sections and 6 dialogs (buffs, consumables,
-  combat controls, equipment/monster/skill browsers with rich filtering,
-  build-vs-build comparison). The web frontend now covers stats, equipment
-  with card slots, a passive-skill panel filtered to damage-relevant
-  masteries, target selection (monster search or manual stats), skill
-  selection, and the damage breakdown — still not full parity (no
-  buffs/consumables/combat-controls panels).
+- `GS_CHAINACTION` / `MO_TRIPLEATTACK` procs — same mechanic shape as the
+  now-implemented `TF_DOUBLE`, not yet ported.
+- GUI parity: the original has 15 sections and 6 dialogs (combat controls,
+  equipment/monster/skill browsers with rich filtering, build-vs-build
+  comparison). The web frontend now covers stats, equipment with card
+  slots, a passive-skill panel filtered to damage-relevant masteries, a
+  buffs panel (quickens, Impositio Manus, Overthrust, Bard/Dancer songs —
+  whatever the engine already read from `active_buffs`/`song_state` but had
+  no UI for), consumables, target selection, skill selection, and the
+  damage breakdown — still not full parity (no combat-controls panel, no
+  build-vs-build comparison).
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 

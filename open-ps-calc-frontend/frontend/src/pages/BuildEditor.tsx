@@ -36,6 +36,8 @@ const DEFAULT_BUILD: BuildData = {
   target_mob_id: null,
   server: "payon_stories",
   consumable_buffs: {},
+  active_buffs: {},
+  song_state: {},
 };
 
 const ASPD_POTION_LABELS = [
@@ -44,6 +46,28 @@ const ASPD_POTION_LABELS = [
   "Awakening Potion (+15%)",
   "Berserk Potion (+20%)",
 ];
+
+// Damage/ASPD-relevant active buffs the engine already reads from
+// build.active_buffs / build.song_state, with no UI before now.
+const SELF_BUFFS = [
+  { key: "SC_TWOHANDQUICKEN", label: "Two-Hand Quicken", max: 10 },
+  { key: "SC_ONEHANDQUICKEN", label: "One-Hand Quicken", max: 10 },
+  { key: "SC_SPEARQUICKEN", label: "Spear Quicken", max: 10 },
+  { key: "SC_ADRENALINE", label: "Adrenaline Rush", max: 2 },
+  { key: "SC_MAXIMIZEPOWER", label: "Maximize Power", max: 1 },
+  { key: "SC_EXPLOSIONSPIRITS", label: "Fury", max: 5 },
+  { key: "SC_OVERTHRUST", label: "Overthrust", max: 10 },
+  { key: "SC_OVERTHRUSTMAX", label: "Overthrust Max", max: 5 },
+  { key: "SC_IMPOSITIO", label: "Impositio Manus", max: 5 },
+] as const;
+
+const SONG_BUFFS = [
+  { key: "SC_DRUMBATTLE", label: "Battle Theme (Drum)", max: 10 },
+  { key: "SC_NIBELUNGEN", label: "Ring of Nibelungen", max: 10 },
+  { key: "SC_ASSNCROS", label: "Assassin Cross of Sunset", max: 10 },
+  { key: "SC_HUMMING", label: "Humming", max: 10 },
+  { key: "SC_FORTUNE", label: "Fortune's Kiss", max: 10 },
+] as const;
 
 const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack" };
 
@@ -144,6 +168,15 @@ export default function BuildEditor() {
       if (value === undefined || value === 0 || value === false) delete next[key];
       else next[key] = value;
       return { ...prev, consumable_buffs: next };
+    });
+  }, []);
+
+  const updateBuffField = useCallback((group: "active_buffs" | "song_state", key: string, level: number) => {
+    setData((prev) => {
+      const next = { ...(prev[group] || {}) };
+      if (level <= 0) delete next[key];
+      else next[key] = level;
+      return { ...prev, [group]: next };
     });
   }, []);
 
@@ -426,7 +459,42 @@ export default function BuildEditor() {
             </div>
           </Panel>
 
-          <Panel eyebrow="05" title="Skill">
+          <Panel eyebrow="05" title="Buffs">
+            <label>Self buffs</label>
+            <div className="passive-grid">
+              {SELF_BUFFS.map((b) => (
+                <div className="field" key={b.key}>
+                  <label title={b.key}>{b.label}</label>
+                  <input
+                    className="mono"
+                    type="number"
+                    min={0}
+                    max={b.max}
+                    value={data.active_buffs?.[b.key] ?? 0}
+                    onChange={(e) => updateBuffField("active_buffs", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
+                  />
+                </div>
+              ))}
+            </div>
+            <label style={{ marginTop: "0.6rem" }}>Bard / Dancer songs</label>
+            <div className="passive-grid">
+              {SONG_BUFFS.map((b) => (
+                <div className="field" key={b.key}>
+                  <label title={b.key}>{b.label}</label>
+                  <input
+                    className="mono"
+                    type="number"
+                    min={0}
+                    max={b.max}
+                    value={data.song_state?.[b.key] ?? 0}
+                    onChange={(e) => updateBuffField("song_state", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
+                  />
+                </div>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel eyebrow="06" title="Skill">
             <div className="selected-pill" style={{ marginBottom: "0.6rem" }}>
               <span>{skill.label}{skill.id !== 0 ? ` Lv.${skill.level}` : ""}</span>
               {skill.id !== 0 && (
@@ -454,7 +522,7 @@ export default function BuildEditor() {
             </div>
           </Panel>
 
-          <Panel eyebrow="06" title="Target">
+          <Panel eyebrow="07" title="Target">
             <div className="tabs">
               <button className={targetMode === "monster" ? "active" : ""} onClick={() => setTargetMode("monster")}>Monster</button>
               <button className={targetMode === "custom" ? "active" : ""} onClick={() => setTargetMode("custom")}>Custom stats</button>
@@ -552,7 +620,7 @@ export default function BuildEditor() {
             </button>
           </div>
 
-          <Panel eyebrow="07" title="Damage breakdown" collapsible={false} highlight>
+          <Panel eyebrow="08" title="Damage breakdown" collapsible={false} highlight>
             <DamageSummary calcResult={calcResult} calculating={calculating} error={calcError} />
           </Panel>
         </div>

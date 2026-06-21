@@ -548,11 +548,34 @@ class BattlePipeline {
     const normalAvg = normal.avg_damage;
     const critAvg = crit ? crit.avg_damage : normalAvg;
 
-    const attacks = [
-      createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * h),
-      createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * (1.0 - h)),
-      createAttackDefinition(critAvg, 0.0, period, effCrit),
-    ];
+    // TF_DOUBLE (Double Attack) — battle.c:4926. Dagger-only, normal attacks
+    // only (skill.id === 0); crit and the proc are mutually exclusive (a
+    // critical swing never also double-attacks). The second hit reruns the
+    // exact same non-crit pipeline as `normal` — since DPS here only needs
+    // the expected value, not a true independent second roll, reusing
+    // normal.avg_damage is mathematically equivalent (E[X+Y] = E[X]+E[Y]
+    // regardless of independence) and avoids a redundant _runBranch call.
+    // NOT YET PORTED: bDoubleRate gear bonus (no consumer in gearBonusAggregator
+    // yet), and any interaction with skill-based (non-normal-attack) hits.
+    const tfDoubleLv = skill.id === 0 && weapon.weapon_type === "Knife"
+      ? (gearBonuses.effective_mastery.TF_DOUBLE || 0)
+      : 0;
+    const doubleRate = (profile.proc_rate_overrides || {}).TF_DOUBLE ?? 5.0;
+    const procChance = tfDoubleLv > 0 ? Math.min(100, doubleRate * tfDoubleLv) : 0;
+    const procFrac = procChance / 100.0;
+
+    const attacks = procFrac > 0
+      ? [
+          createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * h * (1.0 - procFrac)),
+          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * h * procFrac),
+          createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * (1.0 - h)),
+          createAttackDefinition(critAvg, 0.0, period, effCrit),
+        ]
+      : [
+          createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * h),
+          createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * (1.0 - h)),
+          createAttackDefinition(critAvg, 0.0, period, effCrit),
+        ];
     const dps = calculateDps(attacks);
 
     return createBattleResult({
@@ -565,6 +588,8 @@ class BattlePipeline {
       attacks,
       period_ms: period,
       dps_valid: dpsValid,
+      proc_chance: procChance,
+      double_hit: procFrac > 0 ? normal : null,
     });
   }
 }

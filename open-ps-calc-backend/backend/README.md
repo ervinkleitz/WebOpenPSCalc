@@ -54,7 +54,12 @@ frontend bundle).
 `build` in `POST /api/calculate*` uses the same save-schema shape the
 original Python GUI wrote to its `saves/*.json` files (`base_stats`,
 `bonus_stats`, `equipped`, `refine`, `mastery_levels`, `consumable_buffs`,
-etc.) — see `src/engine/buildManager.js` for the exact fields.
+`active_buffs`, `song_state`, etc.) — see `src/engine/buildManager.js` for
+the exact fields.
+
+The `BattleResult` for a normal attack also includes `proc_chance` and
+`double_hit` when the build has Double Attack (`TF_DOUBLE`) levels and a
+dagger equipped — see "Engine layout" below.
 
 ## Engine layout
 
@@ -63,7 +68,8 @@ etc.) — see `src/engine/buildManager.js` for the exact fields.
 - `src/engine/serverProfiles.js` — `STANDARD` (vanilla) vs `PAYON_STORIES`
   deviation tables (skill ratios, mechanic flags, mastery overrides)
 - `src/engine/calculators/battlePipeline.js` — normal attacks, BF_WEAPON
-  skills, BF_MAGIC skills, and CR_GRANDCROSS
+  skills, BF_MAGIC skills, CR_GRANDCROSS, and the TF_DOUBLE (Double Attack)
+  proc
 - `src/engine/calculators/incomingPipeline.js` — mob → player damage
 - everything else under `src/engine/calculators/modifiers/` is one pipeline
   step each (defense, element, card bonuses, mastery, crit, etc.)
