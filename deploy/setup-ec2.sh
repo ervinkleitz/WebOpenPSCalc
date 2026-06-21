@@ -31,6 +31,14 @@ fi
 
 mkdir -p "$DEPLOY_PATH/backend" "$DEPLOY_PATH/frontend/dist"
 
+# nginx runs as www-data, which can't traverse into a home directory by
+# default on Ubuntu (drwxr-x---). Grant just enough to pass through to the
+# deploy path — does not grant directory listing, only traversal to named
+# children. Only matters if $DEPLOY_PATH is under /home/<user>.
+if [[ "$DEPLOY_PATH" == "$HOME"* ]]; then
+  chmod o+x "$HOME"
+fi
+
 if [ ! -f "$DEPLOY_PATH/backend/.env" ]; then
   GENERATED_KEY="$(node -e 'console.log(require("crypto").randomBytes(24).toString("hex"))' 2>/dev/null || true)"
   cat > "$DEPLOY_PATH/backend/.env" <<ENVEOF
