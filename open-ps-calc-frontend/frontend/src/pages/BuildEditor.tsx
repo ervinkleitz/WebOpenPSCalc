@@ -227,18 +227,19 @@ export default function BuildEditor() {
     });
   }, []);
 
-  // SC_VOLCANO is the only damage-relevant ground effect (Deluge/Violent
-  // Gale are HP/Flee, out of this panel's scope) -- it's a single
-  // mutually-exclusive slot (support_buffs.ground_effect + ..._lv), not a
-  // per-key level like everything else here.
-  const updateVolcano = useCallback((level: number) => {
+  // Sage's three ground spells (Volcano/Deluge/Violent Gale) share one
+  // mutually-exclusive slot (support_buffs.ground_effect + ..._lv) -- you
+  // can only stand in one at a time. All three also affect damage: Volcano
+  // directly (+ATK/+MATK), and all three via attrFix.js's elemental
+  // "enchant" bonus when your weapon's element matches the ground effect's.
+  const updateGroundEffect = useCallback((type: string, level: number) => {
     setData((prev) => {
       const next: Record<string, unknown> = { ...(prev.support_buffs || {}) };
-      if (level <= 0) {
+      if (!type || level <= 0) {
         delete next.ground_effect;
         delete next.ground_effect_lv;
       } else {
-        next.ground_effect = "SC_VOLCANO";
+        next.ground_effect = type;
         next.ground_effect_lv = level;
       }
       return { ...prev, support_buffs: next };
@@ -561,7 +562,15 @@ export default function BuildEditor() {
             {(() => {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id));
               const supportBuffs = (data.support_buffs || {}) as Record<string, unknown>;
-              const volcanoLv = Number(supportBuffs.ground_effect === "SC_VOLCANO" ? supportBuffs.ground_effect_lv || 0 : 0);
+              const groundEffectType = (supportBuffs.ground_effect as string) || "";
+              const groundEffectLv = Number(supportBuffs.ground_effect_lv || 0);
+              // SA_VOLCANO/SA_DELUGE/SA_VIOLENTGALE's vanilla max_level is 5;
+              // PS overrides all three to 3 (wiki.payonstories.com/Volcano,
+              // /Deluge, /Violent_Gale all show per-level tables stopping at 3
+              // despite a "Levels: 5 (Fixed)" label likely inherited from
+              // vanilla's max_level field) -- corroborated by PS_VOL_MATK_PCT
+              // and PS_ENCHANT_EFF both being 3-element arrays.
+              const groundEffectMax = data.server === "payon_stories" ? 3 : 5;
               const endowValue = supportBuffs.SC_ASPERSIO ? "SC_ASPERSIO" : (supportBuffs.weapon_endow_sc as string) || "";
               return (
                 <>
@@ -608,16 +617,32 @@ export default function BuildEditor() {
                       </div>
                     ))}
                     <div className="field">
-                      <label title="SC_VOLCANO (Mage/Wizard ground spell)">Volcano <span style={{ color: "var(--text-faint, #777)" }}>(Mage/Wizard)</span></label>
-                      <input
-                        className="mono"
-                        type="number"
-                        min={0}
-                        max={5}
-                        value={volcanoLv}
-                        onChange={(e) => updateVolcano(Math.max(0, Math.min(5, Number(e.target.value))))}
-                      />
+                      <label title="SA_VOLCANO / SA_DELUGE / SA_VIOLENTGALE (Sage/Professor ground spell)">
+                        Ground effect <span style={{ color: "var(--text-faint, #777)" }}>(Sage)</span>
+                      </label>
+                      <select
+                        value={groundEffectType}
+                        onChange={(e) => updateGroundEffect(e.target.value, groundEffectLv || 1)}
+                      >
+                        <option value="">None</option>
+                        <option value="SC_VOLCANO">Volcano (Fire, +ATK/+MATK)</option>
+                        <option value="SC_DELUGE">Deluge (Water, +HP regen)</option>
+                        <option value="SC_VIOLENTGALE">Violent Gale (Wind, +Flee/move speed)</option>
+                      </select>
                     </div>
+                    {groundEffectType && (
+                      <div className="field">
+                        <label>Ground effect level</label>
+                        <input
+                          className="mono"
+                          type="number"
+                          min={1}
+                          max={groundEffectMax}
+                          value={groundEffectLv || 1}
+                          onChange={(e) => updateGroundEffect(groundEffectType, Math.max(1, Math.min(groundEffectMax, Number(e.target.value))))}
+                        />
+                      </div>
+                    )}
                     <div className="field">
                       <label title="Priest weapon endow / Aspersio">Weapon endow <span style={{ color: "var(--text-faint, #777)" }}>(Priest)</span></label>
                       <select value={endowValue} onChange={(e) => updateWeaponEndow(e.target.value)}>

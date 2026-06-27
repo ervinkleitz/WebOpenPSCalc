@@ -7,8 +7,40 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-06-21
 
+### Fixed
+
+- **Volcano's UI cap and source label were wrong for Payon Stories.**
+  The party buffs panel let Volcano go up to level 5 and labeled it
+  "Mage/Wizard" — but its real constant is `SA_VOLCANO` (Sage, not
+  Wizard; confirmed by `skill_tree.json`: jobs 16/4017, Sage/Professor),
+  and PS caps it at level 3, not vanilla's 5 — confirmed against
+  [wiki.payonstories.com/Sage#Skills](https://wiki.payonstories.com/Sage#Skills)
+  (and the individual /Volcano, /Deluge, /Violent_Gale pages — all three
+  show per-level tables stopping at 3 despite a "Levels: 5 (Fixed)" label
+  that's almost certainly inherited from vanilla's `max_level` field, not
+  the real PS-tuned cap) and independently corroborated by
+  `PS_VOL_MATK_PCT` and `PS_ENCHANT_EFF` both already being 3-element
+  arrays in the engine. The cap is now server-aware (3 on Payon Stories,
+  5 on standard pre-renewal) instead of one wrong hardcoded number for both.
+- **`attrFix.js`'s Volcano/Deluge/Violent Gale elemental "enchant" bonus
+  was checking the wrong element entirely** — its local `ELE_FIRE`/
+  `ELE_WATER`/`ELE_WIND` constants (4/5/6) didn't match this engine's
+  actual element index convention used everywhere else (`Ele_Water: 1,
+  Ele_Fire: 3, Ele_Wind: 4` — see `ELE_STR_TO_INT` in `battlePipeline.js`).
+  In practice this meant the bonus silently required a Poison weapon for
+  Deluge, a Holy weapon for Violent Gale, and a Wind weapon for Volcano,
+  instead of Water/Wind/Fire respectively. Found by testing the new
+  ground-effect UI end-to-end with a real matching weapon and getting no
+  bonus; fixed the constants and verified all three now match correctly.
+
 ### Added
 
+- Deluge and Violent Gale added alongside Volcano as a single "Ground
+  effect" dropdown (Sage) — all three share one mutually-exclusive
+  `support_buffs.ground_effect` slot in the engine (you can only stand in
+  one ground spell at a time), so they're now one shared control instead
+  of a Volcano-only number input. Both are damage-relevant via the same
+  elemental enchant bonus as Volcano (see the `attrFix.js` fix above).
 - Min/max damage range shown under the avg damage metric in the damage
   breakdown. The backend already computed `min_damage`/`max_damage` on
   every `DamageResult` (normal and crit); the frontend type/render just

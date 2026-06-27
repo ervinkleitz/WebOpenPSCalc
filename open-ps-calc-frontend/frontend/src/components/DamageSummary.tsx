@@ -67,10 +67,17 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
         <div className="metric">
           <div className="label">Avg damage</div>
           <div className="value">{Math.round(damage.avg_damage)}</div>
-          {(damage.min_damage != null && damage.max_damage != null) && (
-            <div className="metric-sub">{Math.round(damage.min_damage)} – {Math.round(damage.max_damage)} range</div>
-          )}
         </div>
+        {(damage.min_damage != null && damage.max_damage != null) && (
+          <div className="metric metric-range">
+            <div className="label">Damage range</div>
+            <div className="value range">
+              {Math.round(damage.min_damage)}<span className="unit">min</span>
+              {" – "}
+              {Math.round(damage.max_damage)}<span className="unit">max</span>
+            </div>
+          </div>
+        )}
         <div className="metric">
           <div className="label">DPS (est.)</div>
           <div className="value">{result.dps_valid ? result.dps.toFixed(1) : "—"}</div>

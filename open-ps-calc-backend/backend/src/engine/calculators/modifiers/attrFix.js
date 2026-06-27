@@ -8,7 +8,13 @@ const { scaleFloor, pmfStats } = require("../../pmf");
 
 const ENCHANT_EFF = [10, 14, 17, 19, 20];
 const PS_ENCHANT_EFF = [10, 15, 20];
-const ELE_FIRE = 4, ELE_WATER = 5, ELE_WIND = 6;
+// Must match this engine's actual element index convention (see
+// ELE_STR_TO_INT in battlePipeline.js): Neutral=0, Water=1, Earth=2,
+// Fire=3, Wind=4, Poison=5, Holy=6, Dark=7, Ghost=8, Undead=9. This file
+// previously used 4/5/6, which silently matched Wind/Poison/Holy weapons
+// instead of Fire/Water/Wind for the Volcano/Deluge/Violent Gale enchant
+// bonus -- found while verifying the ground-effect UI end-to-end.
+const ELE_FIRE = 3, ELE_WATER = 1, ELE_WIND = 4;
 const GROUND_ELEMENT = { SC_VOLCANO: ELE_FIRE, SC_DELUGE: ELE_WATER, SC_VIOLENTGALE: ELE_WIND };
 
 function calculateAttrFix(weapon, target, pmf, result, build = null, atkElement = null) {
