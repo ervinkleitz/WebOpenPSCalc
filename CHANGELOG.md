@@ -7,6 +7,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-06-21
 
+### Added
+
+- Poem of Bragi (`BA_POEMBRAGI`, Bard/Clown) to the Bard/Dancer songs
+  section. It reduces cast time and after-cast delay (`skillTiming.js`),
+  not ASPD directly — so it only changes DPS when testing an actual
+  skill, not a normal attack (normal-attack period is ASPD-only).
+  Verified with MG_FIREBALL: period 2470ms→1429ms, DPS 153.8→265.9 at
+  Bragi level 10.
+
 ### Changed
 
 - Priest/Blacksmith party buffs (Impositio Manus, Blessing, Increase AGI,

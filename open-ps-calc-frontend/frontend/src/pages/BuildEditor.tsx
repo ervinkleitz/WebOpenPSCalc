@@ -92,8 +92,12 @@ const SONG_BUFFS = [
   { key: "SC_DRUMBATTLE", label: "Battle Theme (Drum)", max: 10 },
   { key: "SC_NIBELUNGEN", label: "Ring of Nibelungen", max: 10 },
   { key: "SC_ASSNCROS", label: "Assassin Cross of Sunset", max: 10 },
-  { key: "SC_HUMMING", label: "Humming", max: 10, jobs: [20, 4021] },
-  { key: "SC_FORTUNE", label: "Fortune's Kiss", max: 10, jobs: [20, 4021] },
+  { key: "SC_HUMMING", label: "Humming", max: 10 },
+  { key: "SC_FORTUNE", label: "Fortune's Kiss", max: 10 },
+  // Reduces cast time + after-cast delay (skillTiming.js), not ASPD
+  // directly -- only shows up in DPS when testing an actual skill, not a
+  // normal attack, since normal-attack period is ASPD-only.
+  { key: "SC_POEMBRAGI", label: "Poem of Bragi", max: 10 },
 ] as const;
 
 const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack" };
