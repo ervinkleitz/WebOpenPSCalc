@@ -7,8 +7,22 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-06-27
 
+### Changed
+
+- Party buffs are now grouped by source class (Priest, Blacksmith, Sage)
+  under their own subheadings, instead of one flat grid with a "(Source)"
+  suffix on every label.
+
 ### Fixed
 
+- **Long checkbox labels in the Buffs panel overlapped neighboring grid
+  cells.** Flex items default to a min-width equal to their content's
+  max-content size, so text like "Impositio Manus" never wrapped inside
+  its grid column and instead rendered on top of whatever sat next to or
+  below it. Fixed with `min-width: 0` on the flex item so the label can
+  wrap inside its column. Per-buff source/mechanic detail that used to be
+  crammed inline (or in a `title` attribute) now lives in an info-icon
+  popover on each group heading instead.
 - **Changelog edits weren't showing up in the in-app viewer without a
   manual dev-server restart.** Vite's dev-server file watcher only
   tracks files under this project's own root by default; `CHANGELOG.md`

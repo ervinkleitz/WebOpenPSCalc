@@ -602,49 +602,84 @@ export default function BuildEditor() {
                     </>
                   )}
 
-                  <label style={{ marginTop: "0.6rem" }} title="From a party member, not self-cast — never filtered by your own job">
+                  <label className="section-label" style={{ marginTop: "0.6rem" }}>
                     Party buffs
+                    <InfoTooltip>
+                      Received from a party member, not self-cast — these are never
+                      filtered by your own job, since any class can stand in
+                      another player's buff range. Checking a buff applies its
+                      max level (you don't control the caster's actual level).
+                    </InfoTooltip>
                   </label>
-                  <div className="passive-grid">
-                    {PARTY_BUFFS.map((b) => {
-                      const current = (data.support_buffs as Record<string, number> | undefined)?.[b.key] ?? 0;
-                      return (
-                        <div className="field field-checkbox" key={b.key}>
-                          <label title={`${b.key} (${b.source}) — applies max level (${b.max}) when checked`}>
-                            <input
-                              type="checkbox"
-                              checked={current > 0}
-                              onChange={(e) => updateBuffField("support_buffs", b.key, e.target.checked ? b.max : 0)}
-                            />
-                            {b.label} <span style={{ color: "var(--text-faint, #777)" }}>({b.source})</span>
-                          </label>
-                        </div>
-                      );
-                    })}
-                    <div className="field">
-                      <label title="SA_VOLCANO / SA_DELUGE / SA_VIOLENTGALE (Sage/Professor ground spell) — applies max level when selected">
-                        Ground effect <span style={{ color: "var(--text-faint, #777)" }}>(Sage)</span>
-                      </label>
-                      <select
-                        value={groundEffectType}
-                        onChange={(e) => updateGroundEffect(e.target.value, groundEffectMax)}
-                      >
-                        <option value="">None</option>
-                        <option value="SC_VOLCANO">Volcano (Fire, +ATK/+MATK)</option>
-                        <option value="SC_DELUGE">Deluge (Water, +HP regen)</option>
-                        <option value="SC_VIOLENTGALE">Violent Gale (Wind, +Flee/move speed)</option>
-                      </select>
+
+                  <div className="buff-group">
+                    <span className="buff-group-label">Priest</span>
+                    <div className="passive-grid">
+                      {PARTY_BUFFS.filter((b) => b.source === "Priest").map((b) => {
+                        const current = (data.support_buffs as Record<string, number> | undefined)?.[b.key] ?? 0;
+                        return (
+                          <div className="field field-checkbox" key={b.key}>
+                            <label title={b.key}>
+                              <input
+                                type="checkbox"
+                                checked={current > 0}
+                                onChange={(e) => updateBuffField("support_buffs", b.key, e.target.checked ? b.max : 0)}
+                              />
+                              <span>{b.label}</span>
+                            </label>
+                          </div>
+                        );
+                      })}
+                      <div className="field">
+                        <label title="Priest weapon endow / Aspersio">Weapon endow</label>
+                        <select value={endowValue} onChange={(e) => updateWeaponEndow(e.target.value)}>
+                          <option value="">None</option>
+                          <option value="SC_ASPERSIO">Aspersio (Holy)</option>
+                          <option value="SC_PROPERTYFIRE">Endow Fire</option>
+                          <option value="SC_PROPERTYWATER">Endow Water</option>
+                          <option value="SC_PROPERTYWIND">Endow Wind</option>
+                          <option value="SC_PROPERTYGROUND">Endow Ground</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="field">
-                      <label title="Priest weapon endow / Aspersio">Weapon endow <span style={{ color: "var(--text-faint, #777)" }}>(Priest)</span></label>
-                      <select value={endowValue} onChange={(e) => updateWeaponEndow(e.target.value)}>
-                        <option value="">None</option>
-                        <option value="SC_ASPERSIO">Aspersio (Holy)</option>
-                        <option value="SC_PROPERTYFIRE">Endow Fire</option>
-                        <option value="SC_PROPERTYWATER">Endow Water</option>
-                        <option value="SC_PROPERTYWIND">Endow Wind</option>
-                        <option value="SC_PROPERTYGROUND">Endow Ground</option>
-                      </select>
+                  </div>
+
+                  <div className="buff-group">
+                    <span className="buff-group-label">Blacksmith</span>
+                    <div className="passive-grid">
+                      {PARTY_BUFFS.filter((b) => b.source === "Blacksmith").map((b) => {
+                        const current = (data.support_buffs as Record<string, number> | undefined)?.[b.key] ?? 0;
+                        return (
+                          <div className="field field-checkbox" key={b.key}>
+                            <label title={b.key}>
+                              <input
+                                type="checkbox"
+                                checked={current > 0}
+                                onChange={(e) => updateBuffField("support_buffs", b.key, e.target.checked ? b.max : 0)}
+                              />
+                              <span>{b.label}</span>
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="buff-group">
+                    <span className="buff-group-label">Sage</span>
+                    <div className="passive-grid">
+                      <div className="field">
+                        <label title="SA_VOLCANO / SA_DELUGE / SA_VIOLENTGALE — applies max level when selected">Ground effect</label>
+                        <select
+                          value={groundEffectType}
+                          onChange={(e) => updateGroundEffect(e.target.value, groundEffectMax)}
+                        >
+                          <option value="">None</option>
+                          <option value="SC_VOLCANO">Volcano (Fire, +ATK/+MATK)</option>
+                          <option value="SC_DELUGE">Deluge (Water, +HP regen)</option>
+                          <option value="SC_VIOLENTGALE">Violent Gale (Wind, +Flee/move speed)</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
 
