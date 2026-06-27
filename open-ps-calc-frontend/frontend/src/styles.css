@@ -289,6 +289,10 @@ label {
 .passive-grid .field input[type="number"] { width: 100%; }
 .passive-grid .field span { display: block; margin-top: 0.1rem; }
 
+.field-checkbox { display: flex; align-items: center; margin-top: 0.3rem; }
+.field-checkbox label { display: flex; align-items: center; gap: 0.45rem; cursor: pointer; font-size: 0.85rem; }
+.field-checkbox input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+
 .card-slots { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.4rem; }
 .card-slot .selected-pill { font-size: 0.85rem; }
 

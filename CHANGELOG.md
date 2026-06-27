@@ -7,6 +7,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-06-21
 
+### Changed
+
+- Priest/Blacksmith party buffs (Impositio Manus, Blessing, Increase AGI,
+  Gloria, Overthrust, Overthrust Max, Adrenaline Rush) switched from a
+  numeric level input to a checkbox — checking it applies the buff's max
+  level, since these are received from a party member and you don't
+  control the caster's actual level anyway. Sage's ground effect dropdown
+  now applies max level automatically on selection instead of a separate
+  level input.
+
 ### Fixed
 
 - **Volcano's UI cap and source label were wrong for Payon Stories.**

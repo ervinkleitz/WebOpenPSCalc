@@ -563,7 +563,6 @@ export default function BuildEditor() {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id));
               const supportBuffs = (data.support_buffs || {}) as Record<string, unknown>;
               const groundEffectType = (supportBuffs.ground_effect as string) || "";
-              const groundEffectLv = Number(supportBuffs.ground_effect_lv || 0);
               // SA_VOLCANO/SA_DELUGE/SA_VIOLENTGALE's vanilla max_level is 5;
               // PS overrides all three to 3 (wiki.payonstories.com/Volcano,
               // /Deluge, /Violent_Gale all show per-level tables stopping at 3
@@ -603,26 +602,28 @@ export default function BuildEditor() {
                     Party buffs
                   </label>
                   <div className="passive-grid">
-                    {PARTY_BUFFS.map((b) => (
-                      <div className="field" key={b.key}>
-                        <label title={`${b.key} (${b.source})`}>{b.label} <span style={{ color: "var(--text-faint, #777)" }}>({b.source})</span></label>
-                        <input
-                          className="mono"
-                          type="number"
-                          min={0}
-                          max={b.max}
-                          value={(data.support_buffs as Record<string, number> | undefined)?.[b.key] ?? 0}
-                          onChange={(e) => updateBuffField("support_buffs", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
-                        />
-                      </div>
-                    ))}
+                    {PARTY_BUFFS.map((b) => {
+                      const current = (data.support_buffs as Record<string, number> | undefined)?.[b.key] ?? 0;
+                      return (
+                        <div className="field field-checkbox" key={b.key}>
+                          <label title={`${b.key} (${b.source}) — applies max level (${b.max}) when checked`}>
+                            <input
+                              type="checkbox"
+                              checked={current > 0}
+                              onChange={(e) => updateBuffField("support_buffs", b.key, e.target.checked ? b.max : 0)}
+                            />
+                            {b.label} <span style={{ color: "var(--text-faint, #777)" }}>({b.source})</span>
+                          </label>
+                        </div>
+                      );
+                    })}
                     <div className="field">
-                      <label title="SA_VOLCANO / SA_DELUGE / SA_VIOLENTGALE (Sage/Professor ground spell)">
+                      <label title="SA_VOLCANO / SA_DELUGE / SA_VIOLENTGALE (Sage/Professor ground spell) — applies max level when selected">
                         Ground effect <span style={{ color: "var(--text-faint, #777)" }}>(Sage)</span>
                       </label>
                       <select
                         value={groundEffectType}
-                        onChange={(e) => updateGroundEffect(e.target.value, groundEffectLv || 1)}
+                        onChange={(e) => updateGroundEffect(e.target.value, groundEffectMax)}
                       >
                         <option value="">None</option>
                         <option value="SC_VOLCANO">Volcano (Fire, +ATK/+MATK)</option>
@@ -630,19 +631,6 @@ export default function BuildEditor() {
                         <option value="SC_VIOLENTGALE">Violent Gale (Wind, +Flee/move speed)</option>
                       </select>
                     </div>
-                    {groundEffectType && (
-                      <div className="field">
-                        <label>Ground effect level</label>
-                        <input
-                          className="mono"
-                          type="number"
-                          min={1}
-                          max={groundEffectMax}
-                          value={groundEffectLv || 1}
-                          onChange={(e) => updateGroundEffect(groundEffectType, Math.max(1, Math.min(groundEffectMax, Number(e.target.value))))}
-                        />
-                      </div>
-                    )}
                     <div className="field">
                       <label title="Priest weapon endow / Aspersio">Weapon endow <span style={{ color: "var(--text-faint, #777)" }}>(Priest)</span></label>
                       <select value={endowValue} onChange={(e) => updateWeaponEndow(e.target.value)}>
