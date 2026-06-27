@@ -5,7 +5,20 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
-## 2026-06-21
+## 2026-06-27
+
+### Fixed
+
+- **Changelog edits weren't showing up in the in-app viewer without a
+  manual dev-server restart.** Vite's dev-server file watcher only
+  tracks files under this project's own root by default; `CHANGELOG.md`
+  living two directories up (at the actual repo root) meant `fs.allow`
+  granted read access but not watch coverage, so the `?raw` import kept
+  serving whatever content existed when the server started. Added a
+  small Vite plugin that explicitly watches the file and forces a full
+  reload on change. Verified by appending a test marker to the file and
+  confirming it appeared without restarting anything, then removed the
+  marker.
 
 ### Added
 
@@ -68,6 +81,11 @@ instead of release version. Dates are taken from actual git commit history.
   (+2+level AGI), and Gloria (+30 LUK) — reported missing after shipping
   the initial Party buffs section; all three were already read from
   `support_buffs` by `statusCalculator.js`, just not exposed yet.
+
+## 2026-06-21
+
+### Added
+
 - **Party buffs section** in the Buffs panel, distinct from self-cast
   buffs: Impositio Manus (Priest), Overthrust/Overthrust Max/Adrenaline
   Rush (Blacksmith), Volcano (Mage/Wizard ground spell), and a weapon
