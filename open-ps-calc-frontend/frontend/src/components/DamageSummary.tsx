@@ -9,6 +9,8 @@ interface Step {
 
 interface DamageBranch {
   avg_damage: number;
+  min_damage: number;
+  max_damage: number;
   steps: Step[];
 }
 
@@ -65,6 +67,9 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
         <div className="metric">
           <div className="label">Avg damage</div>
           <div className="value">{Math.round(damage.avg_damage)}</div>
+          {(damage.min_damage != null && damage.max_damage != null) && (
+            <div className="metric-sub">{Math.round(damage.min_damage)} – {Math.round(damage.max_damage)} range</div>
+          )}
         </div>
         <div className="metric">
           <div className="label">DPS (est.)</div>

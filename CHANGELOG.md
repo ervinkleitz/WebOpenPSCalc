@@ -9,6 +9,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- Min/max damage range shown under the avg damage metric in the damage
+  breakdown. The backend already computed `min_damage`/`max_damage` on
+  every `DamageResult` (normal and crit); the frontend type/render just
+  never surfaced them.
 - Three more Priest party buffs: Blessing (+STR/+INT/+DEX), Increase AGI
   (+2+level AGI), and Gloria (+30 LUK) — reported missing after shipping
   the initial Party buffs section; all three were already read from
