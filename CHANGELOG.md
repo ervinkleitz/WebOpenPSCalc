@@ -9,6 +9,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- Three more Priest party buffs: Blessing (+STR/+INT/+DEX), Increase AGI
+  (+2+level AGI), and Gloria (+30 LUK) — reported missing after shipping
+  the initial Party buffs section; all three were already read from
+  `support_buffs` by `statusCalculator.js`, just not exposed yet.
 - **Party buffs section** in the Buffs panel, distinct from self-cast
   buffs: Impositio Manus (Priest), Overthrust/Overthrust Max/Adrenaline
   Rush (Blacksmith), Volcano (Mage/Wizard ground spell), and a weapon

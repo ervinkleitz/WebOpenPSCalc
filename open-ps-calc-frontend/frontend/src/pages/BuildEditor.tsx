@@ -80,6 +80,9 @@ const SELF_BUFFS = [
 // here writes to build.support_buffs regardless of group.
 const PARTY_BUFFS = [
   { key: "SC_IMPOSITIO", label: "Impositio Manus", max: 5, source: "Priest" },
+  { key: "SC_BLESSING", label: "Blessing", max: 10, source: "Priest" },
+  { key: "SC_INC_AGI", label: "Increase AGI", max: 10, source: "Priest" },
+  { key: "SC_GLORIA", label: "Gloria", max: 1, source: "Priest" },
   { key: "SC_OVERTHRUST", label: "Overthrust", max: 10, source: "Blacksmith" },
   { key: "SC_OVERTHRUSTMAX", label: "Overthrust Max", max: 5, source: "Blacksmith" },
   { key: "SC_ADRENALINE", label: "Adrenaline Rush", max: 2, source: "Blacksmith" },
