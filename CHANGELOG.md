@@ -5,6 +5,34 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-28
+
+### Added
+
+- **Pet section** (Payon Stories server) — panel 03, placed in the left
+  column below Equipment to balance the two-column layout. A dropdown lets
+  you select your active pet; bonuses activate at Cordial (750+ intimacy) and
+  are applied server-side before the damage calculation. Supported bonuses
+  include flat stats (STR/AGI/VIT/INT/DEX/LUK), ATK, MATK%, ASPD%, CRIT,
+  HIT, FLEE, perfect dodge, DEF/MDEF, MaxHP/MaxSP, elemental/racial
+  resist/boost, and crit damage %. HP drain procs and heal power bonuses are
+  noted in the label but not modelled by the engine. Covers all standard pets
+  plus the five PS custom pets (Puck, Kalec, Yser, Gyokuto, Onigiring).
+
+- **ASPD shown in the damage breakdown headline** — the computed attack speed
+  (same value the RO status window shows, 0–190 scale) now appears as a
+  metric card alongside hit chance, crit chance, damage range, and DPS.
+  `status.aspd` was already returned by the calculate endpoint; this was a
+  frontend-only addition.
+
+### Removed
+
+- **"Avg damage" metric card** from the damage breakdown headline — redundant
+  given the damage range (min–max) card directly below it.
+- **"View results" button** from the top bar — the results modal opens
+  automatically on calculate; the button to re-open it added clutter without
+  enough benefit.
+
 ## 2026-06-27
 
 ### Added

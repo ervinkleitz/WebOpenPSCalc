@@ -15,6 +15,9 @@ interface DamageBranch {
 }
 
 interface CalcResult {
+  status: {
+    aspd: number;
+  };
   result: {
     hit_chance: number;
     crit_chance: number;
@@ -49,7 +52,7 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
   if (calculating) return <p className="spinner-text">Calculating…</p>;
   if (!calcResult) return <p className="hint-text">Set up a build and target, then calculate damage.</p>;
 
-  const { result } = calcResult;
+  const { result, status } = calcResult;
   const damage = branch === "crit" && result.crit ? result.crit : result.normal;
   const notImplemented = damage.steps?.length === 1 && damage.steps[0].name === "Not yet implemented";
 
@@ -65,8 +68,8 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
           <div className="value crit">{result.crit_chance.toFixed(1)}<span className="unit">%</span></div>
         </div>
         <div className="metric">
-          <div className="label">Avg damage</div>
-          <div className="value">{Math.round(damage.avg_damage)}</div>
+          <div className="label">ASPD</div>
+          <div className="value">{status.aspd.toFixed(1)}</div>
         </div>
         {(damage.min_damage != null && damage.max_damage != null) && (
           <div className="metric metric-range">

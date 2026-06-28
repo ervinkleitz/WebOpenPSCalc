@@ -28,6 +28,7 @@ export interface BuildData {
   player_active_scs?: Record<string, unknown>;
   song_state?: Record<string, number>;
   consumable_buffs?: ConsumableBuffs;
+  selected_pet?: string;
 }
 
 export interface ConsumableBuffs {

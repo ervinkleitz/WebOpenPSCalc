@@ -67,6 +67,51 @@ const DEFAULT_BUILD: BuildData = {
   song_state: {},
 };
 
+// Bonuses from wiki.payonstories.com/Cute_Pet_System. Only PS server has
+// pet_bonuses populated; standard server sends selected_pet but profile
+// pet_bonuses:{} makes applyPetBonuses a no-op.
+const PS_PETS: { key: string; label: string; psCustom?: true }[] = [
+  // ── Payon Stories custom pets ──────────────────────────────────────────
+  { key: "gyokuto",    label: "Gyokuto — MaxSP +20, Heal +3%",        psCustom: true },
+  { key: "kalec",      label: "Kalec — MATK +1%, MDEF +2",            psCustom: true },
+  { key: "onigiring",  label: "Onigiring — MaxHP +50, Poison resist",  psCustom: true },
+  { key: "puck",       label: "Puck — VIT +1, Magic Dmg Rcvd −1%",    psCustom: true },
+  { key: "yser",       label: "Yser — HIT +4, ASPD +1%",              psCustom: true },
+  // ── Standard pets (alphabetical) ────────────────────────────────────
+  { key: "alice",           label: "Alice — MDEF +1, Demi-Human resist +1%" },
+  { key: "baby_desert_wolf",label: "Baby Desert Wolf — INT +1, SP +20" },
+  { key: "baphomet_jr",     label: "Baphomet Jr. — DEF +1, MDEF +1" },
+  { key: "bongun",          label: "Bongun — VIT +1" },
+  { key: "chonchon",        label: "Chonchon — AGI +1, FLEE +2" },
+  { key: "deviruchi",       label: "Deviruchi — ATK/MATK +1%, HP/SP −3%" },
+  { key: "dokebi",          label: "Dokebi — MATK +1%, ATK −1%" },
+  { key: "drops",           label: "Drops — HIT +3, ATK +3" },
+  { key: "dullahan",        label: "Dullahan — Crit Dmg +4%, LUK −1" },
+  { key: "earth_petite",    label: "Earth Petite — DEF/MDEF −2, ASPD +1%" },
+  { key: "green_maiden",    label: "Green Maiden — DEF +1, Demi-Human resist +1%" },
+  { key: "hunter_fly",      label: "Hunter Fly — FLEE −5, Perfect Dodge +2" },
+  { key: "imp",             label: "Imp — Fire resist +2%, Fire Dmg +1%" },
+  { key: "isis",            label: "Isis — ATK +1%, MATK −1%" },
+  { key: "lunatic",         label: "Lunatic — CRIT +2, ATK +2" },
+  { key: "munak",           label: "Munak — INT +1, DEF +1" },
+  { key: "orc_warrior",     label: "Orc Warrior — ATK +10, DEF −3" },
+  { key: "peco_peco",       label: "Peco Peco — MaxHP +150, SP −10" },
+  { key: "picky",           label: "Picky — STR +1, ATK +5" },
+  { key: "poison_spore",    label: "Poison Spore — STR +1, INT +1" },
+  { key: "poporing",        label: "Poporing — LUK +2, Poison resist +10%" },
+  { key: "poring",          label: "Poring — LUK +2, CRIT +1" },
+  { key: "rocker",          label: "Rocker — MaxHP +25, HP recovery +5%" },
+  { key: "santa_goblin",    label: "Santa Goblin — MaxHP +30, Water resist +1%" },
+  { key: "savage_bebe",     label: "Savage Bebe — VIT +1, MaxHP +50" },
+  { key: "smokie",          label: "Smokie — AGI +1, Perfect Dodge +1" },
+  { key: "sohee",           label: "Sohee — STR +1, DEX +1" },
+  { key: "spore",           label: "Spore — HIT +5, ATK −2" },
+  { key: "steel_chonchon",  label: "Steel Chonchon — FLEE +6, AGI −1" },
+  { key: "succubus",        label: "Succubus — 2% HP drain on attack (proc not modelled)" },
+  { key: "yoyo",            label: "Yoyo — CRIT +3, LUK −1" },
+  { key: "zealotus",        label: "Zealotus — ATK +2%, MATK vs Demi-Human +2%" },
+];
+
 const ASPD_POTION_LABELS = [
   "None",
   "Concentration Potion (+10%)",
@@ -236,7 +281,7 @@ export default function BuildEditor() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(data.equipped), JSON.stringify(data.refine), data.server,
       JSON.stringify(data.base_stats), data.job_id, data.job_level, data.base_level,
-      JSON.stringify(data.bonus_stats)]);
+      JSON.stringify(data.bonus_stats), data.selected_pet]);
 
   // Hiding a self-buff from the panel on job change isn't enough on its own --
   // a stale value left in active_buffs from a previous job would still be
@@ -444,9 +489,7 @@ export default function BuildEditor() {
           <button onClick={() => setSavedBuildsOpen(true)}>Save / Load</button>
           <button onClick={() => setChangelogOpen(true)}>Changelog</button>
           <button onClick={onCopyLink}>{copied ? "Copied!" : "Copy share link"}</button>
-          {(calcResult || calcError) && (
-            <button onClick={() => setResultsOpen(true)}>View results</button>
-          )}
+
           <button className="primary" onClick={onCalculate} disabled={calculating}>
             {calculating ? "Calculating…" : "Calculate damage"}
           </button>
@@ -645,10 +688,42 @@ export default function BuildEditor() {
               })}
             </div>
           </Panel>
+
+          {data.server === "payon_stories" && (
+            <Panel eyebrow="03" title="Pet">
+              <div className="field">
+                <label>
+                  Active pet
+                  <InfoTooltip>
+                    Bonuses activate at Cordial (750+ intimacy). ATK/MATK%,
+                    ASPD%, resist, and flat-stat bonuses are applied to the
+                    calculation. HP drain procs and healing bonuses are noted
+                    in the label but not modelled by the engine.
+                  </InfoTooltip>
+                </label>
+                <select
+                  value={data.selected_pet ?? ""}
+                  onChange={(e) => updateField(["selected_pet"], e.target.value || undefined)}
+                >
+                  <option value="">None</option>
+                  <optgroup label="Payon Stories custom pets">
+                    {PS_PETS.filter((p) => p.psCustom).map((p) => (
+                      <option key={p.key} value={p.key}>{p.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Standard pets">
+                    {PS_PETS.filter((p) => !p.psCustom).map((p) => (
+                      <option key={p.key} value={p.key}>{p.label}</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+            </Panel>
+          )}
         </div>
 
         <div>
-          <Panel eyebrow="03" title="Passive skills">
+          <Panel eyebrow="04" title="Passive skills">
             {passiveSkills.length === 0 ? (
               <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
                 {data.job_id ? "No passive skills for this job." : "Select a job to see passive skills."}
@@ -679,7 +754,7 @@ export default function BuildEditor() {
             )}
           </Panel>
 
-          <Panel eyebrow="04" title="Consumables">
+          <Panel eyebrow="05" title="Consumables">
             <div className="field">
               <label>ASPD potion</label>
               <select
@@ -713,7 +788,7 @@ export default function BuildEditor() {
             </div>
           </Panel>
 
-          <Panel eyebrow="05" title="Buffs">
+          <Panel eyebrow="06" title="Buffs">
             {(() => {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id));
               const supportBuffs = (data.support_buffs || {}) as Record<string, unknown>;
@@ -857,7 +932,7 @@ export default function BuildEditor() {
             })()}
           </Panel>
 
-          <Panel eyebrow="06" title="Skill">
+          <Panel eyebrow="07" title="Skill">
             <div className="selected-pill" style={{ marginBottom: "0.6rem" }}>
               <span>{skill.label}{skill.id !== 0 ? ` Lv.${skill.level}` : ""}</span>
               {skill.id !== 0 && (
@@ -885,7 +960,7 @@ export default function BuildEditor() {
             </div>
           </Panel>
 
-          <Panel eyebrow="07" title="Target">
+          <Panel eyebrow="08" title="Target">
             <div className="tabs">
               <button className={targetMode === "monster" ? "active" : ""} onClick={() => setTargetMode("monster")}>Monster</button>
               <button className={targetMode === "custom" ? "active" : ""} onClick={() => setTargetMode("custom")}>Custom stats</button>
@@ -976,6 +1051,7 @@ export default function BuildEditor() {
               </>
             )}
           </Panel>
+
         </div>
       </div>
       </div>

@@ -57,6 +57,7 @@ function emptyProfile(name, overrides = {}) {
     ps_mastery_weapon_map: {},
     param_skill_flat_adds: {},
     weapon_avg_hits_by_zone: {},
+    pet_bonuses: {},
     ...overrides,
   };
 }
@@ -266,6 +267,54 @@ const PS_MAGIC_VANILLA_OK = new Set([
   "NJ_HYOUSYOURAKU", "NJ_KAMAITACHI", "NJ_HUUJIN",
 ]);
 
+// wiki.payonstories.com/Cute_Pet_System — bonuses activate at Cordial (750+).
+// Keys match build.selected_pet; fields match GearBonuses / applyPetBonuses.
+// Bonuses that can't be modelled in the current engine (HP drain procs, specific
+// monster-type bonuses) are omitted — the pet is still selectable so the
+// supported portion applies.
+const PS_PET_BONUSES = {
+  // ── Standard pets ────────────────────────────────────────────────────────
+  poring:          { luk: 2, cri: 1 },
+  lunatic:         { cri: 2, batk: 2 },
+  picky:           { str_: 1, batk: 5 },
+  drops:           { hit: 3, batk: 3 },
+  chonchon:        { agi: 1, flee: 2 },
+  steel_chonchon:  { flee: 6, agi: -1 },
+  spore:           { hit: 5, batk: -2 },
+  poison_spore:    { str_: 1, int_: 1 },
+  smokie:          { agi: 1, flee2: 1 },
+  rocker:          { maxhp: 25 },                          // +HP; regen not modelled
+  yoyo:            { cri: 3, luk: -1 },
+  munak:           { int_: 1, def_: 1 },
+  bongun:          { vit: 1 },                             // +stun resist not modelled
+  poporing:        { luk: 2, sub_ele: { Ele_Poison: 10 } },
+  peco_peco:       { maxhp: 150, maxsp: -10 },
+  sohee:           { str_: 1, dex: 1 },
+  isis:            { atk_rate: 1, matk_rate: -1 },
+  orc_warrior:     { batk: 10, def_: -3 },
+  savage_bebe:     { vit: 1, maxhp: 50 },
+  deviruchi:       { atk_rate: 1, matk_rate: 1, maxhp_rate: -3, maxsp_rate: -3 },
+  dokebi:          { matk_rate: 1, atk_rate: -1 },
+  alice:           { mdef_: 1, sub_race: { RC_DemiHuman: 1, RC_Player: 1 } },
+  green_maiden:    { def_: 1, sub_race: { RC_DemiHuman: 1, RC_Player: 1 } },
+  baby_desert_wolf:{ int_: 1, maxsp: 20 },
+  baphomet_jr:     { def_: 1, mdef_: 1 },                 // +stun resist not modelled
+  imp:             { sub_ele: { Ele_Fire: 2 }, add_ele: { Ele_Fire: 1 } },
+  hunter_fly:      { flee: -5, flee2: 2 },
+  dullahan:        { crit_atk_rate: 4, luk: -1 },
+  earth_petite:    { def_: -2, mdef_: -2, aspd_percent: 1 },
+  santa_goblin:    { maxhp: 30, sub_ele: { Ele_Water: 1 } },
+  succubus:        {},                                     // 2% HP drain proc not modelled
+  goblin:          {},                                     // +2% to/from Goblins — monster-type, not modelled
+  zealotus:        { atk_rate: 2, magic_add_race: { RC_DemiHuman: 2, RC_Player: 2 } },
+  // ── Payon Stories custom pets ────────────────────────────────────────────
+  puck:            { vit: 1 },                             // −1% magic dmg received not modelled
+  kalec:           { matk_rate: 1, mdef_: 2 },
+  yser:            { hit: 4, aspd_percent: 1 },
+  gyokuto:         { maxsp: 20 },                          // +3% heal power not modelled
+  onigiring:       { maxhp: 50 },                          // poison status resist not modelled
+};
+
 const PAYON_STORIES = emptyProfile("payon_stories", {
   use_ps_data: true,
   use_ps_skill_names: true,
@@ -283,6 +332,7 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   weapon_vanilla_ok: PS_WEAPON_VANILLA_OK,
   magic_ratios: PS_BF_MAGIC_RATIOS,
   magic_vanilla_ok: PS_MAGIC_VANILLA_OK,
+  pet_bonuses: PS_PET_BONUSES,
 });
 
 const PROFILES = {
