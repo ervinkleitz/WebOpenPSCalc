@@ -9,6 +9,35 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **"Start over" button** to start a fresh build without manually
+  clearing every field — resets the form, target, and skill back to
+  defaults (with a confirmation prompt, since it's not undoable once
+  the URL state is overwritten).
+- **Saved builds in localStorage** ("My builds"), up to 10, each with
+  a custom name. Save the build currently open (saving under an
+  existing name overwrites that slot instead of using a new one),
+  load any saved build back into the editor, or delete one. This is
+  separate from the existing URL-based share link — saved builds
+  persist locally across sessions without needing to keep a link
+  around, but don't sync between devices/browsers.
+
+### Changed
+
+- **Redesigned the header into a single compact top bar**, replacing
+  the old two-header layout (a generic app-level topbar plus a
+  separate per-page header with the build name and actions as an H1).
+  The build name is now an inline-editable field in the bar itself,
+  and every action (Start over, My builds, Changelog, Copy share link,
+  Calculate damage) lives in one sticky row — freeing up significant
+  vertical space for the actual calculator panels below.
+- **Moved "Calculate damage" into the top bar** (now sticky, so it's
+  reachable while scrolled anywhere on the page) and **moved the
+  damage breakdown out of an always-present inline panel and into a
+  modal**, opened automatically when you calculate and reopenable via
+  a "View results" button that appears once a result exists. Keeps
+  the main column free for editing the build instead of permanently
+  reserving space for a result you're not always looking at.
+
 - **Double Bolt** (`PF_DOUBLECASTING`/`SC_DOUBLECASTING`) to the
   Professor self-buffs panel — confirmed against
   [wiki.payonstories.com/Double_Bolt](https://wiki.payonstories.com/Double_Bolt):

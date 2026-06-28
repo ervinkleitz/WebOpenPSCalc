@@ -2,10 +2,11 @@ import { useEffect, useCallback, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import SearchPicker from "../components/SearchPicker";
-import DamageSummary from "../components/DamageSummary";
 import Panel from "../components/Panel";
 import InfoTooltip from "../components/InfoTooltip";
 import ChangelogModal from "../components/ChangelogModal";
+import ResultsModal from "../components/ResultsModal";
+import SavedBuildsModal from "../components/SavedBuildsModal";
 import {
   BuildData, SkillState, CustomTarget, TargetMode,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
@@ -153,6 +154,8 @@ export default function BuildEditor() {
   const [calcError, setCalcError] = useState("");
   const [copied, setCopied] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
+  const [resultsOpen, setResultsOpen] = useState(false);
 
   useEffect(() => { api.listJobs().then(setJobs).catch(() => {}); }, []);
 
@@ -274,6 +277,7 @@ export default function BuildEditor() {
   async function onCalculate() {
     setCalculating(true);
     setCalcError("");
+    setResultsOpen(true);
     try {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
@@ -286,6 +290,27 @@ export default function BuildEditor() {
     } finally {
       setCalculating(false);
     }
+  }
+
+  function onNewBuild() {
+    if (!window.confirm("Start over? Any unsaved changes will be lost (save it first from My Builds if you want to keep it).")) return;
+    setData(DEFAULT_BUILD);
+    setSkill(DEFAULT_SKILL);
+    setTargetMode("monster");
+    setCustomTarget(DEFAULT_CUSTOM_TARGET);
+    setCalcResult(null);
+    setCalcError("");
+    setResultsOpen(false);
+  }
+
+  function onLoadSavedState(state: UrlEditorState) {
+    setData(state.build);
+    setSkill(state.skill);
+    setTargetMode(state.targetMode);
+    setCustomTarget(state.customTarget);
+    setCalcResult(null);
+    setCalcError("");
+    setResultsOpen(false);
   }
 
   function onCopyLink() {
@@ -328,44 +353,75 @@ export default function BuildEditor() {
     [data.server],
   );
 
+  const currentEditorState: UrlEditorState = { build: data, skill, targetMode, customTarget };
+
   return (
-    <div className="page">
-      <div className="page-header">
-        <div>
-          <h1>
-            {data.name}
-            <InfoTooltip>
-              <strong>Open PS Calc</strong>
-              A pre-renewal Ragnarok Online damage calculator for vanilla
-              and Payon Stories servers — equip gear, pick a skill and
-              target, and see the full step-by-step damage breakdown.
-              <span className="tooltip-row">
-                <span>Based on</span>
-                <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
-              </span>
-              <span className="tooltip-row">
-                <span>This repo</span>
-                <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">WebOpenPSCalc</a>
-              </span>
-            </InfoTooltip>
-          </h1>
+    <div className="app-shell">
+      <div className="topbar">
+        <div className="topbar-left">
+          <span className="brand-mark">⚔</span>
+          <input
+            className="build-name-input"
+            value={data.name}
+            onChange={(e) => updateField(["name"], e.target.value)}
+            aria-label="Build name"
+          />
+          <InfoTooltip>
+            <strong>Open PS Calc</strong>
+            A pre-renewal Ragnarok Online damage calculator for vanilla
+            and Payon Stories servers — equip gear, pick a skill and
+            target, and see the full step-by-step damage breakdown.
+            <span className="tooltip-row">
+              <span>Based on</span>
+              <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
+            </span>
+            <span className="tooltip-row">
+              <span>This repo</span>
+              <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">WebOpenPSCalc</a>
+            </span>
+          </InfoTooltip>
         </div>
-        <div className="field-row" style={{ alignItems: "flex-end" }}>
-          <div className="field" style={{ marginBottom: 0 }}>
-            <label>Server</label>
-            <select value={data.server} onChange={(e) => updateField(["server"], e.target.value)}>
-              <option value="payon_stories">Payon Stories</option>
-              <option value="standard">Standard pre-renewal</option>
-            </select>
-          </div>
+        <div className="topbar-right">
+          <select
+            className="topbar-server-select"
+            value={data.server}
+            onChange={(e) => updateField(["server"], e.target.value)}
+            aria-label="Server"
+          >
+            <option value="payon_stories">Payon Stories</option>
+            <option value="standard">Standard pre-renewal</option>
+          </select>
+          <button onClick={onNewBuild}>Start over</button>
+          <button onClick={() => setSavedBuildsOpen(true)}>My builds</button>
           <button onClick={() => setChangelogOpen(true)}>Changelog</button>
           <button onClick={onCopyLink}>{copied ? "Copied!" : "Copy share link"}</button>
+          {(calcResult || calcError) && (
+            <button onClick={() => setResultsOpen(true)}>View results</button>
+          )}
+          <button className="primary" onClick={onCalculate} disabled={calculating}>
+            {calculating ? "Calculating…" : "Calculate damage"}
+          </button>
         </div>
       </div>
 
-      <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)} />
+      <div className="page">
+        <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)} />
+        <SavedBuildsModal
+          open={savedBuildsOpen}
+          onClose={() => setSavedBuildsOpen(false)}
+          currentName={data.name}
+          currentState={currentEditorState}
+          onLoad={onLoadSavedState}
+        />
+        <ResultsModal
+          open={resultsOpen}
+          onClose={() => setResultsOpen(false)}
+          calcResult={calcResult}
+          calculating={calculating}
+          error={calcError}
+        />
 
-      <div className="editor-grid">
+        <div className="editor-grid">
         <div>
           <Panel eyebrow="01" title="Character">
             <div className="field-row">
@@ -831,18 +887,10 @@ export default function BuildEditor() {
               </>
             )}
           </Panel>
-
-          <div className="panel">
-            <button className="primary" style={{ width: "100%" }} onClick={onCalculate} disabled={calculating}>
-              {calculating ? "Calculating…" : "Calculate damage"}
-            </button>
-          </div>
-
-          <Panel eyebrow="08" title="Damage breakdown" collapsible={false} highlight>
-            <DamageSummary calcResult={calcResult} calculating={calculating} error={calcError} />
-          </Panel>
         </div>
+      </div>
       </div>
     </div>
   );
 }
+
