@@ -47,8 +47,13 @@ const STAT_COST_TABLE: readonly number[] = (() => {
 const TRANS_JOB_IDS = new Set([4008, 4009, 4010, 4011, 4012, 4013, 4015, 4016, 4017, 4018, 4019, 4020, 4021]);
 // Novice + 1st job (except Magician) + Super Novice: Concentration Potion only
 const NOVICE_OR_1ST_JOB_IDS = new Set([0, 1, 2, 3, 4, 5, 6, 23]);
-// PS rebalance: mage tree can use Berserk Potions (Magician checked before NOVICE_OR_1ST)
-const MAGE_TREE_IDS = new Set([2, 9, 16]); // Magician, Wizard, Sage
+// These non-trans classes can use Berserk Potion; trans forms already covered by TRANS_JOB_IDS
+const BERSERK_NON_TRANS_IDS = new Set([
+  2, 9, 16,   // Mage tree: Magician, Wizard, Sage
+  5, 10, 18,  // Merchant tree: Merchant, Blacksmith, Alchemist
+  1, 7, 14,   // Swordsman tree: Swordman, Knight, Crusader
+  6, 12, 17,  // Thief tree: Thief, Assassin, Rogue
+]);
 // PS rebalance: Bard/Dancer and their trans forms are restricted to Concentration Potion
 const CONC_ONLY_IDS = new Set([19, 20, 4020, 4021]); // Bard, Dancer, Clown, Gypsy
 function getTotalStatPoints(baseLevel: number, jobId: number): number {
@@ -76,8 +81,8 @@ function getJobLevelCap(jobId: number): number {
 // 0 (no job selected) → no restriction so the form isn't locked before a class is chosen.
 function aspdPotionCap(jobId: number): number {
   if (!jobId) return 3;
-  if (CONC_ONLY_IDS.has(jobId)) return 1;      // PS: Bard/Dancer/Clown/Gypsy — Conc only
-  if (MAGE_TREE_IDS.has(jobId)) return 3;       // PS: mage tree — Berserk allowed
+  if (CONC_ONLY_IDS.has(jobId)) return 1;           // PS: Bard/Dancer/Clown/Gypsy — Conc only
+  if (BERSERK_NON_TRANS_IDS.has(jobId)) return 3;   // Mage/Merchant/Swordsman/Thief trees
   if (NOVICE_OR_1ST_JOB_IDS.has(jobId)) return 1;
   if (TRANS_JOB_IDS.has(jobId)) return 3;
   return 2;
