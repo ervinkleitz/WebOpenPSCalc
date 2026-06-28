@@ -9,6 +9,20 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Double Bolt** (`PF_DOUBLECASTING`/`SC_DOUBLECASTING`) to the
+  Professor self-buffs panel — confirmed against
+  [wiki.payonstories.com/Double_Bolt](https://wiki.payonstories.com/Double_Bolt):
+  100% chance to instantly re-cast Fire Bolt, Cold Bolt, Lightning
+  Bolt, Earth Spike, or Soul Strike while active. Only Professor
+  (job 4017) has this in its skill tree — base Sage (16) doesn't, despite
+  the wiki documenting it on the general "Sage" overview page (that page
+  covers the whole Sage→Professor line, not just what base Sage can
+  cast). No existing mechanic models "instant extra cast," so it's
+  implemented as halving the effective attack period for the five
+  affected skills (DPS only — the per-hit damage number is unchanged,
+  since the bonus is an extra free cast, not a stronger one). Verified:
+  Fire Bolt DPS exactly doubles with it active; an unaffected skill
+  (Napalm Beat) is untouched.
 - **Frost Diver and Fire Wall to the Wizard passive-skills panel.**
   Both feed a damage multiplier into a *different* skill rather than
   attacking on their own — confirmed against
@@ -29,6 +43,20 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Advanced Book (Sage/Professor) was capped and labeled wrong.** It
+  showed up in the passive-skills panel as "Study" with a max level of
+  10 — that's the vanilla pre-renewal data; PS retunes it to max level
+  5 with its own non-linear +ATK/+ASPD table (confirmed against
+  [wiki.payonstories.com/Advanced_Book](https://wiki.payonstories.com/Advanced_Book)),
+  and renames it for display. `ps_skill_db.json` already had both the
+  correct cap and name, but `dataLoader.js#getPassiveSkillsForJob`
+  never consulted it — only `getSkillDisplayName` did. Also fixed the
+  `/data/skill-tree/:jobId` route never applying the server profile
+  from the `?server=` query param at all (it relied on whatever a
+  previous, unrelated request happened to leave `loader`'s profile set
+  to). Now reads the PS name/cap the same way every other skill does,
+  and the ATK/ASPD-per-level table matches the wiki exactly (lv5:
+  +30 ATK / +7% ASPD on Book weapons, not vanilla's level×3 / level×5%).
 - **Item scripts with quoted skill-name params (e.g. `bonus2
   bSkillAtk,"WZ_VERMILION",20`) silently lost the quotes and never
   matched anything**, since the lookup keys downstream (`WZ_VERMILION`)

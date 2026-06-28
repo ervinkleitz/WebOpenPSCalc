@@ -86,6 +86,7 @@ router.get("/jobs", (_req: Request, res: Response) => {
 });
 
 router.get("/skill-tree/:jobId", (req: Request, res: Response) => {
+  applyServerProfile(req);
   const skills = (loader as any).getPassiveSkillsForJob(Number(req.params.jobId));
   res.json(skills);
 });

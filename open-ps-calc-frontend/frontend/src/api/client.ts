@@ -23,8 +23,8 @@ async function request(path: string, { method = "GET", body }: { method?: string
 export const api = {
   listJobs: () =>
     request("/data/jobs") as Promise<{ id: number; name: string }[]>,
-  getJobPassives: (jobId: number) =>
-    request(`/data/skill-tree/${jobId}`) as Promise<{ name: string; mastery_key: string; description: string; max_level: number }[]>,
+  getJobPassives: (jobId: number, server: string) =>
+    request(`/data/skill-tree/${jobId}?server=${server}`) as Promise<{ name: string; mastery_key: string; description: string; max_level: number }[]>,
   searchItems: (params: Record<string, unknown>) =>
     request(`/data/items?${new URLSearchParams(params as any)}`) as Promise<{ items: any[]; total: number }>,
   getItem: (id: number, server: string) =>

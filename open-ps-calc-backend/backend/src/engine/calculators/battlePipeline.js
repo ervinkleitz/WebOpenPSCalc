@@ -87,6 +87,15 @@ const ELE_STR_TO_INT = {
   Ele_Wind: 4, Ele_Poison: 5, Ele_Holy: 6, Ele_Dark: 7, Ele_Ghost: 8, Ele_Undead: 9,
 };
 
+// PF_DOUBLECASTING ("Double Bolt" on the PS wiki) -- 100% chance for these
+// specific spells to cast a second time instantly while it's active
+// (wiki.payonstories.com/Double_Bolt). Modeled as halving the effective
+// attack period rather than doubling per-hit damage, since the bonus is an
+// extra free cast, not a stronger one.
+const DOUBLECASTING_SKILLS = new Set([
+  "MG_FIREBOLT", "MG_COLDBOLT", "MG_LIGHTNINGBOLT", "WZ_EARTHSPIKE", "MG_SOULSTRIKE",
+]);
+
 function resolveIsRanged(build, weapon, skill) {
   // skill-level long/short overrides (skills.json range sign) are NOT YET PORTED;
   // this mirrors the weapon-derived default from build_manager.effectiveIsRanged.
@@ -498,7 +507,18 @@ class BattlePipeline {
       if (skillData) {
         [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
       }
-      const magicPeriod = Math.max(castMs + delayMs, 100);
+      let magicPeriod = Math.max(castMs + delayMs, 100);
+
+      const doubleCastingLv = Number((build.active_status_levels || {}).SC_DOUBLECASTING || 0);
+      if (doubleCastingLv > 0 && DOUBLECASTING_SKILLS.has(skillName)) {
+        magicPeriod = magicPeriod / 2;
+        magicResult.add_step({
+          name: "Double Casting", value: magicResult.avg_damage, min_value: magicResult.min_damage, max_value: magicResult.max_damage, multiplier: 1.0,
+          note: "SC_DOUBLECASTING (PF_DOUBLECASTING): 100% chance to cast a second time instantly -- modeled as half the effective attack period (DPS only, not per-hit damage).",
+          formula: "period / 2", hercules_ref: "skill.c pc_use_skill PF_DOUBLECASTING",
+        });
+      }
+
       const attacks = [createAttackDefinition(magicResult.avg_damage, 0.0, magicPeriod, 1.0)];
       const dps = calculateDps(attacks);
 

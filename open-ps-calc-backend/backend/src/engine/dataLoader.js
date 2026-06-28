@@ -383,12 +383,20 @@ class DataLoader {
         .filter((n) => DAMAGE_RELEVANT.has(n))
         .map((n) => byName[n])
         .filter((s) => s && s.max_level > 0 && (ACTIVE_SKILL_TYPE_EXCEPTIONS.has(s.name) || (Array.isArray(s.skill_type) && s.skill_type.length === 0)))
-        .map((s) => ({
-          name: s.name,
-          mastery_key: MASTERY_KEY_OVERRIDE[s.name] ?? s.name,
-          description: s.description || s.name,
-          max_level: s.max_level,
-        }));
+        .map((s) => {
+          // PS sometimes retunes a vanilla passive's max level (e.g.
+          // SA_ADVANCEDBOOK is max 5 on PS vs vanilla's 10) and/or renames it
+          // for display (vanilla calls it "Study", PS calls it "Advanced
+          // Book") -- ps_skill_db.json carries both; apply them the same way
+          // getSkillDisplayName does for any other skill.
+          const psEntry = this._usePsData ? this.getPsSkill(s.name) : null;
+          return {
+            name: s.name,
+            mastery_key: MASTERY_KEY_OVERRIDE[s.name] ?? s.name,
+            description: (psEntry && psEntry.name) || s.description || s.name,
+            max_level: (psEntry && psEntry.max_level) || s.max_level,
+          };
+        });
     } catch {
       return [];
     }

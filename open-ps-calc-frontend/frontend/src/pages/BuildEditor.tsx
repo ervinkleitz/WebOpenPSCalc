@@ -71,6 +71,13 @@ const SELF_BUFFS = [
   // presence-only (level doesn't change the magnitude in statusCalculator.js).
   { key: "SC_GS_MADNESSCANCEL", label: "Barrage", max: 1, jobs: [24] },
   { key: "SC_GS_ADJUSTMENT", label: "Run and Gun", max: 1, jobs: [24] },
+  // PS wiki calls this "Double Bolt"; underlying constant is the vanilla
+  // Professor skill PF_DOUBLECASTING (status SC_DOUBLECASTING) -- only
+  // Professor has it in the skill tree, base Sage doesn't. 100% chance to
+  // instantly re-cast a Fire/Cold/Lightning Bolt, Earth Spike, or Soul
+  // Strike; modeled in battlePipeline.js as halving the effective period
+  // for those skills (DPS only, not per-hit damage).
+  { key: "SC_DOUBLECASTING", label: "Double Bolt", max: 1, jobs: [4017] },
 ] as const;
 
 // Received from a party member rather than self-cast -- battle.c treats
@@ -169,11 +176,12 @@ export default function BuildEditor() {
     });
   }, [data.equipped, data.server]);
 
-  // Fetch passive skills when job changes
+  // Fetch passive skills when job (or server, since PS retunes some
+  // max levels/names vs vanilla -- e.g. Advanced Book) changes
   useEffect(() => {
     if (!data.job_id) { setPassiveSkills([]); return; }
-    api.getJobPassives(data.job_id).then(setPassiveSkills).catch(() => setPassiveSkills([]));
-  }, [data.job_id]);
+    api.getJobPassives(data.job_id, data.server).then(setPassiveSkills).catch(() => setPassiveSkills([]));
+  }, [data.job_id, data.server]);
 
   // Hiding a self-buff from the panel on job change isn't enough on its own --
   // a stale value left in active_buffs from a previous job would still be

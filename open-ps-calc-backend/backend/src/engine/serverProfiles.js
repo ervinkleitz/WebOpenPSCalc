@@ -71,6 +71,15 @@ const PS_PASSIVE_RESISTS = {
   GS_SPREADATTACK: { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun"], max_level: 10 },
 };
 
+// wiki.payonstories.com/Advanced_Book: PS retunes this to max level 5 (vanilla
+// is 10) with its own non-linear per-level table, not vanilla's flat
+// level*3 ATK / level*5% ASPD. The PS max_level itself is enforced in
+// dataLoader.js#getPassiveSkillsForJob via ps_skill_db.json; this table is
+// what masteryFix.js / statusCalculator.js actually read per level.
+const PS_PASSIVE_OVERRIDES = {
+  SA_ADVANCEDBOOK: { atk_per_lv: [10, 15, 20, 25, 30], aspd_pct_per_lv: [3, 4, 5, 6, 7] },
+};
+
 const PS_JOB_BONUSES = {
   24: [ // Gunslinger
     [1, "dex"], [2, "luk"], [3, "agi"], [4, "luk"],
@@ -268,6 +277,7 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   sn_hp_bonus: PS_SN_HP_BONUS,
   sn_sp_bonus: PS_SN_SP_BONUS,
   passive_resists: PS_PASSIVE_RESISTS,
+  passive_overrides: PS_PASSIVE_OVERRIDES,
   ps_job_bonuses: PS_JOB_BONUSES,
   weapon_ratios: PS_BF_WEAPON_RATIOS,
   weapon_vanilla_ok: PS_WEAPON_VANILLA_OK,
