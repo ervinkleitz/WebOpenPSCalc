@@ -51,7 +51,7 @@ export default function SavedBuildsModal({ open, onClose, currentName, currentSt
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card saved-builds-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>My builds</h2>
+          <h2>Save / Load build</h2>
           <button onClick={onClose} aria-label="Close">×</button>
         </div>
         <div className="modal-body">

@@ -293,7 +293,7 @@ export default function BuildEditor() {
   }
 
   function onNewBuild() {
-    if (!window.confirm("Start over? Any unsaved changes will be lost (save it first from My Builds if you want to keep it).")) return;
+    if (!window.confirm("Start over? Any unsaved changes will be lost (save it first from Save / Load if you want to keep it).")) return;
     setData(DEFAULT_BUILD);
     setSkill(DEFAULT_SKILL);
     setTargetMode("monster");
@@ -360,12 +360,7 @@ export default function BuildEditor() {
       <div className="topbar">
         <div className="topbar-left">
           <span className="brand-mark">⚔</span>
-          <input
-            className="build-name-input"
-            value={data.name}
-            onChange={(e) => updateField(["name"], e.target.value)}
-            aria-label="Build name"
-          />
+          <span className="brand-title">Open PS Damage Calc</span>
           <InfoTooltip>
             <strong>Open PS Calc</strong>
             A pre-renewal Ragnarok Online damage calculator for vanilla
@@ -392,7 +387,7 @@ export default function BuildEditor() {
             <option value="standard">Standard pre-renewal</option>
           </select>
           <button onClick={onNewBuild}>Start over</button>
-          <button onClick={() => setSavedBuildsOpen(true)}>My builds</button>
+          <button onClick={() => setSavedBuildsOpen(true)}>Save / Load</button>
           <button onClick={() => setChangelogOpen(true)}>Changelog</button>
           <button onClick={onCopyLink}>{copied ? "Copied!" : "Copy share link"}</button>
           {(calcResult || calcError) && (
@@ -695,7 +690,7 @@ export default function BuildEditor() {
                         );
                       })}
                       <div className="field">
-                        <label title="Priest weapon endow / Aspersio">Weapon endow</label>
+                        <label title="Priest weapon endow / Aspersio, plus Enchant Poison and Cursed Water">Weapon endow</label>
                         <select value={endowValue} onChange={(e) => updateWeaponEndow(e.target.value)}>
                           <option value="">None</option>
                           <option value="SC_ASPERSIO">Aspersio (Holy)</option>
@@ -703,6 +698,8 @@ export default function BuildEditor() {
                           <option value="SC_PROPERTYWATER">Endow Water</option>
                           <option value="SC_PROPERTYWIND">Endow Wind</option>
                           <option value="SC_PROPERTYGROUND">Endow Ground</option>
+                          <option value="SC_ENCHANTPOISON">Enchant Poison</option>
+                          <option value="SC_ENCHANTARMS">Cursed Water (Shadow)</option>
                         </select>
                       </div>
                     </div>

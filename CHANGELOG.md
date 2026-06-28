@@ -9,11 +9,23 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Enchant Poison and Cursed Water (Shadow) to the weapon endow
+  dropdown.** Enchant Poison (`AS_ENCHANTPOISON`/`SC_ENCHANTPOISON`)
+  and Cursed Water (item → `ITEM_ENCHANTARMS` skill level 8 → Dark
+  element, per `item_db.json` #12020) were already handled by the
+  engine's element-resolution logic in `buildApplicator.js`, but
+  Enchant Poison only checked `active_status_levels` (which the UI
+  never wrote to) and Cursed Water/`SC_ENCHANTARMS` had no handling at
+  all. Both now route through the same `weapon_endow_sc` dropdown field
+  as the existing Priest endows. Verified: Cursed Water vs. a
+  Holy-element target gives the expected Dark-vs-Holy 125% Attr Fix,
+  and Enchant Poison vs. an Earth-element target gives the expected
+  Poison-vs-Earth 125%.
 - **"Start over" button** to start a fresh build without manually
   clearing every field — resets the form, target, and skill back to
   defaults (with a confirmation prompt, since it's not undoable once
   the URL state is overwritten).
-- **Saved builds in localStorage** ("My builds"), up to 10, each with
+- **Saved builds in localStorage** ("Save / Load"), up to 10, each with
   a custom name. Save the build currently open (saving under an
   existing name overwrites that slot instead of using a new one),
   load any saved build back into the editor, or delete one. This is
@@ -27,7 +39,7 @@ instead of release version. Dates are taken from actual git commit history.
   the old two-header layout (a generic app-level topbar plus a
   separate per-page header with the build name and actions as an H1).
   The build name is now an inline-editable field in the bar itself,
-  and every action (Start over, My builds, Changelog, Copy share link,
+  and every action (Start over, Save / Load, Changelog, Copy share link,
   Calculate damage) lives in one sticky row — freeing up significant
   vertical space for the actual calculator panels below.
 - **Moved "Calculate damage" into the top bar** (now sticky, so it's

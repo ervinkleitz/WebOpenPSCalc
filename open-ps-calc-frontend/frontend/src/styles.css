@@ -109,15 +109,7 @@ label {
 }
 .topbar-left { display: flex; align-items: center; gap: 0.6rem; min-width: 0; flex: 1; }
 .brand-mark { color: var(--accent); font-size: 1.2rem; flex-shrink: 0; }
-.build-name-input {
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 0.3rem 0.5rem;
-  max-width: 320px;
-}
-.build-name-input:hover, .build-name-input:focus { background: var(--bg-panel-raised); border-color: var(--border); }
+.brand-title { font-family: var(--serif); font-size: 1.05rem; white-space: nowrap; }
 .topbar-right { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--text-dim); flex-wrap: wrap; justify-content: flex-end; }
 .topbar-server-select { width: auto; font-size: 0.85rem; padding: 0.5rem 0.6rem; }
 

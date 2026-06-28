@@ -54,6 +54,12 @@ const ENDOW_SC_ELEMENT = {
   SC_PROPERTYWATER: 1,
   SC_PROPERTYWIND: 4,
   SC_PROPERTYGROUND: 2,
+  // AS_ENCHANTPOISON (Assassin self-buff) and Cursed Water (item ->
+  // ITEM_ENCHANTARMS skill lv 8, see item_db.json #12020) both endow the
+  // weapon too, just via different sources -- exposed through the same
+  // dropdown/field as the Priest endows for a single, consistent UI control.
+  SC_ENCHANTPOISON: 5,
+  SC_ENCHANTARMS: 7,
 };
 
 function applyWeaponEndow(effBuild) {
