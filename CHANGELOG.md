@@ -9,6 +9,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Skill pill toggle in damage modal** — when a skill is selected, a pill
+  button showing `[Skill Name Lv N]` appears alongside the existing
+  `[Normal hit]` and `[Critical hit]` toggle buttons. Clicking the pill
+  switches the step-by-step breakdown to the skill's damage. Clicking
+  "Normal hit" shows the baseline auto-attack (a second backend call is
+  made in parallel so both results are available instantly). The skill pill
+  is visually distinct with a highlighted border and slightly heavier weight.
+
 - **Falcon damage shown in results** (Hunter / Sniper) — when a Hunter or
   Sniper build has Falconry Mastery learned, a "Falcon" section appears below
   the damage breakdown showing auto-blitz damage (1 hit) and, if Blitz Beat is

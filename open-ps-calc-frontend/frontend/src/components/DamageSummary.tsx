@@ -22,10 +22,8 @@ interface FalconResult {
   blitz_beat_total: number | null;
 }
 
-interface CalcResult {
-  status: {
-    aspd: number;
-  };
+interface SingleResult {
+  status: { aspd: number };
   result: {
     hit_chance: number;
     crit_chance: number;
@@ -37,11 +35,22 @@ interface CalcResult {
   falcon?: FalconResult;
 }
 
+interface CalcResult {
+  normal_attack: SingleResult;
+  skill: SingleResult | null;
+  selected_skill: { id: number; level: number; label: string };
+}
+
 interface Props {
   calcResult: CalcResult | null;
   calculating: boolean;
   error: string;
 }
+
+// "skill" = selected skill's normal hit
+// "normal" = basic auto-attack
+// "crit" = crit version of whichever is primary (skill if selected, else auto)
+type Branch = "skill" | "normal" | "crit";
 
 function StepRow({ step }: { step: Step }) {
   return (
@@ -78,15 +87,32 @@ function FalconSection({ falcon }: { falcon: FalconResult }) {
 }
 
 export default function DamageSummary({ calcResult, calculating, error }: Props) {
-  const [branch, setBranch] = useState<"normal" | "crit">("normal");
+  const [branch, setBranch] = useState<Branch>("skill");
 
   if (error) return <div className="notice warn">{error}</div>;
   if (calculating) return <p className="spinner-text">Calculating…</p>;
   if (!calcResult) return <p className="hint-text">Set up a build and target, then calculate damage.</p>;
 
-  const { result, status, falcon } = calcResult;
-  const damage = branch === "crit" && result.crit ? result.crit : result.normal;
-  const notImplemented = damage.steps?.length === 1 && damage.steps[0].name === "Not yet implemented";
+  const { normal_attack, skill: skillResult, selected_skill } = calcResult;
+  const hasSkill = skillResult !== null && selected_skill.id !== 0;
+  // The "primary" result is the skill result when a skill is selected, otherwise the auto-attack.
+  const primary = hasSkill ? skillResult! : normal_attack;
+  const hasCrit = !!primary.result.crit;
+
+  // Clamp branch to valid options
+  const activeBranch: Branch =
+    branch === "skill" && !hasSkill ? "normal"
+    : branch === "crit" && !hasCrit ? (hasSkill ? "skill" : "normal")
+    : branch;
+
+  // Which SingleResult provides the status row and step breakdown
+  const activeResult: SingleResult = activeBranch === "normal" ? normal_attack : primary;
+  const activeDamage: DamageBranch =
+    activeBranch === "crit" ? primary.result.crit! : activeResult.result.normal;
+
+  const notImplemented = activeDamage.steps?.length === 1 && activeDamage.steps[0].name === "Not yet implemented";
+  const { result, status } = activeResult;
+  const falcon = (skillResult ?? normal_attack)?.falcon;
 
   return (
     <div>
@@ -103,13 +129,13 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
           <div className="label">ASPD</div>
           <div className="value">{status.aspd.toFixed(1)}</div>
         </div>
-        {(damage.min_damage != null && damage.max_damage != null) && (
+        {(activeDamage.min_damage != null && activeDamage.max_damage != null) && (
           <div className="metric metric-range">
             <div className="label">Damage range</div>
             <div className="value range">
-              {Math.round(damage.min_damage)}<span className="unit">min</span>
+              {Math.round(activeDamage.min_damage)}<span className="unit">min</span>
               {" – "}
-              {Math.round(damage.max_damage)}<span className="unit">max</span>
+              {Math.round(activeDamage.max_damage)}<span className="unit">max</span>
             </div>
           </div>
         )}
@@ -120,21 +146,42 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
       </div>
 
       {notImplemented && (
-        <div className="notice warn">{damage.steps[0].note}</div>
+        <div className="notice warn">{activeDamage.steps[0].note}</div>
       )}
 
+      <div className="branch-toggle">
+        {/* Skill pill — primary view when a skill is selected */}
+        <button
+          className={`branch-skill-pill${activeBranch === "skill" && hasSkill ? " active" : ""}${!hasSkill ? (activeBranch === "normal" ? " active" : "") : ""}`}
+          onClick={() => setBranch(hasSkill ? "skill" : "normal")}
+        >
+          {hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}` : "Normal Attack"}
+        </button>
+
+        {/* Normal hit — only shown as a separate option when a skill is selected */}
+        {hasSkill && (
+          <button
+            className={activeBranch === "normal" ? "active" : ""}
+            onClick={() => setBranch("normal")}
+          >
+            Normal hit
+          </button>
+        )}
+
+        {hasCrit && (
+          <button
+            className={activeBranch === "crit" ? "active" : ""}
+            onClick={() => setBranch("crit")}
+          >
+            Critical hit
+          </button>
+        )}
+      </div>
+
       {!notImplemented && (
-        <>
-          <div className="branch-toggle">
-            <button className={branch === "normal" ? "active" : ""} onClick={() => setBranch("normal")}>Normal hit</button>
-            {result.crit && (
-              <button className={branch === "crit" ? "active" : ""} onClick={() => setBranch("crit")}>Critical hit</button>
-            )}
-          </div>
-          <div className="step-list">
-            {damage.steps.map((step, i) => <StepRow step={step} key={i} />)}
-          </div>
-        </>
+        <div className="step-list">
+          {activeDamage.steps.map((step, i) => <StepRow step={step} key={i} />)}
+        </div>
       )}
 
       {falcon && <FalconSection falcon={falcon} />}

@@ -509,9 +509,17 @@ export default function BuildEditor() {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
         : customTarget;
-      const payload = { build: sanitizedBuild, skill: { id: skill.id, level: skill.level }, target };
-      const res = await api.calculate(payload);
-      setCalcResult(res);
+      const normalPayload = { build: sanitizedBuild, skill: { id: 0, level: 1 }, target };
+      const skillPayload  = { build: sanitizedBuild, skill: { id: skill.id, level: skill.level }, target };
+      const [normalRes, skillRes] = await Promise.all([
+        api.calculate(normalPayload),
+        skill.id !== 0 ? api.calculate(skillPayload) : Promise.resolve(null),
+      ]);
+      setCalcResult({
+        normal_attack: normalRes,
+        skill: skillRes,
+        selected_skill: { id: skill.id, level: skill.level, label: skill.label },
+      });
     } catch (e: any) {
       setCalcError(e.message);
     } finally {

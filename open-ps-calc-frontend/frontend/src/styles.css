@@ -377,9 +377,11 @@ label {
 .metric-range .value.range { font-size: 1.35rem; white-space: nowrap; }
 .metric-range .value.range .unit { font-family: var(--sans); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-faint); margin: 0 0.3rem 0 0.25rem; }
 
-.branch-toggle { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; }
+.branch-toggle { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; flex-wrap: wrap; align-items: center; }
 .branch-toggle button { font-size: 0.8rem; padding: 0.35rem 0.8rem; }
 .branch-toggle button.active { border-color: var(--accent); color: var(--accent); }
+.branch-skill-pill { background: var(--accent-subtle, rgba(99,179,237,0.08)); border-color: var(--accent) !important; font-weight: 600; }
+.branch-skill-pill.active { background: var(--accent-subtle, rgba(99,179,237,0.15)); }
 
 .step-list { display: flex; flex-direction: column; gap: 0.35rem; max-height: 480px; overflow-y: auto; }
 .step-row {
