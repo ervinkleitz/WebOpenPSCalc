@@ -7,6 +7,8 @@ import { getProfile } from "../engine/serverProfiles";
 import { resolvePlayerState } from "../engine/playerStateBuilder";
 import { BattlePipeline } from "../engine/calculators/battlePipeline";
 import { calculateIncomingPhysicalDamage, calculateIncomingMagicDamage } from "../engine/calculators/incomingPipeline";
+const gearBonusAggregator = require("../engine/gearBonusAggregator");
+const { applyPetBonuses } = require("../engine/buildApplicator");
 
 const router = Router();
 
@@ -37,7 +39,11 @@ router.post("/", (req: Request, res: Response) => {
     const pipeline = new BattlePipeline(config);
     const battleResult = pipeline.calculate(status, weapon, skill, target, effBuild, gearBonuses);
 
-    res.json({ status, weapon, target, result: battleResult });
+    const gear_stat_bonuses = {
+      str_: gearBonuses.str_, agi: gearBonuses.agi, vit: gearBonuses.vit,
+      int_: gearBonuses.int_, dex: gearBonuses.dex, luk: gearBonuses.luk,
+    };
+    res.json({ status, weapon, target, result: battleResult, gear_stat_bonuses });
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: "Calculation failed", detail: String(err.message || err) });
@@ -66,6 +72,28 @@ router.post("/incoming", (req: Request, res: Response) => {
       : calculateIncomingPhysicalDamage(mobId, effBuild, status, gearBonuses, weapon, config, opts || {});
 
     res.json({ status, weapon, mob, result });
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: "Calculation failed", detail: String(err.message || err) });
+  }
+});
+
+router.post("/gear-stat-bonuses", (req: Request, res: Response) => {
+  try {
+    const { build: buildData } = req.body || {};
+    if (!buildData) return res.status(400).json({ error: "build is required" });
+
+    const build = buildFromSaveSchema(buildData);
+    const profile = getProfile(build.server);
+    loader.setProfile(profile);
+
+    const ctx = gearBonusAggregator.scriptCtxFromBuild(build, null);
+    const gb = gearBonusAggregator.compute(build.equipped, build.refine_levels, ctx);
+    gearBonusAggregator.applyPassiveBonuses(gb, gb.effective_mastery, profile);
+    applyPetBonuses(gb, build.selected_pet, profile);
+    gearBonusAggregator.applyComboBonuses(gb, build.equipped, profile, ctx);
+
+    res.json({ str_: gb.str_, agi: gb.agi, vit: gb.vit, int_: gb.int_, dex: gb.dex, luk: gb.luk });
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: "Calculation failed", detail: String(err.message || err) });

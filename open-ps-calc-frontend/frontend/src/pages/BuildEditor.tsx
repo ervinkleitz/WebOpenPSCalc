@@ -170,6 +170,7 @@ export default function BuildEditor() {
   const [itemCache, setItemCache] = useState<Record<number, EquippedItemInfo>>({});
   const [mobInfo, setMobInfo] = useState<{ name: string; level: number } | null>(null);
   const [jobBonusStats, setJobBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
+  const [equipBonusStats, setEquipBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
 
   const [calcResult, setCalcResult] = useState<any>(null);
   const [calculating, setCalculating] = useState(false);
@@ -219,6 +220,23 @@ export default function BuildEditor() {
       .then(setJobBonusStats)
       .catch(() => setJobBonusStats({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 }));
   }, [data.job_id, data.job_level, data.server]);
+
+  // Equipment stat bonuses (bStr, bAgi, etc. from item scripts) -- debounced
+  // so rapid equip/unequip changes don't flood the endpoint.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const zero = { str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 };
+    const hasEquipped = Object.values(data.equipped).some((v) => v != null);
+    if (!hasEquipped) { setEquipBonusStats(zero); return; }
+    const timer = setTimeout(() => {
+      api.getGearStatBonuses(data).then(setEquipBonusStats).catch(() => setEquipBonusStats(zero));
+    }, 300);
+    return () => clearTimeout(timer);
+  // JSON.stringify lets us deep-compare the objects that actually drive gear scripts.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(data.equipped), JSON.stringify(data.refine), data.server,
+      JSON.stringify(data.base_stats), data.job_id, data.job_level, data.base_level,
+      JSON.stringify(data.bonus_stats)]);
 
   // Hiding a self-buff from the panel on job change isn't enough on its own --
   // a stale value left in active_buffs from a previous job would still be
@@ -354,10 +372,12 @@ export default function BuildEditor() {
     });
   }
 
+  const itemLabel = (it: any) => it.slots > 0 ? `${it.name}[${it.slots}]` : it.name;
+
   const itemSearch = useCallback(
     (itemType: string, loc?: string) => (query: string): Promise<SearchResult[]> =>
       api.searchItems({ type: itemType, ...(loc ? { loc } : {}), q: query, limit: 12, server: data.server })
-        .then((r) => r.items.map((it: any) => ({ id: it.id, label: it.name, sublabel: `#${it.id}` }))),
+        .then((r) => r.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `#${it.id}` }))),
     [data.server],
   );
 
@@ -367,8 +387,8 @@ export default function BuildEditor() {
         api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: 12, server: data.server }),
         api.searchItems({ type: "IT_WEAPON", q: query, limit: 12, server: data.server }),
       ]).then(([shields, weapons]) => [
-        ...shields.items.map((it: any) => ({ id: it.id, label: it.name, sublabel: `Shield #${it.id}` })),
-        ...weapons.items.map((it: any) => ({ id: it.id, label: it.name, sublabel: `Weapon #${it.id}` })),
+        ...shields.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Shield #${it.id}` })),
+        ...weapons.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Weapon #${it.id}` })),
       ]),
     [data.server],
   );
@@ -506,19 +526,21 @@ export default function BuildEditor() {
               Base stats
               <InfoTooltip>
                 The bold total includes the job-level stat bonus your class
-                gets automatically (e.g. a Knight's STR/VIT growth) on top
-                of the base value you set below it — this bonus is already
-                folded into the damage calculation either way.
+                gets automatically (e.g. a Knight's STR/VIT growth) and any
+                flat stat bonuses from equipped items (bStr, bAgi, etc.) on
+                top of the base value — both are already folded into the
+                damage calculation either way.
               </InfoTooltip>
             </label>
             <div className="ro-stat-grid">
               {STATS.map((s) => {
-                const bonus = jobBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
+                const jobBonus = jobBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
+                const equipBonus = equipBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
                 const base = data.base_stats[s] ?? 1;
                 return (
                   <div className="ro-stat-card" key={s}>
                     <div className="ro-stat-name">{s.toUpperCase()}</div>
-                    <div className="ro-stat-total">{base + bonus}</div>
+                    <div className="ro-stat-total">{base + jobBonus + equipBonus}</div>
                     <div className="ro-stat-detail">
                       <input
                         className="mono"
@@ -528,7 +550,8 @@ export default function BuildEditor() {
                         value={base}
                         onChange={(e) => updateField(["base_stats", s], Math.max(1, Math.min(MAX_STAT, Number(e.target.value))))}
                       />
-                      {bonus > 0 && <span className="ro-stat-bonus" title={`+${bonus} from job level`}>+{bonus}</span>}
+                      {jobBonus > 0 && <span className="ro-stat-bonus" title={`+${jobBonus} from job level`}>+{jobBonus}</span>}
+                      {equipBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--equip" title={`+${equipBonus} from equipment`}>+{equipBonus}</span>}
                     </div>
                   </div>
                 );

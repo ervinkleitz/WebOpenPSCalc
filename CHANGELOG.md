@@ -9,6 +9,25 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Equipment stat bonuses (bStr, bAgi, etc.) now shown in the base stats
+  section** alongside the existing job-level bonus badges. Each stat card
+  now shows two "+N" indicators when applicable — green for job level,
+  blue for equipment — and the bold total reflects all three (base + job +
+  gear). Gear bonuses update reactively as you equip or unequip items via a
+  dedicated `POST /calculate/gear-stat-bonuses` route that runs a single
+  pass of the item-script engine (no full damage calc required), debounced
+  300 ms so rapid changes don't flood the server.
+- **Slot count shown in equipment dropdown labels** — items with card slots
+  now display as `Name[N]` (e.g. `Main Gauche[4]`); slotless items show the
+  plain name. Cards themselves have 0 slots so they're unaffected.
+- **Keyboard navigation in equipment (and all) search dropdowns.**
+  Arrow keys move a highlight through the results list; Enter confirms the
+  highlighted item; Escape closes the list. Tab selects the highlighted
+  item (if any) and lets focus move to the next field naturally without
+  requiring a separate click or Enter press.
+
+### Added
+
 - **Job-level stat bonus now shown next to base stats**, RO-status-window
   style: each stat is a card with the total (base + job bonus) in bold
   and the editable base value plus a small "+N" badge for the job

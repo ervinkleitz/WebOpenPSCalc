@@ -35,6 +35,8 @@ export const api = {
     request(`/data/mobs?${new URLSearchParams(params as any)}`) as Promise<{ items: any[]; total: number }>,
   searchSkills: (params: Record<string, unknown>) =>
     request(`/data/skills?${new URLSearchParams(params as any)}`) as Promise<{ items: any[]; total: number }>,
+  getGearStatBonuses: (build: unknown) =>
+    request("/calculate/gear-stat-bonuses", { method: "POST", body: { build } }) as Promise<{ str_: number; agi: number; vit: number; int_: number; dex: number; luk: number }>,
   calculate: (payload: unknown) =>
     request("/calculate", { method: "POST", body: payload }) as Promise<any>,
 };
