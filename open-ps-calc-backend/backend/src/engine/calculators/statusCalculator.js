@@ -150,9 +150,10 @@ class StatusCalculator {
       status.cri += 75 + 25 * lv;
     }
 
-    if (weapon.weapon_type === "Katar" && (mastery.AS_KATAR || 0) >= 10) {
+    const katarLv = mastery.AS_KATAR || 0;
+    if (weapon.weapon_type === "Katar" && katarLv > 0) {
       const spec = (profile.passive_overrides || {}).AS_KATAR || {};
-      status.cri += spec.cri_at_max_lv || 0;
+      status.cri += (spec.cri_per_lv || 0) * katarLv;
     }
     if ((mastery.DC_DANCINGLESSON || 0) >= 10) {
       const spec = (profile.passive_overrides || {}).DC_DANCINGLESSON || {};

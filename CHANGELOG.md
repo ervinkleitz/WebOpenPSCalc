@@ -7,6 +7,31 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-06-28
 
+### Fixed
+
+- **PS class rebalance — weapon mastery ATK values** corrected per
+  [wiki.payonstories.com/Class_Rebalance](https://wiki.payonstories.com/Class_Rebalance).
+  All six affected masteries were falling through to vanilla eA values instead
+  of PS custom values:
+
+  | Mastery | Vanilla ATK/lv | PS ATK/lv |
+  |---|---|---|
+  | Musical Lesson (`BA_MUSICALLESSON`) | +3 | +5 |
+  | Dancing Lesson (`DC_DANCINGLESSON`) | +3 | +5 |
+  | Iron Hand (`MO_IRONHAND`) | +3 | +5 |
+  | Axe Mastery (`AM_AXEMASTERY`) | +3 | +5 |
+  | Mace Mastery (`PR_MACEMASTERY`) | +3 | +4 |
+  | Katar Mastery (`AS_KATAR`) | +3 | +4 |
+
+- **Spear Mastery (`KN_SPEARMASTERY`) ATK values** corrected: +4→+5/level
+  without Peco, +5→+7/level while riding Peco.
+
+- **Dancing Lesson CRIT** (+10% at lv 10) was missing from the ATK calculation
+  due to a missing `atk_per_lv` array; CRIT gate at max level is unchanged.
+
+- **Katar Mastery CRIT** now scales per level (+0.5% per level, up to +5% at
+  lv 10) — was completely missing from the calculation (returned 0).
+
 ### Added
 
 - **Skill pill toggle in damage modal** — when a skill is selected, a pill

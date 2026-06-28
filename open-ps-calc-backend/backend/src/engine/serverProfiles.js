@@ -77,12 +77,18 @@ const PS_PASSIVE_RESISTS = {
 // level*3 ATK / level*5% ASPD. The PS max_level itself is enforced in
 // dataLoader.js#getPassiveSkillsForJob via ps_skill_db.json; this table is
 // what masteryFix.js / statusCalculator.js actually read per level.
+// PS class rebalance overrides (wiki.payonstories.com/Class_Rebalance).
+// atk_per_lv: total ATK bonus at each skill level (1-indexed, read by masteryFix.js).
+// cri_per_lv: CRI bonus per level on the ×10 internal scale (100 = 10% displayed).
+// ASPD bonuses for these skills live in PS_ASPD_BUFFS below.
 const PS_PASSIVE_OVERRIDES = {
-  SA_ADVANCEDBOOK: { atk_per_lv: [10, 15, 20, 25, 30], aspd_pct_per_lv: [3, 4, 5, 6, 7] },
-  // wiki.payonstories.com/Dancing_Lesson: lv10 grants +10% critical hit rate
-  // (statusCalculator.js reads this value via profile.passive_overrides).
-  // status.cri is on a ×10 internal scale (100 = 10% crit displayed in-game).
-  DC_DANCINGLESSON: { cri_at_max_lv: 100 },
+  SA_ADVANCEDBOOK:  { atk_per_lv: [10, 15, 20, 25, 30], aspd_pct_per_lv: [3, 4, 5, 6, 7] }, // max 5 levels on PS
+  DC_DANCINGLESSON: { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50], cri_at_max_lv: 100 }, // +5 ATK/lv, +10% CRIT at lv10
+  BA_MUSICALLESSON: { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
+  MO_IRONHAND:      { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
+  PR_MACEMASTERY:   { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40] },                  // +4 ATK/lv
+  AM_AXEMASTERY:    { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
+  AS_KATAR:         { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40], cri_per_lv: 5 },  // +4 ATK/lv, +0.5% CRIT/lv
 };
 
 const PS_JOB_BONUSES = {
@@ -326,6 +332,8 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   mechanic_flags: PS_MECHANIC_FLAGS,
   aspd_buffs: PS_ASPD_BUFFS,
   proc_rate_overrides: PS_PROC_RATE_OVERRIDES,
+  // KN_SPEARMASTERY: [without_peco, with_peco] ATK per level. Vanilla is [4, 5]; PS is [5, 7].
+  mastery_per_level: { KN_SPEARMASTERY: [5, 7] },
   steelbody_override: PS_STEELBODY_OVERRIDE,
   sn_hp_bonus: PS_SN_HP_BONUS,
   sn_sp_bonus: PS_SN_SP_BONUS,
