@@ -176,9 +176,6 @@ class BattlePipeline {
     pmf = scaleFloor(pmf, ratio, 100);
     pmf = scaleFloor(pmf, hitCount, 1);
 
-    const skillAtkBonus = gearBonuses ? (gearBonuses.skill_atk[skillName] || 0) : 0;
-    if (skillAtkBonus) pmf = scaleFloor(pmf, 100 + skillAtkBonus, 100);
-
     const [mn1, mx1, av1] = pmfStats(pmf);
     result.add_step({
       name: `Skill Ratio (ID ${skill.id} Lv ${skill.level})`,
@@ -187,6 +184,19 @@ class BattlePipeline {
       formula: `dmg × ${ratio}% × ${hitCount} hit${hitCount !== 1 ? "s" : ""} (${ratioSrc})`,
       hercules_ref: "battle.c battle_calc_skillratio BF_MAGIC",
     });
+
+    const skillAtkBonus = gearBonuses ? (gearBonuses.skill_atk[skillName] || 0) : 0;
+    if (skillAtkBonus) {
+      pmf = scaleFloor(pmf, 100 + skillAtkBonus, 100);
+      const [mnB, mxB, avB] = pmfStats(pmf);
+      result.add_step({
+        name: "Skill ATK Bonus", value: avB, min_value: mnB, max_value: mxB,
+        multiplier: (100 + skillAtkBonus) / 100,
+        note: `bSkillAtk: ${skillName} +${skillAtkBonus}%`,
+        formula: `dmg × (100+${skillAtkBonus})/100`,
+        hercules_ref: "pc.c:3513-3527",
+      });
+    }
 
     if (
       profile !== STANDARD && skillName &&

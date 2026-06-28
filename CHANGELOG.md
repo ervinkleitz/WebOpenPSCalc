@@ -7,14 +7,28 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-06-27
 
-### Changed
-
-- Party buffs are now grouped by source class (Priest, Blacksmith, Sage)
-  under their own subheadings, instead of one flat grid with a "(Source)"
-  suffix on every label.
-
 ### Fixed
 
+- **Item scripts with quoted skill-name params (e.g. `bonus2
+  bSkillAtk,"WZ_VERMILION",20`) silently lost the quotes and never
+  matched anything**, since the lookup keys downstream (`WZ_VERMILION`)
+  don't have quote characters. This is why Frozen Thunder's weapon
+  (`tools.payonstories.com/pc?name=frozen+thunder`) skill bonuses to
+  Lord of Vermilion/Frost Nova weren't applying — its script in
+  `ps_item_manual.json` was correct, the parser just wasn't stripping
+  the quotes. Also fixed a case-sensitivity bug in the same parser:
+  `bCastRate` (capital R, used by several other item scripts) silently
+  failed to match the canonical `bCastrate` key and was dropped
+  entirely. Both are now resolved case-insensitively and with quotes
+  stripped before lookup. Verified end-to-end: Lord of Vermilion DPS
+  with Frozen Thunder equipped went from ~40 to ~74 (damage +20%, cast
+  time -20%, compounding), where before this fix neither bonus applied
+  at all.
+- The BF_MAGIC skill-ATK gear bonus (`bSkillAtk` on staves/spellbooks
+  for specific magic skills) was folded silently into the skill-ratio
+  step instead of getting its own breakdown row, unlike the equivalent
+  BF_WEAPON path. Added a separate "Skill ATK Bonus" step so it's
+  visible in the damage breakdown.
 - **Long checkbox labels in the Buffs panel overlapped neighboring grid
   cells.** Flex items default to a min-width equal to their content's
   max-content size, so text like "Impositio Manus" never wrapped inside
@@ -33,6 +47,12 @@ instead of release version. Dates are taken from actual git commit history.
   reload on change. Verified by appending a test marker to the file and
   confirming it appeared without restarting anything, then removed the
   marker.
+
+### Changed
+
+- Party buffs are now grouped by source class (Priest, Blacksmith, Sage)
+  under their own subheadings, instead of one flat grid with a "(Source)"
+  suffix on every label.
 
 ### Added
 

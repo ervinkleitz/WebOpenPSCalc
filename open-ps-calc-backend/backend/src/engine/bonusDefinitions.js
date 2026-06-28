@@ -186,7 +186,24 @@ const BONUS4 = {
   bAutoSpellOnSkill: def((src, proc, lv, v) => `${Math.floor(v / 10)}% chance to auto-cast ${proc} Lv.${lv} when using ${src}.`),
 };
 
+// Hercules item scripts in the wild are inconsistent about bonus-type casing
+// (bCastrate vs bCastRate, etc.) -- build a case-insensitive lookup so a
+// script author's casing slip doesn't silently drop the whole bonus.
+const BONUS_TABLES = { 1: BONUS1, 2: BONUS2, 3: BONUS3, 4: BONUS4 };
+const LOWERCASE_INDEX = {};
+for (const [arity, table] of Object.entries(BONUS_TABLES)) {
+  const index = {};
+  for (const key of Object.keys(table)) index[key.toLowerCase()] = key;
+  LOWERCASE_INDEX[arity] = index;
+}
+
+// Returns the canonically-cased key for a given arity if a case-insensitive
+// match exists in that arity's table, otherwise the token unchanged.
+function resolveBonusType(arity, token) {
+  return (LOWERCASE_INDEX[arity] || {})[token.toLowerCase()] || token;
+}
+
 module.exports = {
   RACE_NAMES, ELEMENT_NAMES, ELE_STR_TO_INT, SIZE_NAMES, STATUS_NAMES, CLASS_NAMES,
-  BONUS1, BONUS2, BONUS3, BONUS4,
+  BONUS1, BONUS2, BONUS3, BONUS4, resolveBonusType,
 };

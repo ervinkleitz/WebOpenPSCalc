@@ -12,7 +12,7 @@
  * +/-/not. This is the one piece of real "new code" in this port; everything
  * else is a direct structural translation.
  */
-const { BONUS1, BONUS2, BONUS3, BONUS4, ELE_STR_TO_INT } = require("./bonusDefinitions");
+const { BONUS1, BONUS2, BONUS3, BONUS4, ELE_STR_TO_INT, resolveBonusType } = require("./bonusDefinitions");
 const { createItemEffect, createSCEffect } = require("./models");
 
 // ---------------------------------------------------------------------
@@ -321,6 +321,13 @@ const SKILL_RE = /\bskill\s+(\w+)\s*,\s*(\d+)/gm;
 
 function coerce(s) {
   s = s.trim();
+  // Hercules item scripts commonly quote string params (skill/status
+  // constants, etc.) -- strip a single matching pair so e.g. "WZ_VERMILION"
+  // resolves the same as an unquoted WZ_VERMILION instead of becoming a
+  // literal key with quote characters baked in.
+  if (s.length >= 2 && ((s[0] === '"' && s[s.length - 1] === '"') || (s[0] === "'" && s[s.length - 1] === "'"))) {
+    s = s.slice(1, -1).trim();
+  }
   if (/^-?\d+$/.test(s)) return parseInt(s, 10);
   const val = safeEvalInt(s, {});
   if (val !== null) return val;
@@ -346,7 +353,7 @@ function parseScript(script, ctx = null) {
   for (const m of script.matchAll(BONUS_RE)) {
     const aritySuffix = m[1];
     const arity = aritySuffix ? parseInt(aritySuffix, 10) : 1;
-    const bonusType = m[2];
+    const bonusType = resolveBonusType(arity, m[2]);
     const rawParams = m[3] || "";
     const parts = rawParams.split(",").map((p) => p.trim()).filter((p) => p.length);
     const params = parts.map(coerce);
