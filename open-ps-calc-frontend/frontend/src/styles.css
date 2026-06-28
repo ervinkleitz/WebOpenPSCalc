@@ -277,8 +277,21 @@ label {
 .panel-highlight h2 { font-size: 1.15rem; }
 .panel-highlight h2 .eyebrow { color: var(--accent); }
 
-.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; }
-.stat-grid .field label { display: flex; justify-content: space-between; }
+/* Mimics the classic RO status window: a big total per stat, with the
+   editable base value and job-level bonus as smaller supporting detail. */
+.ro-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; }
+.ro-stat-card {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.7rem;
+  text-align: center;
+}
+.ro-stat-name { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+.ro-stat-total { font-family: var(--mono); font-size: 1.5rem; color: var(--accent); line-height: 1.2; margin: 0.1rem 0 0.4rem; }
+.ro-stat-detail { display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+.ro-stat-detail input { width: 4.5rem; text-align: center; padding: 0.35rem 0.4rem; }
+.ro-stat-bonus { font-size: 0.75rem; color: var(--good); font-family: var(--mono); white-space: nowrap; }
 
 .equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
 

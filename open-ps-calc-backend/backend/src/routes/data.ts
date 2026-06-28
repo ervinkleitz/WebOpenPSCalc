@@ -98,4 +98,15 @@ router.get("/jobs/:id", (req: Request, res: Response) => {
   res.json(job);
 });
 
+// Same per-job-level STR/AGI/VIT/INT/DEX/LUK bonus already folded into
+// status.{str,agi,...} by statusCalculator.js -- exposed read-only here so
+// the build editor can show it next to the base stat inputs instead of it
+// only ever showing up invisibly inside the final damage numbers.
+router.get("/job-bonus-stats/:jobId", (req: Request, res: Response) => {
+  const server = applyServerProfile(req);
+  const jobLevel = Number(req.query.job_level) || 1;
+  const profile = getProfile(server);
+  res.json(loader.getJobBonusStats(Number(req.params.jobId), jobLevel, profile));
+});
+
 export default router;

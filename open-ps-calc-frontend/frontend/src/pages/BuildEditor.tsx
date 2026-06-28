@@ -13,6 +13,27 @@ import {
 } from "../types";
 
 const STATS = ["str", "agi", "vit", "int", "dex", "luk"] as const;
+// statusCalculator.js / dataLoader.js's getJobBonusStats reads from the
+// same keys it writes to status.{str_,agi,vit,int_,dex,luk} -- str/int get
+// a trailing underscore there to dodge the JS reserved-ish "int" naming.
+const STAT_TO_BONUS_KEY: Record<typeof STATS[number], string> = {
+  str: "str_", agi: "agi", vit: "vit", int: "int_", dex: "dex", luk: "luk",
+};
+const BASE_LEVEL_CAP = 99;
+const MAX_STAT = 99;
+
+// Pre-renewal job level caps, derived from job_db.json's job list (28 jobs,
+// no baby classes in this dataset): Novice 10, 1st job 50, regular 2nd job
+// 50, Super Novice 99, trans 2nd job 70. Gunslinger/Ninja are classic kRO's
+// "extended" classes (job level 60 there), but wiki.payonstories.com/
+// Gunslinger references planning around "JobLv70 gunslinger", so this PS
+// instance appears to have retuned them to the trans cap instead.
+const TRANS_JOB_IDS = new Set([4008, 4009, 4010, 4011, 4012, 4013, 4015, 4016, 4017, 4018, 4019, 4020, 4021]);
+const JOB_LEVEL_CAP_OVERRIDES: Record<number, number> = { 0: 10, 23: 99, 24: 70, 25: 70 };
+function getJobLevelCap(jobId: number): number {
+  if (TRANS_JOB_IDS.has(jobId)) return 70;
+  return JOB_LEVEL_CAP_OVERRIDES[jobId] ?? 50;
+}
 
 // Whether a slot can be refined depends on the specific equipped item, not
 // the slot itself (e.g. most headgears ARE refineable, but not all; same
@@ -148,6 +169,7 @@ export default function BuildEditor() {
   const [passiveSkills, setPassiveSkills] = useState<PassiveSkill[]>([]);
   const [itemCache, setItemCache] = useState<Record<number, EquippedItemInfo>>({});
   const [mobInfo, setMobInfo] = useState<{ name: string; level: number } | null>(null);
+  const [jobBonusStats, setJobBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
 
   const [calcResult, setCalcResult] = useState<any>(null);
   const [calculating, setCalculating] = useState(false);
@@ -185,6 +207,18 @@ export default function BuildEditor() {
     if (!data.job_id) { setPassiveSkills([]); return; }
     api.getJobPassives(data.job_id, data.server).then(setPassiveSkills).catch(() => setPassiveSkills([]));
   }, [data.job_id, data.server]);
+
+  // Per-job-level STR/AGI/VIT/INT/DEX/LUK bonus (e.g. Knight +1 STR every
+  // few job levels) -- statusCalculator.js already folds this into the
+  // damage calc server-side; fetched here purely to surface it next to the
+  // base stat inputs instead of it only ever showing up invisibly in the
+  // final numbers.
+  useEffect(() => {
+    if (!data.job_id) { setJobBonusStats({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 }); return; }
+    api.getJobBonusStats(data.job_id, data.job_level, data.server)
+      .then(setJobBonusStats)
+      .catch(() => setJobBonusStats({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 }));
+  }, [data.job_id, data.job_level, data.server]);
 
   // Hiding a self-buff from the panel on job change isn't enough on its own --
   // a stale value left in active_buffs from a previous job would still be
@@ -431,7 +465,12 @@ export default function BuildEditor() {
                   onChange={(e) => {
                     const id = Number(e.target.value);
                     const job = jobs.find((j) => j.id === id);
-                    setData((prev) => ({ ...prev, job_id: id, job_name: job?.name ?? "" }));
+                    setData((prev) => ({
+                      ...prev,
+                      job_id: id,
+                      job_name: job?.name ?? "",
+                      job_level: Math.min(prev.job_level, getJobLevelCap(id)),
+                    }));
                   }}
                 >
                   {jobs.length === 0 && <option value={data.job_id}>{data.job_name || `Job ${data.job_id}`}</option>}
@@ -442,28 +481,58 @@ export default function BuildEditor() {
             <div className="field-row">
               <div className="field">
                 <label>Base level</label>
-                <input className="mono" type="number" min={1} max={99} value={data.base_level} onChange={(e) => updateField(["base_level"], Number(e.target.value))} />
+                <input
+                  className="mono"
+                  type="number"
+                  min={1}
+                  max={BASE_LEVEL_CAP}
+                  value={data.base_level}
+                  onChange={(e) => updateField(["base_level"], Math.max(1, Math.min(BASE_LEVEL_CAP, Number(e.target.value))))}
+                />
               </div>
               <div className="field">
                 <label>Job level</label>
-                <input className="mono" type="number" min={1} max={70} value={data.job_level} onChange={(e) => updateField(["job_level"], Number(e.target.value))} />
+                <input
+                  className="mono"
+                  type="number"
+                  min={1}
+                  max={getJobLevelCap(data.job_id)}
+                  value={data.job_level}
+                  onChange={(e) => updateField(["job_level"], Math.max(1, Math.min(getJobLevelCap(data.job_id), Number(e.target.value))))}
+                />
               </div>
             </div>
-            <label style={{ marginTop: "0.3rem" }}>Base stats</label>
-            <div className="stat-grid">
-              {STATS.map((s) => (
-                <div className="field" key={s}>
-                  <label>{s.toUpperCase()}</label>
-                  <input
-                    className="mono"
-                    type="number"
-                    min={1}
-                    max={130}
-                    value={data.base_stats[s] ?? 1}
-                    onChange={(e) => updateField(["base_stats", s], Number(e.target.value))}
-                  />
-                </div>
-              ))}
+            <label style={{ marginTop: "0.3rem" }} className="section-label">
+              Base stats
+              <InfoTooltip>
+                The bold total includes the job-level stat bonus your class
+                gets automatically (e.g. a Knight's STR/VIT growth) on top
+                of the base value you set below it — this bonus is already
+                folded into the damage calculation either way.
+              </InfoTooltip>
+            </label>
+            <div className="ro-stat-grid">
+              {STATS.map((s) => {
+                const bonus = jobBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
+                const base = data.base_stats[s] ?? 1;
+                return (
+                  <div className="ro-stat-card" key={s}>
+                    <div className="ro-stat-name">{s.toUpperCase()}</div>
+                    <div className="ro-stat-total">{base + bonus}</div>
+                    <div className="ro-stat-detail">
+                      <input
+                        className="mono"
+                        type="number"
+                        min={1}
+                        max={MAX_STAT}
+                        value={base}
+                        onChange={(e) => updateField(["base_stats", s], Math.max(1, Math.min(MAX_STAT, Number(e.target.value))))}
+                      />
+                      {bonus > 0 && <span className="ro-stat-bonus" title={`+${bonus} from job level`}>+{bonus}</span>}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </Panel>
 

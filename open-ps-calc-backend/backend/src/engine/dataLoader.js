@@ -555,7 +555,20 @@ class DataLoader {
     return this.__jobBonusTable;
   }
 
-  getJobBonusStats(jobId, jobLevel) {
+  // `profile` is optional and only consulted for its `ps_job_bonuses`
+  // override table (e.g. Gunslinger's PS-specific per-level stat list) --
+  // passing it here instead of duplicating this branch at every call site
+  // (statusCalculator.js and the /data/job-bonus-stats route both need it).
+  getJobBonusStats(jobId, jobLevel, profile = null) {
+    const psJb = profile != null ? (profile.ps_job_bonuses || {})[jobId] : null;
+    if (psJb != null) {
+      const jb = { str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 };
+      for (const [lv, stat] of psJb) {
+        if (lv <= jobLevel) jb[stat] += 1;
+      }
+      return jb;
+    }
+
     const table = this._parseJobBonusTable();
     const codes = table[jobId] || [];
     const result = { str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 };

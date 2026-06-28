@@ -9,6 +9,33 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Job-level stat bonus now shown next to base stats**, RO-status-window
+  style: each stat is a card with the total (base + job bonus) in bold
+  and the editable base value plus a small "+N" badge for the job
+  bonus underneath. This bonus (e.g. a Knight's automatic STR/VIT
+  growth per job level) was already folded into the damage calculation
+  server-side, just invisibly — added a `/data/job-bonus-stats` route
+  so the build editor can show it instead of it only ever showing up
+  in the final numbers. Verified against `statusCalculator.js`: Knight
+  at job level 50 shows the same +8 STR/+2 AGI/+10 VIT/+6 DEX/+4 LUK
+  the backend was already computing.
+
+### Changed
+
+- **Capped stat/level inputs to what pre-renewal actually allows**:
+  base stats to 99 (was 130), base level to 99 (already correct,
+  confirmed against wiki.payonstories.com's level-99 leveling guides),
+  and job level to a per-job cap derived from `job_db.json`'s job list
+  — 10 for Novice, 50 for 1st/regular 2nd job, 70 for trans 2nd job
+  (Lord Knight, High Wizard, etc.), 99 for Super Novice (confirmed:
+  "Super Novices also have a Job Level of 99" on the wiki). Gunslinger
+  and Ninja are set to 70 rather than classic kRO's 60, since the wiki
+  references planning around "JobLv70 gunslinger" — this PS instance
+  appears to have retuned them to the trans cap. Switching jobs now
+  clamps the current job level down if it exceeds the new job's cap.
+
+### Added
+
 - **Enchant Poison and Cursed Water (Shadow) to the weapon endow
   dropdown.** Enchant Poison (`AS_ENCHANTPOISON`/`SC_ENCHANTPOISON`)
   and Cursed Water (item → `ITEM_ENCHANTARMS` skill level 8 → Dark

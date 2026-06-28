@@ -25,6 +25,8 @@ export const api = {
     request("/data/jobs") as Promise<{ id: number; name: string }[]>,
   getJobPassives: (jobId: number, server: string) =>
     request(`/data/skill-tree/${jobId}?server=${server}`) as Promise<{ name: string; mastery_key: string; description: string; max_level: number }[]>,
+  getJobBonusStats: (jobId: number, jobLevel: number, server: string) =>
+    request(`/data/job-bonus-stats/${jobId}?job_level=${jobLevel}&server=${server}`) as Promise<{ str_: number; agi: number; vit: number; int_: number; dex: number; luk: number }>,
   searchItems: (params: Record<string, unknown>) =>
     request(`/data/items?${new URLSearchParams(params as any)}`) as Promise<{ items: any[]; total: number }>,
   getItem: (id: number, server: string) =>

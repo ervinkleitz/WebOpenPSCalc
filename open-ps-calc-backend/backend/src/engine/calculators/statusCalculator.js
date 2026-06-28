@@ -29,16 +29,7 @@ class StatusCalculator {
     const profile = getProfile(build.server);
     const mastery = gb != null ? gb.effective_mastery : build.mastery_levels;
 
-    const psJb = (profile.ps_job_bonuses || {})[build.job_id];
-    let jb;
-    if (psJb != null) {
-      jb = { str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 };
-      for (const [lv, stat] of psJb) {
-        if (lv <= build.job_level) jb[stat] += 1;
-      }
-    } else {
-      jb = loader.getJobBonusStats(build.job_id, build.job_level);
-    }
+    const jb = loader.getJobBonusStats(build.job_id, build.job_level, profile);
 
     status.str = build.base_str + build.bonus_str + jb.str_;
     status.agi = build.base_agi + build.bonus_agi + jb.agi;
