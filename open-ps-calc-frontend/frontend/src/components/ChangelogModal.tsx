@@ -6,10 +6,6 @@ interface Props {
   onClose: () => void;
 }
 
-// Minimal parser for the specific markdown subset CHANGELOG.md actually
-// uses (#/##/### headings, "- " bullets with indented continuation lines,
-// **bold**, `code`, [text](url) links, blank-line paragraphs) -- avoids
-// pulling in a full markdown library for one file.
 function renderInline(text: string, keyPrefix: string) {
   const nodes: React.ReactNode[] = [];
   const pattern = /\*\*(.+?)\*\*|`(.+?)`|\[(.+?)\]\((.+?)\)/g;
@@ -27,6 +23,30 @@ function renderInline(text: string, keyPrefix: string) {
   return nodes;
 }
 
+// Strip markdown syntax to get plain readable text for use in summaries.
+function toPlain(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1");
+}
+
+// Extract a short summary from an item that has no leading **Title**.
+// Cuts at the first ". " or " — " or after ~80 chars, whichever comes first.
+function truncateSummary(text: string): string {
+  const plain = toPlain(text);
+  const dotAt  = plain.indexOf(". ");
+  const dashAt = plain.indexOf(" — ");
+  const natural = Math.min(
+    dotAt  >= 0 ? dotAt  + 1 : Infinity,
+    dashAt >= 0 ? dashAt     : Infinity,
+  );
+  if (natural < plain.length && natural <= 120) return plain.slice(0, natural).trim() + "…";
+  if (plain.length <= 100) return plain;
+  const cut = plain.lastIndexOf(" ", 90);
+  return plain.slice(0, cut > 0 ? cut : 90).trim() + "…";
+}
+
 function renderMarkdown(src: string) {
   const lines = src.split("\n");
   const blocks: React.ReactNode[] = [];
@@ -35,12 +55,31 @@ function renderMarkdown(src: string) {
 
   function flushList() {
     if (listBuffer.length === 0) return;
-    blocks.push(
-      <ul key={`ul-${key++}`}>
-        {listBuffer.map((item, i) => <li key={i}>{renderInline(item, `li-${key}-${i}`)}</li>)}
-      </ul>,
-    );
+    const items = listBuffer.slice();
     listBuffer = [];
+    blocks.push(
+      <div key={`list-${key++}`} className="cl-list">
+        {items.map((item, i) => {
+          const boldMatch = item.match(/^\*\*(.+?)\*\*/);
+          const title = boldMatch
+            ? boldMatch[1]
+            : truncateSummary(item);
+          const body = boldMatch
+            ? item.replace(/^\*\*(.+?)\*\*\s*(?:—\s*)?/, "").trim()
+            : item;
+          return (
+            <details key={i} className="cl-entry">
+              <summary className="cl-entry-summary">{title}</summary>
+              {body && (
+                <div className="cl-entry-body">
+                  {renderInline(body, `body-${key}-${i}`)}
+                </div>
+              )}
+            </details>
+          );
+        })}
+      </div>,
+    );
   }
 
   for (let idx = 0; idx < lines.length; idx++) {
@@ -56,7 +95,7 @@ function renderMarkdown(src: string) {
     flushList();
     if (/^### /.test(line)) blocks.push(<h4 key={key++}>{line.slice(4)}</h4>);
     else if (/^## /.test(line)) blocks.push(<h3 key={key++}>{line.slice(3)}</h3>);
-    else if (/^# /.test(line)) continue; // modal header already shows the "# Changelog" title
+    else if (/^# /.test(line)) continue;
     else if (line.trim() === "") continue;
     else blocks.push(<p key={key++}>{renderInline(line, `p-${key}`)}</p>);
   }
