@@ -107,6 +107,33 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Shield Boomerang damage formula** corrected to the PS formula:
+  `(BATK + shield_weight) × ratio/100`, where `shield_weight` is the
+  displayed in-game weight (item DB stores it ×10, so divided by 10).
+  Per-level ratios are taken from `ps_skill_db.json`
+  (140/180/220/260/300%), not the vanilla eA formula. Shield refine
+  bonus (`refine × 10` flat) is added after DEF reduction.
+
+- **Shield Boomerang level cap** was incorrectly 10; the skill maxes at
+  5 in PS. The level input and all load paths (URL state, saved builds)
+  now cap at 5.
+
+- **Berserk Potion available to Merchant, Swordsman, and Thief trees** —
+  non-trans 2nd-job classes in these trees were incorrectly blocked from
+  using Berserk Potion (capped to Awakening only). The correct PS
+  restriction allows them access alongside trans jobs; only Novice/1st-job
+  and Dancer/Bard/Clown/Gypsy are more restricted.
+
+- **Max SP and Max HP now reflect active buffs** — Blessing (and any
+  other SC that modifies INT or VIT) was not being considered when
+  computing Max SP and Max HP. The stat snapshot was taken before the
+  SC modifier pass ran; it is now derived from the fully-buffed status.
+
+- **HP regen formula** corrected to match the PS wiki:
+  `max(1, floor(MaxHP/200)) + floor(VIT/5)`. The previous formula added
+  a hard `+1` on top of `floor(MaxHP/200)`, overcounting by 1 for any
+  character with MaxHP ≥ 200.
+
 - **PS class rebalance — weapon mastery ATK values** corrected per
   [wiki.payonstories.com/Class_Rebalance](https://wiki.payonstories.com/Class_Rebalance).
   Musical Lesson, Dancing Lesson, Iron Hand, and Axe Mastery corrected from
@@ -130,6 +157,11 @@ instead of release version. Dates are taken from actual git commit history.
   and per-stat cost badge all updated.
 
 ### Changed
+
+- **Damage breakdown is now an inline panel** at the top of the page
+  rather than a modal overlay. It appears automatically when a
+  calculation runs, has a gold accent top border for visibility, and can
+  be dismissed with the × button.
 
 - **Combat stats grid** widened from 2 columns to 3.
 
