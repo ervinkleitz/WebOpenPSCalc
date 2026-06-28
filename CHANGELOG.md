@@ -11,17 +11,9 @@ instead of release version. Dates are taken from actual git commit history.
 
 - **PS class rebalance — weapon mastery ATK values** corrected per
   [wiki.payonstories.com/Class_Rebalance](https://wiki.payonstories.com/Class_Rebalance).
-  All six affected masteries were falling through to vanilla eA values instead
-  of PS custom values:
-
-  | Mastery | Vanilla ATK/lv | PS ATK/lv |
-  |---|---|---|
-  | Musical Lesson (`BA_MUSICALLESSON`) | +3 | +5 |
-  | Dancing Lesson (`DC_DANCINGLESSON`) | +3 | +5 |
-  | Iron Hand (`MO_IRONHAND`) | +3 | +5 |
-  | Axe Mastery (`AM_AXEMASTERY`) | +3 | +5 |
-  | Mace Mastery (`PR_MACEMASTERY`) | +3 | +4 |
-  | Katar Mastery (`AS_KATAR`) | +3 | +4 |
+  Musical Lesson, Dancing Lesson, Iron Hand, and Axe Mastery corrected from
+  +3 to +5 ATK/lv; Mace Mastery and Katar Mastery from +3 to +4 ATK/lv.
+  All were falling through to vanilla eA values instead of PS custom values.
 
 - **Spear Mastery (`KN_SPEARMASTERY`) ATK values** corrected: +4→+5/level
   without Peco, +5→+7/level while riding Peco.
