@@ -585,13 +585,18 @@ class BattlePipeline {
     // the expected value, not a true independent second roll, reusing
     // normal.avg_damage is mathematically equivalent (E[X+Y] = E[X]+E[Y]
     // regardless of independence) and avoids a redundant _runBranch call.
-    // NOT YET PORTED: bDoubleRate gear bonus (no consumer in gearBonusAggregator
-    // yet), and any interaction with skill-based (non-normal-attack) hits.
+    // bDoubleRate (e.g. Sidewinder Card) is a separate, weapon-unrestricted
+    // source of the same proc -- Hercules adds it to the TF_DOUBLE skill
+    // rate in the same roll (battle.c battle_calc_weapon_attack), so it's
+    // additive here too, just without the dagger/normal-attack-only
+    // restriction TF_DOUBLE itself has.
     const tfDoubleLv = skill.id === 0 && weapon.weapon_type === "Knife"
       ? (gearBonuses.effective_mastery.TF_DOUBLE || 0)
       : 0;
     const doubleRate = (profile.proc_rate_overrides || {}).TF_DOUBLE ?? 5.0;
-    const procChance = tfDoubleLv > 0 ? Math.min(100, doubleRate * tfDoubleLv) : 0;
+    const skillProcChance = tfDoubleLv > 0 ? doubleRate * tfDoubleLv : 0;
+    const itemDoubleRate = skill.id === 0 ? (gearBonuses.double_rate || 0) : 0;
+    const procChance = Math.min(100, skillProcChance + itemDoubleRate);
     const procFrac = procChance / 100.0;
 
     const attacks = procFrac > 0

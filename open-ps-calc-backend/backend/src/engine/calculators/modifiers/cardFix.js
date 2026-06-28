@@ -62,14 +62,20 @@ function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf,
 
 function calculateCardFixMagic(target, magicEleName, pmf, result, gearBonuses = null) {
   const [, , avIn] = pmfStats(pmf);
-  let raceBonus = 0, bossBonus = 0, raceRc = "";
+  // bMagicAddRace/bMagicAddEle key off the TARGET's own race/element (e.g.
+  // "magic damage to Fire-element monsters +10%"), not the spell's attack
+  // element (magicEleName) -- those are two different things checked here.
+  let raceBonus = 0, bossBonus = 0, eleBonus = 0, raceRc = "", targetEleKey = "";
   if (gearBonuses != null) {
     const mar = gearBonuses.magic_add_race;
+    const mae = gearBonuses.magic_add_ele;
     raceRc = RACE_TO_RC[target.race] || "";
     const bossRc = target.is_boss ? "RC_Boss" : "RC_NonBoss";
+    targetEleKey = ELE_TO_KEY[target.element] || "";
     raceBonus = mar[raceRc] || 0;
     bossBonus = mar[bossRc] || 0;
-    for (const bonus of [raceBonus, bossBonus]) {
+    eleBonus = (mae[targetEleKey] || 0) + (mae.Ele_All || 0);
+    for (const bonus of [raceBonus, bossBonus, eleBonus]) {
       if (bonus) pmf = scaleFloor(pmf, 100 + bonus, 100);
     }
   }
@@ -77,7 +83,7 @@ function calculateCardFixMagic(target, magicEleName, pmf, result, gearBonuses = 
   let [mn, mx, av] = pmfStats(pmf);
   if (!target.is_pc) {
     const multiplier = avIn ? av / avIn : 1.0;
-    result.add_step({ name: "Card Fix (Magic)", value: av, min_value: mn, max_value: mx, multiplier, note: (raceBonus || bossBonus) ? `MagicRace ${raceRc}+${raceBonus}%` : "no magic card bonuses", formula: "dmg × race/boss factors", hercules_ref: "battle.c:1072-1085" });
+    result.add_step({ name: "Card Fix (Magic)", value: av, min_value: mn, max_value: mx, multiplier, note: (raceBonus || bossBonus || eleBonus) ? `MagicRace ${raceRc}+${raceBonus}%  MagicEle ${targetEleKey}+${eleBonus}%` : "no magic card bonuses", formula: "dmg × race/boss/ele factors", hercules_ref: "battle.c:1072-1085" });
     return pmf;
   }
 
@@ -90,7 +96,7 @@ function calculateCardFixMagic(target, magicEleName, pmf, result, gearBonuses = 
 
   [mn, mx, av] = pmfStats(pmf);
   const multiplier = avIn ? av / avIn : 1.0;
-  result.add_step({ name: "Card Fix (Magic)", value: av, min_value: mn, max_value: mx, multiplier, note: `MagicRace+${raceBonus}%  Ele-${tEle}%  Race-${tRace}%  MagicDef-${tMagicDef}%`, formula: "dmg × race/boss/ele/race/magicdef factors", hercules_ref: "battle.c:1072-1143" });
+  result.add_step({ name: "Card Fix (Magic)", value: av, min_value: mn, max_value: mx, multiplier, note: `MagicRace+${raceBonus}%  MagicEle ${targetEleKey}+${eleBonus}%  Ele-${tEle}%  Race-${tRace}%  MagicDef-${tMagicDef}%`, formula: "dmg × race/boss/ele(target)/ele(resist)/race/magicdef factors", hercules_ref: "battle.c:1072-1143" });
   return pmf;
 }
 

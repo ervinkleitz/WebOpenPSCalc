@@ -113,6 +113,8 @@ const BONUS1 = {
 
   bMatkRate: def((v) => (v > 0 ? `MATK +${v}%.` : `MATK ${v}%.`), "matk_rate"),
 
+  bDoubleRate: def((v) => `+${v}% chance to deal double damage on a normal attack.`, "double_rate"),
+
   bAtkEle: def((v) => `Changes weapon element to ${ELEMENT_NAMES[String(v)] ?? String(v)}.`, "script_atk_ele_rh", "assign", { transform: (x) => ELE_STR_TO_INT[x] }),
   bDefEle: def((v) => `Changes armor element to ${ELEMENT_NAMES[String(v)] ?? String(v)}.`, "script_def_ele", "assign", { transform: (x) => ELE_STR_TO_INT[x] }),
 
@@ -150,6 +152,7 @@ const BONUS2 = {
   bDefRatioAtkRace: def((r, v) => `Bypasses DEF against ${race(r)}.`, "def_ratio_atk_race", "dict"),
 
   bMagicAddRace: def((r, v) => `Increases magic damage against ${race(r)} by ${v}%.`, "magic_add_race", "dict"),
+  bMagicAddEle: def((e, v) => `Increases magic damage against ${ele(e)}-element monsters by ${v}%.`, "magic_add_ele", "dict"),
   bCriticalAddRace: def((r, v) => `CRIT rate +${v} against ${race(r)}.`),
   bExpAddRace: def((r, v) => `EXP gain +${v}% from ${race(r)}.`),
   bResEff: def((scKey, v) => `Increases resistance to ${sc(scKey)} by ${Math.floor(v / 100)}%.`),

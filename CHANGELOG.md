@@ -43,6 +43,28 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Living Magma Card's Fire-monster magic damage bonus did nothing.**
+  Its script (`bonus2 bMagicAddEle,Ele_Fire,10`) used a bonus type the
+  item-script parser didn't recognize at all, so it was silently
+  dropped — confirmed against
+  [wiki.payonstories.com/List_of_Custom_Items](https://wiki.payonstories.com/List_of_Custom_Items).
+  `bMagicAddEle` keys off the *target's* element (like the already-working
+  physical `bAddEle`/Mage Card), not the spell's attack element, so it
+  needed its own gear-bonus field and its own check in
+  `cardFix.js#calculateCardFixMagic` rather than reusing the existing
+  `magicEleName` (attack element) plumbing. Verified: Fire Bolt vs. a
+  Fire-element target now gets +10% with the card equipped and +0%
+  against a Water-element target, as expected.
+- While auditing other custom cards for the same class of bug, found
+  Sidewinder Card's `bonus bDoubleRate,5` (a flat +5% double-attack
+  chance, on top of the `skill TF_DOUBLE,2` it also grants) was parsed
+  but had no consumer anywhere — flagged in this engine's own porting
+  notes as a known gap. Wired it into the existing TF_DOUBLE proc-chance
+  calculation in `battlePipeline.js` as an additive, weapon-unrestricted
+  source (matching battle.c, since `bDoubleRate` isn't dagger-only like
+  the TF_DOUBLE skill itself). Verified: equipping it on a non-dagger
+  weapon now gives a 5% proc chance even though TF_DOUBLE itself
+  requires a dagger.
 - **Advanced Book (Sage/Professor) was capped and labeled wrong.** It
   showed up in the passive-skills panel as "Study" with a max level of
   10 — that's the vanilla pre-renewal data; PS retunes it to max level
