@@ -79,6 +79,10 @@ const PS_PASSIVE_RESISTS = {
 // what masteryFix.js / statusCalculator.js actually read per level.
 const PS_PASSIVE_OVERRIDES = {
   SA_ADVANCEDBOOK: { atk_per_lv: [10, 15, 20, 25, 30], aspd_pct_per_lv: [3, 4, 5, 6, 7] },
+  // wiki.payonstories.com/Dancing_Lesson: lv10 grants +10% critical hit rate
+  // (statusCalculator.js reads this value via profile.passive_overrides).
+  // status.cri is on a ×10 internal scale (100 = 10% crit displayed in-game).
+  DC_DANCINGLESSON: { cri_at_max_lv: 100 },
 };
 
 const PS_JOB_BONUSES = {

@@ -9,6 +9,7 @@ import { BattlePipeline } from "../engine/calculators/battlePipeline";
 import { calculateIncomingPhysicalDamage, calculateIncomingMagicDamage } from "../engine/calculators/incomingPipeline";
 const gearBonusAggregator = require("../engine/gearBonusAggregator");
 const { applyPetBonuses } = require("../engine/buildApplicator");
+const { computeFalconDamage } = require("../engine/calculators/falconCalc");
 
 const router = Router();
 
@@ -43,7 +44,8 @@ router.post("/", (req: Request, res: Response) => {
       str_: gearBonuses.str_, agi: gearBonuses.agi, vit: gearBonuses.vit,
       int_: gearBonuses.int_, dex: gearBonuses.dex, luk: gearBonuses.luk,
     };
-    res.json({ status, weapon, target, result: battleResult, gear_stat_bonuses });
+    const falcon = computeFalconDamage(status, effBuild, gearBonuses, target, loader);
+    res.json({ status, weapon, target, result: battleResult, gear_stat_bonuses, falcon });
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: "Calculation failed", detail: String(err.message || err) });

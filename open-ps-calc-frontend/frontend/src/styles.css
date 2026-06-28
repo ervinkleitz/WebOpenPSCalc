@@ -396,6 +396,19 @@ label {
 .step-row .step-note { grid-column: 1 / -1; font-size: 0.74rem; color: var(--text-faint); }
 .step-row .step-formula { grid-column: 1 / -1; font-size: 0.72rem; color: var(--text-dim); font-family: var(--mono); }
 
+.falcon-section { margin-top: 1.2rem; }
+.falcon-rows { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.4rem; }
+.falcon-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.falcon-row .falcon-label { font-size: 0.82rem; color: var(--text); }
+.falcon-row .falcon-value { font-family: var(--mono); font-size: 0.95rem; color: var(--accent); }
+.falcon-note { font-size: 0.74rem; color: var(--text-faint); padding: 0.15rem 0.2rem; }
+
 .notice {
   background: var(--accent-soft);
   border: 1px solid var(--border);

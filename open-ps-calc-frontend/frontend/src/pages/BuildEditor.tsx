@@ -29,10 +29,20 @@ const MAX_STAT = 99;
 // Gunslinger references planning around "JobLv70 gunslinger", so this PS
 // instance appears to have retuned them to the trans cap instead.
 const TRANS_JOB_IDS = new Set([4008, 4009, 4010, 4011, 4012, 4013, 4015, 4016, 4017, 4018, 4019, 4020, 4021]);
+// Novice + 1st job + Super Novice: Concentration Potion only (can't use Awakening/Berserk)
+const NOVICE_OR_1ST_JOB_IDS = new Set([0, 1, 2, 3, 4, 5, 6, 23]);
 const JOB_LEVEL_CAP_OVERRIDES: Record<number, number> = { 0: 10, 23: 99, 24: 70, 25: 70 };
 function getJobLevelCap(jobId: number): number {
   if (TRANS_JOB_IDS.has(jobId)) return 70;
   return JOB_LEVEL_CAP_OVERRIDES[jobId] ?? 50;
+}
+// Returns the highest ASPD potion index allowed for a job (1=Conc, 2=Awak, 3=Berserk).
+// 0 (no job selected) → no restriction so the form isn't locked before a class is chosen.
+function aspdPotionCap(jobId: number): number {
+  if (!jobId) return 3;
+  if (NOVICE_OR_1ST_JOB_IDS.has(jobId)) return 1;
+  if (TRANS_JOB_IDS.has(jobId)) return 3;
+  return 2;
 }
 
 // Whether a slot can be refined depends on the specific equipped item, not
@@ -407,6 +417,18 @@ export default function BuildEditor() {
       }
       if (Object.keys(nextActive).length === Object.keys(prevActive).length) return prev;
       return { ...prev, active_buffs: nextActive };
+    });
+  }, [data.job_id]);
+
+  // Clear ASPD potion if the new job can't use the currently selected one.
+  useEffect(() => {
+    setData((prev) => {
+      const cap = aspdPotionCap(prev.job_id);
+      const current = (prev.consumable_buffs?.aspd_potion as number) ?? 0;
+      if (current <= cap) return prev;
+      const next = { ...(prev.consumable_buffs || {}) } as Record<string, unknown>;
+      delete next.aspd_potion;
+      return { ...prev, consumable_buffs: next };
     });
   }, [data.job_id]);
 
@@ -890,7 +912,9 @@ export default function BuildEditor() {
                 value={data.consumable_buffs?.aspd_potion ?? 0}
                 onChange={(e) => updateConsumable("aspd_potion", Number(e.target.value) || undefined)}
               >
-                {ASPD_POTION_LABELS.map((label, i) => <option key={i} value={i}>{label}</option>)}
+                {ASPD_POTION_LABELS.map((label, i) => (
+                  <option key={i} value={i} disabled={i > aspdPotionCap(data.job_id)}>{label}</option>
+                ))}
               </select>
             </div>
             <div className="field-row" style={{ marginTop: "0.6rem" }}>

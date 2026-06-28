@@ -14,6 +14,14 @@ interface DamageBranch {
   steps: Step[];
 }
 
+interface FalconResult {
+  per_hit: number;
+  blitz_beat_lv: number;
+  steel_crow_lv: number;
+  auto_blitz_total: number;
+  blitz_beat_total: number | null;
+}
+
 interface CalcResult {
   status: {
     aspd: number;
@@ -26,6 +34,7 @@ interface CalcResult {
     dps_valid: boolean;
     dps: number;
   };
+  falcon?: FalconResult;
 }
 
 interface Props {
@@ -45,6 +54,29 @@ function StepRow({ step }: { step: Step }) {
   );
 }
 
+function FalconSection({ falcon }: { falcon: FalconResult }) {
+  return (
+    <div className="falcon-section">
+      <div className="buff-section-header">Falcon</div>
+      <div className="falcon-rows">
+        <div className="falcon-row">
+          <span className="falcon-label">Auto-blitz (1 hit)</span>
+          <span className="falcon-value">{falcon.auto_blitz_total}</span>
+        </div>
+        {falcon.blitz_beat_total != null && (
+          <div className="falcon-row">
+            <span className="falcon-label">Blitz Beat Lv {falcon.blitz_beat_lv} ({falcon.blitz_beat_lv} × {falcon.per_hit})</span>
+            <span className="falcon-value">{falcon.blitz_beat_total}</span>
+          </div>
+        )}
+        <div className="falcon-note">
+          Steel Crow Lv {falcon.steel_crow_lv} · neutral element · bypasses DEF
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DamageSummary({ calcResult, calculating, error }: Props) {
   const [branch, setBranch] = useState<"normal" | "crit">("normal");
 
@@ -52,7 +84,7 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
   if (calculating) return <p className="spinner-text">Calculating…</p>;
   if (!calcResult) return <p className="hint-text">Set up a build and target, then calculate damage.</p>;
 
-  const { result, status } = calcResult;
+  const { result, status, falcon } = calcResult;
   const damage = branch === "crit" && result.crit ? result.crit : result.normal;
   const notImplemented = damage.steps?.length === 1 && damage.steps[0].name === "Not yet implemented";
 
@@ -104,6 +136,8 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
           </div>
         </>
       )}
+
+      {falcon && <FalconSection falcon={falcon} />}
     </div>
   );
 }

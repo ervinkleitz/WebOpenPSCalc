@@ -9,6 +9,22 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Falcon damage shown in results** (Hunter / Sniper) — when a Hunter or
+  Sniper build has Falconry Mastery learned, a "Falcon" section appears below
+  the damage breakdown showing auto-blitz damage (1 hit) and, if Blitz Beat is
+  skilled, the full Blitz Beat total (level × per-hit). Uses the PS custom
+  formula `(LUK + INT/2 + Steel Crow Lv × 6 + 20) × 2` per hit; applies
+  neutral-element modifier vs target and race/boss gear bonuses, bypasses DEF.
+
+- **ASPD potions filtered by class** — Awakening Potion is disabled for
+  Novice and 1st-job classes; Berserk Potion is disabled for all non-trans
+  classes. Selecting an invalid potion and then switching class auto-clears it.
+
+- **Dancing Lesson Lv 10 CRIT bonus** (`DC_DANCINGLESSON`) now correctly adds
+  +10% critical hit rate for Dancer/Gypsy. The code path in statusCalculator
+  already existed but was reading from an empty override table; fixed by adding
+  `cri_at_max_lv: 100` to `PS_PASSIVE_OVERRIDES`.
+
 - **Clan buffs** — a "Clan" section at the bottom of the Buffs panel lets you
   select your clan membership (Sword, Arch Wand, Golden Mace, Crossbow,
   Artisan, or Vile Wind). The stat bonuses (STR/AGI/VIT/INT/DEX/LUK +1,
