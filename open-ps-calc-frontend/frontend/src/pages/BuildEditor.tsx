@@ -667,7 +667,7 @@ export default function BuildEditor() {
             <div className="field-row">
               <div className="field">
                 <label>Build name</label>
-                <input value={data.name} onChange={(e) => updateField(["name"], e.target.value)} />
+                <span className="field-static">{data.name || "—"}</span>
               </div>
               <div className="field">
                 <label>Job</label>

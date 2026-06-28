@@ -87,6 +87,7 @@ label {
 }
 .field { margin-bottom: 0.85rem; }
 .field-row { display: flex; gap: 0.6rem; }
+.field-static { display: block; padding: 0.4rem 0.6rem; font-size: 0.9rem; color: var(--text); }
 .field-row > .field { flex: 1; }
 
 .error-text { color: var(--crit); font-size: 0.85rem; margin-top: 0.4rem; }
