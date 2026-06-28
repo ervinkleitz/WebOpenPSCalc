@@ -29,6 +29,7 @@ export interface BuildData {
   song_state?: Record<string, number>;
   consumable_buffs?: ConsumableBuffs;
   selected_pet?: string;
+  clan?: string;
 }
 
 export interface ConsumableBuffs {
@@ -77,6 +78,7 @@ export interface SearchResult {
   id: number;
   label: string;
   sublabel: string;
+  disabled?: boolean;
 }
 
 export type TargetMode = "monster" | "custom";

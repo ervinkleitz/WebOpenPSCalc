@@ -128,23 +128,34 @@ const ASPD_POTION_LABELS = [
 // from OTHER players, so they're never filtered by your own job -- any
 // class could be standing in a Priest/Blacksmith/Bard's range.
 const SELF_BUFFS = [
-  { key: "SC_TWOHANDQUICKEN", label: "Two-Hand Quicken", max: 10, jobs: [7, 4008] },
-  { key: "SC_ONEHANDQUICKEN", label: "One-Hand Quicken", max: 10, jobs: [7, 4008] },
-  { key: "SC_SPEARQUICKEN", label: "Spear Quicken", max: 10, jobs: [14, 4015] },
-  { key: "SC_MAXIMIZEPOWER", label: "Maximize Power", max: 1, jobs: [10, 4011] },
-  { key: "SC_EXPLOSIONSPIRITS", label: "Fury", max: 5, jobs: [15, 4016] },
+  // Archer / Hunter / Sniper / Bard / Dancer / Clown / Gypsy
+  { key: "SC_CONCENTRATION",    label: "Attention Concentrate", max: 10, jobs: [3, 11, 19, 20, 4012, 4020, 4021] },
+  // Knight / Lord Knight
+  { key: "SC_TWOHANDQUICKEN",  label: "Two-Hand Quicken",      max: 10, jobs: [7, 4008] },
+  { key: "SC_ONEHANDQUICKEN",  label: "One-Hand Quicken",      max: 10, jobs: [7, 4008] },
+  // Crusader / Paladin
+  { key: "SC_SPEARQUICKEN",    label: "Spear Quicken",         max: 10, jobs: [14, 4015] },
+  // Blacksmith / Whitesmith — SC_SHOUT adds STR+4 in statusCalculator.js
+  { key: "SC_MAXIMIZEPOWER",   label: "Maximize Power",        max: 1,  jobs: [10, 4011] },
+  { key: "SC_SHOUT",           label: "Loud Exclamation",      max: 1,  jobs: [10, 4011] },
+  // Monk / Champion
+  { key: "SC_EXPLOSIONSPIRITS", label: "Fury",                 max: 5,  jobs: [15, 4016] },
+  // Gunslinger — SC_GS_ACCURACY adds AGI+4/DEX+4 in statusCalculator.js
+  { key: "SC_GS_ACCURACY",     label: "Increasing Accuracy",   max: 1,  jobs: [24] },
   // PS renames these two displays ("Barrage" / "Run and Gun") but the
   // underlying constants are the vanilla Gunslinger ones; both are
   // presence-only (level doesn't change the magnitude in statusCalculator.js).
-  { key: "SC_GS_MADNESSCANCEL", label: "Barrage", max: 1, jobs: [24] },
-  { key: "SC_GS_ADJUSTMENT", label: "Run and Gun", max: 1, jobs: [24] },
+  { key: "SC_GS_MADNESSCANCEL", label: "Barrage",             max: 1,  jobs: [24] },
+  { key: "SC_GS_ADJUSTMENT",   label: "Run and Gun",          max: 1,  jobs: [24] },
+  // Ninja — SC_NJ_NEN adds +lv STR and +lv INT (defaults; PS may override)
+  { key: "SC_NJ_NEN",          label: "Ki",                    max: 10, jobs: [25] },
   // PS wiki calls this "Double Bolt"; underlying constant is the vanilla
   // Professor skill PF_DOUBLECASTING (status SC_DOUBLECASTING) -- only
   // Professor has it in the skill tree, base Sage doesn't. 100% chance to
   // instantly re-cast a Fire/Cold/Lightning Bolt, Earth Spike, or Soul
   // Strike; modeled in battlePipeline.js as halving the effective period
   // for those skills (DPS only, not per-hit damage).
-  { key: "SC_DOUBLECASTING", label: "Double Bolt", max: 1, jobs: [4017] },
+  { key: "SC_DOUBLECASTING",   label: "Double Bolt",          max: 1,  jobs: [4017] },
 ] as const;
 
 // Received from a party member rather than self-cast -- battle.c treats
@@ -174,15 +185,55 @@ const SONG_BUFFS = [
   { key: "SC_POEMBRAGI", label: "Poem of Bragi", max: 10 },
 ] as const;
 
-// Only support_buffs can add to flat base stats — self buffs (quicken, fury,
-// etc.) and songs (humming, fortune) only affect derived stats like ASPD/HIT/CRI.
-function computeBuffStatBonuses(supportBuffs: Record<string, unknown> = {}): Record<string, number> {
-  const b = { str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 };
+// Passive skills and buffs that add to flat base stats.
+// SC_CONCENTRATION is a % of current AGI/DEX — approximated using pre-bonus
+// totals (card bonuses excluded per the engine formula, close enough for display).
+const CLAN_STAT_BONUSES: Record<string, Partial<Record<keyof typeof emptyBuff, number>>> = {
+  sword_clan:       { str_: 1, vit: 1 },
+  arch_wand_clan:   { int_: 1, dex: 1 },
+  golden_mace_clan: { int_: 1, vit: 1 },
+  crossbow_clan:    { dex: 1, agi: 1 },
+  artisan_clan:     { dex: 1, luk: 1 },
+  vile_wind_clan:   { str_: 1, agi: 1 },
+};
+const emptyBuff = { str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 };
+
+function computeBuffStatBonuses(
+  supportBuffs: Record<string, unknown> = {},
+  activeSc: Record<string, unknown> = {},
+  preTotals: { agi: number; dex: number } = { agi: 0, dex: 0 },
+  masteryLevels: Record<string, unknown> = {},
+  clan = "",
+): Record<string, number> {
+  const b = { ...emptyBuff };
+  // Passive skill stat bonuses (mirror of statusCalculator.js lines 45-49)
+  if (masteryLevels.BS_HILTBINDING) b.str_ += 1;
+  const dragonologyLv = (masteryLevels.SA_DRAGONOLOGY as number) || 0;
+  if (dragonologyLv) b.int_ += Math.floor((dragonologyLv + 1) / 2);
+  const owlLv = (masteryLevels.AC_OWL as number) || 0;
+  if (owlLv) b.dex += owlLv;
+  // Active self-buff stat bonuses (mirror of statusCalculator.js lines 55-87)
+  if (activeSc.SC_SHOUT) b.str_ += 4;
+  const njNenLv = (activeSc.SC_NJ_NEN as number) || 0;
+  if (njNenLv) { b.str_ += njNenLv; b.int_ += njNenLv; }
+  if (activeSc.SC_GS_ACCURACY) { b.agi += 4; b.dex += 4; }
+  // Active / party buff bonuses
   const blessingLv = (supportBuffs.SC_BLESSING as number) || 0;
   if (blessingLv > 0) { b.str_ += blessingLv; b.int_ += blessingLv; b.dex += blessingLv; }
   const incAgiLv = (supportBuffs.SC_INC_AGI as number) || 0;
   if (incAgiLv > 0) { b.agi += 2 + incAgiLv; }
   if (supportBuffs.SC_GLORIA) { b.luk += 30; }
+  const concLv = (activeSc.SC_CONCENTRATION as number) || 0;
+  if (concLv > 0) {
+    const pct = (2 + concLv) / 100;
+    b.agi += Math.floor((preTotals.agi + b.agi) * pct);
+    b.dex += Math.floor((preTotals.dex + b.dex) * pct);
+  }
+  // Clan stat bonuses
+  const clanBonus = CLAN_STAT_BONUSES[clan] || {};
+  for (const [k, v] of Object.entries(clanBonus)) {
+    (b as Record<string, number>)[k] = ((b as Record<string, number>)[k] ?? 0) + (v ?? 0);
+  }
   return b;
 }
 
@@ -324,9 +375,21 @@ export default function BuildEditor() {
       JSON.stringify(data.bonus_stats), data.selected_pet]);
 
   useEffect(() => {
-    setBuffBonusStats(computeBuffStatBonuses(data.support_buffs as Record<string, unknown>));
+    const base = data.base_stats;
+    setBuffBonusStats(computeBuffStatBonuses(
+      (data.support_buffs || {}) as Record<string, unknown>,
+      (data.active_buffs || {}) as Record<string, unknown>,
+      {
+        agi: (base.agi ?? 1) + (jobBonusStats.agi ?? 0) + (equipBonusStats.agi ?? 0),
+        dex: (base.dex ?? 1) + (jobBonusStats.dex ?? 0) + (equipBonusStats.dex ?? 0),
+      },
+      (data.mastery_levels || {}) as Record<string, unknown>,
+      data.clan ?? "",
+    ));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(data.support_buffs)]);
+  }, [JSON.stringify(data.support_buffs), JSON.stringify(data.active_buffs),
+      JSON.stringify(data.mastery_levels), data.clan,
+      data.base_stats.agi, data.base_stats.dex, jobBonusStats, equipBonusStats]);
 
   // Hiding a self-buff from the panel on job change isn't enough on its own --
   // a stale value left in active_buffs from a previous job would still be
@@ -464,23 +527,33 @@ export default function BuildEditor() {
 
   const itemLabel = (it: any) => it.slots > 0 ? `${it.name}[${it.slots}]` : it.name;
 
+  const canEquip = useCallback(
+    (it: any) => !Array.isArray(it.job) || it.job.length === 0 || it.job.includes(data.job_id),
+    [data.job_id],
+  );
+
+  const sortResults = (rows: SearchResult[]) =>
+    rows.sort((a, b) => (a.disabled ? 1 : 0) - (b.disabled ? 1 : 0));
+
   const itemSearch = useCallback(
     (itemType: string, loc?: string) => (query: string): Promise<SearchResult[]> =>
-      api.searchItems({ type: itemType, ...(loc ? { loc } : {}), q: query, limit: 12, server: data.server, job: data.job_id })
-        .then((r) => r.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `#${it.id}` }))),
-    [data.server, data.job_id],
+      api.searchItems({ type: itemType, ...(loc ? { loc } : {}), q: query, limit: 20, server: data.server })
+        .then((r) => sortResults(r.items.map((it: any) => ({
+          id: it.id, label: itemLabel(it), sublabel: `#${it.id}`, disabled: !canEquip(it),
+        })))),
+    [data.server, data.job_id, canEquip],
   );
 
   const leftHandSearch = useCallback(
     (query: string): Promise<SearchResult[]> =>
       Promise.all([
-        api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: 12, server: data.server, job: data.job_id }),
-        api.searchItems({ type: "IT_WEAPON", q: query, limit: 12, server: data.server, job: data.job_id }),
-      ]).then(([shields, weapons]) => [
-        ...shields.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Shield #${it.id}` })),
-        ...weapons.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Weapon #${it.id}` })),
-      ]),
-    [data.server, data.job_id],
+        api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: 20, server: data.server }),
+        api.searchItems({ type: "IT_WEAPON", q: query, limit: 20, server: data.server }),
+      ]).then(([shields, weapons]) => sortResults([
+        ...shields.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Shield #${it.id}`, disabled: !canEquip(it) })),
+        ...weapons.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Weapon #${it.id}`, disabled: !canEquip(it) })),
+      ])),
+    [data.server, data.job_id, canEquip],
   );
 
   const mobSearch = useCallback(
@@ -613,12 +686,12 @@ export default function BuildEditor() {
             <label style={{ marginTop: "0.3rem" }} className="section-label">
               Base stats
               <InfoTooltip>
-                The bold total includes the job-level stat bonus your class
-                gets automatically (e.g. a Knight's STR/VIT growth), flat
-                stat bonuses from equipped items (bStr, bAgi, etc.), and
-                buff bonuses (Blessing → STR/INT/DEX; Inc AGI → AGI;
-                Gloria → LUK) — all already folded into the damage
-                calculation.
+                The bold total includes the job-level stat bonus, flat
+                bonuses from equipped items (bStr, bAgi, etc.), passive
+                skill bonuses (Dragonology → INT; Owl's Eye → DEX;
+                Hilt Binding → STR), and buff bonuses (Blessing, Inc AGI,
+                Gloria, Attention Concentrate) — all folded into the
+                damage calculation.
               </InfoTooltip>
             </label>
             <div className="ro-stat-grid">
@@ -642,7 +715,7 @@ export default function BuildEditor() {
                       />
                       {jobBonus > 0 && <span className="ro-stat-bonus" title={`+${jobBonus} from job level`}>+{jobBonus}</span>}
                       {equipBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--equip" title={`+${equipBonus} from equipment`}>+{equipBonus}</span>}
-                      {buffBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--buff" title={`+${buffBonus} from buffs`}>+{buffBonus}</span>}
+                      {buffBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--buff" title={`+${buffBonus} from skills / buffs`}>+{buffBonus}</span>}
                     </div>
                   </div>
                 );
@@ -865,26 +938,28 @@ export default function BuildEditor() {
                     </p>
                   ) : (
                     <>
-                      <label>Self buffs</label>
+                      <div className="buff-section-header">Self buffs</div>
                       <div className="passive-grid">
-                        {selfBuffs.map((b) => (
-                          <div className="field" key={b.key}>
-                            <label title={b.key}>{b.label}</label>
-                            <input
-                              className="mono"
-                              type="number"
-                              min={0}
-                              max={b.max}
-                              value={data.active_buffs?.[b.key] ?? 0}
-                              onChange={(e) => updateBuffField("active_buffs", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
-                            />
-                          </div>
-                        ))}
+                        {selfBuffs.map((b) => {
+                          const active = (data.active_buffs?.[b.key] ?? 0) > 0;
+                          return (
+                            <div className="field field-checkbox" key={b.key}>
+                              <label title={b.key}>
+                                <input
+                                  type="checkbox"
+                                  checked={active}
+                                  onChange={(e) => updateBuffField("active_buffs", b.key, e.target.checked ? b.max : 0)}
+                                />
+                                <span>{b.label}</span>
+                              </label>
+                            </div>
+                          );
+                        })}
                       </div>
                     </>
                   )}
 
-                  <label className="section-label" style={{ marginTop: "0.6rem" }}>
+                  <div className="buff-section-header">
                     Party buffs
                     <InfoTooltip>
                       Received from a party member, not self-cast — these are never
@@ -892,7 +967,7 @@ export default function BuildEditor() {
                       another player's buff range. Checking a buff applies its
                       max level (you don't control the caster's actual level).
                     </InfoTooltip>
-                  </label>
+                  </div>
 
                   <div className="buff-group">
                     <span className="buff-group-label">Priest</span>
@@ -967,7 +1042,7 @@ export default function BuildEditor() {
                     </div>
                   </div>
 
-                  <label style={{ marginTop: "0.6rem" }} title="From a party member, never filtered by your own job">Bard / Dancer songs</label>
+                  <div className="buff-section-header" title="From a party member, never filtered by your own job">Bard / Dancer songs</div>
                   <div className="passive-grid">
                     {SONG_BUFFS.map((b) => (
                       <div className="field" key={b.key}>
@@ -982,6 +1057,25 @@ export default function BuildEditor() {
                         />
                       </div>
                     ))}
+                  </div>
+
+                  <div className="buff-section-header">Clan</div>
+                  <div className="passive-grid">
+                    <div className="field">
+                      <label>Clan membership</label>
+                      <select
+                        value={data.clan ?? ""}
+                        onChange={(e) => updateField(["clan"], e.target.value || undefined)}
+                      >
+                        <option value="">None</option>
+                        <option value="sword_clan">Sword Clan (STR+1, VIT+1)</option>
+                        <option value="arch_wand_clan">Arch Wand Clan (INT+1, DEX+1)</option>
+                        <option value="golden_mace_clan">Golden Mace Clan (INT+1, VIT+1)</option>
+                        <option value="crossbow_clan">Crossbow Clan (DEX+1, AGI+1)</option>
+                        <option value="artisan_clan">Artisan Clan (DEX+1, LUK+1)</option>
+                        <option value="vile_wind_clan">Vile Wind Clan (STR+1, AGI+1)</option>
+                      </select>
+                    </div>
                   </div>
                 </>
               );

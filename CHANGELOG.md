@@ -9,6 +9,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Clan buffs** — a "Clan" section at the bottom of the Buffs panel lets you
+  select your clan membership (Sword, Arch Wand, Golden Mace, Crossbow,
+  Artisan, or Vile Wind). The stat bonuses (STR/AGI/VIT/INT/DEX/LUK +1,
+  plus MaxHP+30/MaxSP+10) are applied to the damage calculation server-side
+  via the existing `CLAN_STATS` table in `buildApplicator.js`. Selecting a
+  clan also shows the corresponding +1 badges in the base stats section.
+
 - **Equipment filtered by class** — item search dropdowns now only show gear
   equippable by the currently selected job (e.g. switching to Mage hides
   two-handed swords). If the class is changed after equipping an item that

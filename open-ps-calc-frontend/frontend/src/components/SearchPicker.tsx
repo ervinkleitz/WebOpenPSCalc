@@ -45,7 +45,18 @@ export default function SearchPicker({ placeholder, search, onSelect }: Props) {
     item?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
+  // Returns the next non-disabled index in direction +1 or -1, or -1 if none.
+  function findEnabled(from: number, dir: 1 | -1): number {
+    let i = from + dir;
+    while (i >= 0 && i < results.length) {
+      if (!results[i].disabled) return i;
+      i += dir;
+    }
+    return -1;
+  }
+
   function selectResult(r: SearchResult) {
+    if (r.disabled) return;
     onSelect(r);
     setQuery("");
     setResults([]);
@@ -56,17 +67,33 @@ export default function SearchPicker({ placeholder, search, onSelect }: Props) {
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      if (!open && results.length > 0) { setOpen(true); setActiveIndex(0); return; }
-      if (open && results.length > 0) setActiveIndex((prev) => Math.min(prev + 1, results.length - 1));
+      if (!open && results.length > 0) {
+        const first = findEnabled(-1, 1);
+        setOpen(true);
+        setActiveIndex(first);
+        return;
+      }
+      if (open && results.length > 0) {
+        const next = findEnabled(activeIndex, 1);
+        if (next >= 0) setActiveIndex(next);
+      }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      if (open) setActiveIndex((prev) => Math.max(prev - 1, -1));
+      if (open) {
+        const prev = findEnabled(activeIndex, -1);
+        setActiveIndex(prev);
+      }
     } else if (e.key === "Enter") {
-      if (open && activeIndex >= 0) { e.preventDefault(); selectResult(results[activeIndex]); }
+      if (open && activeIndex >= 0 && !results[activeIndex]?.disabled) {
+        e.preventDefault();
+        selectResult(results[activeIndex]);
+      }
     } else if (e.key === "Tab") {
-      // Select focused item on Tab; let the event propagate so focus moves normally.
-      if (open && activeIndex >= 0) selectResult(results[activeIndex]);
-      else setOpen(false);
+      if (open && activeIndex >= 0 && !results[activeIndex]?.disabled) {
+        selectResult(results[activeIndex]);
+      } else {
+        setOpen(false);
+      }
     } else if (e.key === "Escape") {
       setOpen(false);
       setActiveIndex(-1);
@@ -87,7 +114,7 @@ export default function SearchPicker({ placeholder, search, onSelect }: Props) {
           {results.map((r, i) => (
             <div
               key={r.id}
-              className={`search-result-item${i === activeIndex ? " active" : ""}`}
+              className={`search-result-item${i === activeIndex ? " active" : ""}${r.disabled ? " disabled" : ""}`}
               onClick={() => selectResult(r)}
             >
               <span>{r.label}</span>
