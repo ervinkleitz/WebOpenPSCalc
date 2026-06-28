@@ -55,7 +55,7 @@ function computeFalconDamage(status, build, gearBonuses, target, loader) {
     per_hit:           perHit,
     blitz_beat_lv:     blitzBeatLv,
     steel_crow_lv:     steelCrowLv,
-    auto_blitz_total:  perHit,                    // 1 hit
+    auto_blitz_total:  perHit * 5,               // always 5 hits (same as Blitz Beat lv5)
     blitz_beat_total:  blitzBeatLv ? perHit * blitzBeatLv : null,
   };
 }

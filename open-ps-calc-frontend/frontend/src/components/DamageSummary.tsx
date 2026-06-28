@@ -68,7 +68,7 @@ function FalconView({ falcon }: { falcon: FalconResult }) {
   return (
     <div className="falcon-rows">
       <div className="falcon-row">
-        <span className="falcon-label">Auto-blitz (1 hit)</span>
+        <span className="falcon-label">Auto-blitz (5 hits)</span>
         <span className="falcon-value">{falcon.auto_blitz_total}</span>
       </div>
       {falcon.blitz_beat_total != null && (
