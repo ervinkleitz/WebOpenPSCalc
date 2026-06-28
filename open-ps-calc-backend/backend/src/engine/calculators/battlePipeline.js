@@ -17,8 +17,7 @@
  *   - incoming_physical_pipeline.py / incoming_magic_pipeline.py (mob → player).
  *   - Katar second-hit, dual-wield left-hand branch, TF_DOUBLE/GS_CHAINACTION
  *     procs, MO_TRIPLEATTACK proc branch, item autocasts (bAutoSpell on
- *     attack/skill), NJ_ISSEN's fixed-damage formula, CR_SHIELDBOOMERANG's
- *     flag.weapon=0 special case, and the many small PS-only multiplicative
+ *     attack/skill), NJ_ISSEN's fixed-damage formula, and the many small PS-only multiplicative
  *     bonuses (Cloaking, Lex Aeterna, Mailbreaker/Venom Dust/Raided, Backstab
  *     Opportunity, performing bonuses) that battle_pipeline.py threads
  *     through _run_branch. These all still work as plain weapon-skill ratio
@@ -370,6 +369,78 @@ class BattlePipeline {
   }
 
   /**
+   * CR_SHIELDBOOMERANG — flag.weapon=0 special case (battle.c).
+   * Base damage = floor(shield_weight / 10) × skill_level, bypassing weapon ATK entirely.
+   * Skill ratio (PS: 100+40*lv, vanilla: 70+30*lv), DEF, element, and card bonuses apply normally.
+   * Always ranged; neutral element (shield is not imbued with weapon element).
+   */
+  _runShieldBoomerangBranch(status, weapon, skill, target, build, opts = {}) {
+    const { profile = STANDARD, gear_bonuses: gearBonuses } = opts;
+    const result = createDamageResult();
+    const skillName = "CR_SHIELDBOOMERANG";
+
+    const shieldId = build.equipped && build.equipped.left_hand;
+    const shieldItem = shieldId ? loader.getItem(shieldId) : null;
+    const shieldWeight = shieldItem ? (shieldItem.weight || 0) : 0;
+
+    const baseDmg = Math.floor(shieldWeight / 10) * skill.level;
+    let pmf = uniformPmf(baseDmg, baseDmg);
+    result.add_step({
+      name: "Shield Weight Base",
+      value: baseDmg, min_value: baseDmg, max_value: baseDmg,
+      note: shieldItem
+        ? `${shieldItem.name || "Shield"} — weight ${shieldWeight} → floor(${shieldWeight}/10) × Lv${skill.level}`
+        : "No shield equipped — base damage 0",
+      formula: "floor(shield_weight/10) × skill_level",
+      hercules_ref: "battle.c ATK_ADD(weight/10*skill_lv), flag.weapon=0",
+    });
+
+    if (gearBonuses && gearBonuses.atk_rate) {
+      pmf = scaleFloor(pmf, 100 + gearBonuses.atk_rate, 100);
+      const [mn, mx, av] = pmfStats(pmf);
+      result.add_step({ name: "bAtkRate", value: av, min_value: mn, max_value: mx, multiplier: (100 + gearBonuses.atk_rate) / 100, note: `bAtkRate +${gearBonuses.atk_rate}%`, formula: `dmg*(100+${gearBonuses.atk_rate})//100`, hercules_ref: "battle.c:5330" });
+    }
+
+    const psRatioFn = (profile.weapon_ratios || {})[skillName];
+    const ratio = psRatioFn ? psRatioFn(skill.level) : 70 + 30 * skill.level; // vanilla: 100+30*(lv-1)
+    pmf = scaleFloor(pmf, ratio, 100);
+    const [rmn, rmx, rav] = pmfStats(pmf);
+    result.add_step({
+      name: `Skill Ratio (Lv ${skill.level})`,
+      value: rav, min_value: rmn, max_value: rmx, multiplier: ratio / 100,
+      note: `Shield Boomerang Lv${skill.level}: ${ratio}%`,
+      formula: psRatioFn ? `PS: (100+40*lv) = ${ratio}%` : `vanilla: (70+30*lv) = ${ratio}%`,
+      hercules_ref: "battle.c battle_calc_skillratio CR_SHIELDBOOMERANG",
+    });
+
+    const skillAtkBonus = gearBonuses ? (gearBonuses.skill_atk[skillName] || 0) : 0;
+    if (skillAtkBonus) {
+      pmf = scaleFloor(pmf, 100 + skillAtkBonus, 100);
+      const [mn, mx, av] = pmfStats(pmf);
+      result.add_step({ name: "Skill ATK Bonus", value: av, min_value: mn, max_value: mx, multiplier: (100 + skillAtkBonus) / 100, note: `bSkillAtk: ${skillName} +${skillAtkBonus}%`, formula: `dmg × (100+${skillAtkBonus})/100`, hercules_ref: "pc.c:3513-3527" });
+    }
+
+    pmf = calculateDefenseFix(target, build, gearBonuses, pmf, this.config, result, { is_crit: false, skill });
+
+    // Neutral element — shield is not imbued with weapon element
+    pmf = calculateAttrFix(weapon, target, pmf, result, build, 0 /* Ele_Neutral */);
+
+    pmf = calculateCardFix(build, gearBonuses, 0 /* Ele_Neutral */, target, true /* isRanged */, pmf, result);
+
+    pmf = calculateFinalRateBonus(true /* isRanged */, pmf, this.config, result);
+
+    pmf = floorAt(pmf, 1);
+
+    const [mn, mx, av] = pmfStats(pmf);
+    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Shield Boomerang branch (flag.weapon=0, shield weight base)", formula: "", hercules_ref: "" });
+    result.min_damage = mn;
+    result.max_damage = mx;
+    result.avg_damage = av;
+    result.pmf = pmf;
+    return result;
+  }
+
+  /**
    * Run a single damage branch (normal or crit) through the modifier chain.
    * Mirrors BattlePipeline._run_branch in the Python source (trimmed scope —
    * see file header).
@@ -475,6 +546,33 @@ class BattlePipeline {
     if (profile.skill_level_cap_overrides && profile.skill_level_cap_overrides[skillName] != null) {
       const cap = profile.skill_level_cap_overrides[skillName];
       if (skill.level > cap) skill = { ...skill, level: cap };
+    }
+
+    if (skillName === "CR_SHIELDBOOMERANG") {
+      if (profile.mechanic_flags.has("CR_SHIELDBOOMERANG_NK_IGNORE_FLEE")) skill.nk_ignore_flee = true;
+      const [hitChanceSB] = calculateHitChance(status, target, this.config);
+      const effectiveHitSB = skill.nk_ignore_flee ? 100.0 : hitChanceSB;
+      const sbResult = this._runShieldBoomerangBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
+      let castMs = 0, delayMs = 0;
+      if (skillData) {
+        [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      }
+      const sbPeriod = Math.max(castMs + delayMs, 100);
+      const attacks = [
+        createAttackDefinition(sbResult.avg_damage, 0.0, sbPeriod, effectiveHitSB / 100.0),
+        createAttackDefinition(0.0, 0.0, sbPeriod, 1.0 - effectiveHitSB / 100.0),
+      ];
+      const dps = calculateDps(attacks);
+      return createBattleResult({
+        normal: sbResult,
+        crit: null,
+        crit_chance: 0.0,
+        hit_chance: effectiveHitSB,
+        dps,
+        attacks,
+        period_ms: sbPeriod,
+        dps_valid: true,
+      });
     }
 
     if (skillName === "CR_GRANDCROSS") {

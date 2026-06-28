@@ -27,7 +27,6 @@ const BF_WEAPON_RATIOS = {
   KN_PIERCE: (lv) => 100 + 10 * lv,
   KN_BOWLINGBASH: (lv) => 100 + 40 * lv,
   CR_SHIELDCHARGE: (lv) => 100 + 20 * lv,
-  CR_SHIELDBOOMERANG: (lv) => 100 + 30 * lv,
   CR_HOLYCROSS: (lv) => 100 + 35 * lv,
   MC_MAMMONITE: (lv) => 100 + 50 * lv,
   TF_POISON: () => 100,
