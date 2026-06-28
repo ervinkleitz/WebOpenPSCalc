@@ -106,7 +106,12 @@ export default function SearchPicker({ placeholder, search, onSelect }: Props) {
         placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        onFocus={() => results.length > 0 && setOpen(true)}
+        onFocus={() => {
+          if (results.length > 0) { setOpen(true); return; }
+          if (!query.trim()) {
+            search("").then((rows) => { setResults(rows); setActiveIndex(-1); setOpen(rows.length > 0); }).catch(() => {});
+          }
+        }}
         onKeyDown={handleKeyDown}
       />
       {open && results.length > 0 && (

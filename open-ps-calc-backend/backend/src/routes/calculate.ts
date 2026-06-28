@@ -80,6 +80,41 @@ router.post("/incoming", (req: Request, res: Response) => {
   }
 });
 
+router.post("/status", (req: Request, res: Response) => {
+  try {
+    const { build: buildData } = req.body || {};
+    if (!buildData) return res.status(400).json({ error: "build is required" });
+
+    const build = buildFromSaveSchema(buildData);
+    const profile = getProfile(build.server);
+    loader.setProfile(profile);
+
+    const config = createBattleConfig();
+    const [, , weapon, status] = resolvePlayerState(build, config, profile);
+
+    res.json({
+      max_hp:    status.max_hp,
+      max_sp:    status.max_sp,
+      hp_regen:  status.hp_regen,
+      sp_regen:  status.sp_regen,
+      batk:      status.batk,
+      weapon_atk: weapon?.atk ?? 0,
+      matk_min:  status.matk_min,
+      matk_max:  status.matk_max,
+      hard_def:  status.def_,
+      soft_def:  status.def2,
+      hard_mdef: status.mdef,
+      soft_mdef: status.mdef2,
+      aspd:      status.aspd,
+      cri:       status.cri,
+      flee:      status.flee,
+    });
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: "Status calculation failed", detail: String(err.message || err) });
+  }
+});
+
 router.post("/gear-stat-bonuses", (req: Request, res: Response) => {
   try {
     const { build: buildData } = req.body || {};

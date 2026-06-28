@@ -22,6 +22,22 @@ const STAT_TO_BONUS_KEY: Record<typeof STATS[number], string> = {
 const BASE_LEVEL_CAP = 99;
 const MAX_STAT = 99;
 
+// Cumulative status points available at each base level (index = level - 1).
+// Mirrors dataLoader.js statpoint_table.json (pre-re, levels 1–99).
+// Trans 2nd jobs receive an additional +52 points.
+const STAT_POINT_BY_LEVEL: readonly number[] = [48,51,54,57,60,64,68,72,76,80,85,90,95,100,105,111,117,123,129,135,142,149,156,163,170,178,186,194,202,210,219,228,237,246,255,265,275,285,295,305,316,327,338,349,360,372,384,396,408,420,433,446,459,472,485,499,513,527,541,555,570,585,600,615,630,646,662,678,694,710,727,744,761,778,795,813,831,849,867,885,904,923,942,961,980,1000,1020,1040,1060,1080,1101,1122,1143,1164,1185,1207,1229,1251,1273];
+
+// STAT_COST_TABLE[v] = total stat points spent to bring a stat from 1 to v.
+// PS formula: cost to increment v→v+1 is 1 if v < 7, else floor(v/10) + 2.
+const STAT_COST_TABLE: readonly number[] = (() => {
+  const t: number[] = [0, 0];
+  for (let v = 2; v <= 99; v++) {
+    const s = v - 1;
+    t.push(t[v - 1] + (s < 7 ? 1 : Math.floor(s / 10) + 2));
+  }
+  return t;
+})();
+
 // Pre-renewal job level caps, derived from job_db.json's job list (28 jobs,
 // no baby classes in this dataset): Novice 10, 1st job 50, regular 2nd job
 // 50, Super Novice 99, trans 2nd job 70. Gunslinger/Ninja are classic kRO's
@@ -29,8 +45,28 @@ const MAX_STAT = 99;
 // Gunslinger references planning around "JobLv70 gunslinger", so this PS
 // instance appears to have retuned them to the trans cap instead.
 const TRANS_JOB_IDS = new Set([4008, 4009, 4010, 4011, 4012, 4013, 4015, 4016, 4017, 4018, 4019, 4020, 4021]);
-// Novice + 1st job + Super Novice: Concentration Potion only (can't use Awakening/Berserk)
+// Novice + 1st job (except Magician) + Super Novice: Concentration Potion only
 const NOVICE_OR_1ST_JOB_IDS = new Set([0, 1, 2, 3, 4, 5, 6, 23]);
+// PS rebalance: mage tree can use Berserk Potions (Magician checked before NOVICE_OR_1ST)
+const MAGE_TREE_IDS = new Set([2, 9, 16]); // Magician, Wizard, Sage
+// PS rebalance: Bard/Dancer and their trans forms are restricted to Concentration Potion
+const CONC_ONLY_IDS = new Set([19, 20, 4020, 4021]); // Bard, Dancer, Clown, Gypsy
+function getTotalStatPoints(baseLevel: number, jobId: number): number {
+  const idx = Math.min(Math.max(baseLevel, 1), STAT_POINT_BY_LEVEL.length) - 1;
+  const base = STAT_POINT_BY_LEVEL[idx] ?? 48;
+  return TRANS_JOB_IDS.has(jobId) ? base + 52 : base;
+}
+function maxAffordableStat(from: number, remaining: number): number {
+  let v = from, pts = remaining;
+  while (v < MAX_STAT) {
+    const c = v < 7 ? 1 : Math.floor(v / 10) + 2;
+    if (c > pts) break;
+    pts -= c;
+    v++;
+  }
+  return v;
+}
+
 const JOB_LEVEL_CAP_OVERRIDES: Record<number, number> = { 0: 10, 23: 99, 24: 70, 25: 70 };
 function getJobLevelCap(jobId: number): number {
   if (TRANS_JOB_IDS.has(jobId)) return 70;
@@ -40,6 +76,8 @@ function getJobLevelCap(jobId: number): number {
 // 0 (no job selected) → no restriction so the form isn't locked before a class is chosen.
 function aspdPotionCap(jobId: number): number {
   if (!jobId) return 3;
+  if (CONC_ONLY_IDS.has(jobId)) return 1;      // PS: Bard/Dancer/Clown/Gypsy — Conc only
+  if (MAGE_TREE_IDS.has(jobId)) return 3;       // PS: mage tree — Berserk allowed
   if (NOVICE_OR_1ST_JOB_IDS.has(jobId)) return 1;
   if (TRANS_JOB_IDS.has(jobId)) return 3;
   return 2;
@@ -52,6 +90,8 @@ const EQUIP_SLOTS = [
   { key: "right_hand", label: "Right hand (weapon)", itemType: "IT_WEAPON" },
   { key: "left_hand", label: "Left hand (shield / weapon)", itemType: "IT_ARMOR", loc: "EQP_SHIELD", dualWield: true },
   { key: "head_top", label: "Headgear (top)", itemType: "IT_ARMOR", loc: "EQP_HEAD_TOP" },
+  { key: "head_mid", label: "Headgear (mid)", itemType: "IT_ARMOR", loc: "EQP_HEAD_MID" },
+  { key: "head_low", label: "Headgear (low)", itemType: "IT_ARMOR", loc: "EQP_HEAD_LOW" },
   { key: "armor", label: "Armor", itemType: "IT_ARMOR", loc: "EQP_ARMOR" },
   { key: "garment", label: "Garment", itemType: "IT_ARMOR", loc: "EQP_GARMENT" },
   { key: "shoes", label: "Shoes", itemType: "IT_ARMOR", loc: "EQP_SHOES" },
@@ -178,6 +218,7 @@ const PARTY_BUFFS = [
   { key: "SC_BLESSING", label: "Blessing", max: 10, source: "Priest" },
   { key: "SC_INC_AGI", label: "Increase AGI", max: 10, source: "Priest" },
   { key: "SC_GLORIA", label: "Gloria", max: 1, source: "Priest" },
+  { key: "SC_ANGELUS", label: "Angelus", max: 5, source: "Priest" },
   { key: "SC_OVERTHRUST", label: "Overthrust", max: 10, source: "Blacksmith" },
   { key: "SC_OVERTHRUSTMAX", label: "Overthrust Max", max: 5, source: "Blacksmith" },
   { key: "SC_ADRENALINE", label: "Adrenaline Rush", max: 2, source: "Blacksmith" },
@@ -290,6 +331,7 @@ export default function BuildEditor() {
   const [jobBonusStats, setJobBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [equipBonusStats, setEquipBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [buffBonusStats, setBuffBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
+  const [charStatus, setCharStatus] = useState<any>(null);
 
   // Slots whose equipped item's job[] list doesn't include the current job_id.
   // Derived — no extra state. Assumes valid when item not yet in cache.
@@ -318,6 +360,16 @@ export default function BuildEditor() {
     return { ...data, equipped };
   }, [data, invalidSlots]);
 
+  const totalStatPoints = useMemo(
+    () => getTotalStatPoints(data.base_level, data.job_id),
+    [data.base_level, data.job_id],
+  );
+  const remainingStatPoints = useMemo(
+    () => totalStatPoints
+        - STATS.reduce((sum, s) => sum + (STAT_COST_TABLE[data.base_stats[s] ?? 1] ?? 0), 0),
+    [data.base_stats, totalStatPoints],
+  );
+
   const [calcResult, setCalcResult] = useState<any>(null);
   const [calculating, setCalculating] = useState(false);
   const [calcError, setCalcError] = useState("");
@@ -325,6 +377,15 @@ export default function BuildEditor() {
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
   const [resultsOpen, setResultsOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">(() =>
+    (localStorage.getItem("theme") as "dark" | "light") || "dark"
+  );
+  const [themeHintSeen, setThemeHintSeen] = useState(() => localStorage.getItem("themeHintSeen") === "1");
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   useEffect(() => { api.listJobs().then(setJobs).catch(() => {}); }, []);
 
@@ -400,6 +461,18 @@ export default function BuildEditor() {
   }, [JSON.stringify(data.support_buffs), JSON.stringify(data.active_buffs),
       JSON.stringify(data.mastery_levels), data.clan,
       data.base_stats.agi, data.base_stats.dex, jobBonusStats, equipBonusStats]);
+
+  // Secondary status panel (Max HP/SP, regen, ATK, MATK, DEF, MDEF, ASPD, Crit)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      api.getCharacterStatus(sanitizedBuild)
+        .then(setCharStatus)
+        .catch(() => setCharStatus(null));
+    }, 300);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(sanitizedBuild)]);
 
   // Hiding a self-buff from the panel on job change isn't enough on its own --
   // a stale value left in active_buffs from a previous job would still be
@@ -624,6 +697,25 @@ export default function BuildEditor() {
           </InfoTooltip>
         </div>
         <div className="topbar-right">
+          <div style={{ position: "relative" }}>
+            <button
+              className="ghost theme-toggle"
+              onClick={() => {
+                setTheme(t => t === "dark" ? "light" : "dark");
+                if (!themeHintSeen) {
+                  setThemeHintSeen(true);
+                  localStorage.setItem("themeHintSeen", "1");
+                }
+              }}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              title={theme === "dark" ? "Light mode" : "Dark mode"}
+            >
+              {theme === "dark" ? "☀" : "☾"}
+            </button>
+            {!themeHintSeen && (
+              <div className="theme-hint">{theme === "dark" ? "Try light mode" : "Try dark mode"}</div>
+            )}
+          </div>
           <select
             className="topbar-server-select"
             value={data.server}
@@ -723,6 +815,12 @@ export default function BuildEditor() {
                 Gloria, Attention Concentrate) — all folded into the
                 damage calculation.
               </InfoTooltip>
+              <span className={`stat-pts-counter${remainingStatPoints < 0 ? " stat-pts-counter--over" : remainingStatPoints <= 10 ? " stat-pts-counter--low" : ""}`}>
+                <span className="stat-pts-bar">
+                  <span className="stat-pts-bar__fill" style={{ width: `${(Math.min(1, Math.max(0, 1 - remainingStatPoints / totalStatPoints)) * 100).toFixed(1)}%` }} />
+                </span>
+                {remainingStatPoints.toLocaleString()} SP remaining
+              </span>
             </label>
             <div className="ro-stat-grid">
               {STATS.map((s) => {
@@ -730,6 +828,7 @@ export default function BuildEditor() {
                 const equipBonus = equipBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
                 const buffBonus = buffBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
                 const base = data.base_stats[s] ?? 1;
+                const nextCost = base < 7 ? 1 : Math.floor(base / 10) + 2;
                 return (
                   <div className="ro-stat-card" key={s}>
                     <div className="ro-stat-name">{s.toUpperCase()}</div>
@@ -741,15 +840,45 @@ export default function BuildEditor() {
                         min={1}
                         max={MAX_STAT}
                         value={base}
-                        onChange={(e) => updateField(["base_stats", s], Math.max(1, Math.min(MAX_STAT, Number(e.target.value))))}
+                        onChange={(e) => {
+                          const newVal = Math.max(1, Math.min(MAX_STAT, Number(e.target.value)));
+                          if (newVal > base) {
+                            const capped = maxAffordableStat(base, remainingStatPoints);
+                            updateField(["base_stats", s], Math.min(newVal, capped));
+                          } else {
+                            updateField(["base_stats", s], newVal);
+                          }
+                        }}
                       />
                       {jobBonus > 0 && <span className="ro-stat-bonus" title={`+${jobBonus} from job level`}>+{jobBonus}</span>}
                       {equipBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--equip" title={`+${equipBonus} from equipment`}>+{equipBonus}</span>}
                       {buffBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--buff" title={`+${buffBonus} from skills / buffs`}>+{buffBonus}</span>}
                     </div>
+                    <div className="ro-stat-cost">+{nextCost} pt</div>
                   </div>
                 );
               })}
+            </div>
+            <label style={{ marginTop: "0.9rem" }} className="section-label">Combat stats</label>
+            <div className="sec-stat-grid">
+              {([
+                { label: "Max HP",   value: charStatus?.max_hp?.toLocaleString() },
+                { label: "Max SP",   value: charStatus?.max_sp?.toLocaleString() },
+                { label: "HP Regen", value: charStatus ? `${charStatus.hp_regen} /tick` : undefined },
+                { label: "SP Regen", value: charStatus ? `${charStatus.sp_regen} /tick` : undefined },
+                { label: "ATK",      value: charStatus ? String(charStatus.batk + charStatus.weapon_atk) : undefined },
+                { label: "MATK",     value: charStatus ? `${charStatus.matk_min}–${charStatus.matk_max}` : undefined },
+                { label: "DEF",      value: charStatus ? `${charStatus.hard_def}+${charStatus.soft_def}` : undefined },
+                { label: "MDEF",     value: charStatus ? `${charStatus.hard_mdef}+${charStatus.soft_mdef}` : undefined },
+                { label: "ASPD",     value: charStatus?.aspd?.toFixed(0) },
+                { label: "Flee",     value: charStatus?.flee?.toLocaleString() },
+                { label: "Critical", value: charStatus ? `${(charStatus.cri / 10).toFixed(1)}%` : undefined },
+              ] as { label: string; value?: string }[]).map(({ label, value }) => (
+                <div key={label} className="sec-stat-card">
+                  <div className="sec-stat-label">{label}</div>
+                  <div className="sec-stat-value">{value ?? "—"}</div>
+                </div>
+              ))}
             </div>
           </Panel>
 

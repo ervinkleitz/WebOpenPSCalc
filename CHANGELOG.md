@@ -7,23 +7,6 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-06-28
 
-### Fixed
-
-- **PS class rebalance — weapon mastery ATK values** corrected per
-  [wiki.payonstories.com/Class_Rebalance](https://wiki.payonstories.com/Class_Rebalance).
-  Musical Lesson, Dancing Lesson, Iron Hand, and Axe Mastery corrected from
-  +3 to +5 ATK/lv; Mace Mastery and Katar Mastery from +3 to +4 ATK/lv.
-  All were falling through to vanilla eA values instead of PS custom values.
-
-- **Spear Mastery (`KN_SPEARMASTERY`) ATK values** corrected: +4→+5/level
-  without Peco, +5→+7/level while riding Peco.
-
-- **Dancing Lesson CRIT** (+10% at lv 10) was missing from the ATK calculation
-  due to a missing `atk_per_lv` array; CRIT gate at max level is unchanged.
-
-- **Katar Mastery CRIT** now scales per level (+0.5% per level, up to +5% at
-  lv 10) — was completely missing from the calculation (returned 0).
-
 ### Added
 
 - **Skill pill toggle in damage modal** — when a skill is selected, a pill
@@ -43,7 +26,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 - **ASPD potions filtered by class** — Awakening Potion is disabled for
   Novice and 1st-job classes; Berserk Potion is disabled for all non-trans
-  classes. Selecting an invalid potion and then switching class auto-clears it.
+  classes. Dancer, Bard, Clown, and Gypsy are restricted to Concentration
+  Potion (PS rebalance); Magician, Wizard, and Sage can use Berserk Potion
+  (PS rebalance). Selecting an invalid potion and then switching class
+  auto-clears it.
 
 - **Dancing Lesson Lv 10 CRIT bonus** (`DC_DANCINGLESSON`) now correctly adds
   +10% critical hit rate for Dancer/Gypsy. The code path in statusCalculator
@@ -79,6 +65,73 @@ instead of release version. Dates are taken from actual git commit history.
   metric card alongside hit chance, crit chance, damage range, and DPS.
   `status.aspd` was already returned by the calculate endpoint; this was a
   frontend-only addition.
+
+- **Combat stats panel** — A "Combat stats" grid below base stats shows Max HP,
+  Max SP, HP Regen, SP Regen, ATK, MATK (min–max range), DEF (hard+soft),
+  MDEF (hard+soft), ASPD, Flee, and Critical. Values come from a new
+  `POST /calculate/status` route that runs the full status pipeline without
+  requiring a battle target; updates reactively as stats or equipment change,
+  debounced 300 ms.
+
+- **Remaining status points display** — The "Base stats" label now shows a
+  thin progress bar and "N SP remaining" counter next to it. Color-coded:
+  neutral when budget is healthy, gold at ≤ 10 remaining, red when over
+  budget. Each stat card also shows the cost of the next increment ("+N pt").
+  Stat inputs are capped when raising if the remaining budget would be
+  exceeded; lowering always works. Trans 2nd jobs receive the +52 bonus on
+  top of the base-level total.
+
+- **Light/dark mode toggle** — A ☀/☾ button in the top bar switches between
+  dark (default) and light mode. The selected theme is persisted via
+  `localStorage`; an inline script in `index.html` restores it before the
+  page renders so there is no dark-to-light flash on load.
+
+- **Theme toggle hint popover** — First-time visitors see an accent-colored
+  speech bubble below the toggle reading "Try light mode" (or "Try dark mode"
+  if already on light). Dismissed permanently after the first click and never
+  shown again across sessions.
+
+- **Angelus in party buffs** (Priest, max level 5) — Added with the correct
+  PS formula: flat `+3 × level` applied to soft DEF first, then a
+  `+10% × level` multiplier. The engine previously used the vanilla-eA
+  `+5%/level` formula with no flat component; both values were wrong for PS.
+
+- **Middle and bottom headgear slots** — `head_mid` (`EQP_HEAD_MID`) and
+  `head_low` (`EQP_HEAD_LOW`) added to the equipment section. Card sub-slots
+  derive from the slot key automatically so no further changes were needed.
+
+- **Equipment dropdown opens on click** — Focusing an empty equipment slot
+  immediately shows up to 20 items for that slot without needing to type
+  first. Previously the picker stayed blank until at least one character
+  was entered.
+
+### Fixed
+
+- **PS class rebalance — weapon mastery ATK values** corrected per
+  [wiki.payonstories.com/Class_Rebalance](https://wiki.payonstories.com/Class_Rebalance).
+  Musical Lesson, Dancing Lesson, Iron Hand, and Axe Mastery corrected from
+  +3 to +5 ATK/lv; Mace Mastery and Katar Mastery from +3 to +4 ATK/lv.
+  All were falling through to vanilla eA values instead of PS custom values.
+
+- **Spear Mastery (`KN_SPEARMASTERY`) ATK values** corrected: +4→+5/level
+  without Peco, +5→+7/level while riding Peco.
+
+- **Dancing Lesson CRIT** (+10% at lv 10) was missing from the ATK calculation
+  due to a missing `atk_per_lv` array; CRIT gate at max level is unchanged.
+
+- **Katar Mastery CRIT** now scales per level (+0.5% per level, up to +5% at
+  lv 10) — was completely missing from the calculation (returned 0).
+
+- **PS stat point cost formula** — The correct PS formula charges 1 point per
+  increment for stats 1–6, then `floor(V/10) + 2` from stat 7 onwards. The
+  previous formula (`floor(V/10) + 1` uniformly) significantly under-counted:
+  a level 97 Dancer with AGI 96, DEX 98, INT 9, VIT/STR/LUK 1 showed 183 SP
+  remaining instead of 1. Remaining display, affordability cap on stat inputs,
+  and per-stat cost badge all updated.
+
+### Changed
+
+- **Combat stats grid** widened from 2 columns to 3.
 
 ### Removed
 

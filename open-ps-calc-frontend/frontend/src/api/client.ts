@@ -37,6 +37,13 @@ export const api = {
     request(`/data/skills?${new URLSearchParams(params as any)}`) as Promise<{ items: any[]; total: number }>,
   getGearStatBonuses: (build: unknown) =>
     request("/calculate/gear-stat-bonuses", { method: "POST", body: { build } }) as Promise<{ str_: number; agi: number; vit: number; int_: number; dex: number; luk: number }>,
+  getCharacterStatus: (build: unknown) =>
+    request("/calculate/status", { method: "POST", body: { build } }) as Promise<{
+      max_hp: number; max_sp: number; hp_regen: number; sp_regen: number;
+      batk: number; weapon_atk: number; matk_min: number; matk_max: number;
+      hard_def: number; soft_def: number; hard_mdef: number; soft_mdef: number;
+      aspd: number; cri: number; flee: number;
+    }>,
   calculate: (payload: unknown) =>
     request("/calculate", { method: "POST", body: payload }) as Promise<any>,
 };

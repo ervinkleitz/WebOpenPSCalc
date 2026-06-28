@@ -114,7 +114,8 @@ class StatusCalculator {
     status.def2 = status.vit + build.bonus_def2;
 
     const angelusLv = Number(support.SC_ANGELUS || 0);
-    status.def_percent = 100 + 5 * angelusLv;
+    status.def2 += 3 * angelusLv;                   // PS: flat +3 per level applied first
+    status.def_percent = 100 + 10 * angelusLv;      // PS: +10% per level (max lv5 = +50%)
 
     if ("SC_POISON" in playerScs) {
       const penalty = build.server === "payon_stories" ? 50 : 25;
