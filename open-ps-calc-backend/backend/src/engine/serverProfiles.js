@@ -229,13 +229,20 @@ const PS_BF_MAGIC_RATIOS = {
   NJ_HYOUSENSOU: () => 85,
   NJ_RAIGEKISAI: (lv) => 150 + 60 * lv,
   AL_HOLYLIGHT: (lv, tgt, ctx) => 101 + (ctx ? ctx.base_level : 125),
+  // wiki.payonstories.com/Frost_Nova: MATK% scales with the caster's own
+  // Frost Diver rank (+10% MATK per Frost Diver level), not a manual param --
+  // read straight from mastery_levels (ctx.skill_levels) via the Frost
+  // Diver passive-skill entry in dataLoader.js#getPassiveSkillsForJob.
   WZ_FROSTNOVA: (lv, tgt, ctx) => {
-    const frostdiverLv = ctx ? (ctx.skill_params.WZ_FROSTNOVA_frostdiver_lv ?? 0) : 0;
+    const frostdiverLv = ctx ? (ctx.skill_levels.MG_FROSTDIVER ?? 0) : 0;
     return 50 * lv + 10 * frostdiverLv;
   },
   PR_MAGNUS: (lv, tgt) => (tgt && (tgt.element === 9 || tgt.race === "Demon")) ? 100 : 50,
+  // wiki.payonstories.com/Fire_Pillar: each hit's MATK% scales with the
+  // caster's own Fire Wall rank (+2% MATK per hit per Fire Wall level) --
+  // same pattern as Frost Nova/Frost Diver above.
   WZ_FIREPILLAR: (lv, tgt, ctx) => {
-    const firewallLv = ctx ? (ctx.skill_params.WZ_FIREPILLAR_firewall_lv ?? 0) : 0;
+    const firewallLv = ctx ? (ctx.skill_levels.MG_FIREWALL ?? 0) : 0;
     return (2 + 2 * lv) * (70 + 2 * firewallLv);
   },
   WZ_SIGHTRASHER: (lv) => 100 + 75 * lv,

@@ -7,6 +7,26 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-06-27
 
+### Added
+
+- **Frost Diver and Fire Wall to the Wizard passive-skills panel.**
+  Both feed a damage multiplier into a *different* skill rather than
+  attacking on their own — confirmed against
+  [wiki.payonstories.com/Frost_Nova](https://wiki.payonstories.com/Frost_Nova)
+  ("+10% MATK to Frost Nova per rank of Frost Diver") and
+  [wiki.payonstories.com/Fire_Pillar](https://wiki.payonstories.com/Fire_Pillar)
+  ("+2% MATK per hit per rank of Fire Wall"). The engine's PS magic-ratio
+  formulas for `WZ_FROSTNOVA`/`WZ_FIREPILLAR` already implemented this
+  scaling correctly, but read it from a `skill_params` field the build
+  editor never exposed any input for, so it was silently always 0. Both
+  skills are normally excluded from the passive panel (they're active,
+  not passive, skills), so they needed an explicit carve-out in
+  `dataLoader.js#getPassiveSkillsForJob`; the ratio formulas now read
+  the level from `mastery_levels` like every other passive. Verified:
+  Frost Nova Lv5 goes from 250%→350% MATK and Fire Pillar Lv5 from
+  840%→1080% MATK at Frost Diver/Fire Wall level 10, matching the wiki's
+  worked examples exactly.
+
 ### Fixed
 
 - **Item scripts with quoted skill-name params (e.g. `bonus2

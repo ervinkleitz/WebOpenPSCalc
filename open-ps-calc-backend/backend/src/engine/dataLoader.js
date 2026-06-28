@@ -354,9 +354,21 @@ class DataLoader {
       "KN_CAVALIERMASTERY",
       // Proc-based extra hits on normal attacks (battlePipeline.js#calculate)
       "TF_DOUBLE",
+      // Active skills whose own level isn't used to attack with directly,
+      // but which act as a damage multiplier for a *different* skill (PS
+      // wiki: Frost Nova's MATK% scales with the caster's Frost Diver rank;
+      // Fire Pillar's per-hit MATK% scales with Fire Wall rank). Listed here
+      // so their level is reachable from the build editor at all -- see the
+      // skill_type exception below, and PS_BF_MAGIC_RATIOS in
+      // serverProfiles.js for where the level is actually consumed.
+      "MG_FROSTDIVER", "MG_FIREWALL",
     ]);
     // Some skill DB names differ from the key masteryFix.js looks up.
     const MASTERY_KEY_OVERRIDE = { "SM_TWOHAND": "SM_TWOHANDSWORD" };
+    // These are active (non-passive) skills, normally excluded by the
+    // skill_type check below -- carved out because their level still feeds
+    // into a damage formula (see DAMAGE_RELEVANT comment above).
+    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL"]);
 
     try {
       const treeData = this._loadJson("tables/skill_tree.json");
@@ -370,7 +382,7 @@ class DataLoader {
       return skillNames
         .filter((n) => DAMAGE_RELEVANT.has(n))
         .map((n) => byName[n])
-        .filter((s) => s && Array.isArray(s.skill_type) && s.skill_type.length === 0 && s.max_level > 0)
+        .filter((s) => s && s.max_level > 0 && (ACTIVE_SKILL_TYPE_EXCEPTIONS.has(s.name) || (Array.isArray(s.skill_type) && s.skill_type.length === 0)))
         .map((s) => ({
           name: s.name,
           mastery_key: MASTERY_KEY_OVERRIDE[s.name] ?? s.name,
