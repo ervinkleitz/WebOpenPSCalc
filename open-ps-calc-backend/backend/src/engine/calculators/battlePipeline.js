@@ -28,7 +28,7 @@
 const { loader } = require("../dataLoader");
 const { createCalcContext, createDamageResult, createBattleResult, createAttackDefinition } = require("../models");
 const { getProfile, STANDARD } = require("../serverProfiles");
-const { uniformPmf, scaleFloor, floorAt, pmfStats, convolve } = require("../pmf");
+const { uniformPmf, scaleFloor, floorAt, pmfStats, convolve, addFlat } = require("../pmf");
 
 const { calculateBaseDamage } = require("./modifiers/baseDamage");
 const { calculateRefineFix } = require("./modifiers/refineFix");
@@ -369,10 +369,11 @@ class BattlePipeline {
   }
 
   /**
-   * CR_SHIELDBOOMERANG — flag.weapon=0 special case (battle.c).
-   * Base damage = floor(shield_weight / 10) × skill_level, bypassing weapon ATK entirely.
-   * Skill ratio (PS: 100+40*lv, vanilla: 70+30*lv), DEF, element, and card bonuses apply normally.
-   * Always ranged; neutral element (shield is not imbued with weapon element).
+   * CR_SHIELDBOOMERANG — PS formula (wiki.payonstories.com/Shield_Boomerang):
+   *   damage = floor((BATK + shield_weight) × ratio / 100) + shield_refine × 10
+   * Ratios per level: [130, 180, 220, 260, 300].
+   * Weapon ATK and size fix are excluded. Neutral element. Mastery flat bonuses apply (PS).
+   * Ranged attack; always hits monsters (nk_ignore_flee via mechanic_flags).
    */
   _runShieldBoomerangBranch(status, weapon, skill, target, build, opts = {}) {
     const { profile = STANDARD, gear_bonuses: gearBonuses } = opts;
@@ -382,35 +383,25 @@ class BattlePipeline {
     const shieldId = build.equipped && build.equipped.left_hand;
     const shieldItem = shieldId ? loader.getItem(shieldId) : null;
     const shieldWeight = shieldItem ? (shieldItem.weight || 0) : 0;
+    const shieldRefine = (build.refine_levels && build.refine_levels.left_hand) || 0;
 
-    const baseDmg = Math.floor(shieldWeight / 10) * skill.level;
+    // item_db stores weight as 10× the in-game displayed value (e.g. Buckler: db=600, displayed=60)
+    const displayWeight = Math.floor(shieldWeight / 10);
+    // PS skill DB ratios per level (ps_skill_db.json id 251): [140, 180, 220, 260, 300]
+    const SB_RATIOS = [140, 180, 220, 260, 300];
+    const ratio = SB_RATIOS[Math.min(skill.level, SB_RATIOS.length) - 1] ?? 140;
+
+    const baseSum = status.batk + displayWeight;
+    const baseDmg = Math.floor(baseSum * ratio / 100);
     let pmf = uniformPmf(baseDmg, baseDmg);
     result.add_step({
-      name: "Shield Weight Base",
+      name: "Shield Boomerang Base",
       value: baseDmg, min_value: baseDmg, max_value: baseDmg,
       note: shieldItem
-        ? `${shieldItem.name || "Shield"} — weight ${shieldWeight} → floor(${shieldWeight}/10) × Lv${skill.level}`
-        : "No shield equipped — base damage 0",
-      formula: "floor(shield_weight/10) × skill_level",
-      hercules_ref: "battle.c ATK_ADD(weight/10*skill_lv), flag.weapon=0",
-    });
-
-    if (gearBonuses && gearBonuses.atk_rate) {
-      pmf = scaleFloor(pmf, 100 + gearBonuses.atk_rate, 100);
-      const [mn, mx, av] = pmfStats(pmf);
-      result.add_step({ name: "bAtkRate", value: av, min_value: mn, max_value: mx, multiplier: (100 + gearBonuses.atk_rate) / 100, note: `bAtkRate +${gearBonuses.atk_rate}%`, formula: `dmg*(100+${gearBonuses.atk_rate})//100`, hercules_ref: "battle.c:5330" });
-    }
-
-    const psRatioFn = (profile.weapon_ratios || {})[skillName];
-    const ratio = psRatioFn ? psRatioFn(skill.level) : 70 + 30 * skill.level; // vanilla: 100+30*(lv-1)
-    pmf = scaleFloor(pmf, ratio, 100);
-    const [rmn, rmx, rav] = pmfStats(pmf);
-    result.add_step({
-      name: `Skill Ratio (Lv ${skill.level})`,
-      value: rav, min_value: rmn, max_value: rmx, multiplier: ratio / 100,
-      note: `Shield Boomerang Lv${skill.level}: ${ratio}%`,
-      formula: psRatioFn ? `PS: (100+40*lv) = ${ratio}%` : `vanilla: (70+30*lv) = ${ratio}%`,
-      hercules_ref: "battle.c battle_calc_skillratio CR_SHIELDBOOMERANG",
+        ? `BATK ${status.batk} + ${shieldItem.name || "shield"} weight ${displayWeight} (db:${shieldWeight}/10) = ${baseSum} × ${ratio}%`
+        : `BATK ${status.batk} (no shield equipped) × ${ratio}%`,
+      formula: `floor((BATK + shield_weight_displayed) × ${ratio} / 100)`,
+      hercules_ref: "wiki.payonstories.com/Shield_Boomerang — PS formula",
     });
 
     const skillAtkBonus = gearBonuses ? (gearBonuses.skill_atk[skillName] || 0) : 0;
@@ -422,7 +413,35 @@ class BattlePipeline {
 
     pmf = calculateDefenseFix(target, build, gearBonuses, pmf, this.config, result, { is_crit: false, skill });
 
-    // Neutral element — shield is not imbued with weapon element
+    // Mastery flat bonuses apply on PS (wiki.payonstories.com/Shield_Boomerang)
+    const ctx = createCalcContext({
+      skill_levels: gearBonuses ? gearBonuses.effective_mastery : build.mastery_levels,
+      skill_params: build.skill_params,
+      base_level: build.base_level,
+      base_str: build.base_str,
+      str_: status.str,
+      vit: status.vit,
+      dex: status.dex,
+      int_: status.int_,
+      weapon_type: weapon ? weapon.weapon_type : "",
+    });
+    pmf = calculateMasteryFix(weapon, build, target, pmf, result, skill, { profile, ctx });
+
+    // Shield upgrade: +10 flat per refine level, added post-DEF like atk2
+    if (shieldRefine > 0) {
+      const refineFlat = shieldRefine * 10;
+      pmf = addFlat(pmf, refineFlat);
+      const [mn, mx, av] = pmfStats(pmf);
+      result.add_step({
+        name: "Shield Upgrade Bonus",
+        value: av, min_value: mn, max_value: mx,
+        note: `+${shieldRefine} refine × 10 = flat +${refineFlat}`,
+        formula: "damage + shield_refine × 10",
+        hercules_ref: "wiki.payonstories.com/Shield_Boomerang",
+      });
+    }
+
+    // Neutral element — always, regardless of weapon element
     pmf = calculateAttrFix(weapon, target, pmf, result, build, 0 /* Ele_Neutral */);
 
     pmf = calculateCardFix(build, gearBonuses, 0 /* Ele_Neutral */, target, true /* isRanged */, pmf, result);
@@ -432,7 +451,7 @@ class BattlePipeline {
     pmf = floorAt(pmf, 1);
 
     const [mn, mx, av] = pmfStats(pmf);
-    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Shield Boomerang branch (flag.weapon=0, shield weight base)", formula: "", hercules_ref: "" });
+    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Shield Boomerang branch", formula: "", hercules_ref: "" });
     result.min_damage = mn;
     result.max_damage = mx;
     result.avg_damage = av;

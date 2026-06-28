@@ -42,6 +42,7 @@ export interface SkillState {
   id: number;
   level: number;
   label: string;
+  max_level: number;
 }
 
 export interface CustomTarget {
@@ -79,6 +80,7 @@ export interface SearchResult {
   label: string;
   sublabel: string;
   disabled?: boolean;
+  max_level?: number;
 }
 
 export type TargetMode = "monster" | "custom";

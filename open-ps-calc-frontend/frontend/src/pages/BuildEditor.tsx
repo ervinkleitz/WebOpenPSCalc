@@ -293,7 +293,7 @@ function computeBuffStatBonuses(
   return b;
 }
 
-const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack" };
+const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack", max_level: 10 };
 
 const DEFAULT_CUSTOM_TARGET: CustomTarget = {
   def_: 0, mdef_: 0, vit: 1, level: 1, size: "Medium", race: "Formless",
@@ -325,7 +325,7 @@ export default function BuildEditor() {
   })();
 
   const [data, setData] = useState<BuildData>(initialState?.build ?? DEFAULT_BUILD);
-  const [skill, setSkill] = useState<SkillState>(initialState?.skill ?? DEFAULT_SKILL);
+  const [skill, setSkill] = useState<SkillState>({ ...DEFAULT_SKILL, ...(initialState?.skill ?? {}) });
   const [targetMode, setTargetMode] = useState<TargetMode>(initialState?.targetMode ?? "monster");
   const [customTarget, setCustomTarget] = useState<CustomTarget>(initialState?.customTarget ?? DEFAULT_CUSTOM_TARGET);
 
@@ -393,6 +393,21 @@ export default function BuildEditor() {
   }, [theme]);
 
   useEffect(() => { api.listJobs().then(setJobs).catch(() => {}); }, []);
+
+  // Keep skill.max_level in sync whenever the selected skill changes
+  useEffect(() => {
+    if (skill.id === 0) return;
+    api.getSkillById(skill.id, data.server)
+      .then((s) => {
+        const cap = s.max_level ?? 10;
+        setSkill((prev) => ({
+          ...prev,
+          max_level: cap,
+          level: Math.max(1, Math.min(cap, prev.level)),
+        }));
+      })
+      .catch(() => {});
+  }, [skill.id, data.server]);
 
   // Keep URL in sync with editor state (debounced 400ms)
   useEffect(() => {
@@ -618,7 +633,7 @@ export default function BuildEditor() {
 
   function onLoadSavedState(state: UrlEditorState) {
     setData(state.build);
-    setSkill(state.skill);
+    setSkill({ ...DEFAULT_SKILL, ...state.skill });
     setTargetMode(state.targetMode);
     setCustomTarget(state.customTarget);
     setCalcResult(null);
@@ -674,7 +689,7 @@ export default function BuildEditor() {
   const skillSearch = useCallback(
     (query: string): Promise<SearchResult[]> =>
       api.searchSkills({ q: query, limit: 12, server: data.server })
-        .then((r) => r.items.map((s: any) => ({ id: s.id, label: s.display_name || s.name || `Skill ${s.id}`, sublabel: s.name }))),
+        .then((r) => r.items.map((s: any) => ({ id: s.id, label: s.display_name || s.name || `Skill ${s.id}`, sublabel: s.name, max_level: s.max_level ?? 10 }))),
     [data.server],
   );
 
@@ -1256,10 +1271,10 @@ export default function BuildEditor() {
                   className="mono"
                   type="number"
                   min={1}
-                  max={10}
+                  max={skill.max_level}
                   style={{ width: 60 }}
                   value={skill.level}
-                  onChange={(e) => setSkill((s) => ({ ...s, level: Number(e.target.value) }))}
+                  onChange={(e) => setSkill((s) => ({ ...s, level: Math.max(1, Math.min(s.max_level, Number(e.target.value))) }))}
                 />
               )}
             </div>
@@ -1271,7 +1286,7 @@ export default function BuildEditor() {
               <SearchPicker
                 placeholder="Search skills…"
                 search={skillSearch}
-                onSelect={(r) => setSkill({ id: r.id, level: 1, label: r.label })}
+                onSelect={(r) => setSkill({ id: r.id, level: 1, label: r.label, max_level: r.max_level ?? 10 })}
               />
             </div>
           </Panel>
