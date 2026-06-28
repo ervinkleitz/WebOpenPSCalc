@@ -50,7 +50,8 @@ interface Props {
 // "skill" = selected skill's normal hit
 // "normal" = basic auto-attack
 // "crit" = crit version of whichever is primary (skill if selected, else auto)
-type Branch = "skill" | "normal" | "crit";
+// "falcon" = falcon / blitz damage breakdown
+type Branch = "skill" | "normal" | "crit" | "falcon";
 
 function StepRow({ step }: { step: Step }) {
   return (
@@ -63,24 +64,21 @@ function StepRow({ step }: { step: Step }) {
   );
 }
 
-function FalconSection({ falcon }: { falcon: FalconResult }) {
+function FalconView({ falcon }: { falcon: FalconResult }) {
   return (
-    <div className="falcon-section">
-      <div className="buff-section-header">Falcon</div>
-      <div className="falcon-rows">
+    <div className="falcon-rows">
+      <div className="falcon-row">
+        <span className="falcon-label">Auto-blitz (1 hit)</span>
+        <span className="falcon-value">{falcon.auto_blitz_total}</span>
+      </div>
+      {falcon.blitz_beat_total != null && (
         <div className="falcon-row">
-          <span className="falcon-label">Auto-blitz (1 hit)</span>
-          <span className="falcon-value">{falcon.auto_blitz_total}</span>
+          <span className="falcon-label">Blitz Beat Lv {falcon.blitz_beat_lv} ({falcon.blitz_beat_lv} × {falcon.per_hit})</span>
+          <span className="falcon-value">{falcon.blitz_beat_total}</span>
         </div>
-        {falcon.blitz_beat_total != null && (
-          <div className="falcon-row">
-            <span className="falcon-label">Blitz Beat Lv {falcon.blitz_beat_lv} ({falcon.blitz_beat_lv} × {falcon.per_hit})</span>
-            <span className="falcon-value">{falcon.blitz_beat_total}</span>
-          </div>
-        )}
-        <div className="falcon-note">
-          Steel Crow Lv {falcon.steel_crow_lv} · neutral element · bypasses DEF
-        </div>
+      )}
+      <div className="falcon-note">
+        Steel Crow Lv {falcon.steel_crow_lv} · bypasses DEF · neutral element vs target
       </div>
     </div>
   );
@@ -98,21 +96,24 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
   // The "primary" result is the skill result when a skill is selected, otherwise the auto-attack.
   const primary = hasSkill ? skillResult! : normal_attack;
   const hasCrit = !!primary.result.crit;
+  const falcon = (skillResult ?? normal_attack)?.falcon;
+  const hasFalcon = !!falcon;
 
   // Clamp branch to valid options
   const activeBranch: Branch =
     branch === "skill" && !hasSkill ? "normal"
     : branch === "crit" && !hasCrit ? (hasSkill ? "skill" : "normal")
+    : branch === "falcon" && !hasFalcon ? (hasSkill ? "skill" : "normal")
     : branch;
 
-  // Which SingleResult provides the status row and step breakdown
+  // Which SingleResult provides the metrics and step breakdown (not used for falcon branch)
   const activeResult: SingleResult = activeBranch === "normal" ? normal_attack : primary;
-  const activeDamage: DamageBranch =
-    activeBranch === "crit" ? primary.result.crit! : activeResult.result.normal;
+  const activeDamage: DamageBranch | null = activeBranch === "falcon"
+    ? null
+    : activeBranch === "crit" ? primary.result.crit! : activeResult.result.normal;
 
-  const notImplemented = activeDamage.steps?.length === 1 && activeDamage.steps[0].name === "Not yet implemented";
+  const notImplemented = activeDamage?.steps?.length === 1 && activeDamage.steps[0].name === "Not yet implemented";
   const { result, status } = activeResult;
-  const falcon = (skillResult ?? normal_attack)?.falcon;
 
   return (
     <div>
@@ -129,7 +130,7 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
           <div className="label">ASPD</div>
           <div className="value">{status.aspd.toFixed(1)}</div>
         </div>
-        {(activeDamage.min_damage != null && activeDamage.max_damage != null) && (
+        {activeDamage && activeDamage.min_damage != null && activeDamage.max_damage != null && (
           <div className="metric metric-range">
             <div className="label">Damage range</div>
             <div className="value range">
@@ -145,14 +146,14 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
         </div>
       </div>
 
-      {notImplemented && (
+      {notImplemented && activeDamage && (
         <div className="notice warn">{activeDamage.steps[0].note}</div>
       )}
 
       <div className="branch-toggle">
         {/* Skill pill — primary view when a skill is selected */}
         <button
-          className={`branch-skill-pill${activeBranch === "skill" && hasSkill ? " active" : ""}${!hasSkill ? (activeBranch === "normal" ? " active" : "") : ""}`}
+          className={`branch-skill-pill${activeBranch === "skill" && hasSkill ? " active" : ""}${!hasSkill && activeBranch === "normal" ? " active" : ""}`}
           onClick={() => setBranch(hasSkill ? "skill" : "normal")}
         >
           {hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}` : "Normal Attack"}
@@ -176,15 +177,24 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
             Critical hit
           </button>
         )}
+
+        {hasFalcon && (
+          <button
+            className={`branch-falcon-pill${activeBranch === "falcon" ? " active" : ""}`}
+            onClick={() => setBranch("falcon")}
+          >
+            Falcon
+          </button>
+        )}
       </div>
 
-      {!notImplemented && (
+      {activeBranch === "falcon" && falcon ? (
+        <FalconView falcon={falcon} />
+      ) : !notImplemented && activeDamage ? (
         <div className="step-list">
           {activeDamage.steps.map((step, i) => <StepRow step={step} key={i} />)}
         </div>
-      )}
-
-      {falcon && <FalconSection falcon={falcon} />}
+      ) : null}
     </div>
   );
 }

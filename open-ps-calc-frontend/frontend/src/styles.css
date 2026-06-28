@@ -382,6 +382,8 @@ label {
 .branch-toggle button.active { border-color: var(--accent); color: var(--accent); }
 .branch-skill-pill { background: var(--accent-subtle, rgba(99,179,237,0.08)); border-color: var(--accent) !important; font-weight: 600; }
 .branch-skill-pill.active { background: var(--accent-subtle, rgba(99,179,237,0.15)); }
+.branch-falcon-pill { border-color: var(--success, #68d391) !important; color: var(--success, #68d391); }
+.branch-falcon-pill.active { background: rgba(104,211,145,0.12); }
 
 .step-list { display: flex; flex-direction: column; gap: 0.35rem; max-height: 480px; overflow-y: auto; }
 .step-row {

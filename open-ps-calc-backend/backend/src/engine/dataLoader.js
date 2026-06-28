@@ -354,6 +354,8 @@ class DataLoader {
       "KN_CAVALIERMASTERY",
       // Proc-based extra hits on normal attacks (battlePipeline.js#calculate)
       "TF_DOUBLE",
+      // Falcon damage (falconCalc.js): mastery enables it, Steel Crow/Blitz Beat scale it
+      "HT_FALCON", "HT_STEELCROW", "HT_BLITZBEAT",
       // Active skills whose own level isn't used to attack with directly,
       // but which act as a damage multiplier for a *different* skill (PS
       // wiki: Frost Nova's MATK% scales with the caster's Frost Diver rank;
@@ -368,7 +370,7 @@ class DataLoader {
     // These are active (non-passive) skills, normally excluded by the
     // skill_type check below -- carved out because their level still feeds
     // into a damage formula (see DAMAGE_RELEVANT comment above).
-    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL"]);
+    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT"]);
 
     try {
       const treeData = this._loadJson("tables/skill_tree.json");
