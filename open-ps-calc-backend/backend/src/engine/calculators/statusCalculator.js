@@ -48,9 +48,6 @@ class StatusCalculator {
     const acOwlLv = mastery.AC_OWL || 0;
     if (acOwlLv) status.dex += acOwlLv;
 
-    const intForMaxsp = status.int_;
-    const vitForMaxhp = status.vit;
-
     // === SC STAT MODIFIERS ===
     if ("SC_SHOUT" in activeSc) status.str += 4;
 
@@ -372,7 +369,7 @@ class StatusCalculator {
 
     // === MAX HP ===
     const hpBase = loader.getHpAtLevel(build.job_id, build.base_level);
-    status.max_hp = Math.floor(hpBase * (100 + vitForMaxhp) / 100);
+    status.max_hp = Math.floor(hpBase * (100 + status.vit) / 100);
     status.max_hp += build.bonus_maxhp;
 
     const crTrustLv = mastery.CR_TRUST || 0;
@@ -390,7 +387,7 @@ class StatusCalculator {
 
     // === MAX SP ===
     const spBase = loader.getSpAtLevel(build.job_id, build.base_level);
-    status.max_sp = Math.floor(spBase * (100 + intForMaxsp) / 100);
+    status.max_sp = Math.floor(spBase * (100 + status.int_) / 100);
     status.max_sp += build.bonus_maxsp;
     if (build.bonus_maxsp_rate) {
       status.max_sp = Math.floor(status.max_sp * (100 + build.bonus_maxsp_rate) / 100);
@@ -508,7 +505,7 @@ class StatusCalculator {
     if (drumLv) status.def_ += (drumLv + 1) * 2;
 
     // === REGEN ===
-    status.hp_regen = 1 + Math.floor(status.vit / 5) + Math.floor(status.max_hp / 200);
+    status.hp_regen = Math.max(1, Math.floor(status.max_hp / 200)) + Math.floor(status.vit / 5);
     status.sp_regen = 1 + Math.floor(status.int_ / 6) + Math.floor(status.max_sp / 100);
     if (status.int_ >= 120) status.sp_regen += Math.floor((status.int_ - 120) / 2) + 4;
 

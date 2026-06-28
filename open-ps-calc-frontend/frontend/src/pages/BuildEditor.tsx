@@ -5,7 +5,7 @@ import SearchPicker from "../components/SearchPicker";
 import Panel from "../components/Panel";
 import InfoTooltip from "../components/InfoTooltip";
 import ChangelogModal from "../components/ChangelogModal";
-import ResultsModal from "../components/ResultsModal";
+import ResultsPanel from "../components/ResultsPanel";
 import SavedBuildsModal from "../components/SavedBuildsModal";
 import {
   BuildData, SkillState, CustomTarget, TargetMode,
@@ -765,7 +765,7 @@ export default function BuildEditor() {
           currentState={currentEditorState}
           onLoad={onLoadSavedState}
         />
-        <ResultsModal
+        <ResultsPanel
           open={resultsOpen}
           onClose={() => setResultsOpen(false)}
           calcResult={calcResult}

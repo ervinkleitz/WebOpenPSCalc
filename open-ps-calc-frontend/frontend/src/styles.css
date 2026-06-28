@@ -538,6 +538,35 @@ label {
 
 .results-modal { max-width: 760px; }
 
+/* ---------------- Results panel (inline) ---------------- */
+.results-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+.results-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1.4rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+.results-panel-header h2 { font-size: 1.05rem; color: var(--accent); margin: 0; }
+.results-panel-header button {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0.1rem 0.4rem;
+  cursor: pointer;
+}
+.results-panel-header button:hover { color: var(--text); }
+.results-panel-body { padding: 1.2rem 1.4rem 1.4rem; }
+
 .saved-builds-modal { max-width: 520px; }
 .saved-builds-save-row { align-items: flex-end; margin-bottom: 0.4rem; }
 .saved-builds-list { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
