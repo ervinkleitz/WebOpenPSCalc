@@ -28,6 +28,10 @@ router.get("/items", (req: Request, res: Response) => {
     const q = String(req.query.q).toLowerCase();
     items = items.filter((it: any) => (it.name || "").toLowerCase().includes(q) || (it.aegis_name || "").toLowerCase().includes(q));
   }
+  if (req.query.job !== undefined) {
+    const jobId = Number(req.query.job);
+    items = items.filter((it: any) => !Array.isArray(it.job) || it.job.length === 0 || it.job.includes(jobId));
+  }
   items = items.filter((it: any) => !loader.isItemHidden(it.id));
   res.json(paginate(items, req));
 });

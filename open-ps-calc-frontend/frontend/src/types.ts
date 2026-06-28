@@ -70,6 +70,7 @@ export interface EquippedItemInfo {
   name: string;
   slots?: number;
   refineable?: boolean;
+  job?: number[];
 }
 
 export interface SearchResult {

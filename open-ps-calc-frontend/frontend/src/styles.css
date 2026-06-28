@@ -293,6 +293,7 @@ label {
 .ro-stat-detail input { width: 4.5rem; text-align: center; padding: 0.35rem 0.4rem; }
 .ro-stat-bonus { font-size: 0.75rem; color: var(--good); font-family: var(--mono); white-space: nowrap; }
 .ro-stat-bonus--equip { color: var(--link); }
+.ro-stat-bonus--buff  { color: var(--accent); }
 
 .equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
 
@@ -347,6 +348,8 @@ label {
   padding: 0.5rem 0.65rem; font-size: 0.85rem;
 }
 .selected-pill button { padding: 0.2rem 0.5rem; font-size: 0.75rem; }
+.selected-pill--invalid { border-color: var(--crit); background: rgba(226,104,92,0.08); }
+.selected-pill--invalid > span:first-child { color: var(--crit); }
 
 /* ---------------- Summary ---------------- */
 .summary-headline { display: flex; gap: 1.4rem; flex-wrap: wrap; margin-bottom: 1rem; }

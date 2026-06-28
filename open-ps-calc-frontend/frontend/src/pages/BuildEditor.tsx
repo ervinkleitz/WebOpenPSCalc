@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import SearchPicker from "../components/SearchPicker";
@@ -174,6 +174,18 @@ const SONG_BUFFS = [
   { key: "SC_POEMBRAGI", label: "Poem of Bragi", max: 10 },
 ] as const;
 
+// Only support_buffs can add to flat base stats — self buffs (quicken, fury,
+// etc.) and songs (humming, fortune) only affect derived stats like ASPD/HIT/CRI.
+function computeBuffStatBonuses(supportBuffs: Record<string, unknown> = {}): Record<string, number> {
+  const b = { str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 };
+  const blessingLv = (supportBuffs.SC_BLESSING as number) || 0;
+  if (blessingLv > 0) { b.str_ += blessingLv; b.int_ += blessingLv; b.dex += blessingLv; }
+  const incAgiLv = (supportBuffs.SC_INC_AGI as number) || 0;
+  if (incAgiLv > 0) { b.agi += 2 + incAgiLv; }
+  if (supportBuffs.SC_GLORIA) { b.luk += 30; }
+  return b;
+}
+
 const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack" };
 
 const DEFAULT_CUSTOM_TARGET: CustomTarget = {
@@ -216,6 +228,34 @@ export default function BuildEditor() {
   const [mobInfo, setMobInfo] = useState<{ name: string; level: number } | null>(null);
   const [jobBonusStats, setJobBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [equipBonusStats, setEquipBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
+  const [buffBonusStats, setBuffBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
+
+  // Slots whose equipped item's job[] list doesn't include the current job_id.
+  // Derived — no extra state. Assumes valid when item not yet in cache.
+  const invalidSlots = useMemo(() => {
+    const invalid = new Set<string>();
+    for (const slot of EQUIP_SLOTS) {
+      if (slot.itemType === "IT_AMMO") continue; // ammo restrictions enforced by search filter only
+      const equippedId = data.equipped[slot.key] as number | null | undefined;
+      if (equippedId == null) continue;
+      const item = itemCache[equippedId];
+      if (!item?.job || item.job.length === 0) continue;
+      if (!item.job.includes(data.job_id)) invalid.add(slot.key);
+    }
+    return invalid;
+  }, [data.equipped, data.job_id, itemCache]);
+
+  // Build sent to the backend — same as `data` but with invalid slots nulled out
+  // so they don't affect gear bonus badges or the damage calculation.
+  const sanitizedBuild = useMemo(() => {
+    if (invalidSlots.size === 0) return data;
+    const equipped = { ...data.equipped };
+    for (const slotKey of invalidSlots) {
+      equipped[slotKey] = null;
+      for (let i = 1; i <= 4; i++) delete equipped[`${slotKey}_card${i}`];
+    }
+    return { ...data, equipped };
+  }, [data, invalidSlots]);
 
   const [calcResult, setCalcResult] = useState<any>(null);
   const [calculating, setCalculating] = useState(false);
@@ -274,14 +314,19 @@ export default function BuildEditor() {
     const hasEquipped = Object.values(data.equipped).some((v) => v != null);
     if (!hasEquipped) { setEquipBonusStats(zero); return; }
     const timer = setTimeout(() => {
-      api.getGearStatBonuses(data).then(setEquipBonusStats).catch(() => setEquipBonusStats(zero));
+      api.getGearStatBonuses(sanitizedBuild).then(setEquipBonusStats).catch(() => setEquipBonusStats(zero));
     }, 300);
     return () => clearTimeout(timer);
   // JSON.stringify lets us deep-compare the objects that actually drive gear scripts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(data.equipped), JSON.stringify(data.refine), data.server,
+  }, [JSON.stringify(sanitizedBuild.equipped), JSON.stringify(data.refine), data.server,
       JSON.stringify(data.base_stats), data.job_id, data.job_level, data.base_level,
       JSON.stringify(data.bonus_stats), data.selected_pet]);
+
+  useEffect(() => {
+    setBuffBonusStats(computeBuffStatBonuses(data.support_buffs as Record<string, unknown>));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(data.support_buffs)]);
 
   // Hiding a self-buff from the panel on job change isn't enough on its own --
   // a stale value left in active_buffs from a previous job would still be
@@ -379,7 +424,7 @@ export default function BuildEditor() {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
         : customTarget;
-      const payload = { build: data, skill: { id: skill.id, level: skill.level }, target };
+      const payload = { build: sanitizedBuild, skill: { id: skill.id, level: skill.level }, target };
       const res = await api.calculate(payload);
       setCalcResult(res);
     } catch (e: any) {
@@ -421,21 +466,21 @@ export default function BuildEditor() {
 
   const itemSearch = useCallback(
     (itemType: string, loc?: string) => (query: string): Promise<SearchResult[]> =>
-      api.searchItems({ type: itemType, ...(loc ? { loc } : {}), q: query, limit: 12, server: data.server })
+      api.searchItems({ type: itemType, ...(loc ? { loc } : {}), q: query, limit: 12, server: data.server, job: data.job_id })
         .then((r) => r.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `#${it.id}` }))),
-    [data.server],
+    [data.server, data.job_id],
   );
 
   const leftHandSearch = useCallback(
     (query: string): Promise<SearchResult[]> =>
       Promise.all([
-        api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: 12, server: data.server }),
-        api.searchItems({ type: "IT_WEAPON", q: query, limit: 12, server: data.server }),
+        api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: 12, server: data.server, job: data.job_id }),
+        api.searchItems({ type: "IT_WEAPON", q: query, limit: 12, server: data.server, job: data.job_id }),
       ]).then(([shields, weapons]) => [
         ...shields.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Shield #${it.id}` })),
         ...weapons.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Weapon #${it.id}` })),
       ]),
-    [data.server],
+    [data.server, data.job_id],
   );
 
   const mobSearch = useCallback(
@@ -569,21 +614,23 @@ export default function BuildEditor() {
               Base stats
               <InfoTooltip>
                 The bold total includes the job-level stat bonus your class
-                gets automatically (e.g. a Knight's STR/VIT growth) and any
-                flat stat bonuses from equipped items (bStr, bAgi, etc.) on
-                top of the base value — both are already folded into the
-                damage calculation either way.
+                gets automatically (e.g. a Knight's STR/VIT growth), flat
+                stat bonuses from equipped items (bStr, bAgi, etc.), and
+                buff bonuses (Blessing → STR/INT/DEX; Inc AGI → AGI;
+                Gloria → LUK) — all already folded into the damage
+                calculation.
               </InfoTooltip>
             </label>
             <div className="ro-stat-grid">
               {STATS.map((s) => {
                 const jobBonus = jobBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
                 const equipBonus = equipBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
+                const buffBonus = buffBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
                 const base = data.base_stats[s] ?? 1;
                 return (
                   <div className="ro-stat-card" key={s}>
                     <div className="ro-stat-name">{s.toUpperCase()}</div>
-                    <div className="ro-stat-total">{base + jobBonus + equipBonus}</div>
+                    <div className="ro-stat-total">{base + jobBonus + equipBonus + buffBonus}</div>
                     <div className="ro-stat-detail">
                       <input
                         className="mono"
@@ -595,6 +642,7 @@ export default function BuildEditor() {
                       />
                       {jobBonus > 0 && <span className="ro-stat-bonus" title={`+${jobBonus} from job level`}>+{jobBonus}</span>}
                       {equipBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--equip" title={`+${equipBonus} from equipment`}>+{equipBonus}</span>}
+                      {buffBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--buff" title={`+${buffBonus} from buffs`}>+{buffBonus}</span>}
                     </div>
                   </div>
                 );
@@ -609,12 +657,14 @@ export default function BuildEditor() {
                 const item = equippedId != null ? itemCache[equippedId] : null;
                 const cardSlotCount = item?.slots ?? 0;
                 const isRefineable = item?.refineable ?? false;
+                const isInvalid = invalidSlots.has(slot.key);
                 return (
                   <div key={slot.key} className="field">
                     <label>{slot.label}</label>
                     {equippedId != null ? (
-                      <div className="selected-pill">
-                        <span>
+                      <>
+                      <div className={`selected-pill${isInvalid ? " selected-pill--invalid" : ""}`}>
+                        <span title={isInvalid ? "Not equippable by this class — excluded from calculation" : undefined}>
                           {item ? item.name : `Item #${equippedId}`}
                           {isRefineable ? ` +${data.refine[slot.key] || 0}` : ""}
                         </span>
@@ -631,6 +681,12 @@ export default function BuildEditor() {
                           Unequip
                         </button>
                       </div>
+                      {isInvalid && (
+                        <span style={{ fontSize: "0.72rem", color: "var(--crit)", marginTop: "0.2rem", display: "block" }}>
+                          Not equippable by this class
+                        </span>
+                      )}
+                      </>
                     ) : (
                       <SearchPicker
                         placeholder={`Search ${slot.label.toLowerCase()}…`}

@@ -9,6 +9,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Equipment filtered by class** — item search dropdowns now only show gear
+  equippable by the currently selected job (e.g. switching to Mage hides
+  two-handed swords). If the class is changed after equipping an item that
+  the new class cannot use, the slot is highlighted in red with a "Not
+  equippable by this class" notice and the item is silently excluded from
+  the damage calculation and equipment stat bonuses until unequipped.
+
 - **Pet section** (Payon Stories server) — panel 03, placed in the left
   column below Equipment to balance the two-column layout. A dropdown lets
   you select your active pet; bonuses activate at Cordial (750+ intimacy) and
