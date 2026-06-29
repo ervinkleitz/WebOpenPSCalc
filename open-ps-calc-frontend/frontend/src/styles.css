@@ -124,6 +124,21 @@ label {
 /* ---------------- Layout shells ---------------- */
 .app-shell { min-height: 100%; display: flex; flex-direction: column; }
 
+.credits-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--border-soft);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  text-align: center;
+}
+.credits-sep { opacity: 0.4; }
+.credits-names { color: var(--text-dim); }
+
 .topbar {
   display: flex;
   align-items: center;

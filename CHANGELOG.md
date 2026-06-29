@@ -18,10 +18,16 @@ instead of release version. Dates are taken from actual git commit history.
   level 99 the old calc reported 3 fewer remaining points than it should,
   blocking stat increases that the server allows.
 
-- **ASPD potion cap — Acolyte classes** — Priest, Monk, High Priest, and
-  Champion are now restricted to Concentration Potion only (same as Bard /
-  Dancer), matching Payon Stories rebalance rules. Acolyte was already
-  correct via the 1st-job cap.
+- **ASPD potion cap — Acolyte classes** — Priest and High Priest are
+  restricted to Concentration Potion only (same as Bard / Dancer), matching
+  Payon Stories rebalance rules. Monk and Champion are capped at Awakening
+  Potion. Acolyte was already correct via the 1st-job cap.
+
+### Added
+
+- **Credits footer** — Added a footer crediting Discord testers (Metan,
+  hokageyyy, leafhill, knightzeroxx, kerfuffl) and tochoco.latte for the
+  initial base engine.
 
 ## 2026-06-28 (Monk rework)
 

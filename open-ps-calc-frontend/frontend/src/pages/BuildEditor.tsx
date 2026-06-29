@@ -56,7 +56,7 @@ const BERSERK_NON_TRANS_IDS = new Set([
 ]);
 // PS rebalance: these classes are restricted to Concentration Potion
 const CONC_ONLY_IDS = new Set([
-  8, 15, 4009, 4016,   // Acolyte tree: Priest, Monk, High Priest, Champion
+  8, 4009,              // Acolyte tree: Priest, High Priest
   19, 20, 4020, 4021,  // Archer tree: Bard, Dancer, Clown, Gypsy
 ]);
 function getTotalStatPoints(baseLevel: number, jobId: number): number {
@@ -1390,6 +1390,17 @@ export default function BuildEditor() {
         </div>
       </div>
       </div>
+
+      <footer className="credits-footer">
+        <span>
+          Thanks to our testers:&nbsp;
+          <span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl</span>
+        </span>
+        <span className="credits-sep">·</span>
+        <span>
+          Base engine by&nbsp;<span className="credits-names">tochoco.latte</span>
+        </span>
+      </footer>
     </div>
   );
 }
