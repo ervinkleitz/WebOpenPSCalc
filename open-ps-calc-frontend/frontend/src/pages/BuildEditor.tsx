@@ -190,6 +190,7 @@ const SELF_BUFFS = [
   { key: "SC_ONEHANDQUICKEN",  label: "One-Hand Quicken",      max: 10, jobs: [7, 4008] },
   // Crusader / Paladin
   { key: "SC_SPEARQUICKEN",    label: "Spear Quicken",         max: 10, jobs: [14, 4015] },
+  { key: "SC_PROVIDENCE",      label: "Providence",            max: 5,  jobs: [14, 4015] },
   // Blacksmith / Whitesmith — SC_SHOUT adds STR+4 in statusCalculator.js
   { key: "SC_MAXIMIZEPOWER",   label: "Maximize Power",        max: 1,  jobs: [10, 4011] },
   { key: "SC_SHOUT",           label: "Loud Exclamation",      max: 1,  jobs: [10, 4011] },

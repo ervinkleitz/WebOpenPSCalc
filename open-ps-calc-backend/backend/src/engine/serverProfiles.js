@@ -89,6 +89,7 @@ const PS_PASSIVE_OVERRIDES = {
   PR_MACEMASTERY:   { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40] },                  // +4 ATK/lv
   AM_AXEMASTERY:    { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
   AS_KATAR:         { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40], cri_per_lv: 5 },  // +4 ATK/lv, +0.5% CRIT/lv
+  SC_SPEARQUICKEN:  { hit_per_lv: 1, flee_per_lv: 1 },                                        // PS rework: no CRI, +1 HIT/lv, +1 FLEE/lv
 };
 
 const PS_JOB_BONUSES = {

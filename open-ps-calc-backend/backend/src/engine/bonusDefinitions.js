@@ -97,6 +97,7 @@ const BONUS1 = {
   bMaxSPrate: def((v) => (v > 0 ? `MaxSP +${v}%.` : `MaxSP ${v}%.`), "maxsp_rate"),
 
   bDef: def((v) => (v > 0 ? `DEF +${v}.` : `DEF ${v}.`), "def_"),
+  bVitDef: def((v) => (v > 0 ? `Soft DEF +${v}.` : `Soft DEF ${v}.`), "def2"),
   bMdef: def((v) => (v > 0 ? `MDEF +${v}.` : `MDEF ${v}.`), "mdef_"),
   bNearAtkDef: def((v) => `Near-range damage resistance +${v}%.`, "near_atk_def_rate"),
   bLongAtkDef: def((v) => `Long-range damage resistance +${v}%.`, "long_atk_def_rate"),

@@ -103,6 +103,7 @@ function applyGearBonuses(build, gearBonuses) {
     bonus_flee: build.bonus_flee + gb.flee + (ma.flee || 0) + (cons.flee || 0),
     bonus_cri: build.bonus_cri + gb.cri + (ma.cri || 0) + (cons.cri || 0),
     equip_def: build.equip_def + gb.def_ + (ma.def || 0),
+    bonus_def2: build.bonus_def2 + gb.def2,
     equip_mdef: build.equip_mdef + gb.mdef_ + (ma.mdef || 0),
     bonus_maxhp: build.bonus_maxhp + gb.maxhp + (ma.maxhp || 0) + (cl.maxhp || 0),
     bonus_maxsp: build.bonus_maxsp + gb.maxsp + (ma.maxsp || 0) + (cl.maxsp || 0),

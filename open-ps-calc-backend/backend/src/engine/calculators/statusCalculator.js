@@ -197,6 +197,8 @@ class StatusCalculator {
     if ("SC_SPEARQUICKEN" in activeSc) {
       const lv = activeSc.SC_SPEARQUICKEN;
       status.cri += (sqStatSpec.cri_per_lv || 0) * lv;
+      status.hit += (sqStatSpec.hit_per_lv || 0) * lv;
+      status.flee += (sqStatSpec.flee_per_lv || 0) * lv;
     }
 
     // === PASSIVE SKILL HIT/FLEE BONUSES ===
@@ -429,6 +431,7 @@ class StatusCalculator {
     status.mdef2 = status.int_ + (status.vit >> 1);
 
     if ("SC_ENDURE" in activeSc) status.mdef += activeSc.SC_ENDURE;
+    if ("SC_PROVIDENCE" in activeSc) status.mdef += 2 * activeSc.SC_PROVIDENCE;
     if ("SC_MINDBREAKER" in playerScs) {
       const lv = Number(playerScs.SC_MINDBREAKER);
       status.mdef = Math.max(0, Math.floor(status.mdef * (100 - 12 * lv) / 100));

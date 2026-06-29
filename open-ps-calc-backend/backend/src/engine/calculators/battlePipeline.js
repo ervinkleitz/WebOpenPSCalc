@@ -369,6 +369,42 @@ class BattlePipeline {
   }
 
   /**
+   * CR_REFLECTSHIELD — PS rework formula:
+   *   damage = floor(SoftDEF × (1 + 1.75 × HardDEF / 100) × SkillLvl / 10)
+   * Ignores target DEF. Requires hit roll. Enhanced by cards and armor attributes.
+   */
+  _runReflectShieldBranch(status, weapon, skill, target, build, opts = {}) {
+    const { profile = STANDARD, gear_bonuses: gearBonuses } = opts;
+    const result = createDamageResult();
+
+    const softDef = status.def2;
+    const hardDef = status.def_;
+    const baseDmg = Math.floor(softDef * (1 + 1.75 * hardDef / 100) * skill.level / 10);
+    let pmf = uniformPmf(baseDmg, baseDmg);
+    result.add_step({
+      name: "Reflect Shield Base",
+      value: baseDmg, min_value: baseDmg, max_value: baseDmg,
+      note: `Soft DEF ${softDef} × (1 + 1.75 × ${hardDef}/100) × Lv${skill.level}/10`,
+      formula: "floor(SoftDEF × (1 + 1.75 × HardDEF/100) × SkillLvl/10)",
+      hercules_ref: "wiki.payonstories.com/Reflect_Shield — PS rework",
+    });
+
+    // Ignores target DEF — no defenseFix step
+    pmf = calculateAttrFix(weapon, target, pmf, result, build, 0 /* Ele_Neutral */);
+    pmf = calculateCardFix(build, gearBonuses, 0 /* Ele_Neutral */, target, false /* melee */, pmf, result);
+    pmf = calculateFinalRateBonus(false, pmf, this.config, result);
+    pmf = floorAt(pmf, 1);
+
+    const [mn, mx, av] = pmfStats(pmf);
+    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Reflect Shield branch", formula: "", hercules_ref: "" });
+    result.min_damage = mn;
+    result.max_damage = mx;
+    result.avg_damage = av;
+    result.pmf = pmf;
+    return result;
+  }
+
+  /**
    * CR_SHIELDBOOMERANG — PS formula (wiki.payonstories.com/Shield_Boomerang):
    *   damage = floor((BATK + shield_weight) × ratio / 100) + shield_refine × 10
    * Ratios per level: [130, 180, 220, 260, 300].
@@ -565,6 +601,25 @@ class BattlePipeline {
     if (profile.skill_level_cap_overrides && profile.skill_level_cap_overrides[skillName] != null) {
       const cap = profile.skill_level_cap_overrides[skillName];
       if (skill.level > cap) skill = { ...skill, level: cap };
+    }
+
+    if (skillName === "CR_REFLECTSHIELD") {
+      const [hitChanceRS] = calculateHitChance(status, target, this.config);
+      const rsResult = this._runReflectShieldBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
+      const rsAttacks = [
+        createAttackDefinition(rsResult.avg_damage, 0.0, amotion, hitChanceRS / 100.0),
+        createAttackDefinition(0.0, 0.0, amotion, 1.0 - hitChanceRS / 100.0),
+      ];
+      return createBattleResult({
+        normal: rsResult,
+        crit: null,
+        crit_chance: 0.0,
+        hit_chance: hitChanceRS,
+        dps: calculateDps(rsAttacks),
+        attacks: rsAttacks,
+        period_ms: amotion,
+        dps_valid: true,
+      });
     }
 
     if (skillName === "CR_SHIELDBOOMERANG") {

@@ -4264,10 +4264,19 @@
   },
   "90071": {
     "_ps_custom": true,
-    "description": "Stone shield taken from a broken desert statue.<br/>Strangely, it gets heavier the more it is polished<br/>Increase damage of Shield Boomerang and Shield Charge by 3% per refine<br/>Class:<font color='#6666CC'> Shield</font><br/>Defense:<font color='#0000FF'> 2</font><br/>Weight:<font color='#009900'> 150</font><br/>Jobs:<font color='#6666CC'> Crusader</font>",
+    "description": "Stone shield taken from a broken desert statue.<br/>Strangely, it gets heavier the more it is polished<br/>Increase damage of Shield Boomerang and Shield Charge by 5% per refine<br/>Class:<font color='#6666CC'> Shield</font><br/>Defense:<font color='#0000FF'> 2</font><br/>Weight:<font color='#009900'> 150</font><br/>Jobs:<font color='#6666CC'> Crusader</font>",
     "name": "Stone Discus",
     "def": 2,
-    "slots": 1
+    "slots": 1,
+    "script": "bonus2 bSkillAtk,CR_SHIELDBOOMERANG,getrefine()*5; bonus2 bSkillAtk,CR_SHIELDCHARGE,getrefine()*5;"
+  },
+  "4223": {
+    "description": "Def +1.<br/>Soft DEF +10. If base VIT &gt; 77, additional Soft DEF +10.<br/>Class: Card<br/>Compound on: Headgear<br/>Weight: 1",
+    "script": "bonus bDef,1; bonus bVitDef,10; if(readparam(bVit)>77){bonus bVitDef,10;}"
+  },
+  "4261": {
+    "description": "Def +1.<br/>Increases Magnum Break fire element duration by 2 seconds per Magnum Break skill level.<br/>[Swordsman class] Increases by 11 seconds per skill level instead.<br/>Class: Card<br/>Compound on: Headgear<br/>Weight: 1",
+    "script": "bonus bDef,1;"
   },
   "90078": {
     "_ps_custom": true,

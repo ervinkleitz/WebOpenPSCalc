@@ -181,6 +181,7 @@ function createGearBonuses(overrides = {}) {
     crit_atk_rate: 0,
     long_atk_rate: 0,
     def_: 0,
+    def2: 0,
     mdef_: 0,
     maxhp: 0,
     maxsp: 0,

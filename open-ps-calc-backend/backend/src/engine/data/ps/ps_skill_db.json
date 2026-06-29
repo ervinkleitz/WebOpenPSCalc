@@ -6007,47 +6007,47 @@
     "cast_time": "Instant",
     "cast_delay": "Global Cooldown",
     "duration": "300 Seconds",
-    "description": "Reflects a certain amount of damage back to the enemy after they inflict damage with a melee physical attack. Requires Shield.",
+    "description": "Reflects a certain amount of damage back to the enemy after they inflict damage with a melee physical attack. Requires Shield. [PS Rework] Also deals active damage on each hit received: floor(SoftDEF × (1 + 1.75 × HardDEF/100) × SkillLvl/10). This active damage requires a hit roll, ignores target DEF, and is enhanced by weapon cards and armor attributes. % reflect is capped to the lesser of damage dealt or the defender's max HP.",
     "levels": [
       {
         "level": 1,
-        "effect": "13% of Damage Reflected"
+        "effect": "13% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 0.1"
       },
       {
         "level": 2,
-        "effect": "16% of Damage Reflected"
+        "effect": "16% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 0.2"
       },
       {
         "level": 3,
-        "effect": "19% of Damage Reflected"
+        "effect": "19% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 0.3"
       },
       {
         "level": 4,
-        "effect": "22% of Damage Reflected"
+        "effect": "22% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 0.4"
       },
       {
         "level": 5,
-        "effect": "25% of Damage Reflected"
+        "effect": "25% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 0.5"
       },
       {
         "level": 6,
-        "effect": "28% of Damage Reflected"
+        "effect": "28% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 0.6"
       },
       {
         "level": 7,
-        "effect": "31% of Damage Reflected"
+        "effect": "31% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 0.7"
       },
       {
         "level": 8,
-        "effect": "34% of Damage Reflected"
+        "effect": "34% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 0.8"
       },
       {
         "level": 9,
-        "effect": "37% of Damage Reflected"
+        "effect": "37% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 0.9"
       },
       {
         "level": 10,
-        "effect": "40% of Damage Reflected"
+        "effect": "40% Reflected; Active: SoftDEF × (1 + 1.75 × HardDEF/100) × 1.0"
       }
     ],
     "requirements": [
@@ -6117,10 +6117,10 @@
     "name": "Grand Cross",
     "max_level": 10,
     "skill_form": "Physical AoE",
-    "sp_cost": "30 SP + 7 SP Per Skill Level",
+    "sp_cost": "30 SP + 6 SP Per Skill Level",
     "cast_time": "3 Seconds",
     "cast_delay": "1 Second",
-    "description": "Summons a cross of holy light on the ground around the caster that will damage enemies that come into contact with it. Grand Cross will cause the Blind effect on Undead and Demon monsters, but will not blind Boss monsters. The damage of Grand Cross is affected by both ATK and MATK but Weapon Masteries, Demon Bane, and +DMG% cards do not modify the damage of Grand Cross. The skill will damage the caster for 20% of their Max HP plus an amount based on the damage dealt to targets.",
+    "description": "Summons a cross of holy light on the ground around the caster that will damage enemies that come into contact with it. Grand Cross will cause the Blind effect on Undead and Demon monsters, but will not blind Boss monsters. The damage of Grand Cross is affected by both ATK and MATK but Weapon Masteries, Demon Bane, and +DMG% cards do not modify the damage of Grand Cross. The skill will damage the caster for 20% of their Max HP plus an amount based on the damage dealt to targets. The caster is immune to knockback while casting.",
     "levels": [
       {
         "level": 1,
@@ -6189,36 +6189,35 @@
     "name": "Providence",
     "max_level": 5,
     "skill_form": "Buff",
-    "sp_cost": "30 SP",
+    "sp_cost": "20 SP Per Skill Level",
     "cast_time": "3 Seconds",
     "cast_delay": "3 Seconds",
-    "range": "6 Cells + 1 Cell Per Skill Level",
-    "duration": "15 Sec + 15 Sec Per Skill Level",
-    "description": "Temporarily increases party member's resistance to Demon and Holy elemental monsters. This skill cannot be cast on yourself or on other Crusaders.",
+    "duration": "30 Sec + 30 Sec Per Skill Level",
+    "description": "Self-cast buff. Cannot be interrupted or dispelled while casting. Increases MDEF by 2 per skill level. Also reduces the Defense Penalty (DEF reduction when hit by many enemies) by 50%. No longer requires Heal to learn.",
     "levels": [
       {
         "level": 1,
-        "effect": "5% Demon and Holy Resistance"
+        "effect": "MDEF +2; Duration: 60s"
       },
       {
         "level": 2,
-        "effect": "10% Demon and Holy Resistance"
+        "effect": "MDEF +4; Duration: 90s"
       },
       {
         "level": 3,
-        "effect": "15% Demon and Holy Resistance"
+        "effect": "MDEF +6; Duration: 120s"
       },
       {
         "level": 4,
-        "effect": "20% Demon and Holy Resistance"
+        "effect": "MDEF +8; Duration: 150s"
       },
       {
         "level": 5,
-        "effect": "25% Demon and Holy Resistance"
+        "effect": "MDEF +10; Duration: 180s"
       }
     ],
     "requirements": [
-      "Divine Protection 5, Heal 5"
+      "Divine Protection 5"
     ],
     "constant": "CR_PROVIDENCE"
   },
@@ -6268,47 +6267,47 @@
     "cast_time": "Instant",
     "cast_delay": "Global Cooldown",
     "duration": "300 Seconds",
-    "description": "Increases attack speed when using spear weapons for the skill's duration. Also adds +1 CRIT per skill level.",
+    "description": "Increases attack speed when using spear weapons for the skill's duration. Grants +1 HIT and +1 FLEE per skill level. No longer grants Critical Hit.",
     "levels": [
       {
         "level": 1,
-        "effect": "ASPD: 1H +8.0% / 2H +21.5%"
+        "effect": "ASPD: 1H +8.0% / 2H +21.5%; HIT +1; FLEE +1"
       },
       {
         "level": 2,
-        "effect": "ASPD: 1H +8.5% / 2H +23.0%"
+        "effect": "ASPD: 1H +8.5% / 2H +23.0%; HIT +2; FLEE +2"
       },
       {
         "level": 3,
-        "effect": "ASPD: 1H +9.0% / 2H +24.5%"
+        "effect": "ASPD: 1H +9.0% / 2H +24.5%; HIT +3; FLEE +3"
       },
       {
         "level": 4,
-        "effect": "ASPD: 1H +9.5% / 2H +26.0%"
+        "effect": "ASPD: 1H +9.5% / 2H +26.0%; HIT +4; FLEE +4"
       },
       {
         "level": 5,
-        "effect": "ASPD: 1H +10.0% / 2H +27.5%"
+        "effect": "ASPD: 1H +10.0% / 2H +27.5%; HIT +5; FLEE +5"
       },
       {
         "level": 6,
-        "effect": "ASPD: 1H +10.5% / 2H +29.0%"
+        "effect": "ASPD: 1H +10.5% / 2H +29.0%; HIT +6; FLEE +6"
       },
       {
         "level": 7,
-        "effect": "ASPD: 1H +11.0% / 2H +30.5%"
+        "effect": "ASPD: 1H +11.0% / 2H +30.5%; HIT +7; FLEE +7"
       },
       {
         "level": 8,
-        "effect": "ASPD: 1H +11.5% / 2H +32.0%"
+        "effect": "ASPD: 1H +11.5% / 2H +32.0%; HIT +8; FLEE +8"
       },
       {
         "level": 9,
-        "effect": "ASPD: 1H +12.0% / 2H +33.5%"
+        "effect": "ASPD: 1H +12.0% / 2H +33.5%; HIT +9; FLEE +9"
       },
       {
         "level": 10,
-        "effect": "ASPD: 1H +12.5% / 2H +35.0%"
+        "effect": "ASPD: 1H +12.5% / 2H +35.0%; HIT +10; FLEE +10"
       }
     ],
     "requirements": [
