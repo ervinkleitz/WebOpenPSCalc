@@ -145,7 +145,10 @@ class StatusCalculator {
 
     if ("SC_EXPLOSIONSPIRITS" in activeSc) {
       const lv = activeSc.SC_EXPLOSIONSPIRITS;
-      status.cri += 75 + 25 * lv;
+      const expSpec = (profile.passive_overrides || {}).SC_EXPLOSIONSPIRITS || {};
+      const criBase   = expSpec.cri_base   ?? 75;
+      const criPerLv  = expSpec.cri_per_lv ?? 25;
+      status.cri += criBase + criPerLv * lv;
     }
 
     const katarLv = mastery.AS_KATAR || 0;
@@ -227,6 +230,12 @@ class StatusCalculator {
       const moDodgeSpec = (profile.passive_overrides || {}).MO_DODGE || {};
       const moFlee = "flee_per_lv" in moDodgeSpec ? moDodgeLv * moDodgeSpec.flee_per_lv : (moDodgeLv * 3) >> 1;
       status.flee += moFlee;
+    }
+
+    const moIronHandLv = mastery.MO_IRONHAND || 0;
+    if (moIronHandLv) {
+      const moIhSpec = (profile.passive_overrides || {}).MO_IRONHAND || {};
+      if ("flee_per_lv" in moIhSpec) status.flee += moIronHandLv * moIhSpec.flee_per_lv;
     }
 
     const njTobiLv = mastery.NJ_TOBIDOUGU || 0;

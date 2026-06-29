@@ -82,14 +82,15 @@ const PS_PASSIVE_RESISTS = {
 // cri_per_lv: CRI bonus per level on the ×10 internal scale (100 = 10% displayed).
 // ASPD bonuses for these skills live in PS_ASPD_BUFFS below.
 const PS_PASSIVE_OVERRIDES = {
-  SA_ADVANCEDBOOK:  { atk_per_lv: [10, 15, 20, 25, 30], aspd_pct_per_lv: [3, 4, 5, 6, 7] }, // max 5 levels on PS
-  DC_DANCINGLESSON: { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50], cri_at_max_lv: 100 }, // +5 ATK/lv, +10% CRIT at lv10
-  BA_MUSICALLESSON: { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
-  MO_IRONHAND:      { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
-  PR_MACEMASTERY:   { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40] },                  // +4 ATK/lv
-  AM_AXEMASTERY:    { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
-  AS_KATAR:         { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40], cri_per_lv: 5 },  // +4 ATK/lv, +0.5% CRIT/lv
-  SC_SPEARQUICKEN:  { hit_per_lv: 1, flee_per_lv: 1 },                                        // PS rework: no CRI, +1 HIT/lv, +1 FLEE/lv
+  SA_ADVANCEDBOOK:   { atk_per_lv: [10, 15, 20, 25, 30], aspd_pct_per_lv: [3, 4, 5, 6, 7] }, // max 5 levels on PS
+  DC_DANCINGLESSON:  { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50], cri_at_max_lv: 100 }, // +5 ATK/lv, +10% CRIT at lv10
+  BA_MUSICALLESSON:  { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
+  MO_IRONHAND:       { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50], flee_per_lv: 2 }, // PS rework: Martial Arts — +5 ATK/lv, +2 FLEE/lv, also covers Mace
+  PR_MACEMASTERY:    { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40] },                  // +4 ATK/lv
+  AM_AXEMASTERY:     { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
+  AS_KATAR:          { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40], cri_per_lv: 5 },  // +4 ATK/lv, +0.5% CRIT/lv
+  SC_SPEARQUICKEN:   { hit_per_lv: 1, flee_per_lv: 1 },                                        // PS rework: no CRI, +1 HIT/lv, +1 FLEE/lv
+  SC_EXPLOSIONSPIRITS: { cri_base: 175, cri_per_lv: 25 },                                      // PS rework: 20%/22.5%/25%/27.5%/30% (was 10%…20%)
 };
 
 const PS_JOB_BONUSES = {
@@ -147,6 +148,7 @@ const PS_MECHANIC_FLAGS = new Set([
   "GROUND_EFFECT_PS_VALUES",
   "GS_GS_ADJUSTMENT_SKIP_HIT_PENALTY",
   "PR_MACEMASTERY_EXPANDED_WEAPON_TYPES",
+  "MO_EXTREMITYFIST_PS_SP_REWORK",  // PS rework: SP consumed = floor(MaxSP × 0.2 × SkillLv)
   // wiki.payonstories.com/Grand_Cross: weapon masteries (and Demon Bane's flat
   // bonus) DO count toward Grand Cross's ATK component on PS, unlike vanilla
   // Hercules where CR_GRANDCROSS is in masteryFix.js's MASTERY_EXEMPT_SKILLS.
@@ -196,8 +198,9 @@ const PS_BF_WEAPON_RATIOS = {
     const zenyPincher = !!(ctx && ctx.skill_params.PS_BS_ZENYPINCHER_active);
     return Math.trunc((100 + 50 * lv) * (zenyPincher ? 0.4 : 1.0));
   },
-  MO_CHAINCOMBO: (lv) => 160 + 80 * lv,
-  MO_COMBOFINISH: (lv) => 255 + 85 * lv,
+  MO_TRIPLEATTACK: (lv) => 100 + 40 * lv,   // PS rework: 5 levels → 140/180/220/260/300%
+  MO_CHAINCOMBO:   (lv) => 200 + 60 * lv,   // PS rework: 260/320/380/440/500%
+  MO_COMBOFINISH:  (lv) => 255 + 90 * lv,   // PS rework: 345/435/525/615/705%
   PS_RG_TRICKARROW: () => 100,
   PS_RG_QUICKSTEP: () => 10,
   PS_PR_HOLYSTRIKE: (lv, tgt, ctx) => 101 + (ctx ? ctx.base_str : 0) + (ctx ? ctx.base_level : 0),
@@ -335,6 +338,9 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   proc_rate_overrides: PS_PROC_RATE_OVERRIDES,
   // KN_SPEARMASTERY: [without_peco, with_peco] ATK per level. Vanilla is [4, 5]; PS is [5, 7].
   mastery_per_level: { KN_SPEARMASTERY: [5, 7] },
+  // PS Monk rework: Martial Arts (MO_IRONHAND) also covers Mace weapons.
+  // If a character has Martial Arts but not Priest Mace Mastery, use MO_IRONHAND for Mace.
+  mastery_prefer_fallback: { PR_MACEMASTERY: "MO_IRONHAND" },
   steelbody_override: PS_STEELBODY_OVERRIDE,
   sn_hp_bonus: PS_SN_HP_BONUS,
   sn_sp_bonus: PS_SN_SP_BONUS,

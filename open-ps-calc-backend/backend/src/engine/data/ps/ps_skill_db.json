@@ -6317,50 +6317,50 @@
   },
   "259": {
     "id": 259,
-    "name": "Iron Hand",
+    "name": "Martial Arts",
     "max_level": 10,
     "skill_form": "Passive",
-    "description": "Increases damage with bare hands and Knuckle class weapons and their attack speed.",
+    "description": "PS Rework: Combines Iron Hand and Dodge into one passive. Increases damage with bare hands, Knuckle, and Mace class weapons. Also increases FLEE. No longer boosts ASPD.",
     "levels": [
       {
         "level": 1,
-        "effect": "Damage +5 / +1% ASPD"
+        "effect": "Damage +5; FLEE +2"
       },
       {
         "level": 2,
-        "effect": "Damage +10 / +2% ASPD"
+        "effect": "Damage +10; FLEE +4"
       },
       {
         "level": 3,
-        "effect": "Damage +15 / +3% ASPD"
+        "effect": "Damage +15; FLEE +6"
       },
       {
         "level": 4,
-        "effect": "Damage +20 / +4% ASPD"
+        "effect": "Damage +20; FLEE +8"
       },
       {
         "level": 5,
-        "effect": "Damage +25 / +5% ASPD"
+        "effect": "Damage +25; FLEE +10"
       },
       {
         "level": 6,
-        "effect": "Damage +30 / +6% ASPD"
+        "effect": "Damage +30; FLEE +12"
       },
       {
         "level": 7,
-        "effect": "Damage +35 / +7% ASPD"
+        "effect": "Damage +35; FLEE +14"
       },
       {
         "level": 8,
-        "effect": "Damage +40 / +8% ASPD"
+        "effect": "Damage +40; FLEE +16"
       },
       {
         "level": 9,
-        "effect": "Damage +45 / +9% ASPD"
+        "effect": "Damage +45; FLEE +18"
       },
       {
         "level": 10,
-        "effect": "Damage +50 / +10% ASPD"
+        "effect": "Damage +50; FLEE +20"
       }
     ],
     "requirements": [
@@ -6373,7 +6373,7 @@
     "name": "Spirits Recovery",
     "max_level": 5,
     "skill_form": "Passive",
-    "description": "Restores additional HP and SP every 5 seconds while sitting. If user's carried weight is over 70% of the maximum capacity, this extra HP and SP is recovered every 10 seconds. Can be used after casting Asura to regenerate HP/SP. HP is regenerated at 6 * Skill Level and SP is regnerated at 3 * Skill Level. The rate is further increased by the Monk's max HP and SP.",
+    "description": "PS Rework: After sitting for 5 seconds, grants the Spirits Recovery buff for 30 seconds, restoring (SkillLv + MaxSP/200) SP every 5 seconds. While the buff is active, being within 30 cells of a monster killed that grants EXP refreshes the buff for 30 seconds (party kills count). Critical Explosion partially halts this buff while active (SkillLv SP regen persists; MaxSP bonus does not).",
     "requirements": [
       "Blade Stop 2"
     ],
@@ -6403,7 +6403,7 @@
     "sp_cost": "5 SP",
     "cast_time": "2 Seconds",
     "cast_delay": "Global Cooldown",
-    "description": "Uses all Spirit Spheres and regains 10 SP per sphere. Can be used on another Monk's Spheres in PVP. If used against a monster it steals 1 SP per monster level with a success chance of 40% and grants one Spirit Sphere. Ineffective against Boss monsters and WoE guardians.",
+    "description": "PS Rework: 100% success rate (up from 40%). When used against a monster, absorbs SP equal to MonsterLVL × 0.35 + 5. No longer grants a Spirit Sphere on cast. Can be used on another Monk's Spheres in PVP. Ineffective against Boss monsters and WoE guardians.",
     "requirements": [
       "Call Spirits 5"
     ],
@@ -6412,53 +6412,33 @@
   "263": {
     "id": 263,
     "name": "Triple Attack",
-    "max_level": 10,
+    "max_level": 5,
     "skill_form": "Passive",
-    "description": "Enables the chance of automatically delivering a triple attack in battle. This skill can be followed up with Chain Combo.",
+    "description": "PS Rework: Condensed to 5 levels. Enables a chance to automatically deliver a triple attack. Triggers the Combo Ready buff (3 sec) enabling Chain Combo and instant Call Spirits. While wielding fist weapons, gains +0.2% × SkillLv activation rate per 10 Job Levels. Requires Martial Arts 5.",
     "levels": [
       {
         "level": 1,
-        "effect": "29% Activation Chance / 120% ATK"
-      },
-      {
-        "level": 2,
         "effect": "28% Activation Chance / 140% ATK"
       },
       {
-        "level": 3,
-        "effect": "27% Activation Chance / 160% ATK"
-      },
-      {
-        "level": 4,
+        "level": 2,
         "effect": "26% Activation Chance / 180% ATK"
       },
       {
-        "level": 5,
-        "effect": "25% Activation Chance / 200% ATK"
-      },
-      {
-        "level": 6,
+        "level": 3,
         "effect": "24% Activation Chance / 220% ATK"
       },
       {
-        "level": 7,
-        "effect": "23% Activation Chance / 240% ATK"
-      },
-      {
-        "level": 8,
+        "level": 4,
         "effect": "22% Activation Chance / 260% ATK"
       },
       {
-        "level": 9,
-        "effect": "21% Activation Chance / 280% ATK"
-      },
-      {
-        "level": 10,
+        "level": 5,
         "effect": "20% Activation Chance / 300% ATK"
       }
     ],
     "requirements": [
-      "Dodge 5"
+      "Martial Arts 5"
     ],
     "constant": "MO_TRIPLEATTACK"
   },
@@ -6481,7 +6461,7 @@
     "name": "Dodge",
     "max_level": 10,
     "skill_form": "Passive",
-    "description": "Increases flee rate by 2 per skill level.",
+    "description": "PS Rework: This skill has been removed. Its FLEE bonus (+2 per level) is now part of Martial Arts.",
     "requirements": [
       "Iron Hand 5, Call Spirits 5"
     ],
@@ -6508,10 +6488,10 @@
     "max_level": 5,
     "skill_form": "Ranged Attack",
     "sp_cost": "10 SP",
-    "cast_time": "1 Sec + 1 Sec Per Sphere Thrown",
+    "cast_time": "1 Sec + 0.8 Sec Per Sphere Thrown",
     "cast_delay": "Global Cooldown",
     "range": "9 Cells",
-    "description": "Attacks a distant enemy by firing Spirit Spheres. Each cast requires at least one Spirit Sphere.",
+    "description": "PS Rework: Cast time reduced (was 1+1 sec/sphere). Attacks a distant enemy by firing Spirit Spheres. Innately grants 3 Spirit Spheres when used for a killing blow. Each cast requires at least one Spirit Sphere.",
     "levels": [
       {
         "level": 1,
@@ -6548,7 +6528,7 @@
     "cast_time": "5 Seconds",
     "cast_delay": "Global Cooldown",
     "duration": "30 Seconds Per Skill Level",
-    "description": "Doubles the Monk's DEF and quadruples MDEF up to 90 as a maximum while decreasing Movement and Attack Speed. While this skill is active, other skills cannot be used.",
+    "description": "PS Rework: Doubles DEF and quadruples MDEF (max 90) while decreasing Movement and ASPD. Can now be toggled off by recasting (with normal cast time). Becomes subject to Overcrowding penalty when attacked by 23+ enemies (every enemy after 23 reduces DEF by 5%).",
     "requirements": [
       "Combo Finish 3"
     ],
@@ -6587,7 +6567,7 @@
       }
     ],
     "requirements": [
-      "Dodge 5"
+      "Martial Arts 5"
     ],
     "constant": "MO_BLADESTOP"
   },
@@ -6600,27 +6580,27 @@
     "cast_time": "Instant",
     "cast_delay": "Global Cooldown",
     "duration": "180 Seconds",
-    "description": "Temporarily increases caster's Critical Attack rate for period of time. During the Explosion Spirits status, SP regen is suspended. Requires five Spirit Spheres to cast.",
+    "description": "PS Rework: CRIT bonus increased. Triple Attack can critically hit while this is active. All other combo skills cannot be used while active. Can be toggled off by recasting. Partially halts Spirits Recovery while active (SkillLv SP regen persists; MaxSP bonus does not). SP regen otherwise suspended. Requires five Spirit Spheres to cast.",
     "levels": [
       {
         "level": 1,
-        "effect": "+10.0% CRIT"
+        "effect": "+20.0% CRIT"
       },
       {
         "level": 2,
-        "effect": "+12.5% CRIT"
+        "effect": "+22.5% CRIT"
       },
       {
         "level": 3,
-        "effect": "+15.0% CRIT"
+        "effect": "+25.0% CRIT"
       },
       {
         "level": 4,
-        "effect": "+17.5% CRIT"
+        "effect": "+27.5% CRIT"
       },
       {
         "level": 5,
-        "effect": "+20.0% CRIT"
+        "effect": "+30.0% CRIT"
       }
     ],
     "requirements": [
@@ -6633,30 +6613,30 @@
     "name": "Asura Strike",
     "max_level": 5,
     "skill_form": "Physical Attack",
-    "sp_cost": "100% of Remaining SP",
+    "sp_cost": "20% × SkillLv of MaxSP (if insufficient, uses all remaining SP)",
     "cast_time": "4.5 Sec - 0.5 Sec Per Skill Level",
     "cast_delay": "3.5 Sec - 0.5 Sec Per Skill Level",
-    "description": "Only usable during Critical Explosion status. Inflicts a devastating amount of damage by consuming the caster's remaining SP. After using Asura Strike, the Explosion Spirits status is automatically canceled and the Monk will not be able to restore SP naturally for 5 minutes. Each cast requires 5 Spirit Spheres.",
+    "description": "PS Rework: Now consumes 20% × SkillLv of MaxSP instead of all SP. When used after Combo Finish (Asura Strike Ready buff), has no cast time, requires only 2 Spirit Spheres, and does not require Critical Explosion. Otherwise requires Critical Explosion. Damage formula: ATK × (8 + SP/10) + flat. After use, Critical Explosion is cancelled and SP cannot regenerate naturally for 5 minutes. Each hard-cast requires 5 Spirit Spheres.",
     "levels": [
       {
         "level": 1,
-        "effect": "ATK * (8 + SP / 10) + 400 Damage"
+        "effect": "SP Cost: 20% MaxSP; ATK × (8 + SP/10) + 400 Damage"
       },
       {
         "level": 2,
-        "effect": "ATK * (8 + SP / 10) + 550 Damage"
+        "effect": "SP Cost: 40% MaxSP; ATK × (8 + SP/10) + 550 Damage"
       },
       {
         "level": 3,
-        "effect": "ATK * (8 + SP / 10) + 700 Damage"
+        "effect": "SP Cost: 60% MaxSP; ATK × (8 + SP/10) + 700 Damage"
       },
       {
         "level": 4,
-        "effect": "ATK * (8 + SP / 10) + 850 Damage"
+        "effect": "SP Cost: 80% MaxSP; ATK × (8 + SP/10) + 850 Damage"
       },
       {
         "level": 5,
-        "effect": "ATK * (8 + SP / 10) + 1000 Damage"
+        "effect": "SP Cost: 100% MaxSP; ATK × (8 + SP/10) + 1000 Damage"
       }
     ],
     "requirements": [
@@ -6672,11 +6652,11 @@
     "sp_cost": "8 SP + 1 SP Per Skill Level",
     "cast_time": "Instant",
     "cast_delay": "Global Cooldown",
-    "description": "Only usable during Triple Attack delay. Spins a target while attacking the enemy with a combo hit. This skill can be followed up with Combo Finish.",
+    "description": "PS Rework: Damage adjusted. Usable during Combo Ready buff (3 sec after Triple Attack). After use, grants Combo Finish Ready buff (0.8 sec) if Monk knows Combo Finish and has 1+ Spirit Sphere. No longer passively increases Triple Attack activation rate.",
     "levels": [
       {
         "level": 1,
-        "effect": "240% ATK"
+        "effect": "260% ATK"
       },
       {
         "level": 2,
@@ -6684,15 +6664,15 @@
       },
       {
         "level": 3,
-        "effect": "400% ATK"
+        "effect": "380% ATK"
       },
       {
         "level": 4,
-        "effect": "480% ATK"
+        "effect": "440% ATK"
       },
       {
         "level": 5,
-        "effect": "560% ATK"
+        "effect": "500% ATK"
       }
     ],
     "requirements": [
@@ -6709,27 +6689,27 @@
     "cast_time": "Instant",
     "cast_delay": "Global Cooldown",
     "range": "Melee Range",
-    "description": "Only usable during Chain Combo delay. This skill can be followed up with the Asura Strike skill if the user is in Explosion Spirits state and has summoned at least 4 Spirit Spheres. Each cast requires one Spirit Sphere.",
+    "description": "PS Rework: Damage increased. Usable during Combo Finish Ready buff (0.8 sec after Chain Combo). After use, grants Asura Strike Ready buff (2 sec) if Monk knows Asura Strike and has 2+ Spirit Spheres. No longer passively increases Triple Attack activation rate or grants a damage buff after use. Each cast requires one Spirit Sphere.",
     "levels": [
       {
         "level": 1,
-        "effect": "340% ATK"
+        "effect": "345% ATK"
       },
       {
         "level": 2,
-        "effect": "425% ATK"
+        "effect": "435% ATK"
       },
       {
         "level": 3,
-        "effect": "510% ATK"
+        "effect": "525% ATK"
       },
       {
         "level": 4,
-        "effect": "595% ATK"
+        "effect": "615% ATK"
       },
       {
         "level": 5,
-        "effect": "680% ATK"
+        "effect": "705% ATK"
       }
     ],
     "requirements": [
@@ -13699,8 +13679,10 @@
     "name": "Ki Translation",
     "max_level": 1,
     "skill_form": "Active",
-    "sp_cost": "40\tSP",
-    "description": "Transfer one of your Spirit Spheres to another party member. Uses up 1 Spirit Sphere.",
+    "sp_cost": "20 SP",
+    "cast_time": "1 Second",
+    "cast_delay": "0.5 Seconds",
+    "description": "PS Rework: SP cost reduced from 40 → 20; cast time 2s → 1s; ACD 1s → 0.5s. No longer requires recipient to be in party. Transfer one of your Spirit Spheres to another player. Uses up 1 Spirit Sphere.",
     "constant": "MO_KITRANSLATION"
   },
   "1016": {
@@ -13709,7 +13691,7 @@
     "max_level": 1,
     "skill_form": "Physical attack",
     "sp_cost": "20\tSP",
-    "description": "Focus your inner energies and attack an enemy to deal damage and push them away. The targeted enemy receives 300% damage, and nearby monsters will be pushed away 2 cells and stunned for 2 sec. Drains a small amount of HP per use.",
+    "description": "PS Rework: ACD reduced from 2s → 1s. Focus your inner energies and attack an enemy to deal damage and push them away. The targeted enemy receives 300% damage, and nearby monsters will be pushed away 2 cells and stunned for 2 sec. Drains a small amount of HP per use.",
     "constant": "MO_BALKYOUNG"
   },
   "1017": {

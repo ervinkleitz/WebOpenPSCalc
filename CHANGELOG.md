@@ -5,6 +5,48 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-28 (Monk rework)
+
+### Added
+
+- **PS Monk Rework — Asura Strike damage branch** — Implemented the full
+  `ATK × (8 + floor(SP/10)) + flat` formula in a dedicated
+  `_runAsuraStrikeBranch` in battlePipeline.js. On PS, SP consumed is
+  `floor(MaxSP × 20% × SkillLv)` (per rework); flat bonus per level:
+  400/550/700/850/1000. Bypasses DEF, always hits, ignores size/mastery/refine
+  exactly as vanilla, then applies element fix, card fix, and final rate bonus.
+
+- **PS Monk Rework — Martial Arts** (was Iron Hand) — renamed to "Martial
+  Arts" in ps_skill_db.json; now grants FLEE +2/level in addition to weapon
+  mastery. Mastery now also covers **Mace** class weapons (`mastery_prefer_fallback`
+  routes Mace → `MO_IRONHAND` when the character has no Priest Mace Mastery).
+  ASPD bonus removed. FLEE handled via new `flee_per_lv: 2` in
+  `PS_PASSIVE_OVERRIDES.MO_IRONHAND` and a new block in `statusCalculator.js`.
+
+- **PS Monk Rework — Critical Explosion CRIT values** increased:
+  20%/22.5%/25%/27.5%/30% (was 10%/12.5%/15%/17.5%/20%). Handled via new
+  `SC_EXPLOSIONSPIRITS: { cri_base: 175, cri_per_lv: 25 }` in
+  `PS_PASSIVE_OVERRIDES`; statusCalculator reads the override, falling back to
+  vanilla `75 + 25×lv` if no override is present.
+
+### Changed
+
+- **PS Monk Rework — Triple Attack** condensed to 5 levels (140/180/220/260/300%
+  ATK, activation rates 28/26/24/22/20%). Added PS ratio `(lv) => 100 + 40 * lv`
+  to `PS_BF_WEAPON_RATIOS`. Requirements updated to "Martial Arts 5".
+
+- **PS Monk Rework — Chain Combo** damage adjusted to 260/320/380/440/500% ATK
+  (was 240/320/400/480/560). Ratio formula updated to `(lv) => 200 + 60 * lv`.
+
+- **PS Monk Rework — Combo Finish** damage increased to 345/435/525/615/705% ATK
+  (was 340/425/510/595/680). Ratio formula updated to `(lv) => 255 + 90 * lv`.
+
+- **Skill descriptions updated** for Martial Arts, Dodge (removed note), Triple
+  Attack, Chain Combo, Combo Finish, Critical Explosion, Asura Strike, Finger
+  Offensive (cast time 1+0.8/sphere), Steel Body, Blade Stop (Martial Arts 5
+  req), Spirits Recovery, Absorb Spirits (100% success, new SP formula), Ki
+  Translation (SP 40→20, cast 2s→1s, ACD 1s→0.5s), Ki Explosion (ACD 2s→1s).
+
 ## 2026-06-28
 
 ### Added

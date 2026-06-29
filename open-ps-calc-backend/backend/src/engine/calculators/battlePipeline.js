@@ -373,6 +373,71 @@ class BattlePipeline {
    *   damage = floor(SoftDEF × (1 + 1.75 × HardDEF / 100) × SkillLvl / 10)
    * Ignores target DEF. Requires hit roll. Enhanced by cards and armor attributes.
    */
+
+  /**
+   * PS rework: MO_EXTREMITYFIST (Asura Strike).
+   * Formula: ATK × (8 + floor(SP/10)) + flat
+   * PS: SP consumed = floor(MaxSP × 0.2 × SkillLv); vanilla: all remaining SP.
+   * Ignores DEF, always hits (IgnoreFlee), ignores size fix, mastery, and refine.
+   */
+  _runAsuraStrikeBranch(status, weapon, skill, target, build, opts = {}) {
+    const { profile = STANDARD, gear_bonuses: gearBonuses } = opts;
+    const result = createDamageResult();
+
+    const psRework = profile.mechanic_flags.has("MO_EXTREMITYFIST_PS_SP_REWORK");
+    let spConsumed, spNote;
+    if (psRework) {
+      spConsumed = Math.floor(status.max_sp * 0.2 * skill.level);
+      spNote = `MaxSP(${status.max_sp}) × ${20 * skill.level}% = ${spConsumed}`;
+    } else {
+      spConsumed = build.current_sp != null ? build.current_sp : status.max_sp;
+      spNote = `All remaining SP = ${spConsumed}`;
+    }
+
+    const flatBonus = [400, 550, 700, 850, 1000][skill.level - 1] ?? 1000;
+    const spDiv = Math.floor(spConsumed / 10);
+    const skillRatio = (8 + spDiv) * 100;
+
+    let pmf = calculateBaseDamage(status, weapon, build, target, skill, result, {
+      gear_bonuses: gearBonuses, is_crit: false, is_ranged: false,
+    });
+
+    pmf = scaleFloor(pmf, skillRatio, 100);
+    let [mn, mx, av] = pmfStats(pmf);
+    result.add_step({
+      name: "Asura Strike Ratio",
+      value: av, min_value: mn, max_value: mx, multiplier: skillRatio / 100,
+      note: `SP: ${spNote}; ratio = (8 + floor(${spConsumed}/10)) × 100 = ${skillRatio}%`,
+      formula: `ATK × (8 + floor(SP/10)) = ATK × ${8 + spDiv}`,
+      hercules_ref: "battle.c battle_calc_skillratio MO_EXTREMITYFIST",
+    });
+
+    pmf = addFlat(pmf, flatBonus);
+    [mn, mx, av] = pmfStats(pmf);
+    result.add_step({
+      name: "Asura Strike Flat",
+      value: av, min_value: mn, max_value: mx, multiplier: 1.0,
+      note: `+${flatBonus} flat at Lv${skill.level}`,
+      formula: `+ ${flatBonus}`,
+      hercules_ref: "battle.c battle_calc_skillratio MO_EXTREMITYFIST",
+    });
+
+    // NK_IGNORE_DEF: no defense step
+    pmf = calculateActiveStatusBonus(weapon, build, skill, pmf, result, profile);
+    pmf = calculateRefineFix(weapon, skill, pmf, result);
+    pmf = calculateMasteryFix(weapon, build, target, pmf, result, skill, { profile });
+    pmf = calculateAttrFix(weapon, target, pmf, result, build, 0 /* Ele_Neutral */);
+    pmf = calculateForgeBonus(weapon, 1, pmf, result);
+    pmf = calculateCardFix(build, gearBonuses, 0 /* Ele_Neutral */, target, false, pmf, result);
+    pmf = calculateFinalRateBonus(false, pmf, this.config, result);
+    pmf = floorAt(pmf, 1);
+
+    [mn, mx, av] = pmfStats(pmf);
+    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Asura Strike branch", formula: "", hercules_ref: "" });
+    result.min_damage = mn; result.max_damage = mx; result.avg_damage = av; result.pmf = pmf;
+    return result;
+  }
+
   _runReflectShieldBranch(status, weapon, skill, target, build, opts = {}) {
     const { profile = STANDARD, gear_bonuses: gearBonuses } = opts;
     const result = createDamageResult();
@@ -601,6 +666,18 @@ class BattlePipeline {
     if (profile.skill_level_cap_overrides && profile.skill_level_cap_overrides[skillName] != null) {
       const cap = profile.skill_level_cap_overrides[skillName];
       if (skill.level > cap) skill = { ...skill, level: cap };
+    }
+
+    if (skillName === "MO_EXTREMITYFIST") {
+      const asuraResult = this._runAsuraStrikeBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
+      let castMs = 0, delayMs = 0;
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      const asuraPeriod = Math.max(castMs + delayMs, 100);
+      const attacks = [createAttackDefinition(asuraResult.avg_damage, 0.0, asuraPeriod, 1.0)];
+      return createBattleResult({
+        normal: asuraResult, crit: null, crit_chance: 0.0, hit_chance: 100.0,
+        dps: calculateDps(attacks), attacks, period_ms: asuraPeriod, dps_valid: true,
+      });
     }
 
     if (skillName === "CR_REFLECTSHIELD") {
