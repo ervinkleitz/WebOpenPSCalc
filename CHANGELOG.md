@@ -5,6 +5,24 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-29
+
+### Fixed
+
+- **Stat distribution cost formula** — Corrected the stat point cost formula
+  to match [payonrocalc.jaludev.com](https://payonrocalc.jaludev.com/) (the
+  official PS stat simulator). Previous formula (`v < 7 ? 1 : floor(v/10)+2`)
+  overcharged by 1 point at every exact multiple-of-10 stat value (v=10, 20,
+  30, …) and undercharged for v=1–6. Correct formula is
+  `floor((v−1)/10)+2` for all v≥1. Effect: for a typical high-INT build at
+  level 99 the old calc reported 3 fewer remaining points than it should,
+  blocking stat increases that the server allows.
+
+- **ASPD potion cap — Acolyte classes** — Priest, Monk, High Priest, and
+  Champion are now restricted to Concentration Potion only (same as Bard /
+  Dancer), matching Payon Stories rebalance rules. Acolyte was already
+  correct via the 1st-job cap.
+
 ## 2026-06-28 (Monk rework)
 
 ### Added

@@ -28,12 +28,12 @@ const MAX_STAT = 99;
 const STAT_POINT_BY_LEVEL: readonly number[] = [48,51,54,57,60,64,68,72,76,80,85,90,95,100,105,111,117,123,129,135,142,149,156,163,170,178,186,194,202,210,219,228,237,246,255,265,275,285,295,305,316,327,338,349,360,372,384,396,408,420,433,446,459,472,485,499,513,527,541,555,570,585,600,615,630,646,662,678,694,710,727,744,761,778,795,813,831,849,867,885,904,923,942,961,980,1000,1020,1040,1060,1080,1101,1122,1143,1164,1185,1207,1229,1251,1273];
 
 // STAT_COST_TABLE[v] = total stat points spent to bring a stat from 1 to v.
-// PS formula: cost to increment v→v+1 is 1 if v < 7, else floor(v/10) + 2.
+// PS formula: cost to increment v→v+1 is floor((v-1)/10) + 2 for all v≥1.
+// (Verified against payonrocalc.jaludev.com — the official PS stat simulator.)
 const STAT_COST_TABLE: readonly number[] = (() => {
   const t: number[] = [0, 0];
   for (let v = 2; v <= 99; v++) {
-    const s = v - 1;
-    t.push(t[v - 1] + (s < 7 ? 1 : Math.floor(s / 10) + 2));
+    t.push(t[v - 1] + (Math.floor((v - 2) / 10) + 2));
   }
   return t;
 })();
@@ -54,8 +54,11 @@ const BERSERK_NON_TRANS_IDS = new Set([
   1, 7, 14,   // Swordsman tree: Swordman, Knight, Crusader
   6, 12, 17,  // Thief tree: Thief, Assassin, Rogue
 ]);
-// PS rebalance: Bard/Dancer and their trans forms are restricted to Concentration Potion
-const CONC_ONLY_IDS = new Set([19, 20, 4020, 4021]); // Bard, Dancer, Clown, Gypsy
+// PS rebalance: these classes are restricted to Concentration Potion
+const CONC_ONLY_IDS = new Set([
+  8, 15, 4009, 4016,   // Acolyte tree: Priest, Monk, High Priest, Champion
+  19, 20, 4020, 4021,  // Archer tree: Bard, Dancer, Clown, Gypsy
+]);
 function getTotalStatPoints(baseLevel: number, jobId: number): number {
   const idx = Math.min(Math.max(baseLevel, 1), STAT_POINT_BY_LEVEL.length) - 1;
   const base = STAT_POINT_BY_LEVEL[idx] ?? 48;
@@ -64,7 +67,7 @@ function getTotalStatPoints(baseLevel: number, jobId: number): number {
 function maxAffordableStat(from: number, remaining: number): number {
   let v = from, pts = remaining;
   while (v < MAX_STAT) {
-    const c = v < 7 ? 1 : Math.floor(v / 10) + 2;
+    const c = Math.floor((v - 1) / 10) + 2;
     if (c > pts) break;
     pts -= c;
     v++;
@@ -849,7 +852,7 @@ export default function BuildEditor() {
                 const equipBonus = equipBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
                 const buffBonus = buffBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
                 const base = data.base_stats[s] ?? 1;
-                const nextCost = base < 7 ? 1 : Math.floor(base / 10) + 2;
+                const nextCost = Math.floor((base - 1) / 10) + 2;
                 return (
                   <div className="ro-stat-card" key={s}>
                     <div className="ro-stat-name">{s.toUpperCase()}</div>
