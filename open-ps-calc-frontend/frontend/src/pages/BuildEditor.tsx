@@ -864,6 +864,7 @@ export default function BuildEditor() {
                         min={1}
                         max={MAX_STAT}
                         value={base}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => {
                           const newVal = Math.max(1, Math.min(MAX_STAT, Number(e.target.value)));
                           if (newVal > base) {

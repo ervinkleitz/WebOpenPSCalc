@@ -5,6 +5,13 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-29
+
+### Changed
+
+- **Base stat inputs** — Focusing a stat input now selects its value so typing
+  immediately replaces it instead of appending to the existing number.
+
 ## 2026-06-29 (Assassin/Thief rework)
 
 ### Added
