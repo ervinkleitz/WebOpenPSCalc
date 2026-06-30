@@ -164,6 +164,8 @@ const PS_MECHANIC_FLAGS = new Set([
   "AS_KATAR_SECOND_HIT",           // Katar second hit: (21+4×AS_KATAR_lv)% of main, doubled proc rate
   "TF_POISON_USES_WEAPON_ELEMENT", // Envenom element = weapon element instead of Poison
   "AS_ENCHANTPOISON_PASSIVE_BONUS",// AS_ENCHANTPOISON: passive +2%/lv damage vs Poison element monsters
+  // PS Hunter rework (Hunter_Rework_PayonStories.pdf)
+  "HT_TRAP_PS_FORMULA",            // Trap damage: lv × factorA × factorB / divisor (INT/DEX scaling, bypasses DEF)
 ]);
 
 // Helper arrays for NJ_KASUMIKIRI / NJ_KIRIKAGE (core/server_profiles.py).

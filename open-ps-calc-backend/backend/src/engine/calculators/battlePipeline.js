@@ -95,6 +95,24 @@ const DOUBLECASTING_SKILLS = new Set([
   "MG_FIREBOLT", "MG_COLDBOLT", "MG_LIGHTNINGBOLT", "WZ_EARTHSPIKE", "MG_SOULSTRIKE",
 ]);
 
+// PS Hunter rework (Hunter_Rework_PayonStories.pdf).
+// Formula: SkillLevel * factorA * factorB / divisor — INT/DEX scaling, bypasses DEF.
+// Elements from skills.json: LandMine=Earth(2), BlastMine=Wind(4), FreezingTrap=Water(1), Claymore=Fire(3).
+const TRAP_SKILL_NAMES = new Set(["HT_LANDMINE", "HT_BLASTMINE", "HT_FREEZINGTRAP", "HT_CLAYMORETRAP"]);
+const TRAP_CONFIGS = {
+  HT_LANDMINE:     { element: 2 /* Earth */, divisor: 45, factorA: "job_dex",  factorB: "base_int" },
+  HT_BLASTMINE:    { element: 4 /* Wind  */, divisor: 45, factorA: "base_dex", factorB: "job_int"  },
+  HT_FREEZINGTRAP: { element: 1 /* Water */, divisor: 70, factorA: "job_dex",  factorB: "base_int" },
+  HT_CLAYMORETRAP: { element: 3 /* Fire  */, divisor: 70, factorA: "base_dex", factorB: "job_int"  },
+};
+function trapFactors(cfg, status, build) {
+  const joblv = build.job_level || 1, baselv = build.base_level || 1;
+  const dex = status.dex || 0, int_ = status.int_ || 0;
+  const a = cfg.factorA === "job_dex"  ? joblv + dex  : baselv + dex;
+  const b = cfg.factorB === "base_int" ? baselv + int_ : joblv + int_;
+  return [a, b];
+}
+
 function resolveIsRanged(build, weapon, skill) {
   // skill-level long/short overrides (skills.json range sign) are NOT YET PORTED;
   // this mirrors the weapon-derived default from build_manager.effectiveIsRanged.
@@ -470,6 +488,58 @@ class BattlePipeline {
   }
 
   /**
+   * PS Hunter rework traps (Hunter_Rework_PayonStories.pdf).
+   * Formula: floor(SkillLevel * factorA * factorB / divisor)
+   *   Land Mine:     lv * (JobLv+DEX) * (BaseLv+INT) / 45  — Earth element
+   *   Blast Mine:    lv * (BaseLv+DEX) * (JobLv+INT) / 45  — Wind element
+   *   Freezing Trap: lv * (JobLv+DEX) * (BaseLv+INT) / 70  — Water element
+   *   Claymore Trap: lv * (BaseLv+DEX) * (JobLv+INT) / 70  — Fire element
+   * Always hits (IgnoreFlee). Bypasses DEF (formula gives final pre-element damage).
+   * Verified: Hunter 99/50 DEX150/INT100 → LandMine=4422, BlastMine=4150,
+   *   FreezingTrap=2842, Claymore=2667 (all match PDF comparison table).
+   */
+  _runTrapBranch(status, weapon, skill, target, build, opts = {}) {
+    const { gear_bonuses: gearBonuses } = opts;
+    const result = createDamageResult();
+    const skillName = skill.name;
+    const cfg = TRAP_CONFIGS[skillName];
+    const [factA, factB] = trapFactors(cfg, status, build);
+    const baseDmg = Math.floor(skill.level * factA * factB / cfg.divisor);
+
+    let pmf = uniformPmf(baseDmg, baseDmg);
+    result.add_step({
+      name: "Trap Base",
+      value: baseDmg, min_value: baseDmg, max_value: baseDmg,
+      note: `Lv${skill.level} × ${factA} × ${factB} / ${cfg.divisor} = ${baseDmg}`,
+      formula: `floor(SkillLv × factorA × factorB / ${cfg.divisor})`,
+      hercules_ref: "Hunter_Rework_PayonStories.pdf",
+    });
+
+    const skillAtkBonus = gearBonuses ? (gearBonuses.skill_atk[skillName] || 0) : 0;
+    if (skillAtkBonus) {
+      pmf = scaleFloor(pmf, 100 + skillAtkBonus, 100);
+      const [mn, mx, av] = pmfStats(pmf);
+      result.add_step({
+        name: "Skill ATK Bonus", value: av, min_value: mn, max_value: mx,
+        multiplier: (100 + skillAtkBonus) / 100,
+        note: `bSkillAtk: ${skillName} +${skillAtkBonus}%`,
+        formula: `dmg × (100+${skillAtkBonus})/100`,
+        hercules_ref: "pc.c:3513-3527",
+      });
+    }
+
+    pmf = calculateAttrFix(weapon, target, pmf, result, build, cfg.element);
+    pmf = calculateCardFix(build, gearBonuses, cfg.element, target, false /* melee */, pmf, result);
+    pmf = calculateFinalRateBonus(false, pmf, this.config, result);
+    pmf = floorAt(pmf, 1);
+
+    const [mn, mx, av] = pmfStats(pmf);
+    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: `${skillName} trap branch`, formula: "", hercules_ref: "" });
+    result.min_damage = mn; result.max_damage = mx; result.avg_damage = av; result.pmf = pmf;
+    return result;
+  }
+
+  /**
    * CR_SHIELDBOOMERANG — PS formula (wiki.payonstories.com/Shield_Boomerang):
    *   damage = floor((BATK + shield_weight) × ratio / 100) + shield_refine × 10
    * Ratios per level: [130, 180, 220, 260, 300].
@@ -794,6 +864,27 @@ class BattlePipeline {
         attacks,
         period_ms: magicPeriod,
         dps_valid: true,
+      });
+    }
+    if (TRAP_SKILL_NAMES.has(skillName)) {
+      if (profile.mechanic_flags.has("HT_TRAP_PS_FORMULA")) {
+        const trapResult = this._runTrapBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
+        let castMs = 0, delayMs = 0;
+        if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+        const trapPeriod = Math.max(castMs + delayMs, 100);
+        const trapAttacks = [createAttackDefinition(trapResult.avg_damage, 0.0, trapPeriod, 1.0)];
+        return createBattleResult({
+          normal: trapResult, crit: null, crit_chance: 0.0, hit_chance: 100.0,
+          dps: calculateDps(trapAttacks), attacks: trapAttacks, period_ms: trapPeriod, dps_valid: true,
+        });
+      }
+      return createBattleResult({
+        normal: createDamageResult({ steps: [{
+          name: "Not yet implemented", value: 0, min_value: 0, max_value: 0, multiplier: 1,
+          note: `${skillName}: trap formula not yet ported for non-PS profiles.`,
+          formula: "", hercules_ref: "",
+        }] }),
+        dps_valid: false,
       });
     }
     if (skillData && (skillData.skill_form === "Misc" || (skillData.damage_type || []).includes("Misc"))) {

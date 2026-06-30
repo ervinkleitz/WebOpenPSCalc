@@ -367,7 +367,7 @@
     ],
     "slots": 0,
     "aegis_name": "Dory_Card",
-    "script": "bonus2 bSkillAtk,HT_FREEZINGTRAP,30; bonus2 bSkillAtk,HT_CLAYMORETRAP,15;"
+    "script": "bonus2 bSkillAtk,HT_FREEZINGTRAP,5; bonus2 bSkillAtk,HT_CLAYMORETRAP,5;"
   },
   "8242": {
     "type": "IT_CARD",
@@ -385,7 +385,7 @@
     ],
     "slots": 0,
     "aegis_name": "Wolpertinger_Card",
-    "script": "bonus2 bSkillAtk,HT_BLASTMINE,15; bonus2 bSkillAtk,HT_LANDMINE,15;"
+    "script": "bonus2 bSkillAtk,HT_BLASTMINE,5; bonus2 bSkillAtk,HT_LANDMINE,5;"
   },
   "8244": {
     "type": "IT_CARD",
@@ -1186,7 +1186,7 @@
     "weapon_level": 3,
     "equip_level": 12,
     "refineable": true,
-    "script": "bonus2 bSkillAtk,\"HT_LANDMINE\",20; bonus2 bSkillAtk,\"HT_FREEZINGTRAP\",20; bonus2 bSkillAtk,\"HT_BLASTMINE\",20; bonus2 bSkillAtk,\"HT_CLAYMORETRAP\",20;"
+    "script": "bonus2 bSkillAtk,\"HT_LANDMINE\",5; bonus2 bSkillAtk,\"HT_FREEZINGTRAP\",5; bonus2 bSkillAtk,\"HT_BLASTMINE\",5; bonus2 bSkillAtk,\"HT_CLAYMORETRAP\",5;"
   },
   "81000": {
     "type": "IT_WEAPON",

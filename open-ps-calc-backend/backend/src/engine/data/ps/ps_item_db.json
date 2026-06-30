@@ -32781,7 +32781,7 @@
     "name": "Dory Card",
     "refine": false,
     "slots": 0,
-    "description": "Increases damage of <font color='#008800'>Freezing Trap</font> by 30% and <font color='#008800'>Claymore Trap</font> by 15%. (Multiple instances of this card will stack.)<br/> <br/>Class:<font color='#6666CC'> Card</font><br/>Compound on:<font color='#00CC33'> Weapon</font><br/>Weight:<font color='#009900'> 1</font>",
+    "description": "Increases damage of <font color='#008800'>Freezing Trap</font> and <font color='#008800'>Claymore Trap</font> by 5%. (Multiple instances of this card will stack.)<br/> <br/>Class:<font color='#6666CC'> Card</font><br/>Compound on:<font color='#00CC33'> Weapon</font><br/>Weight:<font color='#009900'> 1</font>",
     "isList": false,
     "id": 8241,
     "lastUpdated": 1774332140989
@@ -32799,7 +32799,7 @@
     "name": "Wolpertinger Card",
     "refine": false,
     "slots": 0,
-    "description": "Increases damage of <font color='#008800'>Blast Mine</font> by and <font color='#008800'>Land Mine</font> skills by 15%. (Multiple instances of this card will stack.)<br/> <br/>Class:<font color='#6666CC'> Card</font><br/>Compound on:<font color='#00CC33'> Weapon</font><br/>Weight:<font color='#009900'> 1</font>",
+    "description": "Increases damage of <font color='#008800'>Blast Mine</font> and <font color='#008800'>Land Mine</font> by 5%. (Multiple instances of this card will stack.)<br/> <br/>Class:<font color='#6666CC'> Card</font><br/>Compound on:<font color='#00CC33'> Weapon</font><br/>Weight:<font color='#009900'> 1</font>",
     "isList": false,
     "id": "8243",
     "lastUpdated": 1774296439536

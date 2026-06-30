@@ -5,6 +5,29 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-29 (Hunter rework)
+
+### Added
+
+- **PS Hunter Rework — Trap damage formulas** — Land Mine, Blast Mine, Freezing
+  Trap, and Claymore Trap now use the reworked INT/DEX-based formulas:
+  - Land Mine: `lv × (JobLv+DEX) × (BaseLv+INT) / 45` (Fire → Earth element)
+  - Blast Mine: `lv × (BaseLv+DEX) × (JobLv+INT) / 45` (Wind element)
+  - Freezing Trap: `lv × (JobLv+DEX) × (BaseLv+INT) / 70` (Water element)
+  - Claymore Trap: `lv × (BaseLv+DEX) × (JobLv+INT) / 70` (Fire element)
+
+  Traps bypass DEF. All four show up in the skill picker for Hunter/Sniper and
+  produce a full step-by-step damage breakdown. Element vs target and race/size
+  card bonuses still apply.
+
+### Changed
+
+- **Dory Card** — Damage bonus reduced from 30%/15% to 5% for both Freezing Trap
+  and Claymore Trap, matching the reworked card's new effect.
+- **Wolpertinger Card** — Damage bonus reduced from 15% to 5% for both Blast Mine
+  and Land Mine.
+- **Setting Dirk** — All-trap damage bonus reduced from 20% to 5% per trap skill.
+
 ## 2026-06-29
 
 ### Changed
