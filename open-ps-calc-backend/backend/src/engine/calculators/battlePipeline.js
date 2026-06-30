@@ -985,18 +985,73 @@ class BattlePipeline {
     const procChance = Math.min(100, skillProcChance + itemDoubleRate);
     const procFrac = procChance / 100.0;
 
-    const attacks = procFrac > 0
-      ? [
-          createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * h * (1.0 - procFrac)),
-          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * h * procFrac),
-          createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * (1.0 - h)),
-          createAttackDefinition(critAvg, 0.0, period, effCrit),
-        ]
-      : [
-          createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * h),
-          createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * (1.0 - h)),
-          createAttackDefinition(critAvg, 0.0, period, effCrit),
+    // MO_TRIPLEATTACK proc — auto-attacks only (Monk/Champion). TA replaces
+    // the auto-attack on proc (unlike TF_DOUBLE which adds a second hit).
+    // PS rework: 5 levels, base rates [28,26,24,22,20]%; Knuckle weapons gain
+    // +0.2×lv% per 10 job levels (e.g. +5% total at rank 5, j50).
+    // MO_TRIPLEATTACK_PS_BONUS flag: TA proc can crit when SC_EXPLOSIONSPIRITS
+    // (Critical Explosion / Fury) is active.
+    const taLv = skill.id === 0 ? (gearBonuses.effective_mastery.MO_TRIPLEATTACK || 0) : 0;
+    let taProc = null, taCritProc = null, taProcChance = 0;
+    if (taLv > 0) {
+      const taRates = (profile.proc_rate_overrides || {}).MO_TRIPLEATTACK;
+      if (taRates) {
+        let baseRate = Array.isArray(taRates) ? (taRates[taLv] ?? 0) : taRates * taLv;
+        if (weapon.weapon_type === "Knuckle") {
+          baseRate += 0.2 * taLv * Math.floor((build.job_level || 1) / 10);
+        }
+        taProcChance = Math.min(100, baseRate);
+        const taSkill = { id: 263, name: "MO_TRIPLEATTACK", level: taLv, nk_ignore_flee: false };
+        taProc = this._runBranch(status, weapon, taSkill, target, build, false, { profile, gear_bonuses: gearBonuses });
+        const furyActive = profile.mechanic_flags.has("MO_TRIPLEATTACK_PS_BONUS")
+          && "SC_EXPLOSIONSPIRITS" in (build.active_status_levels || {});
+        if (furyActive) {
+          taCritProc = this._runBranch(status, weapon, taSkill, target, build, true, { profile, gear_bonuses: gearBonuses });
+        }
+      }
+    }
+    const tpf = taProcChance / 100.0;
+    const taAvg = taProc ? taProc.avg_damage : 0;
+    const taCritAvg = taCritProc ? taCritProc.avg_damage : taAvg;
+
+    // Build attacks array. TA proc takes priority over TF_DOUBLE (Monks don't
+    // use Knives, so both shouldn't apply simultaneously in practice).
+    let attacks;
+    if (tpf > 0 && taProc) {
+      if (taCritProc) {
+        // Fury active: TA proc can crit (independent of normal crit roll)
+        attacks = [
+          createAttackDefinition(taCritAvg,  0.0, period, effCrit * tpf),
+          createAttackDefinition(critAvg,     0.0, period, effCrit * (1.0 - tpf)),
+          createAttackDefinition(taAvg,       0.0, period, (1.0 - effCrit) * tpf * h),
+          createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * tpf * (1.0 - h)),
+          createAttackDefinition(normalAvg,   0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h),
+          createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - h)),
         ];
+      } else {
+        // No Fury: TA can't crit; crits happen only on non-proc swings
+        attacks = [
+          createAttackDefinition(critAvg,     0.0, period, effCrit),
+          createAttackDefinition(taAvg,       0.0, period, (1.0 - effCrit) * tpf * h),
+          createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * tpf * (1.0 - h)),
+          createAttackDefinition(normalAvg,   0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h),
+          createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - h)),
+        ];
+      }
+    } else if (procFrac > 0) {
+      attacks = [
+        createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * h * (1.0 - procFrac)),
+        createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * h * procFrac),
+        createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * (1.0 - h)),
+        createAttackDefinition(critAvg, 0.0, period, effCrit),
+      ];
+    } else {
+      attacks = [
+        createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * h),
+        createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * (1.0 - h)),
+        createAttackDefinition(critAvg, 0.0, period, effCrit),
+      ];
+    }
 
     if (katarProcChance > 0 && katarSecond) {
       const kpf = katarProcChance / 100;
@@ -1021,6 +1076,9 @@ class BattlePipeline {
       katar_second: katarSecond,
       katar_second_crit: katarSecondCrit,
       katar_proc_chance: katarProcChance,
+      ta_proc: taProc,
+      ta_crit_proc: taCritProc,
+      ta_proc_chance: taProcChance,
     });
   }
 }

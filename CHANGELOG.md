@@ -5,6 +5,25 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-29 (Monk rework)
+
+### Added
+
+- **PS Monk Rework — Triple Attack proc** — Triple Attack (MO_TRIPLEATTACK) now
+  procs during auto-attacks for Monks and Champions on Payon Stories, replacing
+  the normal hit when it triggers.
+  - Proc rate: 28 / 26 / 24 / 22 / 20 % at skill levels 1–5 (decreases with
+    higher level per PS rework design).
+  - Knuckle bonus: +0.2 × skill level % per 10 job levels (e.g. +5 % at lv 5,
+    job level 50).
+  - Crit eligibility: Triple Attack can crit when the **Fury** buff
+    (SC_EXPLOSIONSPIRITS / Critical Explosion) is active. This is gated by the
+    `MO_TRIPLEATTACK_PS_BONUS` mechanic flag so it only applies on PS.
+  - Fury crit chance: 20 / 22.5 / 25 / 27.5 / 30 % at Fury levels 1–5 (uses
+    the existing `SC_EXPLOSIONSPIRITS` override in serverProfiles.js).
+  - Triple Attack skill level is tracked via the passive-skills panel; Fury is
+    activated through the Self Buffs section.
+
 ## 2026-06-29 (UI polish)
 
 ### Fixed

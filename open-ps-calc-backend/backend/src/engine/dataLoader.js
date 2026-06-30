@@ -354,6 +354,8 @@ class DataLoader {
       "KN_CAVALIERMASTERY",
       // Proc-based extra hits on normal attacks (battlePipeline.js#calculate)
       "TF_DOUBLE",
+      // PS Monk rework: MO_TRIPLEATTACK level sets proc rate and TA ratio damage
+      "MO_TRIPLEATTACK",
       // PS Assassin rework: AS_ENCHANTPOISON level feeds the passive +2%/lv vs Poison element bonus
       "AS_ENCHANTPOISON",
       // Falcon damage (falconCalc.js): mastery enables it, Steel Crow/Blitz Beat scale it
@@ -372,7 +374,7 @@ class DataLoader {
     // These are active (non-passive) skills, normally excluded by the
     // skill_type check below -- carved out because their level still feeds
     // into a damage formula (see DAMAGE_RELEVANT comment above).
-    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT", "AS_ENCHANTPOISON"]);
+    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT", "AS_ENCHANTPOISON", "MO_TRIPLEATTACK"]);
 
     try {
       const treeData = this._loadJson("tables/skill_tree.json");

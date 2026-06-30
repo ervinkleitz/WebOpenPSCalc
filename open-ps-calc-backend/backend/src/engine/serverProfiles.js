@@ -121,6 +121,9 @@ const PS_PROC_RATE_OVERRIDES = {
   GS_CHAINACTION: 7.0,
   AC_VULTURE: 7.0,
   SM_SWORD: 7.0,
+  // PS rework: 5 levels, rates decrease with level (28/26/24/22/20%).
+  // Index 0 unused; index [lv] = base proc chance at that level.
+  MO_TRIPLEATTACK: [0, 28, 26, 24, 22, 20],
 };
 
 const PS_STEELBODY_OVERRIDE = [
@@ -166,6 +169,8 @@ const PS_MECHANIC_FLAGS = new Set([
   "AS_ENCHANTPOISON_PASSIVE_BONUS",// AS_ENCHANTPOISON: passive +2%/lv damage vs Poison element monsters
   // PS Hunter rework (Hunter_Rework_PayonStories.pdf)
   "HT_TRAP_PS_FORMULA",            // Trap damage: lv × factorA × factorB / divisor (INT/DEX scaling, bypasses DEF)
+  // PS Monk rework (PSRO_Monk_Rework_2026.pdf)
+  "MO_TRIPLEATTACK_PS_BONUS",      // Triple Attack can crit when SC_EXPLOSIONSPIRITS (Fury/Critical Explosion) is active
 ]);
 
 // Helper arrays for NJ_KASUMIKIRI / NJ_KIRIKAGE (core/server_profiles.py).
