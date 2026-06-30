@@ -5,6 +5,27 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-30
+
+### Fixed
+
+- **Refine level cap** — refine input now enforces a maximum of +10
+  (pre-renewal cap), both via the input's `max` attribute and a clamped
+  `onChange` handler so typed values above +10 are corrected immediately.
+- **ASPD display precision** — base stats panel shows one decimal place
+  (e.g. 186.3) instead of a rounded integer, matching the damage results panel.
+  The formula uses a single `Math.floor` on the combined AGI/DEX reduction,
+  matching eAthena's integer-division behaviour exactly.
+
+### Added
+
+- **PS Monk rework — Triple Attack proc** — `MO_TRIPLEATTACK` now procs on
+  auto-attacks for Monk/Champion on Payon Stories. Proc rates: 28/26/24/22/20 %
+  at skill levels 1–5; Knuckle weapons gain +0.2 × skill level % per 10 job
+  levels. When the **Fury** buff (SC_EXPLOSIONSPIRITS) is active, Triple Attack
+  procs can crit. Skill level tracked via the passive panel; Fury toggled via
+  Self Buffs.
+
 ## 2026-06-29 (ASPD precision)
 
 ### Fixed

@@ -86,6 +86,14 @@ motivated several changes beyond a straight 1:1 port:
 - **A lightweight `X-API-Key` gate** on the backend (see `DEPLOYMENT.md`)
   to deter casual direct API access — explicitly *not* real authentication,
   since the key ships in the public frontend bundle.
+- **PS Monk rework — Triple Attack proc** — `MO_TRIPLEATTACK` now procs on
+  auto-attacks for Monk/Champion on Payon Stories (28/26/24/22/20 % at levels
+  1–5, with Knuckle weapon bonus). When **Fury** (SC_EXPLOSIONSPIRITS) is
+  active, procs can crit. Skill level tracked via the passive panel.
+- **Refine cap enforced at +10** — the refine input clamps to +10, the
+  pre-renewal maximum, both in the HTML attribute and the change handler.
+- **ASPD shown to one decimal place** — uses a single `Math.floor` on the
+  combined AGI/DEX reduction, matching eAthena's integer-division behaviour.
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.

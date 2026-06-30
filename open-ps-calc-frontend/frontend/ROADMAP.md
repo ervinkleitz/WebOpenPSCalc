@@ -65,7 +65,7 @@ without re-auditing everything from scratch.
   `MG_SOULSTRIKE_MDEF_IGNORE`, `WZ_FIREPILLAR_MDEF_IGNORE`,
   `MO_EXTREMITYFIST_NK_NORMAL_DEF`, `PR_TURNUNDEAD_PS_BONUS`,
   `PS_HOLYSTRIKE_PROC`, `SC_GS_ADJUSTMENT_LR_REDUCE`,
-  `NJ_ISSEN_MIRROR_BONUS`, `MO_TRIPLEATTACK_PS_BONUS`) — these need new
+  `NJ_ISSEN_MIRROR_BONUS`) — these need new
   modifier code, not just data, so left for the `battle_pipeline.js`
   deferred-items pass. Also: 3 of the 36 weapon ratios
   (`PS_RG_TRICKARROW`, `PS_RG_QUICKSTEP`, `PS_PR_HOLYSTRIKE`) are PS-custom
@@ -101,8 +101,8 @@ without re-auditing everything from scratch.
   vanilla default of 5%/level, 7%/level on PS; verified end-to-end that DPS
   scales correctly and that non-dagger weapons correctly get 0% proc despite
   having skill levels set). Still deferred: katar second-hit, dual-wield
-  left hand, `GS_CHAINACTION`/`MO_TRIPLEATTACK` procs (same shape as
-  Double Attack but not yet ported), item autocasts, NJ_ISSEN's
+  left hand, `GS_CHAINACTION` proc (same shape as `TF_DOUBLE` and the
+  now-implemented `MO_TRIPLEATTACK`, but not yet ported), item autocasts, NJ_ISSEN's
   fixed-damage formula, CR_SHIELDBOOMERANG's special case, several small
   PS-only multiplicative bonuses (Cloaking, Lex Aeterna, Mailbreaker/Venom
   Dust/Raided, Backstab Opportunity, "performing" bonuses), `bDoubleRate`
@@ -115,8 +115,8 @@ without re-auditing everything from scratch.
 - BF_MISC skills beyond Grand Cross (HT_LANDMINE, TF_THROWSTONE,
   NJ_ZENYNAGE, GS_FLING, BA_DISSONANCE, etc.) — still return "not yet
   implemented".
-- `GS_CHAINACTION` / `MO_TRIPLEATTACK` procs — same mechanic shape as the
-  now-implemented `TF_DOUBLE`, not yet ported.
+- `GS_CHAINACTION` proc — same mechanic shape as `TF_DOUBLE` and the
+  now-implemented `MO_TRIPLEATTACK`, not yet ported.
 - Gunslinger's coin economy (Flip the Coin / `GS_GLITTERING`, and every
   skill whose damage or effect scales with coins held — e.g. PS's
   `GS_BULLSEYE` bleed chance is explicitly different "with coins") has no
@@ -145,6 +145,13 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **PS Monk rework — Triple Attack proc** — `MO_TRIPLEATTACK` procs on
+  auto-attacks for Monk/Champion; proc rates `[28,26,24,22,20]%` by level,
+  Knuckle bonus `+0.2×lv% per 10 job levels`. `MO_TRIPLEATTACK_PS_BONUS`
+  mechanic flag gates Fury-conditional crit when SC_EXPLOSIONSPIRITS is active.
+  Six-slot probability model covers all crit/proc/miss combinations. Skill
+  level tracked via the passive panel (MO_TRIPLEATTACK added to `DAMAGE_RELEVANT`
+  and `ACTIVE_SKILL_TYPE_EXCEPTIONS`). Fury toggled via the Self Buffs section.
 - Magic pipeline (#1 above moved to "Fully ported").
 - Card slots on equipment — up to 4 per item, read from `item.slots`,
   written to `equipped["<slot>_cardN"]`, already consumed by

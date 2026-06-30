@@ -967,10 +967,10 @@ export default function BuildEditor() {
                         className="mono"
                         type="number"
                         min={0}
-                        max={20}
+                        max={10}
                         style={{ marginTop: "0.4rem" }}
                         value={data.refine[slot.key] || 0}
-                        onChange={(e) => updateField(["refine", slot.key], Number(e.target.value))}
+                        onChange={(e) => updateField(["refine", slot.key], Math.min(10, Math.max(0, Number(e.target.value))))}
                         title="Refine level"
                       />
                     )}

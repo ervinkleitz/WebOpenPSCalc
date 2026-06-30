@@ -73,7 +73,7 @@ without re-auditing everything from scratch.
   `MG_SOULSTRIKE_MDEF_IGNORE`, `WZ_FIREPILLAR_MDEF_IGNORE`,
   `MO_EXTREMITYFIST_NK_NORMAL_DEF`, `PR_TURNUNDEAD_PS_BONUS`,
   `PS_HOLYSTRIKE_PROC`, `SC_GS_ADJUSTMENT_LR_REDUCE`,
-  `NJ_ISSEN_MIRROR_BONUS`, `MO_TRIPLEATTACK_PS_BONUS`) — these need new
+  `NJ_ISSEN_MIRROR_BONUS`) — these need new
   modifier code, not just data, so left for the `battle_pipeline.js`
   deferred-items pass. Also: 3 of the 36 weapon ratios
   (`PS_RG_TRICKARROW`, `PS_RG_QUICKSTEP`, `PS_PR_HOLYSTRIKE`) are PS-custom
@@ -115,8 +115,8 @@ without re-auditing everything from scratch.
   as a separate branch in the damage breakdown. **PS Envenom weapon element
   and Enchant Poison passive bonus also implemented** — see serverProfiles
   entry below. Still deferred: dual-wield left hand,
-  `GS_CHAINACTION`/`MO_TRIPLEATTACK` procs (same shape as
-  Double Attack but not yet ported), item autocasts, NJ_ISSEN's
+  `GS_CHAINACTION` proc (same shape as Double Attack but not yet ported),
+  item autocasts, NJ_ISSEN's
   fixed-damage formula, CR_SHIELDBOOMERANG's special case, several small
   PS-only multiplicative bonuses (Cloaking, Lex Aeterna, Mailbreaker/Venom
   Dust/Raided, Backstab Opportunity, "performing" bonuses), `bDoubleRate`
@@ -137,8 +137,8 @@ without re-auditing everything from scratch.
   HT_FREEZINGTRAP / HT_CLAYMORETRAP are now implemented for the
   `PAYON_STORIES` profile (see "Done this pass"); non-PS profiles still
   return "not yet implemented" for these four.
-- `GS_CHAINACTION` / `MO_TRIPLEATTACK` procs — same mechanic shape as the
-  now-implemented `TF_DOUBLE`, not yet ported.
+- `GS_CHAINACTION` proc — same mechanic shape as `TF_DOUBLE` and the
+  now-implemented `MO_TRIPLEATTACK`, not yet ported.
 - Gunslinger's coin economy (Flip the Coin / `GS_GLITTERING`, and every
   skill whose damage or effect scales with coins held — e.g. PS's
   `GS_BULLSEYE` bleed chance is explicitly different "with coins") has no
@@ -167,6 +167,14 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **PS Monk rework — Triple Attack proc** — `MO_TRIPLEATTACK` procs on
+  auto-attacks for Monk/Champion; proc rates level-indexed `[28,26,24,22,20]%`,
+  Knuckle bonus `+0.2×lv% per 10 job levels`. `MO_TRIPLEATTACK_PS_BONUS`
+  mechanic flag gates Fury-conditional crit: when SC_EXPLOSIONSPIRITS is active,
+  the proc branch runs a separate crit branch at Fury's crit rate. Six-slot
+  attack-definition model covers all crit/proc/miss combinations. `MO_TRIPLEATTACK`
+  added to `DAMAGE_RELEVANT` + `ACTIVE_SKILL_TYPE_EXCEPTIONS` so it appears in
+  the passive panel.
 - **PS Hunter rework** — four offensive trap skills (`HT_LANDMINE`,
   `HT_BLASTMINE`, `HT_FREEZINGTRAP`, `HT_CLAYMORETRAP`) now calculate real
   damage for the `PAYON_STORIES` profile using the reworked INT/DEX-based
