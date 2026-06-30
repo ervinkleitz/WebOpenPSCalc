@@ -1394,7 +1394,7 @@ export default function BuildEditor() {
       <footer className="credits-footer">
         <span>
           Thanks to our testers:&nbsp;
-          <span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl</span>
+          <span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet</span>
         </span>
         <span className="credits-sep">·</span>
         <span>
