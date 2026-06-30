@@ -5,6 +5,13 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-29 (ASPD precision)
+
+### Fixed
+
+- **ASPD display** — base stats panel now shows one decimal place (e.g. 186.3)
+  instead of a rounded integer, matching the damage results panel.
+
 ## 2026-06-29 (Monk rework)
 
 ### Added
