@@ -5,6 +5,26 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-29 (Assassin/Thief rework)
+
+### Added
+
+- **PS Assassin Rework — Katar second hit** — Implemented the katar second-hit
+  branch for auto-attacks (Katar + TF_DOUBLE learned). Proc rate is 2× the PS
+  TF_DOUBLE rate (14%/lv, capped at 100%). Damage scales as
+  `(21 + 4×AS_KATAR_lv)%` of the main hit — up to 61% at AS_KATAR lv10
+  (was flat 21% vanilla). Second hit can crit with the same katar-doubled crit
+  rate and is included in DPS. Shown as a "Katar 2nd hit" tab in the results
+  panel.
+
+- **PS Assassin Rework — Enchant Poison passive** — AS_ENCHANTPOISON now grants
+  a passive `+2%/lv` damage bonus vs Poison element monsters (up to +10% at
+  lv5), regardless of whether the buff is active. AS_ENCHANTPOISON appears in
+  the passive skills grid for Assassins.
+
+- **PS Thief Rework — Envenom weapon element** — TF_POISON (Envenom) now uses
+  the weapon's element instead of forced Poison on Payon Stories.
+
 ## 2026-06-29
 
 ### Fixed

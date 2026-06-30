@@ -627,7 +627,21 @@ class BattlePipeline {
     }
     if (skill.name in (profile.skill_elements || {})) effAtkEle = profile.skill_elements[skill.name];
 
+    // PS rework: Envenom uses weapon element instead of forced Poison.
+    if (profile.mechanic_flags.has("TF_POISON_USES_WEAPON_ELEMENT") && skill.name === "TF_POISON") effAtkEle = weapon.element;
+
     pmf = calculateAttrFix(weapon, target, pmf, result, build, effAtkEle);
+
+    // PS rework: Enchant Poison passive — +2%/lv vs Poison element targets.
+    const ELE_POISON = 5;
+    const enchantPoisonLv = profile.mechanic_flags.has("AS_ENCHANTPOISON_PASSIVE_BONUS")
+      ? (gearBonuses.effective_mastery?.AS_ENCHANTPOISON || 0) : 0;
+    if (enchantPoisonLv > 0 && target.element === ELE_POISON) {
+      const bonusPct = 2 * enchantPoisonLv;
+      pmf = scaleFloor(pmf, 100 + bonusPct, 100);
+      const [mn2, mx2, av2] = pmfStats(pmf);
+      result.add_step({ name: "Enchant Poison Passive", value: av2, min_value: mn2, max_value: mx2, multiplier: (100 + bonusPct) / 100, note: `AS_ENCHANTPOISON Lv ${enchantPoisonLv}: +${bonusPct}% vs Poison element`, formula: `dmg × ${100 + bonusPct} / 100`, hercules_ref: "PS-AssassinRework" });
+    }
 
     const div = hitCount;
     pmf = calculateForgeBonus(weapon, div, pmf, result);
@@ -827,6 +841,38 @@ class BattlePipeline {
     const normalAvg = normal.avg_damage;
     const critAvg = crit ? crit.avg_damage : normalAvg;
 
+    // Katar second hit — auto-attack only; proc rate = 2× the TF_DOUBLE rate.
+    // PS rework damage: (21 + 4×AS_KATAR_lv)% of main hit (was flat 21% vanilla).
+    let katarSecond = null;
+    let katarSecondCrit = null;
+    let katarProcChance = 0;
+    if (skill.id === 0 && weapon.weapon_type === "Katar" && profile.mechanic_flags.has("AS_KATAR_SECOND_HIT")) {
+      const katarTFDoubleLv = gearBonuses.effective_mastery.TF_DOUBLE || 0;
+      if (katarTFDoubleLv > 0) {
+        const katarMasteryLv = gearBonuses.effective_mastery.AS_KATAR || 0;
+        const katarDoubleRatePerLv = (profile.proc_rate_overrides || {}).TF_DOUBLE ?? 5.0;
+        katarProcChance = Math.min(100, 2 * katarDoubleRatePerLv * katarTFDoubleLv + (gearBonuses.double_rate || 0));
+        const katarScale = (21 + 4 * katarMasteryLv) / 100;
+        const scalePct = (katarScale * 100).toFixed(0);
+
+        katarSecond = createDamageResult({
+          min_damage: Math.floor(normal.min_damage * katarScale),
+          max_damage: Math.floor(normal.max_damage * katarScale),
+          avg_damage: normal.avg_damage * katarScale,
+        });
+        katarSecond.add_step({ name: "Katar 2nd hit", value: normal.avg_damage * katarScale, min_value: Math.floor(normal.min_damage * katarScale), max_value: Math.floor(normal.max_damage * katarScale), note: `Proc: ${katarProcChance}% · ${scalePct}% of main hit (21% base + ${4 * katarMasteryLv}% from AS_KATAR Lv${katarMasteryLv})`, formula: `main × ${scalePct} / 100`, hercules_ref: "PS-AssassinRework" });
+
+        if (crit) {
+          katarSecondCrit = createDamageResult({
+            min_damage: Math.floor(crit.min_damage * katarScale),
+            max_damage: Math.floor(crit.max_damage * katarScale),
+            avg_damage: crit.avg_damage * katarScale,
+          });
+          katarSecondCrit.add_step({ name: "Katar 2nd hit (crit)", value: crit.avg_damage * katarScale, min_value: Math.floor(crit.min_damage * katarScale), max_value: Math.floor(crit.max_damage * katarScale), note: `Proc: ${katarProcChance}% · ${scalePct}% of crit hit`, formula: `crit × ${scalePct} / 100`, hercules_ref: "PS-AssassinRework" });
+        }
+      }
+    }
+
     // TF_DOUBLE (Double Attack) — battle.c:4926. Dagger-only, normal attacks
     // only (skill.id === 0); crit and the proc are mutually exclusive (a
     // critical swing never also double-attacks). The second hit reruns the
@@ -860,6 +906,13 @@ class BattlePipeline {
           createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * (1.0 - h)),
           createAttackDefinition(critAvg, 0.0, period, effCrit),
         ];
+
+    if (katarProcChance > 0 && katarSecond) {
+      const kpf = katarProcChance / 100;
+      attacks.push(createAttackDefinition(katarSecond.avg_damage, 0.0, period, kpf * (1.0 - effCrit) * h));
+      if (katarSecondCrit) attacks.push(createAttackDefinition(katarSecondCrit.avg_damage, 0.0, period, kpf * effCrit));
+    }
+
     const dps = calculateDps(attacks);
 
     return createBattleResult({
@@ -874,6 +927,9 @@ class BattlePipeline {
       dps_valid: dpsValid,
       proc_chance: procChance,
       double_hit: procFrac > 0 ? normal : null,
+      katar_second: katarSecond,
+      katar_second_crit: katarSecondCrit,
+      katar_proc_chance: katarProcChance,
     });
   }
 }

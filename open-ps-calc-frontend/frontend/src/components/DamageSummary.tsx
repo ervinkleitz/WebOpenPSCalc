@@ -29,6 +29,9 @@ interface SingleResult {
     crit_chance: number;
     normal: DamageBranch;
     crit?: DamageBranch;
+    katar_second?: DamageBranch;
+    katar_second_crit?: DamageBranch;
+    katar_proc_chance?: number;
     dps_valid: boolean;
     dps: number;
   };
@@ -51,7 +54,8 @@ interface Props {
 // "normal" = basic auto-attack
 // "crit" = crit version of whichever is primary (skill if selected, else auto)
 // "falcon" = falcon / blitz damage breakdown
-type Branch = "skill" | "normal" | "crit" | "falcon";
+// "katar" = katar second hit (auto-attack only, PS Assassin rework)
+type Branch = "skill" | "normal" | "crit" | "falcon" | "katar";
 
 function StepRow({ step }: { step: Step }) {
   return (
@@ -98,19 +102,23 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
   const hasCrit = !!primary.result.crit;
   const falcon = (skillResult ?? normal_attack)?.falcon;
   const hasFalcon = !!falcon;
+  const hasKatar = !!normal_attack.result.katar_second;
 
   // Clamp branch to valid options
   const activeBranch: Branch =
     branch === "skill" && !hasSkill ? "normal"
     : branch === "crit" && !hasCrit ? (hasSkill ? "skill" : "normal")
     : branch === "falcon" && !hasFalcon ? (hasSkill ? "skill" : "normal")
+    : branch === "katar" && !hasKatar ? (hasSkill ? "skill" : "normal")
     : branch;
 
   // Which SingleResult provides the metrics and step breakdown (not used for falcon branch)
-  const activeResult: SingleResult = activeBranch === "normal" ? normal_attack : primary;
+  const activeResult: SingleResult = (activeBranch === "normal" || activeBranch === "katar") ? normal_attack : primary;
   const activeDamage: DamageBranch | null = activeBranch === "falcon"
     ? null
-    : activeBranch === "crit" ? primary.result.crit! : activeResult.result.normal;
+    : activeBranch === "katar" ? (normal_attack.result.katar_second ?? null)
+    : activeBranch === "crit" ? primary.result.crit!
+    : activeResult.result.normal;
 
   const notImplemented = activeDamage?.steps?.length === 1 && activeDamage.steps[0].name === "Not yet implemented";
   const { result, status } = activeResult;
@@ -144,6 +152,12 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
           <div className="label">DPS (est.)</div>
           <div className="value">{result.dps_valid ? result.dps.toFixed(1) : "—"}</div>
         </div>
+        {activeBranch === "katar" && normal_attack.result.katar_proc_chance != null && (
+          <div className="metric">
+            <div className="label">2nd hit proc</div>
+            <div className="value">{normal_attack.result.katar_proc_chance.toFixed(1)}<span className="unit">%</span></div>
+          </div>
+        )}
       </div>
 
       {notImplemented && activeDamage && (
@@ -184,6 +198,15 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
             onClick={() => setBranch("falcon")}
           >
             Falcon
+          </button>
+        )}
+
+        {hasKatar && (
+          <button
+            className={activeBranch === "katar" ? "active" : ""}
+            onClick={() => setBranch("katar")}
+          >
+            Katar 2nd hit
           </button>
         )}
       </div>

@@ -347,6 +347,7 @@ function createBattleResult(overrides = {}) {
     magic: null,
     katar_second: null,
     katar_second_crit: null,
+    katar_proc_chance: 0.0,
     proc_chance: 0.0,
     double_hit: null,
     double_hit_crit: null,
