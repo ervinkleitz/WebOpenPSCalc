@@ -5,6 +5,21 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-06-29 (UI polish)
+
+### Fixed
+
+- **Build name not updating on save** — saving a build under a new name in the
+  Save / Load panel now immediately reflects the name in the Character section.
+
+### Changed
+
+- **Title renamed** — "Open PS Damage Calc" shortened to "Open PS Calc" in the
+  navbar.
+- **Consistent popups** — the Damage breakdown panel is now a centred modal
+  overlay matching the Changelog and Save / Load dialogs, instead of an inline
+  collapsible section.
+
 ## 2026-06-29 (Hunter rework)
 
 ### Added

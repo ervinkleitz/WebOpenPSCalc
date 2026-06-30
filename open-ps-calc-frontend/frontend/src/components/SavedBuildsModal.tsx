@@ -8,9 +8,10 @@ interface Props {
   currentName: string;
   currentState: UrlEditorState;
   onLoad: (state: UrlEditorState) => void;
+  onSave: (name: string) => void;
 }
 
-export default function SavedBuildsModal({ open, onClose, currentName, currentState, onLoad }: Props) {
+export default function SavedBuildsModal({ open, onClose, currentName, currentState, onLoad, onSave }: Props) {
   const [builds, setBuilds] = useState<SavedBuild[]>([]);
   const [nameInput, setNameInput] = useState(currentName);
   const [error, setError] = useState("");
@@ -41,6 +42,7 @@ export default function SavedBuildsModal({ open, onClose, currentName, currentSt
     }
     setBuilds(result.builds);
     setError("");
+    onSave(name);
   }
 
   function handleDelete(id: string) {

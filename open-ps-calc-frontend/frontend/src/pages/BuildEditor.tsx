@@ -391,7 +391,6 @@ export default function BuildEditor() {
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
   const [resultsOpen, setResultsOpen] = useState(false);
-  const [calcTrigger, setCalcTrigger] = useState(0);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
     (localStorage.getItem("theme") as "dark" | "light") || "dark"
   );
@@ -608,7 +607,6 @@ export default function BuildEditor() {
     setCalculating(true);
     setCalcError("");
     setResultsOpen(true);
-    setCalcTrigger((t) => t + 1);
     try {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
@@ -711,7 +709,7 @@ export default function BuildEditor() {
       <div className="topbar">
         <div className="topbar-left">
           <span className="brand-mark">⚔</span>
-          <span className="brand-title">Open PS Damage Calc</span>
+          <span className="brand-title">Open PS Calc</span>
           <InfoTooltip>
             <strong>Open PS Calc</strong>
             A pre-renewal Ragnarok Online damage calculator for vanilla
@@ -775,6 +773,7 @@ export default function BuildEditor() {
           currentName={data.name}
           currentState={currentEditorState}
           onLoad={onLoadSavedState}
+          onSave={(name) => setData((prev) => ({ ...prev, name }))}
         />
         <ResultsPanel
           open={resultsOpen}
@@ -782,7 +781,6 @@ export default function BuildEditor() {
           calcResult={calcResult}
           calculating={calculating}
           error={calcError}
-          calcTrigger={calcTrigger}
         />
 
         <div className="editor-grid">
