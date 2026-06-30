@@ -60,8 +60,8 @@ instead of release version. Dates are taken from actual git commit history.
 ### Added
 
 - **Credits footer** — Added a footer crediting Discord testers (Metan,
-  hokageyyy, leafhill, knightzeroxx, kerfuffl) and tochoco.latte for the
-  initial base engine.
+  hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet) and tochoco.latte
+  for the initial base engine.
 
 ## 2026-06-28 (Monk rework)
 

@@ -58,6 +58,14 @@ without re-auditing everything from scratch.
   `skill.level`, never `target`/`ctx` — several PS magic ratios need them
   (e.g. `PR_MAGNUS` checks target race, `WZ_FIREPILLAR` reads
   `skill_params`). Now matches the weapon path's `(lv, tgt, ctx)` signature.
+  **PS Assassin/Thief rework flags added and implemented**: three new
+  `mechanic_flags` added to the `PAYON_STORIES` profile with full pipeline
+  consumers: `AS_KATAR_SECOND_HIT` (katar second-hit proc),
+  `TF_POISON_USES_WEAPON_ELEMENT` (Envenom attack element follows weapon
+  element), `AS_ENCHANTPOISON_PASSIVE_BONUS` (Enchant Poison skill level
+  adds 2% damage per level vs Poison-element targets). `AS_ENCHANTPOISON`
+  also added to `dataLoader.js`'s `DAMAGE_RELEVANT` and
+  `ACTIVE_SKILL_TYPE_EXCEPTIONS` so the skill appears in the passive panel.
   **Still missing**: the upstream profile also has ~13 more `mechanic_flags`
   with no consumer anywhere in this JS port yet (`SC_CLOAKING_BONUS`,
   `BA_MUSICALSTRIKE_PERFORMING_BONUS`, `DC_THROWARROW_PERFORMING_BONUS`,
@@ -100,8 +108,14 @@ without re-auditing everything from scratch.
   with crit; proc rate from `profile.proc_rate_overrides.TF_DOUBLE` with a
   vanilla default of 5%/level, 7%/level on PS; verified end-to-end that DPS
   scales correctly and that non-dagger weapons correctly get 0% proc despite
-  having skill levels set). Still deferred: katar second-hit, dual-wield
-  left hand, `GS_CHAINACTION`/`MO_TRIPLEATTACK` procs (same shape as
+  having skill levels set). **Katar second-hit now implemented** — Katar
+  auto-attack with `TF_DOUBLE` learned procs a second hit at 2× the normal
+  `TF_DOUBLE` rate, dealing `(21 + 4 × AS_KATAR_lv)%` of the main-hit
+  damage; both normal and crit variants computed, included in DPS, exposed
+  as a separate branch in the damage breakdown. **PS Envenom weapon element
+  and Enchant Poison passive bonus also implemented** — see serverProfiles
+  entry below. Still deferred: dual-wield left hand,
+  `GS_CHAINACTION`/`MO_TRIPLEATTACK` procs (same shape as
   Double Attack but not yet ported), item autocasts, NJ_ISSEN's
   fixed-damage formula, CR_SHIELDBOOMERANG's special case, several small
   PS-only multiplicative bonuses (Cloaking, Lex Aeterna, Mailbreaker/Venom
@@ -145,6 +159,10 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **PS Assassin/Thief rework** — katar second-hit proc (now in the
+  battlePipeline and exposed as a breakdown branch), Enchant Poison passive
+  damage bonus vs Poison-element targets, and Envenom weapon-element
+  override — all gated behind new `PAYON_STORIES` mechanic flags.
 - Magic pipeline (#1 above moved to "Fully ported").
 - Card slots on equipment — up to 4 per item, read from `item.slots`,
   written to `equipped["<slot>_cardN"]`, already consumed by

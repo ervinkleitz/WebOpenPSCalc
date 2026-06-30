@@ -25,9 +25,12 @@ Qt GUI. This port is a stateless multi-user **web app**, which forced or
 motivated several changes beyond a straight 1:1 port:
 
 - **No accounts, no server-side storage.** The original saves builds to
-  local `saves/*.json` files. This port has no database and no login —
-  the entire build (stats, equipment, skill, target) is encoded into the
-  URL's `?b=` query param, so "saving" a build is just sharing its link.
+  local `saves/*.json` files. This port has no database and no login.
+  Build state is encoded into the URL's `?b=` query param (lz-string
+  compressed; old uncompressed URLs are still decoded transparently), so
+  sharing a build is just sharing its link. A **Save / Load** panel also
+  stores named build snapshots in the browser's `localStorage` (up to a
+  small cap), purely client-side.
 - **TypeScript.** Backend entry points/routes and the entire frontend are
   TypeScript; the ported engine internals stay as `.js` (loaded via
   `allowJs`) to keep the line-for-line diff against the original Python
@@ -52,6 +55,20 @@ motivated several changes beyond a straight 1:1 port:
   placeholder result fields for it (`proc_chance`, `double_hit`) but the
   pipeline never actually computed them. Dagger-only, mutually exclusive
   with crit, proc rate read from the PS/vanilla profile tables.
+- **PS Assassin/Thief rework** — Three Payon Stories custom behaviours
+  added behind mechanic flags: (1) katar second hit (`AS_KATAR_SECOND_HIT`)
+  — auto-attack with a Katar procs a second hit at twice the normal
+  `TF_DOUBLE` rate, dealing `(21 + 4 × AS_KATAR_lv)%` of the main hit;
+  shown as a separate branch in the damage breakdown. (2) Enchant Poison
+  passive bonus (`AS_ENCHANTPOISON_PASSIVE_BONUS`) — each Enchant Poison
+  skill level adds 2% damage against Poison-element targets. (3) Envenom
+  weapon element (`TF_POISON_USES_WEAPON_ELEMENT`) — Envenom's attack
+  element follows the weapon's element rather than always being Poison.
+- **ASPD potion policy** — The restricted-to-Concentration-Potion class
+  list reflects PS's rebalance (Priest/High Priest, Bard/Dancer and their
+  trans forms). Monk and Champion can use Awakening Potion; Whitesmith,
+  Mastersmith, Creator, Biochemist, and the Thief/Rogue tree can use
+  Berserk Potion.
 - **Filled in larger chunks of `PAYON_STORIES`'s skill-ratio/mastery
   overrides** in `serverProfiles.js` than the original port carried over
   initially, pulled directly from the upstream Python source.
