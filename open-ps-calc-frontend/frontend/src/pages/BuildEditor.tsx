@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import LZString from "lz-string";
 import { api } from "../api/client";
 import SearchPicker from "../components/SearchPicker";
 import Panel from "../components/Panel";
@@ -305,11 +306,15 @@ const DEFAULT_CUSTOM_TARGET: CustomTarget = {
 };
 
 function encodeState(state: UrlEditorState): string {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  return "z1_" + LZString.compressToEncodedURIComponent(JSON.stringify(state));
 }
 
 function decodeState(encoded: string): UrlEditorState | null {
   try {
+    if (encoded.startsWith("z1_")) {
+      const json = LZString.decompressFromEncodedURIComponent(encoded.slice(3));
+      return json ? JSON.parse(json) : null;
+    }
     return JSON.parse(decodeURIComponent(escape(atob(encoded))));
   } catch {
     return null;
@@ -386,6 +391,7 @@ export default function BuildEditor() {
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
   const [resultsOpen, setResultsOpen] = useState(false);
+  const [calcTrigger, setCalcTrigger] = useState(0);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
     (localStorage.getItem("theme") as "dark" | "light") || "dark"
   );
@@ -602,6 +608,7 @@ export default function BuildEditor() {
     setCalculating(true);
     setCalcError("");
     setResultsOpen(true);
+    setCalcTrigger((t) => t + 1);
     try {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
@@ -775,6 +782,7 @@ export default function BuildEditor() {
           calcResult={calcResult}
           calculating={calculating}
           error={calcError}
+          calcTrigger={calcTrigger}
         />
 
         <div className="editor-grid">

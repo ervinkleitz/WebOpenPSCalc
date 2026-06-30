@@ -9,6 +9,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **URL compression** — Build share URLs are now compressed with LZ-string,
+  reducing typical URL length by ~50–60 %. Old uncompressed URLs (with `?b=`)
+  continue to load without any action required.
+
+- **Calculate → scroll to results** — Clicking "Calculate damage" now smoothly
+  scrolls the results panel into view, even when the panel is already open.
+
 - **Base stat inputs** — Focusing a stat input now selects its value so typing
   immediately replaces it instead of appending to the existing number.
 
