@@ -11,7 +11,7 @@ instead of release version. Dates are taken from actual git commit history.
 
 - **PS Hunter Rework — Trap damage formulas** — Land Mine, Blast Mine, Freezing
   Trap, and Claymore Trap now use the reworked INT/DEX-based formulas:
-  - Land Mine: `lv × (JobLv+DEX) × (BaseLv+INT) / 45` (Fire → Earth element)
+  - Land Mine: `lv × (JobLv+DEX) × (BaseLv+INT) / 45` (Earth element)
   - Blast Mine: `lv × (BaseLv+DEX) × (JobLv+INT) / 45` (Wind element)
   - Freezing Trap: `lv × (JobLv+DEX) × (BaseLv+INT) / 70` (Water element)
   - Claymore Trap: `lv × (BaseLv+DEX) × (JobLv+INT) / 70` (Fire element)

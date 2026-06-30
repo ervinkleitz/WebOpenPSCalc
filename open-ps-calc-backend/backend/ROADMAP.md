@@ -123,12 +123,20 @@ without re-auditing everything from scratch.
   gear bonus (cards/items that add to Double Attack's proc chance — no
   consumer in `gearBonusAggregator.js` yet), and `bWeaponAtk` (needs a
   weapon-type → Hercules `W_*` constant table not transcribed here).
+  **PS Hunter trap branch now implemented** — `_runTrapBranch` handles
+  HT_LANDMINE, HT_BLASTMINE, HT_FREEZINGTRAP, HT_CLAYMORETRAP when
+  `HT_TRAP_PS_FORMULA` mechanic flag is set; dispatched in `calculate()`
+  before the generic BF_MISC fallback. Formula verified against the PDF's
+  comparison table at Hunter 99/50 DEX150/INT100 for all four traps.
 
 ## Not yet started
 
-- BF_MISC skills beyond Grand Cross (HT_LANDMINE, TF_THROWSTONE,
-  NJ_ZENYNAGE, GS_FLING, BA_DISSONANCE, etc.) — still return "not yet
-  implemented".
+- BF_MISC skills beyond Grand Cross and the PS trap branch
+  (TF_THROWSTONE, NJ_ZENYNAGE, GS_FLING, BA_DISSONANCE, etc.) — still
+  return "not yet implemented". HT_LANDMINE / HT_BLASTMINE /
+  HT_FREEZINGTRAP / HT_CLAYMORETRAP are now implemented for the
+  `PAYON_STORIES` profile (see "Done this pass"); non-PS profiles still
+  return "not yet implemented" for these four.
 - `GS_CHAINACTION` / `MO_TRIPLEATTACK` procs — same mechanic shape as the
   now-implemented `TF_DOUBLE`, not yet ported.
 - Gunslinger's coin economy (Flip the Coin / `GS_GLITTERING`, and every
@@ -159,6 +167,13 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **PS Hunter rework** — four offensive trap skills (`HT_LANDMINE`,
+  `HT_BLASTMINE`, `HT_FREEZINGTRAP`, `HT_CLAYMORETRAP`) now calculate real
+  damage for the `PAYON_STORIES` profile using the reworked INT/DEX-based
+  formulas (divisors 45 and 70). Bypasses DEF; element fix, race/size card
+  bonuses, `bSkillAtk` bonuses (Dory Card, Wolpertinger Card, Setting Dirk),
+  and `bFinalAtk` all still apply. Card bonus values updated in
+  `ps_item_manual.json`, `ps_item_overrides.json`, and `ps_item_db.json`.
 - **PS Assassin/Thief rework** — katar second-hit proc (now in the
   battlePipeline and exposed as a breakdown branch), Enchant Poison passive
   damage bonus vs Poison-element targets, and Envenom weapon-element

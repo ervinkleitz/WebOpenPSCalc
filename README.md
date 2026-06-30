@@ -64,6 +64,12 @@ motivated several changes beyond a straight 1:1 port:
   skill level adds 2% damage against Poison-element targets. (3) Envenom
   weapon element (`TF_POISON_USES_WEAPON_ELEMENT`) — Envenom's attack
   element follows the weapon's element rather than always being Poison.
+- **PS Hunter rework** — Offensive trap damage formulas completely replaced
+  for Payon Stories: Land Mine, Blast Mine, Freezing Trap, and Claymore Trap
+  now use INT/DEX/level-based formulas (`lv × factorA × factorB / divisor`)
+  behind the `HT_TRAP_PS_FORMULA` mechanic flag, bypassing DEF. Element vs
+  target and race/size card bonuses still apply. Dory Card, Wolpertinger Card,
+  and Setting Dirk bonus values updated to match the reworked amounts.
 - **ASPD potion policy** — The restricted-to-Concentration-Potion class
   list reflects PS's rebalance (Priest/High Priest, Bard/Dancer and their
   trans forms). Monk and Champion can use Awakening Potion; Whitesmith,
