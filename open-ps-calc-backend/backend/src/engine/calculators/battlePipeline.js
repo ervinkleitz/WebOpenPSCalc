@@ -789,10 +789,11 @@ class BattlePipeline {
         crit: null,
         crit_chance: 0.0,
         hit_chance: hitChanceRS,
-        dps: calculateDps(rsAttacks),
+        dps: 0,
         attacks: rsAttacks,
         period_ms: amotion,
-        dps_valid: true,
+        // DPS depends on monster attack speed, not player ASPD — not calculable here.
+        dps_valid: false,
       });
     }
 
