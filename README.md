@@ -107,6 +107,10 @@ motivated several changes beyond a straight 1:1 port:
   to exactly one selectable result. Tab while the dropdown is open selects
   the keyboard-highlighted item, or the first non-disabled result if none is
   highlighted, before moving focus normally.
+- **Card search filtered by slot** — card pickers only show cards that can
+  compound into that slot type (weapon cards for weapon slots, armor cards
+  for armor slots, etc.). The left-hand slot shows weapon cards when a
+  weapon is equipped there (dual-wield) and shield cards otherwise.
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.

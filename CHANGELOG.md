@@ -5,6 +5,17 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-01
+
+### Changed
+
+- **Card search filtered by slot** — card pickers in the equipment section
+  now only show cards that can compound into that slot type. Weapon slots
+  show weapon cards, armor slots show armor cards, headgear slots show
+  headgear cards, and so on. The left-hand slot shows weapon cards when a
+  weapon is equipped there (dual-wield) and shield cards when a shield is
+  equipped.
+
 ## 2026-06-30
 
 ### Added
