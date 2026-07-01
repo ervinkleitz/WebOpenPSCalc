@@ -147,6 +147,13 @@ motivated several changes beyond a straight 1:1 port:
   `gearBonusAggregator` parses `autobonus` inner scripts into
   `gearBonuses.auto_bonuses`; `build.flags.force_procs` applies them as
   permanent bonuses.
+- **PS Wizard / High Wizard rework** — changes from `Wizard_and_High_Wizard_Trans_Class_Changes.pdf`
+  are modelled: Frost Nova reworked formula (190+15×lv base, +10%/Frost Diver lv, max lv 5);
+  Lord of Vermillion total 200×lv% (4 waves summed, 2000% at lv 10); Napalm Vulcan
+  element changed from Ghost to Shadow + 50% MDEF ignore; Fire Pillar 50% MDEF ignore
+  (max lv 5); Mystical Amplification per-level MATK scaling (+10%/lv on PS, flat 50%
+  vanilla, max lv 5, exposed in the buffs panel); Sightrasher max lv 5; Soul Drain
+  passive +1% MaxHP per level (slider in the passives panel).
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.

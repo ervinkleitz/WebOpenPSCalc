@@ -370,13 +370,15 @@ class DataLoader {
       // skill_type exception below, and PS_BF_MAGIC_RATIOS in
       // serverProfiles.js for where the level is actually consumed.
       "MG_FROSTDIVER", "MG_FIREWALL",
+      // PS High Wizard rework: Soul Drain grants +1% MaxHP per level passively.
+      "HW_SOULDRAIN",
     ]);
     // Some skill DB names differ from the key masteryFix.js looks up.
     const MASTERY_KEY_OVERRIDE = { "SM_TWOHAND": "SM_TWOHANDSWORD" };
     // These are active (non-passive) skills, normally excluded by the
     // skill_type check below -- carved out because their level still feeds
     // into a damage formula (see DAMAGE_RELEVANT comment above).
-    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT", "AS_ENCHANTPOISON", "MO_TRIPLEATTACK"]);
+    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT", "AS_ENCHANTPOISON", "MO_TRIPLEATTACK", "HW_SOULDRAIN"]);
 
     try {
       const treeData = this._loadJson("tables/skill_tree.json");

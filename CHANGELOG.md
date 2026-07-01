@@ -5,6 +5,33 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-01 (3)
+
+### Added
+
+- **PS Wizard / High Wizard rework** (`Wizard_and_High_Wizard_Trans_Class_Changes.pdf`) —
+  the following changes are now modelled:
+  - **Frost Nova** (`WZ_FROSTNOVA`): PS rework formula `(175+15×lv) + 10×FrostDiverLv`%
+    (190/205/220/235/250% base at levels 1–5, up to +100% with Frost Diver 10).
+    Max level capped at 5.
+  - **Lord of Vermillion** (`WZ_VERMILION`): 4 waves, each wave deals `20×lv×waveNum`%
+    MATK. Total = `200×lv`% (2000% at level 10). Added to `PS_BF_MAGIC_RATIOS`.
+  - **Napalm Vulcan** (`HW_NAPALMVULCAN`): element changed from Ghost to Shadow (Dark,
+    element 7) via `skill_elements` override in the PS profile. 50% hard MDEF
+    ignore added via the `HW_NAPALMVULCAN_MDEF_IGNORE` mechanic flag.
+  - **Fire Pillar** (`WZ_FIREPILLAR`): 50% hard MDEF ignore added via the
+    `WZ_FIREPILLAR_MDEF_IGNORE` mechanic flag. Max level capped at 5.
+  - **Mystical Amplification** (`WZ_AMPLIFYMAGICPOWER` / `SC_AMPLIFYMAGICPOWER`):
+    PS rework scales MATK boost per level — `min(lv,5)×10`% (10/20/30/40/50%).
+    Vanilla remains flat 50% regardless of level. Max level capped at 5.
+    Added to the buffs panel (Wizard / High Wizard).
+  - **Sightrasher** (`WZ_SIGHTRASHER`): max level capped at 5. Formula already
+    correct (`100+75×lv`% = 175/250/325/400/475%).
+  - **Soul Drain** (`HW_SOULDRAIN`): passive +1% MaxHP per level (max +10% at
+    level 10). Exposed as a passive skill slider; added to `DAMAGE_RELEVANT`
+    and `ACTIVE_SKILL_TYPE_EXCEPTIONS` in `dataLoader.js`.
+  - Reworks banner updated to include Wizard / High Wizard.
+
 ## 2026-07-01 (2)
 
 ### Added

@@ -71,10 +71,23 @@ without re-auditing everything from scratch.
   `RG_BOW_DOUBLE_ATTACK` (Rogue). Knight rework uses no new mechanic flags —
   implemented via `SC_TWOHANDQUICKEN.cri_per_lv`, `skill_level_cap_overrides`,
   and `mastery_prefer_fallback`.
+  **PS Wizard / High Wizard rework implemented**: `WZ_FROSTNOVA` formula
+  corrected to `(175+15×lv) + 10×FrostDiverLv`% (was `50×lv + …`). `WZ_VERMILION`
+  added to `PS_BF_MAGIC_RATIOS` with `200×lv`% total (4 waves summed).
+  `HW_NAPALMVULCAN` removed from `PS_MAGIC_VANILLA_OK`; element overridden to
+  Shadow (Dark=7) via `skill_elements`; 50% MDEF ignore added via
+  `HW_NAPALMVULCAN_MDEF_IGNORE` flag. `WZ_FIREPILLAR_MDEF_IGNORE` flag wired
+  into `battlePipeline.js`'s `_runMagicBranch`. `SC_AMPLIFYMAGICPOWER` added to
+  `statusCalculator.js` with PS-scaling (`min(lv,5)×10`%) gated by
+  `SC_AMPLIFYMAGICPOWER_SCALING` flag; vanilla keeps flat 50%. `HW_SOULDRAIN`
+  passive +1% MaxHP/lv added to `statusCalculator.js` and exposed as a skill
+  slider via `DAMAGE_RELEVANT` / `ACTIVE_SKILL_TYPE_EXCEPTIONS`. Level caps
+  added: `WZ_FROSTNOVA:5`, `WZ_FIREPILLAR:5`, `WZ_SIGHTRASHER:5`,
+  `WZ_AMPLIFYMAGICPOWER:5`.
   **Still missing**: upstream has ~10 more `mechanic_flags` with no consumer
   anywhere in this JS port yet (`SC_CLOAKING_BONUS`,
   `BA_MUSICALSTRIKE_PERFORMING_BONUS`, `DC_THROWARROW_PERFORMING_BONUS`,
-  `GS_BLOCK_ENDOW`, `MG_SOULSTRIKE_MDEF_IGNORE`, `WZ_FIREPILLAR_MDEF_IGNORE`,
+  `GS_BLOCK_ENDOW`, `MG_SOULSTRIKE_MDEF_IGNORE`,
   `MO_EXTREMITYFIST_NK_NORMAL_DEF`, `PR_TURNUNDEAD_PS_BONUS`,
   `PS_HOLYSTRIKE_PROC`, `SC_GS_ADJUSTMENT_LR_REDUCE`,
   `NJ_ISSEN_MIRROR_BONUS`) — these need new modifier code, not just data.
@@ -158,6 +171,9 @@ without re-auditing everything from scratch.
   `has_auto_bonuses: boolean`; the frontend shows a "Cards always proc"
   checkbox in the damage breakdown panel when true, triggering immediate
   recalculation on toggle.
+  **PS Wizard rework — 50% MDEF ignore** for `WZ_FIREPILLAR` and
+  `HW_NAPALMVULCAN` wired via per-skill `mdefIgnorePct` parameter already
+  present in `calculateMagicDefenseFix` (was always passed 0 before).
   Still deferred: `GS_CHAINACTION` proc,
   item autocasts, NJ_ISSEN's fixed-damage formula,
   CR_SHIELDBOOMERANG's special case, several small PS-only multiplicative

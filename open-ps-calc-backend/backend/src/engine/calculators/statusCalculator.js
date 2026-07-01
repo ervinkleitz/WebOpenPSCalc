@@ -390,6 +390,12 @@ class StatusCalculator {
       status.max_hp = Math.floor(status.max_hp * (100 + build.bonus_maxhp_rate) / 100);
     }
 
+    // PS High Wizard rework: Soul Drain passive +1% MaxHP per level.
+    const hwSouldrainLv = mastery.HW_SOULDRAIN || 0;
+    if (hwSouldrainLv) {
+      status.max_hp = Math.floor(status.max_hp * (100 + hwSouldrainLv) / 100);
+    }
+
     if (build.job_id === 23) {
       for (const [thresh, bonus] of Object.entries(profile.sn_hp_bonus || {})) {
         if (build.base_level >= Number(thresh)) status.max_hp += bonus;
@@ -433,6 +439,17 @@ class StatusCalculator {
     if (build.bonus_matk_flat) {
       status.matk_min += build.bonus_matk_flat;
       status.matk_max += build.bonus_matk_flat;
+    }
+
+    // Mystical Amplification (SC_AMPLIFYMAGICPOWER): flat 50% on vanilla;
+    // PS rework scales per level (+10%/lv, cap lv5 = 50%) via SC_AMPLIFYMAGICPOWER_SCALING.
+    if ("SC_AMPLIFYMAGICPOWER" in activeSc) {
+      const lv = activeSc.SC_AMPLIFYMAGICPOWER;
+      const ampPct = profile.mechanic_flags.has("SC_AMPLIFYMAGICPOWER_SCALING")
+        ? Math.min(lv, 5) * 10
+        : 50;
+      status.matk_min = Math.floor(status.matk_min * (100 + ampPct) / 100);
+      status.matk_max = Math.floor(status.matk_max * (100 + ampPct) / 100);
     }
 
     // === MDEF ===

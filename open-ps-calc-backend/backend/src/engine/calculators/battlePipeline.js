@@ -241,8 +241,12 @@ class BattlePipeline {
     }
 
     // 3. Magic defense (MDEF% + soft MDEF flat)
+    const mdefIgnorePct =
+      (profile.mechanic_flags.has("WZ_FIREPILLAR_MDEF_IGNORE") && skillName === "WZ_FIREPILLAR") ? 50
+      : (profile.mechanic_flags.has("HW_NAPALMVULCAN_MDEF_IGNORE") && skillName === "HW_NAPALMVULCAN") ? 50
+      : 0;
     if (!skill.nk_ignore_def) {
-      pmf = calculateMagicDefenseFix(target, gearBonuses || {}, pmf, result);
+      pmf = calculateMagicDefenseFix(target, gearBonuses || {}, pmf, result, mdefIgnorePct);
     } else {
       const [mn, mx, av] = pmfStats(pmf);
       result.add_step({

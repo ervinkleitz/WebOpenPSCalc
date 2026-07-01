@@ -194,6 +194,13 @@ const PS_MECHANIC_FLAGS = new Set([
   // Vulture's Eye enables Double Attack when a bow is equipped. Proc chance =
   // doubleRate × min(TF_DOUBLE_lv, AC_VULTURE_lv). Requires both skills to have levels.
   "RG_BOW_DOUBLE_ATTACK",
+  // PS Wizard/High Wizard rework (Wizard_and_High_Wizard_Trans_Class_Changes.pdf)
+  // Fire Pillar and Napalm Vulcan each ignore 50% of hard MDEF.
+  "WZ_FIREPILLAR_MDEF_IGNORE",
+  "HW_NAPALMVULCAN_MDEF_IGNORE",
+  // Mystical Amplification scales with skill level on PS: +10% MATK per level
+  // (lv1=10%, lv2=20%, …, lv5=50%). Vanilla gives flat 50% at any level.
+  "SC_AMPLIFYMAGICPOWER_SCALING",
 ]);
 
 // Helper arrays for NJ_KASUMIKIRI / NJ_KIRIKAGE (core/server_profiles.py).
@@ -287,14 +294,17 @@ const PS_BF_MAGIC_RATIOS = {
   NJ_HYOUSENSOU: () => 85,
   NJ_RAIGEKISAI: (lv) => 150 + 60 * lv,
   AL_HOLYLIGHT: (lv, tgt, ctx) => 101 + (ctx ? ctx.base_level : 125),
-  // wiki.payonstories.com/Frost_Nova: MATK% scales with the caster's own
-  // Frost Diver rank (+10% MATK per Frost Diver level), not a manual param --
-  // read straight from mastery_levels (ctx.skill_levels) via the Frost
-  // Diver passive-skill entry in dataLoader.js#getPassiveSkillsForJob.
+  // wiki.payonstories.com/Frost_Nova: PS rework — base MATK% is 190+15×lv
+  // (175+15×lv formula; lv1=190, lv5=250), +10% per Frost Diver level.
+  // Frost Diver level read from mastery_levels via the passive-skill entry in
+  // dataLoader.js#getPassiveSkillsForJob.
   WZ_FROSTNOVA: (lv, tgt, ctx) => {
     const frostdiverLv = ctx ? (ctx.skill_levels.MG_FROSTDIVER ?? 0) : 0;
-    return 50 * lv + 10 * frostdiverLv;
+    return 175 + 15 * lv + 10 * frostdiverLv;
   },
+  // wiki.payonstories.com/Lord_of_Vermillion: 4 waves, each wave deals
+  // 20%×lv×wave# MATK. Total = 20×lv×(1+2+3+4) = 200×lv (2000% at lv10).
+  WZ_VERMILION: (lv) => 200 * lv,
   PR_MAGNUS: (lv, tgt) => (tgt && (tgt.element === 9 || tgt.race === "Demon")) ? 100 : 50,
   // wiki.payonstories.com/Fire_Pillar: each hit's MATK% scales with the
   // caster's own Fire Wall rank (+2% MATK per hit per Fire Wall level) --
@@ -311,7 +321,7 @@ const PS_MAGIC_VANILLA_OK = new Set([
   "MG_NAPALMBEAT", "MG_SOULSTRIKE", "MG_FIREWALL", "MG_THUNDERSTORM",
   "MG_FROSTDIVER", "MG_COLDBOLT", "MG_FIREBOLT", "MG_LIGHTNINGBOLT",
   "WZ_SIGHTBLASTER", "WZ_WATERBALL", "WZ_STORMGUST", "WZ_JUPITEL",
-  "WZ_METEOR", "HW_NAPALMVULCAN", "AL_RUWACH", "NJ_KOUENKA", "NJ_KAENSIN",
+  "WZ_METEOR", "AL_RUWACH", "NJ_KOUENKA", "NJ_KAENSIN",
   "NJ_HYOUSYOURAKU", "NJ_KAMAITACHI", "NJ_HUUJIN",
 ]);
 
@@ -377,7 +387,15 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   // PS Knight rework: Blade Mastery (KN_TWOHANDMASTERY) covers 1H Sword too.
   // SM_SWORD is still used when a Knight doesn't have KN_TWOHANDMASTERY (e.g. Swordman).
   mastery_prefer_fallback: { PR_MACEMASTERY: "MO_IRONHAND", SM_SWORD: "KN_TWOHANDMASTERY" },
-  skill_level_cap_overrides: { KN_SPEARSTAB: 5 },
+  skill_level_cap_overrides: {
+    KN_SPEARSTAB: 5,
+    WZ_FROSTNOVA: 5,
+    WZ_FIREPILLAR: 5,
+    WZ_SIGHTRASHER: 5,
+    WZ_AMPLIFYMAGICPOWER: 5,
+  },
+  // HW_NAPALMVULCAN uses Shadow (Dark) element on PS instead of Ghost
+  skill_elements: { HW_NAPALMVULCAN: 7 },
   steelbody_override: PS_STEELBODY_OVERRIDE,
   sn_hp_bonus: PS_SN_HP_BONUS,
   sn_sp_bonus: PS_SN_SP_BONUS,

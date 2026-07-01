@@ -231,6 +231,10 @@ const SELF_BUFFS = [
   // Strike; modeled in battlePipeline.js as halving the effective period
   // for those skills (DPS only, not per-hit damage).
   { key: "SC_DOUBLECASTING",   label: "Double Bolt",          max: 1,  jobs: [4017] },
+  // Wizard / High Wizard — Mystical Amplification: next spell +50% MATK (vanilla),
+  // or +10% per level capped at level 5 (PS rework). Max 10 vanilla / 5 PS;
+  // PS cap enforced server-side via SC_AMPLIFYMAGICPOWER_SCALING mechanic flag.
+  { key: "SC_AMPLIFYMAGICPOWER", label: "Mystical Amplification", max: 10, jobs: [9, 4010] },
 ] as const;
 
 // Received from a party member rather than self-cast -- battle.c treats
@@ -827,6 +831,7 @@ export default function BuildEditor() {
                 <li>Crusader — Reflect Shield formula, Spear Quicken (Hit/Flee), Magnum endow restricted to auto-attacks</li>
                 <li>Knight — Sword Quickening CRIT, Blade Mastery covers 1H Sword, Spear Stab max level 5</li>
                 <li>Rogue — Backstab formula (200+30×lv, +40% opportunity bonus), Trick Arrow 2-hit 200%, Raid 600%, Vulture's Eye enables bow Double Attack, Yser Card functional</li>
+                <li>Wizard / High Wizard — Frost Nova base formula (190+15×lv, +10% per Frost Diver lv), Lord of Vermillion 200×lv% total (4 waves), Napalm Vulcan Shadow element + 50% MDEF ignore, Fire Pillar 50% MDEF ignore, Mystical Amplification +10%/lv (max lv 5), Sightrasher max lv 5, Soul Drain +1% MaxHP/lv</li>
               </ul>
             )}
           </div>
