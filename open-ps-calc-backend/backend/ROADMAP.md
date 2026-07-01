@@ -179,6 +179,15 @@ without re-auditing everything from scratch.
   `_runBranch`. Fixed by adding `skill.nk_ignore_ele` alongside the existing
   `nk_ignore_def`/`nk_ignore_flee` flags in `calculate()`; `_runBranch` now
   skips AttrFix when set. Primary beneficiary: `AS_SPLASHER` (Venom Splasher).
+  **PS Gunslinger rework implemented** — verified all damage-relevant rework
+  items: `GS_TRIPLEACTION` (140%/hit × 3 = 420% total, PS ratio `100+40×lv` at
+  max level 1, was 450% vanilla); `GS_GROUNDDRIFT` (`200+60×lv`%, max 800% at
+  lv 10, was `100+50×lv`%); `GS_MAGICALBULLET` (`50+DEX+BaseLvl`%); Heavy-Tipped
+  Bullet (ATK 45, `bonus2 bAddRace,RC_All,10` — all already in PS data).
+  **Neutral resist fixed**: `GS_DUST` was missing from `PS_PASSIVE_RESISTS` despite
+  its description promising 7% Neutral resist at max level — now added. `GS_FULLBUSTER`
+  and `GS_SPREADATTACK` resist now also triggers with Grenade Launcher
+  (`weapon_types` updated to `["Shotgun","Grenade"]` for all three).
   Still deferred: `GS_CHAINACTION` proc,
   item autocasts, NJ_ISSEN's fixed-damage formula,
   CR_SHIELDBOOMERANG's special case, several small PS-only multiplicative

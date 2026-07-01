@@ -832,6 +832,7 @@ export default function BuildEditor() {
                 <li>Knight — Sword Quickening CRIT, Blade Mastery covers 1H Sword, Spear Stab max level 5</li>
                 <li>Rogue — Backstab formula (200+30×lv, +40% opportunity bonus), Trick Arrow 2-hit 200%, Raid 600%, Vulture's Eye enables bow Double Attack, Yser Card functional</li>
                 <li>Wizard / High Wizard — Frost Nova base formula (190+15×lv, +10% per Frost Diver lv), Lord of Vermillion 200×lv% total (4 waves), Napalm Vulcan Shadow element + 50% MDEF ignore, Fire Pillar 50% MDEF ignore, Mystical Amplification +10%/lv (max lv 5), Sightrasher max lv 5, Soul Drain +1% MaxHP/lv</li>
+                <li>Gunslinger — Triple Action 420% total (100+40×lv), Ground Drift 200+60×lv% (max 800%), Soul Bullet (50+DEX+BaseLvl)%, Heavy-Tipped Bullet ATK 45 +10% all races; Dust/Full Buster/Spread Attack 7% Neutral resist now also triggers with Grenade Launcher</li>
               </ul>
             )}
           </div>

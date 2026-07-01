@@ -158,6 +158,14 @@ motivated several changes beyond a straight 1:1 port:
   (max lv 5); Mystical Amplification per-level MATK scaling (+10%/lv on PS, flat 50%
   vanilla, max lv 5, exposed in the buffs panel); Sightrasher max lv 5; Soul Drain
   passive +1% MaxHP per level (slider in the passives panel).
+- **PS Gunslinger rework** — damage-relevant changes from the Gunslinger Balancing
+  Patch are modelled: Triple Action 420% total (100+40×lv at max level 1, was 450%);
+  Ground Drift 200+60×lv% (max 800%, was 100+50×lv%); Soul Bullet (50+DEX+BaseLvl)%;
+  Heavy-Tipped Bullet ATK 45 with +10% damage to all races (`RC_All`). Neutral
+  resistance corrected: `GS_DUST` now grants 7% Neutral resist at level 10 (was
+  listed in the description but never wired into `PS_PASSIVE_RESISTS`); all three
+  shotgun skills (`GS_DUST`, `GS_FULLBUSTER`, `GS_SPREADATTACK`) now also grant the
+  resist when a Grenade Launcher is equipped, not just a Shotgun.
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.

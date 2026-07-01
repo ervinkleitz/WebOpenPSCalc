@@ -9,6 +9,29 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **PS Gunslinger rework** — changes from the Gunslinger Balancing Patch are now
+  modelled:
+  - **Triple Action** (`GS_TRIPLEACTION`): total damage 420% (3 hits × 140% each).
+    PS formula `100 + 40 × SkillLv` at max level 1. Vanilla was 450%
+    (100 + 50 × lv). Already stored as a PS ratio override; description
+    updated to reflect the confirmed total.
+  - **Ground Drift** (`GS_GROUNDDRIFT`): damage `200 + 60 × SkillLv`% (max 800%
+    at level 10). Vanilla was `100 + 50 × SkillLv`%. Already stored as a PS
+    ratio override; confirmed correct.
+  - **Soul Bullet** (`GS_MAGICALBULLET`): damage `(50 + DEX + BaseLvl)`%. Already
+    stored as a PS ratio override with a `ctx`-aware lambda. Confirmed correct.
+  - **Heavy-Tipped Bullet** (item 13235): ATK 45 and `+10% damage to all races`
+    (`bonus2 bAddRace,RC_All,10`) — already implemented in `ps_item_manual.json`
+    via `RC_All` which fans out to `RC_Boss`/`RC_NonBoss`, covering every monster.
+  - **Dust (`GS_DUST`) neutral resistance**: +7% resistance to Neutral element
+    when mastered at level 10 (previously the description mentioned it but it was
+    never wired into `PS_PASSIVE_RESISTS`). Now active for Shotgun and Grenade
+    Launcher, matching the patch note and the existing Dust description.
+  - **Full Buster / Spread Attack — Grenade Launcher support**: 7% Neutral
+    resistance at max level now also triggers when using a Grenade Launcher
+    weapon (previously Shotgun only). `weapon_types` updated to
+    `["Shotgun", "Grenade"]` for both skills in `PS_PASSIVE_RESISTS`.
+
 - **PS Rogue rework** (`Rogue_Patchnotes_PayonStories.pdf`) — the following
   damage-relevant changes are now modelled:
   - **Backstab formula**: changed from `300 + 40×lv`% (vanilla) to

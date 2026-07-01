@@ -68,8 +68,9 @@ const STANDARD = emptyProfile("standard", { use_ps_data: false });
 // Payon Stories verified deviations
 // ---------------------------------------------------------------------
 const PS_PASSIVE_RESISTS = {
-  GS_FULLBUSTER: { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun"], max_level: 10 },
-  GS_SPREADATTACK: { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun"], max_level: 10 },
+  GS_DUST:        { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun", "Grenade"], max_level: 10 },
+  GS_FULLBUSTER:  { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun", "Grenade"], max_level: 10 },
+  GS_SPREADATTACK: { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun", "Grenade"], max_level: 10 },
 };
 
 // wiki.payonstories.com/Advanced_Book: PS retunes this to max level 5 (vanilla

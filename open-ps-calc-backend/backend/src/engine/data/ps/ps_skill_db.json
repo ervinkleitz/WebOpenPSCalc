@@ -12052,7 +12052,7 @@
     "max_level": 10,
     "skill_form": "Physical attack",
     "sp_cost": "9-45 SP",
-    "description": "Inflicts devastating damage to an enemy by firing multiple bullets at once. When the skill has been mastered at 10 Skill Level, the player has 7% resistance against neutral damage. Requires Shotgun class weapon.",
+    "description": "Inflicts devastating damage to an enemy by firing multiple bullets at once. When the skill has been mastered at 10 Skill Level, the player has 7% resistance against neutral damage. Requires Shotgun or Grenade Launcher class weapon.",
     "levels": [
       {
         "level": 1,
@@ -12106,7 +12106,7 @@
     "max_level": 10,
     "skill_form": "Physical attack",
     "sp_cost": "7-25 SP",
-    "description": "Consumes 5 bullets to spread damage over a large area. When the skill has been mastered at 10 Skill Level, the player has 7% resistance against neutral damage. Requires Shotgun class weapon.",
+    "description": "Consumes 5 bullets to spread damage over a large area. When the skill has been mastered at 10 Skill Level, the player has 7% resistance against neutral damage. Requires Shotgun or Grenade Launcher class weapon.",
     "levels": [
       {
         "level": 1,
