@@ -96,6 +96,7 @@ const PS_PASSIVE_OVERRIDES = {
   AS_RIGHT: { rh_factors: [0.80, 0.90, 1.00, 1.10, 1.20] },  // lv 1–5: 80/90/100/110/120%
   AS_LEFT:  { lh_factors: [0.60, 0.70, 0.80, 0.90, 1.00] },  // lv 1–5: 60/70/80/90/100%
   SC_SPEARQUICKEN:   { hit_per_lv: 1, flee_per_lv: 1 },                                        // PS rework: no CRI, +1 HIT/lv, +1 FLEE/lv
+  SC_TWOHANDQUICKEN: { cri_per_lv: 10 },                                                        // PS Knight rework: +1% CRIT/lv (vanilla: +0.8%/lv; internal ×10 scale)
   SC_EXPLOSIONSPIRITS: { cri_base: 175, cri_per_lv: 25 },                                      // PS rework: 20%/22.5%/25%/27.5%/30% (was 10%…20%)
 };
 
@@ -366,7 +367,10 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   mastery_per_level: { KN_SPEARMASTERY: [5, 7] },
   // PS Monk rework: Martial Arts (MO_IRONHAND) also covers Mace weapons.
   // If a character has Martial Arts but not Priest Mace Mastery, use MO_IRONHAND for Mace.
-  mastery_prefer_fallback: { PR_MACEMASTERY: "MO_IRONHAND" },
+  // PS Knight rework: Blade Mastery (KN_TWOHANDMASTERY) covers 1H Sword too.
+  // SM_SWORD is still used when a Knight doesn't have KN_TWOHANDMASTERY (e.g. Swordman).
+  mastery_prefer_fallback: { PR_MACEMASTERY: "MO_IRONHAND", SM_SWORD: "KN_TWOHANDMASTERY" },
+  skill_level_cap_overrides: { KN_SPEARSTAB: 5 },
   steelbody_override: PS_STEELBODY_OVERRIDE,
   sn_hp_bonus: PS_SN_HP_BONUS,
   sn_sp_bonus: PS_SN_SP_BONUS,

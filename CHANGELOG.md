@@ -7,6 +7,30 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-01
 
+### Added
+
+- **PS Knight rework** (`Payon Stories Knight Patch (1).pdf`) — the following
+  changes are now modelled in the damage calculator:
+  - **Sword Quickening CRIT**: +1% Critical Hit chance per skill level (was
+    +0.8%/lv in vanilla). `SC_TWOHANDQUICKEN` reads `cri_per_lv: 10` from
+    `PS_PASSIVE_OVERRIDES` (internal ×10 scale).
+  - **Spear Stab max level 5**: Skill level is capped at 5 on PS via
+    `skill_level_cap_overrides`. Damage ratio is `100 + 40 × lv`% (already
+    in `PS_BF_WEAPON_RATIOS` from a prior pass).
+  - **Blade Mastery covers 1H Sword**: Blade Mastery (`KN_TWOHANDMASTERY`,
+    renamed on PS) now applies the 4 ATK-per-level bonus to 1H Sword weapons
+    in addition to 2H Swords. Implemented via `mastery_prefer_fallback`:
+    when a Knight has `KN_TWOHANDMASTERY` levels the engine routes 1H Sword
+    mastery to it instead of vanilla Sword Mastery (`SM_SWORD`). Characters
+    without `KN_TWOHANDMASTERY` (e.g. Swordman, Crusader) still use vanilla
+    `SM_SWORD`.
+  - **Counter Attack 200%**: Already implemented from a prior pass
+    (`KN_AUTOCOUNTER: () => 200` in `PS_BF_WEAPON_RATIOS`). Confirmed correct.
+  - **Sword Quickening 1H ASPD +10%**: Already implemented (`"1HSword": () =>
+    100` in `PS_ASPD_BUFFS`). Confirmed correct.
+  - **Spear Stab ratio 100+40×lv**: Already implemented in `PS_BF_WEAPON_RATIOS`.
+    Confirmed correct.
+
 ### Changed
 
 - **PS Crusader rework** (`PSRO_Crusader_Rework_2026.pdf`) — the following

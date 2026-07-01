@@ -122,6 +122,14 @@ motivated several changes beyond a straight 1:1 port:
   compound into that slot type (weapon cards for weapon slots, armor cards
   for armor slots, etc.). The left-hand slot shows weapon cards when a
   weapon is equipped there (dual-wield) and shield cards otherwise.
+- **PS Knight rework** — changes from `Payon Stories Knight Patch (1).pdf` are
+  modelled: Sword Quickening now grants +1% CRIT per level (up from +0.8%/lv
+  vanilla); Spear Stab is capped at max level 5 with 100+40×lv% damage ratio;
+  Blade Mastery (`KN_TWOHANDMASTERY`) now applies to 1H Sword weapons in
+  addition to 2H Swords — when a Knight has Blade Mastery levels, 1H Sword
+  mastery routes to it instead of vanilla Sword Mastery via the
+  `mastery_prefer_fallback` mechanism; Counter Attack 200% and Sword Quickening
+  1H ASPD (+10%) were already in place from a prior pass.
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.
