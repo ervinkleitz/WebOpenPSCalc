@@ -728,7 +728,12 @@ class BattlePipeline {
     // PS rework: Envenom uses weapon element instead of forced Poison.
     if (profile.mechanic_flags.has("TF_POISON_USES_WEAPON_ELEMENT") && skill.name === "TF_POISON") effAtkEle = weapon.element;
 
-    pmf = calculateAttrFix(weapon, target, pmf, result, build, effAtkEle);
+    if (!skill.nk_ignore_ele) {
+      pmf = calculateAttrFix(weapon, target, pmf, result, build, effAtkEle);
+    } else {
+      const [mnE, mxE, avE] = pmfStats(pmf);
+      result.add_step({ name: "Element (AttrFix)", value: avE, min_value: mnE, max_value: mxE, multiplier: 1.0, note: "BYPASSED — NK_IGNORE_ELEMENT", formula: "no change", hercules_ref: "battle.c NK_IGNORE_ELEMENT" });
+    }
 
     // PS rework: Enchant Poison passive — +2%/lv vs Poison element targets.
     const ELE_POISON = 5;
@@ -780,6 +785,7 @@ class BattlePipeline {
     const damageType = skillData ? skillData.damage_type || [] : [];
     skill.nk_ignore_def = damageType.includes("IgnoreDefense");
     skill.nk_ignore_flee = damageType.includes("IgnoreFlee");
+    skill.nk_ignore_ele = damageType.includes("IgnoreElement");
     skill.ignore_size_fix = skillName === "MO_EXTREMITYFIST";
 
     const amotion = Math.max(100, Math.round(2000 - status.aspd * 10));
