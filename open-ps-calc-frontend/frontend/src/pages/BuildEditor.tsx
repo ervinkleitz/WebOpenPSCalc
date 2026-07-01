@@ -402,6 +402,7 @@ export default function BuildEditor() {
   const [calcResult, setCalcResult] = useState<any>(null);
   const [calculating, setCalculating] = useState(false);
   const [calcError, setCalcError] = useState("");
+  const [forceProcs, setForceProcs] = useState(false);
   const [copied, setCopied] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
@@ -620,7 +621,8 @@ export default function BuildEditor() {
     });
   }, []);
 
-  async function onCalculate() {
+  async function onCalculate(fpOverride?: boolean) {
+    const fp = fpOverride !== undefined ? fpOverride : forceProcs;
     setCalculating(true);
     setCalcError("");
     setResultsOpen(true);
@@ -628,8 +630,11 @@ export default function BuildEditor() {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
         : customTarget;
-      const normalPayload = { build: sanitizedBuild, skill: { id: 0, level: 1 }, target };
-      const skillPayload  = { build: sanitizedBuild, skill: { id: skill.id, level: skill.level }, target };
+      const buildWithFlags = fp
+        ? { ...sanitizedBuild, flags: { ...(sanitizedBuild.flags || {}), force_procs: true } }
+        : sanitizedBuild;
+      const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target };
+      const skillPayload  = { build: buildWithFlags, skill: { id: skill.id, level: skill.level }, target };
       const [normalRes, skillRes] = await Promise.all([
         api.calculate(normalPayload),
         skill.id !== 0 ? api.calculate(skillPayload) : Promise.resolve(null),
@@ -645,6 +650,12 @@ export default function BuildEditor() {
       setCalculating(false);
       setTimeout(() => resultsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     }
+  }
+
+  function handleToggleForceProcs() {
+    const nextFP = !forceProcs;
+    setForceProcs(nextFP);
+    onCalculate(nextFP);
   }
 
   function onNewBuild() {
@@ -777,7 +788,7 @@ export default function BuildEditor() {
           <button onClick={() => setChangelogOpen(true)}>Changelog</button>
           <button onClick={onCopyLink}>{copied ? "Copied!" : "Copy share link"}</button>
 
-          <button className="primary" onClick={onCalculate} disabled={calculating}>
+          <button className="primary" onClick={() => onCalculate()} disabled={calculating}>
             {calculating ? "Calculating…" : "Calculate damage"}
           </button>
         </div>
@@ -828,6 +839,8 @@ export default function BuildEditor() {
           calcResult={calcResult}
           calculating={calculating}
           error={calcError}
+          forceProcs={forceProcs}
+          onToggleForceProcs={handleToggleForceProcs}
         />
 
         <div className="editor-grid">

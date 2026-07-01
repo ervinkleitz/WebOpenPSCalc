@@ -229,6 +229,7 @@ function createGearBonuses(overrides = {}) {
     skill_delayrate: {},
     skill_grants: {},
     effective_mastery: {},
+    auto_bonuses: [],
     from_cards: null,
     ...overrides,
   };

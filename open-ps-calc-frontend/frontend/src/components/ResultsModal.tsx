@@ -7,9 +7,11 @@ interface Props {
   calcResult: any;
   calculating: boolean;
   error: string;
+  forceProcs?: boolean;
+  onToggleForceProcs?: () => void;
 }
 
-export default function ResultsModal({ open, onClose, calcResult, calculating, error }: Props) {
+export default function ResultsModal({ open, onClose, calcResult, calculating, error, forceProcs = false, onToggleForceProcs = () => {} }: Props) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -27,7 +29,7 @@ export default function ResultsModal({ open, onClose, calcResult, calculating, e
           <button onClick={onClose} aria-label="Close">×</button>
         </div>
         <div className="modal-body">
-          <DamageSummary calcResult={calcResult} calculating={calculating} error={error} />
+          <DamageSummary calcResult={calcResult} calculating={calculating} error={error} forceProcs={forceProcs} onToggleForceProcs={onToggleForceProcs} />
         </div>
       </div>
     </div>

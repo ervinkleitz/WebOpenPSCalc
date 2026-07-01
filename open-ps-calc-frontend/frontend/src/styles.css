@@ -484,6 +484,13 @@ label {
 .falcon-note { font-size: 0.74rem; color: var(--text-faint); padding: 0.15rem 0.2rem; }
 .dw-section-label { font-size: 0.74rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0; margin-bottom: 0.25rem; }
 .beta-tag { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #e6a817; background: rgba(230,168,23,0.15); border-radius: 3px; padding: 0.1rem 0.35rem; margin-left: 0.3rem; vertical-align: middle; }
+.proc-mode-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.3rem 0 0.45rem; }
+.proc-mode-label { font-size: 0.74rem; color: var(--text-faint); letter-spacing: 0.02em; }
+.proc-mode-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.proc-mode-toggle button { border: none; border-right: 1px solid var(--border); background: transparent; padding: 0.25rem 0.6rem; font-size: 0.78rem; color: var(--text-dim); cursor: pointer; line-height: 1.4; }
+.proc-mode-toggle button:last-child { border-right: none; }
+.proc-mode-toggle button.active { background: var(--accent-soft); color: var(--text); }
+.proc-mode-toggle button:hover:not(.active) { background: rgba(255,255,255,0.04); }
 
 .notice {
   background: var(--accent-soft);

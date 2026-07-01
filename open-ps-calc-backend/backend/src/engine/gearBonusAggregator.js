@@ -123,7 +123,7 @@ function buildAutocastSpec(bonuses, eff) {
   }
 }
 
-function compute(equipped, refineLevels = null, scriptCtx = null) {
+function compute(equipped, refineLevels = null, scriptCtx = null, forceProcs = false) {
   const bonuses = createGearBonuses();
   const cardGb = createGearBonuses();
   let refinedefUnits = 0;
@@ -198,6 +198,22 @@ function compute(equipped, refineLevels = null, scriptCtx = null) {
     }
 
     bonuses.sc_effects.push(...parseScStart(script, ctx));
+
+    // Extract autobonus entries (temporary proc-based bonuses, e.g. Bonechewer Card)
+    const autobonusRe = /\bautobonus2?\s+"([^"]+)"\s*,\s*(\d+)/g;
+    let abMatch;
+    while ((abMatch = autobonusRe.exec(script)) !== null) {
+      const innerScript = abMatch[1];
+      const rate = parseInt(abMatch[2], 10);
+      const innerEffects = parseScript(innerScript, ctx);
+      bonuses.auto_bonuses.push({ inner_effects: innerEffects, rate, source_slot: slot, source_item_id: itemId });
+      if (forceProcs) {
+        for (const eff of innerEffects) {
+          if (isCard) applyEffect(cardGb, eff);
+          applyEffect(bonuses, eff);
+        }
+      }
+    }
   }
 
   if (refinedefUnits > 0) {

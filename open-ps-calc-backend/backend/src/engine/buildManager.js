@@ -119,6 +119,7 @@ function buildFromSaveSchema(data) {
     is_riding_peco: flags.is_riding_peco ?? false,
     no_sizefix: flags.no_sizefix ?? false,
     armor_element: flags.armor_element ?? 0,
+    force_procs: flags.force_procs ?? false,
     server: data.server || "payon_stories",
     manual_adj_bonuses: data.manual_adj || {},
     support_buffs: supportBuffs,

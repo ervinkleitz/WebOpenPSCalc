@@ -18,7 +18,7 @@ function resolvePlayerState(build, config, profile = null) {
 
   function onePass(status) {
     const ctx = gearBonusAggregator.scriptCtxFromBuild(build, status);
-    const gb = gearBonusAggregator.compute(build.equipped, build.refine_levels, ctx);
+    const gb = gearBonusAggregator.compute(build.equipped, build.refine_levels, ctx, build.force_procs);
     gearBonusAggregator.applyPassiveBonuses(gb, gb.effective_mastery, profile);
     buildApplicator.applyPetBonuses(gb, build.selected_pet, profile);
     gearBonusAggregator.applyComboBonuses(gb, build.equipped, profile, ctx);

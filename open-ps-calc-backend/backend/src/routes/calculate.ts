@@ -45,7 +45,7 @@ router.post("/", (req: Request, res: Response) => {
       int_: gearBonuses.int_, dex: gearBonuses.dex, luk: gearBonuses.luk,
     };
     const falcon = computeFalconDamage(status, effBuild, gearBonuses, target, loader);
-    res.json({ status, weapon, target, result: battleResult, gear_stat_bonuses, falcon });
+    res.json({ status, weapon, target, result: battleResult, gear_stat_bonuses, falcon, has_auto_bonuses: gearBonuses.auto_bonuses.length > 0 });
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: "Calculation failed", detail: String(err.message || err) });

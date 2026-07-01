@@ -23,6 +23,7 @@ interface FalconResult {
 }
 
 interface SingleResult {
+  has_auto_bonuses?: boolean;
   status: { aspd: number };
   result: {
     hit_chance: number;
@@ -54,6 +55,8 @@ interface Props {
   calcResult: CalcResult | null;
   calculating: boolean;
   error: string;
+  forceProcs: boolean;
+  onToggleForceProcs: () => void;
 }
 
 type Branch = "skill" | "normal" | "crit" | "falcon" | "katar";
@@ -117,7 +120,7 @@ function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit, psBonusPct }: {
   );
 }
 
-export default function DamageSummary({ calcResult, calculating, error }: Props) {
+export default function DamageSummary({ calcResult, calculating, error, forceProcs, onToggleForceProcs }: Props) {
   const [branch, setBranch] = useState<Branch>("skill");
   const [dwMode, setDwMode] = useState<DwMode>("ps");
 
@@ -126,6 +129,7 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
   if (!calcResult) return <p className="hint-text">Set up a build and target, then calculate damage.</p>;
 
   const { normal_attack, skill: skillResult, selected_skill } = calcResult;
+  const hasAutoBonus = !!normal_attack.has_auto_bonuses;
   const hasSkill = skillResult !== null && selected_skill.id !== 0;
   const primary = hasSkill ? skillResult! : normal_attack;
   const hasCrit = !!primary.result.crit;
@@ -242,6 +246,29 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
           <button className={dwMode === "vanilla" ? "active" : ""} onClick={() => setDwMode("vanilla")}>
             Vanilla
           </button>
+        </div>
+      )}
+
+      {/* Cards always proc toggle — shown when equipped cards have autobonus proc effects */}
+      {hasAutoBonus && (
+        <div className="proc-mode-row">
+          <span className="proc-mode-label">Proc cards</span>
+          <div className="proc-mode-toggle">
+            <button
+              className={!forceProcs ? "active" : ""}
+              onClick={() => { if (forceProcs) onToggleForceProcs(); }}
+              title="Show damage without proc-based card bonuses active"
+            >
+              Normal
+            </button>
+            <button
+              className={forceProcs ? "active" : ""}
+              onClick={() => { if (!forceProcs) onToggleForceProcs(); }}
+              title="Show damage as if proc-based card bonuses are always active"
+            >
+              Always
+            </button>
+          </div>
         </div>
       )}
 

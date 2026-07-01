@@ -5,6 +5,25 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-01 (2)
+
+### Added
+
+- **Cards always proc toggle** — the damage breakdown panel now shows a
+  "Cards always proc" checkbox when the current loadout contains cards with
+  proc-based effects (e.g. Bonechewer Card). When checked, the calculator
+  treats all `autobonus`-based card procs as permanently active and
+  recalculates immediately. This shows what damage looks like if you're
+  lucky enough to have the proc up all the time (or for planning purposes).
+  The toggle disappears when no proc cards are slotted.
+  - Backend: `gearBonusAggregator.compute()` now parses `autobonus` scripts
+    and stores them in `gearBonuses.auto_bonuses`. When `build.flags.force_procs`
+    is set, the inner bonus effects are applied as permanent bonuses. The
+    calculate route returns `has_auto_bonuses: boolean` in its response.
+  - Frontend: `forceProcs` state in `BuildEditor`, passed through
+    `ResultsPanel` → `DamageSummary`. Toggle triggers an immediate
+    recalculation with the new flag.
+
 ## 2026-07-01
 
 ### Added

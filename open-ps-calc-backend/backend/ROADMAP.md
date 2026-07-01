@@ -150,6 +150,14 @@ without re-auditing everything from scratch.
   Yser Card functional (`bSkillAtk` for RG_BACKSTAP/RG_RAID, +5 HIT).
   `_runBranch` now applies `gearBonuses.skill_atk` (bSkillAtk) after the
   skill ratio step, matching the existing magic/trap branch behaviour.
+  **Cards always proc toggle implemented** — `gearBonusAggregator.compute()`
+  now parses `autobonus` / `autobonus2` scripts from item scripts and stores
+  them in `gearBonuses.auto_bonuses`. When `build.flags.force_procs` is set,
+  the inner bonus effects are applied as permanent bonuses (and to `from_cards`
+  when the source is a card slot). The `/calculate` route returns
+  `has_auto_bonuses: boolean`; the frontend shows a "Cards always proc"
+  checkbox in the damage breakdown panel when true, triggering immediate
+  recalculation on toggle.
   Still deferred: `GS_CHAINACTION` proc,
   item autocasts, NJ_ISSEN's fixed-damage formula,
   CR_SHIELDBOOMERANG's special case, several small PS-only multiplicative
