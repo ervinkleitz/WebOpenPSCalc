@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { forwardRef } from "react";
 import DamageSummary from "./DamageSummary";
 
 interface Props {
@@ -9,27 +9,22 @@ interface Props {
   error: string;
 }
 
-export default function ResultsPanel({ open, onClose, calcResult, calculating, error }: Props) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card results-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+const ResultsPanel = forwardRef<HTMLDivElement, Props>(
+  ({ open, onClose, calcResult, calculating, error }, ref) => {
+    if (!open) return null;
+    return (
+      <div ref={ref} className="results-panel">
+        <div className="results-panel-header">
           <h2>Damage breakdown</h2>
           <button onClick={onClose} aria-label="Close">×</button>
         </div>
-        <div className="modal-body">
+        <div className="results-panel-body">
           <DamageSummary calcResult={calcResult} calculating={calculating} error={error} />
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+);
+
+ResultsPanel.displayName = "ResultsPanel";
+export default ResultsPanel;

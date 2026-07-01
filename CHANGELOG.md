@@ -18,6 +18,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **Damage panel moved inline** — the damage breakdown is now rendered
+  directly on the page (below the toolbar, above the editor grid) instead of
+  a modal overlay. Clicking **Calculate** always scrolls the panel into view,
+  even when it was already open from a previous calculation. A × close button
+  dismisses the panel without losing the result.
 - **Equipment search — auto-select on single result** — while typing in any
   equipment, card, or skill search field, if the results list narrows to
   exactly one selectable (non-disabled) item it is committed automatically

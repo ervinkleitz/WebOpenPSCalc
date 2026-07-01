@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useMemo } from "react";
+import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import LZString from "lz-string";
 import { api } from "../api/client";
@@ -391,6 +391,7 @@ export default function BuildEditor() {
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
   const [resultsOpen, setResultsOpen] = useState(false);
+  const resultsPanelRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
     (localStorage.getItem("theme") as "dark" | "light") || "dark"
   );
@@ -626,6 +627,7 @@ export default function BuildEditor() {
       setCalcError(e.message);
     } finally {
       setCalculating(false);
+      setTimeout(() => resultsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     }
   }
 
@@ -776,6 +778,7 @@ export default function BuildEditor() {
           onSave={(name) => setData((prev) => ({ ...prev, name }))}
         />
         <ResultsPanel
+          ref={resultsPanelRef}
           open={resultsOpen}
           onClose={() => setResultsOpen(false)}
           calcResult={calcResult}
