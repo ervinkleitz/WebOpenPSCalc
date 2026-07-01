@@ -741,6 +741,16 @@ class BattlePipeline {
 
     const profile = getProfile(build.server);
 
+    // SM_MAGNUM_ENDOW_ATTACK_ONLY (Crusader rework): Magnum Break's fire semi-endow
+    // applies only to auto attacks on PS — strip it from skill damage calculations.
+    if (
+      skill.id > 0 && skillName !== "SM_MAGNUM" &&
+      profile.mechanic_flags.has("SM_MAGNUM_ENDOW_ATTACK_ONLY") &&
+      build.support_buffs?.weapon_endow_sc
+    ) {
+      build = { ...build, weapon_element: weapon ? (weapon.element ?? 0) : 0 };
+    }
+
     skill.name = skillName;
     const damageType = skillData ? skillData.damage_type || [] : [];
     skill.nk_ignore_def = damageType.includes("IgnoreDefense");

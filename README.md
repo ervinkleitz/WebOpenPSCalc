@@ -94,6 +94,17 @@ motivated several changes beyond a straight 1:1 port:
 - **A lightweight `X-API-Key` gate** on the backend (see `DEPLOYMENT.md`)
   to deter casual direct API access — explicitly *not* real authentication,
   since the key ships in the public frontend bundle.
+- **PS Crusader rework** — changes from `PSRO_Crusader_Rework_2026.pdf` are
+  modelled: Spear Quicken now grants Hit/Flee instead of Crit; Providence
+  grants MDEF +2×SkillLvl (self-cast); Reflect Shield uses the PS rework
+  formula (`SoftDEF × (1 + 1.75 × HardDEF/100) × SkillLvl/10`, DEF-ignoring,
+  hit-checked, element- and card-enhanced); Magnum Break's fire semi-endow
+  is restricted to auto attacks (`SM_MAGNUM_ENDOW_ATTACK_ONLY` mechanic flag
+  — skill calculations ignore the weapon endow when this flag is active and
+  the skill is not SM_MAGNUM itself); Stone Discus now only boosts Shield
+  Boomerang by 5% per refine (was erroneously also boosting Shield Charge);
+  Stalactic Golem Card grants Soft DEF +10 (+10 more if VIT > 77) instead
+  of the stun resistance.
 - **PS Monk rework — Triple Attack proc** — `MO_TRIPLEATTACK` now procs on
   auto-attacks for Monk/Champion on Payon Stories (28/26/24/22/20 % at levels
   1–5, with Knuckle weapon bonus). When **Fury** (SC_EXPLOSIONSPIRITS) is

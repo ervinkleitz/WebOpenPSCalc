@@ -9,6 +9,28 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **PS Crusader rework** (`PSRO_Crusader_Rework_2026.pdf`) — the following
+  changes are now modelled in the damage calculator:
+  - **Spear Quicken**: No longer grants Critical Hit. Grants +1 Hit and +1
+    Flee per skill level instead. *(Was already implemented from a prior pass;
+    confirmed correct.)*
+  - **Providence**: Self-cast MDEF buff grants +2 MDEF per skill level.
+    *(Already implemented; confirmed correct.)*
+  - **Reflect Shield**: PS rework formula — `floor(SoftDEF × (1 + 1.75 ×
+    HardDEF/100) × SkillLvl/10)`, ignores target DEF, requires a hit roll,
+    enhanced by cards and armor element. *(Already implemented; confirmed
+    correct.)*
+  - **Magnum Break — endow restricted to auto attacks** (`SM_MAGNUM_ENDOW_ATTACK_ONLY`
+    mechanic flag): the fire semi-endow from Magnum Break no longer applies
+    to skill damage on PS. When a weapon endow is active and any skill other
+    than SM_MAGNUM itself is being calculated, the weapon element reverts to
+    the weapon's natural element.
+  - **Stone Discus**: Shield Boomerang damage bonus updated to 5% per refine
+    level (was already 5% but also incorrectly included Shield Charge). Now
+    only boosts Shield Boomerang.
+  - **Stalactic Golem Card**: DEF +1 / Soft DEF +10 / +10 more if base VIT
+    > 77. *(Was already implemented; confirmed correct.)*
+
 - **Card search filtered by slot** — card pickers in the equipment section
   now only show cards that can compound into that slot type. Weapon slots
   show weapon cards, armor slots show armor cards, headgear slots show

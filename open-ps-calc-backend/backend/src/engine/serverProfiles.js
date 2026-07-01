@@ -183,6 +183,9 @@ const PS_MECHANIC_FLAGS = new Set([
   "DUAL_WIELD_PS_THREE_HIT",
   // +10% bonus applied to the combined three-hit total on PS (Class_Rebalance).
   "DUAL_WIELD_PS_DAMAGE_BONUS",
+  // PS Crusader rework (PSRO_Crusader_Rework_2026.pdf): Magnum Break semi-endow
+  // applies to auto attacks only; skill damage ignores the weapon_endow_sc element.
+  "SM_MAGNUM_ENDOW_ATTACK_ONLY",
 ]);
 
 // Helper arrays for NJ_KASUMIKIRI / NJ_KIRIKAGE (core/server_profiles.py).

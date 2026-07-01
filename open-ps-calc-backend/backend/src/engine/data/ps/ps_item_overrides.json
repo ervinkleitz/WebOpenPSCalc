@@ -4264,11 +4264,11 @@
   },
   "90071": {
     "_ps_custom": true,
-    "description": "Stone shield taken from a broken desert statue.<br/>Strangely, it gets heavier the more it is polished<br/>Increase damage of Shield Boomerang and Shield Charge by 5% per refine<br/>Class:<font color='#6666CC'> Shield</font><br/>Defense:<font color='#0000FF'> 2</font><br/>Weight:<font color='#009900'> 150</font><br/>Jobs:<font color='#6666CC'> Crusader</font>",
+    "description": "Stone shield taken from a broken desert statue.<br/>Strangely, it gets heavier the more it is polished<br/>Increase damage of Shield Boomerang by 5% per refine<br/>Class:<font color='#6666CC'> Shield</font><br/>Defense:<font color='#0000FF'> 2</font><br/>Weight:<font color='#009900'> 150</font><br/>Jobs:<font color='#6666CC'> Crusader</font>",
     "name": "Stone Discus",
     "def": 2,
     "slots": 1,
-    "script": "bonus2 bSkillAtk,CR_SHIELDBOOMERANG,getrefine()*5; bonus2 bSkillAtk,CR_SHIELDCHARGE,getrefine()*5;"
+    "script": "bonus2 bSkillAtk,CR_SHIELDBOOMERANG,getrefine()*5;"
   },
   "4223": {
     "description": "Def +1.<br/>Soft DEF +10. If base VIT &gt; 77, additional Soft DEF +10.<br/>Class: Card<br/>Compound on: Headgear<br/>Weight: 1",
