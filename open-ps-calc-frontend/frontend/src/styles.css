@@ -496,6 +496,33 @@ label {
 }
 .notice.warn { background: rgba(226, 104, 92, 0.1); color: var(--text); }
 
+.reworks-banner {
+  position: relative;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 2.5rem 0.65rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 1rem;
+}
+.reworks-banner strong { color: var(--text); display: block; margin-bottom: 0.35rem; }
+.reworks-banner ul { margin: 0; padding-left: 1.2rem; }
+.reworks-banner li { margin: 0.1rem 0; }
+.reworks-banner-close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+}
+.reworks-banner-close:hover { color: var(--text); }
+
 .spinner-text { color: var(--text-faint); font-size: 0.85rem; font-family: var(--mono); }
 
 .share-row { display: flex; gap: 0.5rem; align-items: center; }
