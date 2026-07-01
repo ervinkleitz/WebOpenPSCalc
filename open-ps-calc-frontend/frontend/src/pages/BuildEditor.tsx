@@ -411,7 +411,7 @@ export default function BuildEditor() {
     (localStorage.getItem("theme") as "dark" | "light") || "dark"
   );
   const [themeHintSeen, setThemeHintSeen] = useState(() => localStorage.getItem("themeHintSeen") === "1");
-  const [reworksBannerDismissed, setReworksBannerDismissed] = useState(() => localStorage.getItem("reworksBannerDismissed") === "1");
+  const [reworksBannerCollapsed, setReworksBannerCollapsed] = useState(() => localStorage.getItem("reworksBannerCollapsed") === "1");
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -793,6 +793,34 @@ export default function BuildEditor() {
           onLoad={onLoadSavedState}
           onSave={(name) => setData((prev) => ({ ...prev, name }))}
         />
+        {data.server === "payon_stories" && (
+          <div className="reworks-banner">
+            <button
+              className="reworks-banner-toggle"
+              onClick={() => {
+                const next = !reworksBannerCollapsed;
+                setReworksBannerCollapsed(next);
+                localStorage.setItem("reworksBannerCollapsed", next ? "1" : "0");
+              }}
+              aria-expanded={!reworksBannerCollapsed}
+              aria-label={reworksBannerCollapsed ? "Expand" : "Collapse"}
+            >
+              <strong>PS class reworks implemented</strong>
+              <span className="reworks-banner-chevron">{reworksBannerCollapsed ? "▸" : "▾"}</span>
+            </button>
+            {!reworksBannerCollapsed && (
+              <ul>
+                <li>Assassin / Thief — dual-wield 3-hit model, Enchant Poison bonus, Katar second hit, Envenom element</li>
+                <li>Hunter — offensive trap damage (Land Mine, Blast Mine, Freezing Trap, Claymore Trap)</li>
+                <li>Monk — Triple Attack proc on auto-attack (procs can crit during Fury)</li>
+                <li>Crusader — Reflect Shield formula, Spear Quicken (Hit/Flee), Magnum endow restricted to auto-attacks</li>
+                <li>Knight — Sword Quickening CRIT, Blade Mastery covers 1H Sword, Spear Stab max level 5</li>
+                <li>Rogue — Backstab formula (200+30×lv, +40% opportunity bonus), Trick Arrow 2-hit 200%, Raid 600%, Vulture's Eye enables bow Double Attack, Yser Card functional</li>
+              </ul>
+            )}
+          </div>
+        )}
+
         <ResultsPanel
           ref={resultsPanelRef}
           open={resultsOpen}
@@ -801,28 +829,6 @@ export default function BuildEditor() {
           calculating={calculating}
           error={calcError}
         />
-
-        {data.server === "payon_stories" && !reworksBannerDismissed && (
-          <div className="reworks-banner">
-            <button
-              className="reworks-banner-close"
-              onClick={() => {
-                setReworksBannerDismissed(true);
-                localStorage.setItem("reworksBannerDismissed", "1");
-              }}
-              aria-label="Dismiss"
-            >×</button>
-            <strong>PS class reworks implemented</strong>
-            <ul>
-              <li>Assassin / Thief — dual-wield 3-hit model, Enchant Poison bonus, Katar second hit, Envenom element</li>
-              <li>Hunter — offensive trap damage (Land Mine, Blast Mine, Freezing Trap, Claymore Trap)</li>
-              <li>Monk — Triple Attack proc on auto-attack (procs can crit during Fury)</li>
-              <li>Crusader — Reflect Shield formula, Spear Quicken (Hit/Flee), Magnum endow restricted to auto-attacks</li>
-              <li>Knight — Sword Quickening CRIT, Blade Mastery covers 1H Sword, Spear Stab max level 5</li>
-              <li>Rogue — Backstab formula (200+30×lv, +40% opportunity bonus), Trick Arrow 2-hit 200%, Raid 600%, Vulture's Eye enables bow Double Attack, Yser Card functional</li>
-            </ul>
-          </div>
-        )}
 
         <div className="editor-grid">
         <div>
