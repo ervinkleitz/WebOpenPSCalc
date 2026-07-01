@@ -156,10 +156,18 @@ without re-auditing everything from scratch.
   with an off-hand weapon: 2×RH×`AS_RIGHT`_factor + LH×`AS_LEFT`_factor
   per auto-attack swing. `AS_RIGHT` and `AS_LEFT` added to `DAMAGE_RELEVANT`
   so they appear in the passive panel. Gated by `DUAL_WIELD_PS_THREE_HIT`
-  mechanic flag — remove to revert to single-weapon calculation. Damage panel
-  shows a `[PS (3-hit) beta | Vanilla]` pill toggle: PS mode combines both
-  weapons into a single two-section step list with the computed mastery
-  factors; Vanilla mode shows single RH weapon output and recomputes DPS.
+  mechanic flag — remove to revert to single-weapon calculation. A separate
+  `DUAL_WIELD_PS_DAMAGE_BONUS` flag applies a ×1.10 multiplier to the
+  combined total; returned as `dw_ps_bonus_pct` and shown as a step row in
+  the damage breakdown. Damage panel shows a `[PS (3-hit) beta | Vanilla]`
+  pill toggle: PS mode combines both weapons into a single two-section step
+  list with the computed mastery factors (plus the bonus row); Vanilla mode
+  shows single RH weapon output and recomputes DPS.
+- **SearchPicker UX** — `SearchPicker.tsx` now auto-commits when the
+  results list narrows to exactly one non-disabled item (no Enter/click
+  required), and Tab while the dropdown is open selects the
+  keyboard-highlighted item or the first non-disabled result before moving
+  focus normally.
 - Magic pipeline (#1 above moved to "Fully ported").
 - Card slots on equipment — up to 4 per item, read from `item.slots`,
   written to `equipped["<slot>_cardN"]`, already consumed by

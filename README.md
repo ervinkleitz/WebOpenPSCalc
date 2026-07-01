@@ -55,7 +55,7 @@ motivated several changes beyond a straight 1:1 port:
   placeholder result fields for it (`proc_chance`, `double_hit`) but the
   pipeline never actually computed them. Dagger-only, mutually exclusive
   with crit, proc rate read from the PS/vanilla profile tables.
-- **PS Assassin/Thief rework** — Four Payon Stories custom behaviours
+- **PS Assassin/Thief rework** — Five Payon Stories custom behaviours
   added behind mechanic flags: (1) katar second hit (`AS_KATAR_SECOND_HIT`)
   — auto-attack with a Katar procs a second hit at twice the normal
   `TF_DOUBLE` rate, dealing `(21 + 4 × AS_KATAR_lv)%` of the main hit;
@@ -68,7 +68,10 @@ motivated several changes beyond a straight 1:1 port:
   — Assassin/Assassin Cross with an off-hand weapon use a three-hit swing:
   hits 1 & 2 = RH × `AS_RIGHT` factor, hit 3 = LH × `AS_LEFT` factor. A
   `[PS (3-hit) beta | Vanilla]` toggle in the damage panel lets you compare
-  the PS calculation against single-weapon vanilla output.
+  the PS calculation against single-weapon vanilla output. (5) **Dual-wield
+  combined damage bonus** (`DUAL_WIELD_PS_DAMAGE_BONUS`) — the combined
+  three-hit total receives a ×1.10 multiplier on PS; shown as a step in the
+  breakdown and reflected in DPS.
 - **PS Hunter rework** — Offensive trap damage formulas completely replaced
   for Payon Stories: Land Mine, Blast Mine, Freezing Trap, and Claymore Trap
   now use INT/DEX/level-based formulas (`lv × factorA × factorB / divisor`)
@@ -99,6 +102,11 @@ motivated several changes beyond a straight 1:1 port:
   pre-renewal maximum, both in the HTML attribute and the change handler.
 - **ASPD shown to one decimal place** — uses a single `Math.floor` on the
   combined AGI/DEX reduction, matching eAthena's integer-division behaviour.
+- **Equipment search — auto-select and Tab-to-closest** — typing in any
+  search field (equipment, card, skill) auto-commits when the list narrows
+  to exactly one selectable result. Tab while the dropdown is open selects
+  the keyboard-highlighted item, or the first non-disabled result if none is
+  highlighted, before moving focus normally.
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.

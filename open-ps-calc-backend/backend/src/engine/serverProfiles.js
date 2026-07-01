@@ -181,6 +181,8 @@ const PS_MECHANIC_FLAGS = new Set([
   // Three-hit model per auto-attack: hit1=RH×rhFactor, hit2=hit1 (same roll), hit3=LH×lhFactor.
   // Remove this flag to revert to single-weapon-only calculation.
   "DUAL_WIELD_PS_THREE_HIT",
+  // +10% bonus applied to the combined three-hit total on PS (Class_Rebalance).
+  "DUAL_WIELD_PS_DAMAGE_BONUS",
 ]);
 
 // Helper arrays for NJ_KASUMIKIRI / NJ_KIRIKAGE (core/server_profiles.py).

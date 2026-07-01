@@ -7,6 +7,26 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-06-30
 
+### Added
+
+- **PS Assassin dual-wield — +10% combined damage bonus** — the
+  `DUAL_WIELD_PS_DAMAGE_BONUS` mechanic flag (Payon Stories only) applies a
+  ×1.10 multiplier to the combined three-hit total (2×RH + LH) after mastery
+  factors are applied. The headline damage range and DPS both reflect it; a
+  "PS Dual-Wield Bonus ×1.10" row appears at the bottom of the step list in
+  PS mode.
+
+### Changed
+
+- **Equipment search — auto-select on single result** — while typing in any
+  equipment, card, or skill search field, if the results list narrows to
+  exactly one selectable (non-disabled) item it is committed automatically
+  without requiring Enter or a mouse click.
+- **Equipment search — Tab selects closest match** — pressing Tab while a
+  search dropdown is open now commits the keyboard-highlighted item if one is
+  active, or the first non-disabled result otherwise, before moving focus.
+  Previously Tab only acted when an item had already been keyboard-navigated to.
+
 ### Fixed
 
 - **Refine level cap** — refine input now enforces a maximum of +10

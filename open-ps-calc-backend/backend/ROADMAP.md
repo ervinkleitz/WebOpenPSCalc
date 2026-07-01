@@ -133,9 +133,13 @@ without re-auditing everything from scratch.
   hit 1 (×`AS_RIGHT` factor), hit 3 = LH × `AS_LEFT` factor. Mastery
   factors from serverProfiles `passive_overrides`; vanilla base penalties
   (RH 50%, LH 30%) apply at lv 0. Gated by `DUAL_WIELD_PS_THREE_HIT`
-  mechanic flag. UI: damage panel shows `[PS (3-hit) beta | Vanilla]` toggle
+  mechanic flag. A `DUAL_WIELD_PS_DAMAGE_BONUS` mechanic flag (also set in
+  PS profile) applies a ×1.10 multiplier to the combined total after mastery;
+  propagated to the frontend as `dw_ps_bonus_pct` so headline range and DPS
+  are consistent. UI: damage panel shows `[PS (3-hit) beta | Vanilla]` toggle
   when an off-hand weapon is equipped — PS mode shows combined damage range
-  and two-section step list; Vanilla mode recomputes single-weapon DPS.
+  and two-section step list (with a bonus row when `dw_ps_bonus_pct > 0`);
+  Vanilla mode recomputes single-weapon DPS.
   Still deferred: `GS_CHAINACTION` proc,
   item autocasts, NJ_ISSEN's fixed-damage formula,
   CR_SHIELDBOOMERANG's special case, several small PS-only multiplicative
@@ -198,9 +202,10 @@ without re-auditing everything from scratch.
 - **PS Assassin/Thief rework** — katar second-hit proc (now in the
   battlePipeline and exposed as a breakdown branch), Enchant Poison passive
   damage bonus vs Poison-element targets, Envenom weapon-element override,
-  and dual-wield three-hit auto-attack model (Assassin/Assassin Cross with
-  an off-hand weapon: 2×RH×`AS_RIGHT`_factor + LH×`AS_LEFT`_factor per
-  swing) — all gated behind `PAYON_STORIES` mechanic flags.
+  dual-wield three-hit auto-attack model (Assassin/Assassin Cross with an
+  off-hand weapon: 2×RH×`AS_RIGHT`_factor + LH×`AS_LEFT`_factor per swing),
+  and a ×1.10 PS combined-damage bonus (`DUAL_WIELD_PS_DAMAGE_BONUS`) applied
+  to the three-hit total — all gated behind `PAYON_STORIES` mechanic flags.
 - Magic pipeline (#1 above moved to "Fully ported").
 - Card slots on equipment — up to 4 per item, read from `item.slots`,
   written to `equipped["<slot>_cardN"]`, already consumed by

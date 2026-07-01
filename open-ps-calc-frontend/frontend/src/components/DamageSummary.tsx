@@ -39,6 +39,7 @@ interface SingleResult {
     dw_lh_factor?: number | null;
     dw_lh_normal?: DamageBranch | null;
     dw_lh_crit?: DamageBranch | null;
+    dw_ps_bonus_pct?: number | null;
   };
   falcon?: FalconResult;
 }
@@ -89,9 +90,9 @@ function FalconView({ falcon }: { falcon: FalconResult }) {
   );
 }
 
-function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit }: {
+function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit, psBonusPct }: {
   rh: DamageBranch; lh: DamageBranch;
-  rhFactor: number; lhFactor: number; isCrit: boolean;
+  rhFactor: number; lhFactor: number; isCrit: boolean; psBonusPct?: number;
 }) {
   const rhPct = (rhFactor * 100).toFixed(0);
   const lhPct = (lhFactor * 100).toFixed(0);
@@ -105,6 +106,13 @@ function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit }: {
       <div className="step-list">
         {lh.steps.map((s, i) => <StepRow step={s} key={i} />)}
       </div>
+      {psBonusPct != null && psBonusPct > 0 && (
+        <div className="step-row" style={{ marginTop: "0.5rem" }}>
+          <span className="step-name">PS Dual-Wield Bonus</span>
+          <span className="step-value">×{(1 + psBonusPct / 100).toFixed(2)}</span>
+          <span className="step-note">applied to combined total (+{psBonusPct}%)</span>
+        </div>
+      )}
     </>
   );
 }
@@ -131,6 +139,8 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
   const dwLhFactor = normal_attack.result.dw_lh_factor ?? 1;
   const dwLhNormal = normal_attack.result.dw_lh_normal ?? null;
   const dwLhCrit = normal_attack.result.dw_lh_crit ?? null;
+  const dwPsBonusPct = normal_attack.result.dw_ps_bonus_pct ?? 0;
+  const dwPsBonusMult = 1 + dwPsBonusPct / 100;
 
   // Vanilla DPS: recompute single-weapon DPS from period_ms
   const periodMs = normal_attack.result.period_ms ?? 0;
@@ -164,8 +174,8 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
   const showDwCombined = hasDualWield && dwMode === "ps" && !!dwLhNormal && (activeBranch === "normal" || activeBranch === "crit");
   const dwRhBranch = activeBranch === "crit" ? (normal_attack.result.crit ?? normal_attack.result.normal) : normal_attack.result.normal;
   const dwLhBranch = activeBranch === "crit" ? (dwLhCrit ?? dwLhNormal!) : dwLhNormal!;
-  const combinedMin = showDwCombined ? Math.round(2 * dwRhBranch.min_damage * dwRhFactor + dwLhBranch.min_damage * dwLhFactor) : null;
-  const combinedMax = showDwCombined ? Math.round(2 * dwRhBranch.max_damage * dwRhFactor + dwLhBranch.max_damage * dwLhFactor) : null;
+  const combinedMin = showDwCombined ? Math.round((2 * dwRhBranch.min_damage * dwRhFactor + dwLhBranch.min_damage * dwLhFactor) * dwPsBonusMult) : null;
+  const combinedMax = showDwCombined ? Math.round((2 * dwRhBranch.max_damage * dwRhFactor + dwLhBranch.max_damage * dwLhFactor) * dwPsBonusMult) : null;
 
   // DPS: combined PS DPS in PS mode, single-weapon recomputed in Vanilla mode
   const displayDps = hasDualWield && dwMode === "vanilla" ? vanillaDps : result.dps;
@@ -289,6 +299,7 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
           rhFactor={dwRhFactor}
           lhFactor={dwLhFactor}
           isCrit={activeBranch === "crit"}
+          psBonusPct={dwPsBonusPct}
         />
       ) : !notImplemented && activeDamage ? (
         <div className="step-list">

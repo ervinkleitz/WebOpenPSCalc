@@ -1052,10 +1052,14 @@ class BattlePipeline {
           const lhCrit   = isEligible ? this._runBranch(status, lhWeapon, skill, target, build, true,  { profile, gear_bonuses: gearBonuses }) : null;
           const lhCritAvg = lhCrit ? lhCrit.avg_damage : lhNormal.avg_damage;
 
+          const dwBonusPct = profile.mechanic_flags.has("DUAL_WIELD_PS_DAMAGE_BONUS") ? 10 : 0;
+          const dwBonusMult = 1 + dwBonusPct / 100;
+
           dualWield = {
             lhWeapon, lhNormal, lhCrit, rhFactor, lhFactor,
-            combinedNormalAvg: 2 * normalAvg * rhFactor + lhNormal.avg_damage * lhFactor,
-            combinedCritAvg:   2 * critAvg   * rhFactor + lhCritAvg           * lhFactor,
+            dw_ps_bonus_pct: dwBonusPct,
+            combinedNormalAvg: (2 * normalAvg * rhFactor + lhNormal.avg_damage * lhFactor) * dwBonusMult,
+            combinedCritAvg:   (2 * critAvg   * rhFactor + lhCritAvg           * lhFactor) * dwBonusMult,
           };
         }
       }
@@ -1133,10 +1137,11 @@ class BattlePipeline {
       ta_proc: taProc,
       ta_crit_proc: taCritProc,
       ta_proc_chance: taProcChance,
-      dw_lh_normal: dualWield ? dualWield.lhNormal : null,
-      dw_lh_crit:   dualWield ? dualWield.lhCrit   : null,
-      dw_rh_factor: dualWield ? dualWield.rhFactor  : null,
-      dw_lh_factor: dualWield ? dualWield.lhFactor  : null,
+      dw_lh_normal:    dualWield ? dualWield.lhNormal        : null,
+      dw_lh_crit:      dualWield ? dualWield.lhCrit          : null,
+      dw_rh_factor:    dualWield ? dualWield.rhFactor         : null,
+      dw_lh_factor:    dualWield ? dualWield.lhFactor         : null,
+      dw_ps_bonus_pct: dualWield ? dualWield.dw_ps_bonus_pct : null,
     });
   }
 }

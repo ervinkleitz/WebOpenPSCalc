@@ -30,6 +30,11 @@ export default function SearchPicker({ placeholder, search, onSelect }: Props) {
     }
     const handle = setTimeout(() => {
       search(query).then((rows) => {
+        const enabled = rows.filter((r) => !r.disabled);
+        if (enabled.length === 1) {
+          selectResult(enabled[0]);
+          return;
+        }
         setResults(rows);
         setActiveIndex(-1);
         setOpen(true);
@@ -89,8 +94,13 @@ export default function SearchPicker({ placeholder, search, onSelect }: Props) {
         selectResult(results[activeIndex]);
       }
     } else if (e.key === "Tab") {
-      if (open && activeIndex >= 0 && !results[activeIndex]?.disabled) {
-        selectResult(results[activeIndex]);
+      if (open && results.length > 0) {
+        const target =
+          activeIndex >= 0 && !results[activeIndex]?.disabled
+            ? results[activeIndex]
+            : results.find((r) => !r.disabled);
+        if (target) selectResult(target);
+        else setOpen(false);
       } else {
         setOpen(false);
       }
