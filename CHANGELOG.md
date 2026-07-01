@@ -5,6 +5,20 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-01 (4)
+
+### Fixed
+
+- **Venom Splasher (`AS_SPLASHER`) element modifier bug** — `IgnoreElement` was
+  listed in the skill's `damage_type` but `nk_ignore_ele` was never set, so
+  `calculateAttrFix` always ran in the weapon branch. Against non-neutral element
+  targets this incorrectly multiplied the explosion damage by the element table
+  modifier (e.g. a Fire-element weapon vs an Earth monster would wrongly apply
+  a 50% penalty). Against neutral targets the numbers were unaffected (100×).
+  Fixed by wiring `nk_ignore_ele` alongside `nk_ignore_def`/`nk_ignore_flee`
+  in `calculate()` and skipping AttrFix in `_runBranch` when set. The breakdown
+  now shows "BYPASSED — NK\_IGNORE\_ELEMENT" in the steps to make it explicit.
+
 ## 2026-07-01 (3)
 
 ### Added
