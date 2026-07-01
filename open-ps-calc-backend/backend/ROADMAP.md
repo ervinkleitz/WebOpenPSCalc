@@ -114,7 +114,7 @@ without re-auditing everything from scratch.
   damage; both normal and crit variants computed, included in DPS, exposed
   as a separate branch in the damage breakdown. **PS Envenom weapon element
   and Enchant Poison passive bonus also implemented** — see serverProfiles
-  entry below. Still deferred: dual-wield left hand,
+  entry below. Still deferred:
   `GS_CHAINACTION` proc (same shape as Double Attack but not yet ported),
   item autocasts, NJ_ISSEN's
   fixed-damage formula, CR_SHIELDBOOMERANG's special case, several small
@@ -128,6 +128,19 @@ without re-auditing everything from scratch.
   `HT_TRAP_PS_FORMULA` mechanic flag is set; dispatched in `calculate()`
   before the generic BF_MISC fallback. Formula verified against the PDF's
   comparison table at Hunter 99/50 DEX150/INT100 for all four traps.
+  **PS Assassin dual-wield now implemented** — three-hit model per
+  auto-attack swing: hit 1 = RH × `AS_RIGHT` factor, hit 2 = same roll as
+  hit 1 (×`AS_RIGHT` factor), hit 3 = LH × `AS_LEFT` factor. Mastery
+  factors from serverProfiles `passive_overrides`; vanilla base penalties
+  (RH 50%, LH 30%) apply at lv 0. Gated by `DUAL_WIELD_PS_THREE_HIT`
+  mechanic flag. UI: damage panel shows `[PS (3-hit) beta | Vanilla]` toggle
+  when an off-hand weapon is equipped — PS mode shows combined damage range
+  and two-section step list; Vanilla mode recomputes single-weapon DPS.
+  Still deferred: `GS_CHAINACTION` proc,
+  item autocasts, NJ_ISSEN's fixed-damage formula,
+  CR_SHIELDBOOMERANG's special case, several small PS-only multiplicative
+  bonuses (Cloaking, Lex Aeterna, Mailbreaker/Venom Dust/Raided, Backstab
+  Opportunity, "performing" bonuses), `bDoubleRate` gear bonus, `bWeaponAtk`.
 
 ## Not yet started
 
@@ -184,8 +197,10 @@ without re-auditing everything from scratch.
   `ps_item_manual.json`, `ps_item_overrides.json`, and `ps_item_db.json`.
 - **PS Assassin/Thief rework** — katar second-hit proc (now in the
   battlePipeline and exposed as a breakdown branch), Enchant Poison passive
-  damage bonus vs Poison-element targets, and Envenom weapon-element
-  override — all gated behind new `PAYON_STORIES` mechanic flags.
+  damage bonus vs Poison-element targets, Envenom weapon-element override,
+  and dual-wield three-hit auto-attack model (Assassin/Assassin Cross with
+  an off-hand weapon: 2×RH×`AS_RIGHT`_factor + LH×`AS_LEFT`_factor per
+  swing) — all gated behind `PAYON_STORIES` mechanic flags.
 - Magic pipeline (#1 above moved to "Fully ported").
 - Card slots on equipment — up to 4 per item, read from `item.slots`,
   written to `equipped["<slot>_cardN"]`, already consumed by

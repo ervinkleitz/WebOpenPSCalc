@@ -358,6 +358,8 @@ class DataLoader {
       "MO_TRIPLEATTACK",
       // PS Assassin rework: AS_ENCHANTPOISON level feeds the passive +2%/lv vs Poison element bonus
       "AS_ENCHANTPOISON",
+      // PS dual-wield: AS_RIGHT/AS_LEFT levels set the per-hit damage factors
+      "AS_RIGHT", "AS_LEFT",
       // Falcon damage (falconCalc.js): mastery enables it, Steel Crow/Blitz Beat scale it
       "HT_FALCON", "HT_STEELCROW", "HT_BLITZBEAT",
       // Active skills whose own level isn't used to attack with directly,

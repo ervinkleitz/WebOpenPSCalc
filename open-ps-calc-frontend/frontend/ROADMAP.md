@@ -100,8 +100,8 @@ without re-auditing everything from scratch.
   with crit; proc rate from `profile.proc_rate_overrides.TF_DOUBLE` with a
   vanilla default of 5%/level, 7%/level on PS; verified end-to-end that DPS
   scales correctly and that non-dagger weapons correctly get 0% proc despite
-  having skill levels set). Still deferred: katar second-hit, dual-wield
-  left hand, `GS_CHAINACTION` proc (same shape as `TF_DOUBLE` and the
+  having skill levels set). Still deferred: katar second-hit,
+  `GS_CHAINACTION` proc (same shape as `TF_DOUBLE` and the
   now-implemented `MO_TRIPLEATTACK`, but not yet ported), item autocasts, NJ_ISSEN's
   fixed-damage formula, CR_SHIELDBOOMERANG's special case, several small
   PS-only multiplicative bonuses (Cloaking, Lex Aeterna, Mailbreaker/Venom
@@ -152,6 +152,14 @@ without re-auditing everything from scratch.
   Six-slot probability model covers all crit/proc/miss combinations. Skill
   level tracked via the passive panel (MO_TRIPLEATTACK added to `DAMAGE_RELEVANT`
   and `ACTIVE_SKILL_TYPE_EXCEPTIONS`). Fury toggled via the Self Buffs section.
+- **PS Assassin dual-wield three-hit model** — Assassin/Assassin Cross
+  with an off-hand weapon: 2×RH×`AS_RIGHT`_factor + LH×`AS_LEFT`_factor
+  per auto-attack swing. `AS_RIGHT` and `AS_LEFT` added to `DAMAGE_RELEVANT`
+  so they appear in the passive panel. Gated by `DUAL_WIELD_PS_THREE_HIT`
+  mechanic flag — remove to revert to single-weapon calculation. Damage panel
+  shows a `[PS (3-hit) beta | Vanilla]` pill toggle: PS mode combines both
+  weapons into a single two-section step list with the computed mastery
+  factors; Vanilla mode shows single RH weapon output and recomputes DPS.
 - Magic pipeline (#1 above moved to "Fully ported").
 - Card slots on equipment — up to 4 per item, read from `item.slots`,
   written to `equipped["<slot>_cardN"]`, already consumed by

@@ -55,7 +55,7 @@ motivated several changes beyond a straight 1:1 port:
   placeholder result fields for it (`proc_chance`, `double_hit`) but the
   pipeline never actually computed them. Dagger-only, mutually exclusive
   with crit, proc rate read from the PS/vanilla profile tables.
-- **PS Assassin/Thief rework** — Three Payon Stories custom behaviours
+- **PS Assassin/Thief rework** — Four Payon Stories custom behaviours
   added behind mechanic flags: (1) katar second hit (`AS_KATAR_SECOND_HIT`)
   — auto-attack with a Katar procs a second hit at twice the normal
   `TF_DOUBLE` rate, dealing `(21 + 4 × AS_KATAR_lv)%` of the main hit;
@@ -64,6 +64,11 @@ motivated several changes beyond a straight 1:1 port:
   skill level adds 2% damage against Poison-element targets. (3) Envenom
   weapon element (`TF_POISON_USES_WEAPON_ELEMENT`) — Envenom's attack
   element follows the weapon's element rather than always being Poison.
+  (4) **Dual-wield three-hit model** *(beta)* (`DUAL_WIELD_PS_THREE_HIT`)
+  — Assassin/Assassin Cross with an off-hand weapon use a three-hit swing:
+  hits 1 & 2 = RH × `AS_RIGHT` factor, hit 3 = LH × `AS_LEFT` factor. A
+  `[PS (3-hit) beta | Vanilla]` toggle in the damage panel lets you compare
+  the PS calculation against single-weapon vanilla output.
 - **PS Hunter rework** — Offensive trap damage formulas completely replaced
   for Payon Stories: Land Mine, Blast Mine, Freezing Trap, and Claymore Trap
   now use INT/DEX/level-based formulas (`lv × factorA × factorB / divisor`)

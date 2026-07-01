@@ -25,6 +25,21 @@ instead of release version. Dates are taken from actual git commit history.
   levels. When the **Fury** buff (SC_EXPLOSIONSPIRITS) is active, Triple Attack
   procs can crit. Skill level tracked via the passive panel; Fury toggled via
   Self Buffs.
+- **PS Assassin rework — dual-wield three-hit model** *(beta)* — Assassin and
+  Assassin Cross with a weapon in the off-hand now use a three-hit auto-attack
+  model per swing: hit 1 = RH × `AS_RIGHT` factor, hit 2 = same roll as hit 1
+  (× `AS_RIGHT` factor), hit 3 = LH × `AS_LEFT` factor. PS mastery factors:
+  `AS_RIGHT` lv1–5 → 80/90/100/110/120 %; `AS_LEFT` lv1–5 → 60/70/80/90/100 %.
+  Without mastery (lv 0), vanilla base penalties apply (RH 50 %, LH 30 %).
+  Gated by the `DUAL_WIELD_PS_THREE_HIT` mechanic flag — remove from
+  `serverProfiles.js` to revert to single-weapon calculation.
+- **Damage panel — PS / Vanilla toggle** *(dual-wield builds only)* — a
+  `[PS (3-hit) beta | Vanilla]` pill toggle appears in the damage results panel
+  when an Assassin/Assassin Cross has an off-hand weapon equipped. **PS mode**
+  shows the combined three-hit damage range (2×RH + LH with mastery factors)
+  and the combined DPS; the step list expands into two labeled sections (hits 1
+  & 2 = RH weapon, hit 3 = LH weapon). **Vanilla mode** shows the single
+  right-hand weapon result and recomputes DPS without the off-hand contribution.
 
 ## 2026-06-29 (ASPD precision)
 

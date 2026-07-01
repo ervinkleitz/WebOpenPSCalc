@@ -45,7 +45,7 @@ const { calculateCardFix, calculateCardFixMagic } = require("./modifiers/cardFix
 const { calculateSkillRatio } = require("./modifiers/skillRatio");
 const { calculateSkillTiming } = require("./skillTiming");
 const { calculateDps } = require("./dpsCalculator");
-const { effectiveIsRanged } = require("../buildManager");
+const { effectiveIsRanged, resolveWeapon } = require("../buildManager");
 
 // battle.c:3173-3410 BF_MAGIC skillratio switch (#else RENEWAL) — per-hit ratios.
 // These are explicit overrides; unlisted skills fall back to skills.json ratio_per_level.
@@ -124,6 +124,9 @@ function skillPeriodMs(castMs, delayMs, skillData, skillLv, minPeriodOverride, a
   if (minPeriodOverride) period = Math.max(period, minPeriodOverride);
   return period;
 }
+
+// Assassin (12) and Assassin Cross (4013) can dual-wield daggers.
+const DUAL_WIELD_JOBS = new Set([12, 4013]);
 
 class BattlePipeline {
   constructor(config) {
@@ -1014,10 +1017,61 @@ class BattlePipeline {
     const taAvg = taProc ? taProc.avg_damage : 0;
     const taCritAvg = taCritProc ? taCritProc.avg_damage : taAvg;
 
+    // PS dual-wield: three-hit model per auto-attack.
+    // Hits 1 & 2 are both RH attacks with the same damage roll (×rhFactor each).
+    // Hit 3 is the LH weapon (×lhFactor). Expected total = 2×RH×rhFactor + LH×lhFactor.
+    // Gated by DUAL_WIELD_PS_THREE_HIT — remove that flag from PS_MECHANIC_FLAGS to revert.
+    let dualWield = null;
+    if (
+      skill.id === 0 &&
+      profile.mechanic_flags.has("DUAL_WIELD_PS_THREE_HIT") &&
+      DUAL_WIELD_JOBS.has(build.job_id) &&
+      build.equipped && build.equipped.left_hand
+    ) {
+      const lhItem = loader.getItem(build.equipped.left_hand);
+      if (lhItem && lhItem.type === "IT_WEAPON") {
+        const lhWeapon = resolveWeapon(
+          loader,
+          build.equipped.left_hand,
+          (build.refine_levels || {}).left_hand || 0,
+        );
+        if (lhWeapon) {
+          const rhLv = gearBonuses.effective_mastery.AS_RIGHT || 0;
+          const lhLv = gearBonuses.effective_mastery.AS_LEFT  || 0;
+          const rhSpec = (profile.passive_overrides || {}).AS_RIGHT || {};
+          const lhSpec = (profile.passive_overrides || {}).AS_LEFT  || {};
+          // Vanilla base penalty: RH=50%, LH=30%. PS mastery overrides that directly.
+          const rhFactor = rhSpec.rh_factors
+            ? (rhLv > 0 ? (rhSpec.rh_factors[rhLv - 1] ?? 0.50) : 0.50)
+            : (rhLv > 0 ? (0.50 + 0.10 * rhLv) : 0.50);
+          const lhFactor = lhSpec.lh_factors
+            ? (lhLv > 0 ? (lhSpec.lh_factors[lhLv - 1] ?? 0.30) : 0.30)
+            : (lhLv > 0 ? (0.30 + 0.10 * lhLv) : 0.30);
+
+          const lhNormal = this._runBranch(status, lhWeapon, skill, target, build, false, { profile, gear_bonuses: gearBonuses });
+          const lhCrit   = isEligible ? this._runBranch(status, lhWeapon, skill, target, build, true,  { profile, gear_bonuses: gearBonuses }) : null;
+          const lhCritAvg = lhCrit ? lhCrit.avg_damage : lhNormal.avg_damage;
+
+          dualWield = {
+            lhWeapon, lhNormal, lhCrit, rhFactor, lhFactor,
+            combinedNormalAvg: 2 * normalAvg * rhFactor + lhNormal.avg_damage * lhFactor,
+            combinedCritAvg:   2 * critAvg   * rhFactor + lhCritAvg           * lhFactor,
+          };
+        }
+      }
+    }
+
     // Build attacks array. TA proc takes priority over TF_DOUBLE (Monks don't
     // use Knives, so both shouldn't apply simultaneously in practice).
     let attacks;
-    if (tpf > 0 && taProc) {
+    if (dualWield) {
+      // Dual-wield: crits auto-hit; hit/miss applies to non-crit swings only.
+      attacks = [
+        createAttackDefinition(dualWield.combinedCritAvg,   0.0, period, effCrit),
+        createAttackDefinition(dualWield.combinedNormalAvg, 0.0, period, (1.0 - effCrit) * h),
+        createAttackDefinition(0.0,                         0.0, period, (1.0 - effCrit) * (1.0 - h)),
+      ];
+    } else if (tpf > 0 && taProc) {
       if (taCritProc) {
         // Fury active: TA proc can crit (independent of normal crit roll)
         attacks = [
@@ -1079,6 +1133,10 @@ class BattlePipeline {
       ta_proc: taProc,
       ta_crit_proc: taCritProc,
       ta_proc_chance: taProcChance,
+      dw_lh_normal: dualWield ? dualWield.lhNormal : null,
+      dw_lh_crit:   dualWield ? dualWield.lhCrit   : null,
+      dw_rh_factor: dualWield ? dualWield.rhFactor  : null,
+      dw_lh_factor: dualWield ? dualWield.lhFactor  : null,
     });
   }
 }

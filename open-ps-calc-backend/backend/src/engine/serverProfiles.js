@@ -89,6 +89,12 @@ const PS_PASSIVE_OVERRIDES = {
   PR_MACEMASTERY:    { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40] },                  // +4 ATK/lv
   AM_AXEMASTERY:     { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
   AS_KATAR:          { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40], cri_per_lv: 5 },  // +4 ATK/lv, +0.5% CRIT/lv
+  // PS dual-wield mastery factors (wiki.payonstories.com/Class_Rebalance#Assassin).
+  // rh_factors[lv-1] is the per-hit multiplier applied to each of the 2 RH hits.
+  // lh_factors[lv-1] is the multiplier applied to the 1 LH hit.
+  // Without the skill (lv 0) the vanilla base penalty (50%/30%) applies.
+  AS_RIGHT: { rh_factors: [0.80, 0.90, 1.00, 1.10, 1.20] },  // lv 1–5: 80/90/100/110/120%
+  AS_LEFT:  { lh_factors: [0.60, 0.70, 0.80, 0.90, 1.00] },  // lv 1–5: 60/70/80/90/100%
   SC_SPEARQUICKEN:   { hit_per_lv: 1, flee_per_lv: 1 },                                        // PS rework: no CRI, +1 HIT/lv, +1 FLEE/lv
   SC_EXPLOSIONSPIRITS: { cri_base: 175, cri_per_lv: 25 },                                      // PS rework: 20%/22.5%/25%/27.5%/30% (was 10%…20%)
 };
@@ -171,6 +177,10 @@ const PS_MECHANIC_FLAGS = new Set([
   "HT_TRAP_PS_FORMULA",            // Trap damage: lv × factorA × factorB / divisor (INT/DEX scaling, bypasses DEF)
   // PS Monk rework (PSRO_Monk_Rework_2026.pdf)
   "MO_TRIPLEATTACK_PS_BONUS",      // Triple Attack can crit when SC_EXPLOSIONSPIRITS (Fury/Critical Explosion) is active
+  // PS Assassin dual-wield (wiki.payonstories.com/Class_Rebalance#Assassin)
+  // Three-hit model per auto-attack: hit1=RH×rhFactor, hit2=hit1 (same roll), hit3=LH×lhFactor.
+  // Remove this flag to revert to single-weapon-only calculation.
+  "DUAL_WIELD_PS_THREE_HIT",
 ]);
 
 // Helper arrays for NJ_KASUMIKIRI / NJ_KIRIKAGE (core/server_profiles.py).

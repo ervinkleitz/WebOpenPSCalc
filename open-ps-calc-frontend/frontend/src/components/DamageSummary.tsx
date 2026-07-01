@@ -34,6 +34,11 @@ interface SingleResult {
     katar_proc_chance?: number;
     dps_valid: boolean;
     dps: number;
+    period_ms?: number;
+    dw_rh_factor?: number | null;
+    dw_lh_factor?: number | null;
+    dw_lh_normal?: DamageBranch | null;
+    dw_lh_crit?: DamageBranch | null;
   };
   falcon?: FalconResult;
 }
@@ -50,12 +55,8 @@ interface Props {
   error: string;
 }
 
-// "skill" = selected skill's normal hit
-// "normal" = basic auto-attack
-// "crit" = crit version of whichever is primary (skill if selected, else auto)
-// "falcon" = falcon / blitz damage breakdown
-// "katar" = katar second hit (auto-attack only, PS Assassin rework)
 type Branch = "skill" | "normal" | "crit" | "falcon" | "katar";
+type DwMode = "ps" | "vanilla";
 
 function StepRow({ step }: { step: Step }) {
   return (
@@ -88,8 +89,29 @@ function FalconView({ falcon }: { falcon: FalconResult }) {
   );
 }
 
+function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit }: {
+  rh: DamageBranch; lh: DamageBranch;
+  rhFactor: number; lhFactor: number; isCrit: boolean;
+}) {
+  const rhPct = (rhFactor * 100).toFixed(0);
+  const lhPct = (lhFactor * 100).toFixed(0);
+  return (
+    <>
+      <div className="dw-section-label">Hit 1 &amp; 2 — RH {isCrit ? "crit" : "hit"} × {rhPct}% each</div>
+      <div className="step-list">
+        {rh.steps.map((s, i) => <StepRow step={s} key={i} />)}
+      </div>
+      <div className="dw-section-label" style={{ marginTop: "0.5rem" }}>Hit 3 — LH {isCrit ? "crit" : "hit"} × {lhPct}%</div>
+      <div className="step-list">
+        {lh.steps.map((s, i) => <StepRow step={s} key={i} />)}
+      </div>
+    </>
+  );
+}
+
 export default function DamageSummary({ calcResult, calculating, error }: Props) {
   const [branch, setBranch] = useState<Branch>("skill");
+  const [dwMode, setDwMode] = useState<DwMode>("ps");
 
   if (error) return <div className="notice warn">{error}</div>;
   if (calculating) return <p className="spinner-text">Calculating…</p>;
@@ -97,12 +119,28 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
 
   const { normal_attack, skill: skillResult, selected_skill } = calcResult;
   const hasSkill = skillResult !== null && selected_skill.id !== 0;
-  // The "primary" result is the skill result when a skill is selected, otherwise the auto-attack.
   const primary = hasSkill ? skillResult! : normal_attack;
   const hasCrit = !!primary.result.crit;
   const falcon = (skillResult ?? normal_attack)?.falcon;
   const hasFalcon = !!falcon;
   const hasKatar = !!normal_attack.result.katar_second;
+
+  // Dual-wield (PS Assassin) — auto-attacks only
+  const hasDualWield = !hasSkill && normal_attack.result.dw_rh_factor != null;
+  const dwRhFactor = normal_attack.result.dw_rh_factor ?? 1;
+  const dwLhFactor = normal_attack.result.dw_lh_factor ?? 1;
+  const dwLhNormal = normal_attack.result.dw_lh_normal ?? null;
+  const dwLhCrit = normal_attack.result.dw_lh_crit ?? null;
+
+  // Vanilla DPS: recompute single-weapon DPS from period_ms
+  const periodMs = normal_attack.result.period_ms ?? 0;
+  const rawNormalAvg = normal_attack.result.normal.avg_damage;
+  const rawCritAvg = normal_attack.result.crit?.avg_damage ?? rawNormalAvg;
+  const h = normal_attack.result.hit_chance / 100;
+  const ec = normal_attack.result.crit_chance / 100;
+  const vanillaDps = periodMs > 0
+    ? (rawNormalAvg * (1 - ec) * h + rawCritAvg * ec) / (periodMs / 1000)
+    : null;
 
   // Clamp branch to valid options
   const activeBranch: Branch =
@@ -112,7 +150,6 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
     : branch === "katar" && !hasKatar ? (hasSkill ? "skill" : "normal")
     : branch;
 
-  // Which SingleResult provides the metrics and step breakdown (not used for falcon branch)
   const activeResult: SingleResult = (activeBranch === "normal" || activeBranch === "katar") ? normal_attack : primary;
   const activeDamage: DamageBranch | null = activeBranch === "falcon"
     ? null
@@ -122,6 +159,19 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
 
   const notImplemented = activeDamage?.steps?.length === 1 && activeDamage.steps[0].name === "Not yet implemented";
   const { result, status } = activeResult;
+
+  // Combined DW damage range for the headline (PS mode, normal/crit branch)
+  const showDwCombined = hasDualWield && dwMode === "ps" && !!dwLhNormal && (activeBranch === "normal" || activeBranch === "crit");
+  const dwRhBranch = activeBranch === "crit" ? (normal_attack.result.crit ?? normal_attack.result.normal) : normal_attack.result.normal;
+  const dwLhBranch = activeBranch === "crit" ? (dwLhCrit ?? dwLhNormal!) : dwLhNormal!;
+  const combinedMin = showDwCombined ? Math.round(2 * dwRhBranch.min_damage * dwRhFactor + dwLhBranch.min_damage * dwLhFactor) : null;
+  const combinedMax = showDwCombined ? Math.round(2 * dwRhBranch.max_damage * dwRhFactor + dwLhBranch.max_damage * dwLhFactor) : null;
+
+  // DPS: combined PS DPS in PS mode, single-weapon recomputed in Vanilla mode
+  const displayDps = hasDualWield && dwMode === "vanilla" ? vanillaDps : result.dps;
+  const displayDpsValid = hasDualWield && dwMode === "vanilla"
+    ? (vanillaDps !== null && isFinite(vanillaDps))
+    : result.dps_valid;
 
   return (
     <div>
@@ -138,7 +188,16 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
           <div className="label">ASPD</div>
           <div className="value">{status.aspd.toFixed(1)}</div>
         </div>
-        {activeDamage && activeDamage.min_damage != null && activeDamage.max_damage != null && (
+        {showDwCombined ? (
+          <div className="metric metric-range">
+            <div className="label">Damage range</div>
+            <div className="value range">
+              {combinedMin}<span className="unit">min</span>
+              {" – "}
+              {combinedMax}<span className="unit">max</span>
+            </div>
+          </div>
+        ) : activeDamage && activeDamage.min_damage != null && activeDamage.max_damage != null ? (
           <div className="metric metric-range">
             <div className="label">Damage range</div>
             <div className="value range">
@@ -147,10 +206,10 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
               {Math.round(activeDamage.max_damage)}<span className="unit">max</span>
             </div>
           </div>
-        )}
+        ) : null}
         <div className="metric">
           <div className="label">DPS (est.)</div>
-          <div className="value">{result.dps_valid ? result.dps.toFixed(1) : "—"}</div>
+          <div className="value">{displayDpsValid && displayDps != null ? displayDps.toFixed(1) : "—"}</div>
         </div>
         {activeBranch === "katar" && normal_attack.result.katar_proc_chance != null && (
           <div className="metric">
@@ -164,8 +223,19 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
         <div className="notice warn">{activeDamage.steps[0].note}</div>
       )}
 
+      {/* PS / Vanilla calc mode toggle — only for dual-wield Assassin builds */}
+      {hasDualWield && (
+        <div className="tabs" style={{ marginBottom: "0.5rem" }}>
+          <button className={dwMode === "ps" ? "active" : ""} onClick={() => setDwMode("ps")}>
+            PS (3-hit) <span className="beta-tag">beta</span>
+          </button>
+          <button className={dwMode === "vanilla" ? "active" : ""} onClick={() => setDwMode("vanilla")}>
+            Vanilla
+          </button>
+        </div>
+      )}
+
       <div className="branch-toggle">
-        {/* Skill pill — primary view when a skill is selected */}
         <button
           className={`branch-skill-pill${activeBranch === "skill" && hasSkill ? " active" : ""}${!hasSkill && activeBranch === "normal" ? " active" : ""}`}
           onClick={() => setBranch(hasSkill ? "skill" : "normal")}
@@ -173,7 +243,6 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
           {hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}` : "Normal Attack"}
         </button>
 
-        {/* Normal hit — only shown as a separate option when a skill is selected */}
         {hasSkill && (
           <button
             className={activeBranch === "normal" ? "active" : ""}
@@ -213,6 +282,14 @@ export default function DamageSummary({ calcResult, calculating, error }: Props)
 
       {activeBranch === "falcon" && falcon ? (
         <FalconView falcon={falcon} />
+      ) : showDwCombined && dwRhBranch && dwLhBranch ? (
+        <DualWieldStepList
+          rh={dwRhBranch}
+          lh={dwLhBranch}
+          rhFactor={dwRhFactor}
+          lhFactor={dwLhFactor}
+          isCrit={activeBranch === "crit"}
+        />
       ) : !notImplemented && activeDamage ? (
         <div className="step-list">
           {activeDamage.steps.map((step, i) => <StepRow step={step} key={i} />)}

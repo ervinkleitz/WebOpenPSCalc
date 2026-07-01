@@ -482,6 +482,8 @@ label {
 .falcon-row .falcon-label { font-size: 0.82rem; color: var(--text); }
 .falcon-row .falcon-value { font-family: var(--mono); font-size: 0.95rem; color: var(--accent); }
 .falcon-note { font-size: 0.74rem; color: var(--text-faint); padding: 0.15rem 0.2rem; }
+.dw-section-label { font-size: 0.74rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0; margin-bottom: 0.25rem; }
+.beta-tag { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #e6a817; background: rgba(230,168,23,0.15); border-radius: 3px; padding: 0.1rem 0.35rem; margin-left: 0.3rem; vertical-align: middle; }
 
 .notice {
   background: var(--accent-soft);
