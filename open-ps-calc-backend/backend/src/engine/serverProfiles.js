@@ -187,6 +187,13 @@ const PS_MECHANIC_FLAGS = new Set([
   // PS Crusader rework (PSRO_Crusader_Rework_2026.pdf): Magnum Break semi-endow
   // applies to auto attacks only; skill damage ignores the weapon_endow_sc element.
   "SM_MAGNUM_ENDOW_ATTACK_ONLY",
+  // PS Rogue rework (Rogue_Patchnotes_PayonStories.pdf)
+  // Backstab +40% multiplicative bonus when monster is not targeting the Rogue
+  // (PvP: player not facing the Rogue). Exposed as support_buffs.backstab_opportunity.
+  "RG_BACKSTAP_OPPORTUNITY",
+  // Vulture's Eye enables Double Attack when a bow is equipped. Proc chance =
+  // doubleRate × min(TF_DOUBLE_lv, AC_VULTURE_lv). Requires both skills to have levels.
+  "RG_BOW_DOUBLE_ATTACK",
 ]);
 
 // Helper arrays for NJ_KASUMIKIRI / NJ_KIRIKAGE (core/server_profiles.py).
@@ -213,7 +220,7 @@ const PS_BF_WEAPON_RATIOS = {
   CR_HOLYCROSS: (lv) => 300 + 25 * lv,
   RG_RAID: (lv) => 100 + 100 * lv,
   AM_ACIDTERROR: (lv) => 100 + 80 * lv,
-  RG_BACKSTAP: (lv) => 200 + 40 * lv,
+  RG_BACKSTAP: (lv) => 200 + 30 * lv,
   AS_SPLASHER: (lv, tgt, ctx) => {
     const poisonLv = ctx ? (ctx.skill_params.AS_SPLASHER_poison_react_lv ?? 0) : 0;
     return 500 + 50 * lv + 30 * poisonLv;
@@ -228,7 +235,7 @@ const PS_BF_WEAPON_RATIOS = {
   MO_TRIPLEATTACK: (lv) => 100 + 40 * lv,   // PS rework: 5 levels → 140/180/220/260/300%
   MO_CHAINCOMBO:   (lv) => 200 + 60 * lv,   // PS rework: 260/320/380/440/500%
   MO_COMBOFINISH:  (lv) => 255 + 90 * lv,   // PS rework: 345/435/525/615/705%
-  PS_RG_TRICKARROW: () => 100,
+  PS_RG_TRICKARROW: () => 200,   // 2 hits × 100% ATK each
   PS_RG_QUICKSTEP: () => 10,
   PS_PR_HOLYSTRIKE: (lv, tgt, ctx) => 101 + (ctx ? ctx.base_str : 0) + (ctx ? ctx.base_level : 0),
   AM_DEMONSTRATION: (lv) => 200 + 40 * lv,

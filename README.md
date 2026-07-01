@@ -122,6 +122,14 @@ motivated several changes beyond a straight 1:1 port:
   compound into that slot type (weapon cards for weapon slots, armor cards
   for armor slots, etc.). The left-hand slot shows weapon cards when a
   weapon is equipped there (dual-wield) and shield cards otherwise.
+- **PS Rogue rework** — changes from `Rogue_Patchnotes_PayonStories.pdf` are
+  modelled: Backstab formula `200+30×lv`% with a user-toggleable +40%
+  opportunity bonus (monster not targeting Rogue); Trick Arrow corrected to
+  200% (2×100% hits); Vulture's Eye enables bow Double Attack with proc rate
+  `doubleRate × min(TF_DOUBLE_lv, AC_VULTURE_lv)` behind the
+  `RG_BOW_DOUBLE_ATTACK` mechanic flag; Yser Card (footgear) is now fully
+  functional (+10% Backstab/Raid, +5 HIT). `bSkillAtk` card bonuses now also
+  apply in the weapon skill branch (`_runBranch`).
 - **PS Knight rework** — changes from `Payon Stories Knight Patch (1).pdf` are
   modelled: Sword Quickening now grants +1% CRIT per level (up from +0.8%/lv
   vanilla); Spear Stab is capped at max level 5 with 100+40×lv% damage ratio;

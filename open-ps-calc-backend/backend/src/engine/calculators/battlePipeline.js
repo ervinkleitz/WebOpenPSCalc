@@ -680,6 +680,23 @@ class BattlePipeline {
       target, weapon, profile, ctx, gear_bonuses: gearBonuses,
     });
 
+    // bSkillAtk — skill-specific damage bonus from cards/items (e.g. Yser Card).
+    const skillAtkBonusWpn = gearBonuses ? (gearBonuses.skill_atk?.[skill.name] || 0) : 0;
+    if (skillAtkBonusWpn) {
+      pmf = scaleFloor(pmf, 100 + skillAtkBonusWpn, 100);
+      const [mnB, mxB, avB] = pmfStats(pmf);
+      result.add_step({ name: "Skill ATK Bonus", value: avB, min_value: mnB, max_value: mxB, multiplier: (100 + skillAtkBonusWpn) / 100, note: `bSkillAtk: ${skill.name} +${skillAtkBonusWpn}%`, formula: `dmg × (100+${skillAtkBonusWpn})/100`, hercules_ref: "pc.c:3513-3527" });
+    }
+
+    // PS Rogue rework: Backstab Opportunity — ×1.4 when monster is not targeting
+    // the Rogue (or player is not facing the Rogue in PvP).
+    if (skill.name === "RG_BACKSTAP" && profile.mechanic_flags.has("RG_BACKSTAP_OPPORTUNITY")
+        && build.support_buffs?.backstab_opportunity) {
+      pmf = scaleFloor(pmf, 140, 100);
+      const [mnO, mxO, avO] = pmfStats(pmf);
+      result.add_step({ name: "Backstab Opportunity", value: avO, min_value: mnO, max_value: mxO, multiplier: 1.4, note: "Not targeted / not facing: ×1.4", formula: "dmg × 140 / 100", hercules_ref: "Rogue_Patchnotes_PayonStories.pdf" });
+    }
+
     if (isCrit) {
       pmf = calculateCritAtkRate(build, pmf, result, { weapon, profile, skill, gb: gearBonuses });
     }
@@ -994,9 +1011,17 @@ class BattlePipeline {
     // rate in the same roll (battle.c battle_calc_weapon_attack), so it's
     // additive here too, just without the dagger/normal-attack-only
     // restriction TF_DOUBLE itself has.
-    const tfDoubleLv = skill.id === 0 && weapon.weapon_type === "Knife"
-      ? (gearBonuses.effective_mastery.TF_DOUBLE || 0)
-      : 0;
+    let tfDoubleLv = 0;
+    if (skill.id === 0 && weapon.weapon_type === "Knife") {
+      tfDoubleLv = gearBonuses.effective_mastery.TF_DOUBLE || 0;
+    } else if (skill.id === 0 && weapon.weapon_type === "Bow"
+        && profile.mechanic_flags.has("RG_BOW_DOUBLE_ATTACK")) {
+      // PS Rogue rework: Vulture's Eye enables Double Attack with a bow.
+      // Proc chance = doubleRate × min(TF_DOUBLE_lv, AC_VULTURE_lv).
+      const bowDA = gearBonuses.effective_mastery.TF_DOUBLE || 0;
+      const vultureLv = gearBonuses.effective_mastery.AC_VULTURE || 0;
+      if (bowDA > 0 && vultureLv > 0) tfDoubleLv = Math.min(bowDA, vultureLv);
+    }
     const doubleRate = (profile.proc_rate_overrides || {}).TF_DOUBLE ?? 5.0;
     const skillProcChance = tfDoubleLv > 0 ? doubleRate * tfDoubleLv : 0;
     const itemDoubleRate = skill.id === 0 ? (gearBonuses.double_rate || 0) : 0;

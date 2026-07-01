@@ -2237,9 +2237,10 @@
   },
   "8236": {
     "_ps_custom": true,
-    "description": "Increases damage of <font color='#008800'>Raid</font> and <font color='#008800'>Backstab</font> skills by 10%.<br/>Increases HIT by 5.<br/>Reduces SP cost of Back Stab and Hiding by 3.<br/> <br/>Class:<font color='#6666CC'> Card</font><br/>Compound on:<font color='#00CC33'> Footgear</font><br/>Weight:<font color='#009900'> 1</font>",
+    "description": "Increases damage of <font color='#008800'>Raid</font> and <font color='#008800'>Backstab</font> skills by 10%.<br/>Increases HIT by 5.<br/>Reduces Backstab SP cost by 2.<br/> <br/>Class:<font color='#6666CC'> Card</font><br/>Compound on:<font color='#00CC33'> Footgear</font><br/>Weight:<font color='#009900'> 1</font>",
     "name": "Yser Card",
-    "slots": 0
+    "slots": 0,
+    "script": "bonus2 bSkillAtk,RG_BACKSTAP,10; bonus2 bSkillAtk,RG_RAID,10; bonus bHit,5;"
   },
   "8237": {
     "_ps_custom": true,

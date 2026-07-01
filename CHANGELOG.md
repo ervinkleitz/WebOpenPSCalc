@@ -9,6 +9,29 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **PS Rogue rework** (`Rogue_Patchnotes_PayonStories.pdf`) — the following
+  damage-relevant changes are now modelled:
+  - **Backstab formula**: changed from `300 + 40×lv`% (vanilla) to
+    `200 + 30×lv`% (PS). The +40% multiplicative opportunity bonus (monster
+    not targeting the Rogue / player not facing the Rogue in PvP) is exposed
+    as a **Backstab opportunity** checkbox in the Skill panel; when checked,
+    `_runBranch` applies ×1.4 after the skill ratio.
+  - **Trick Arrow** (`PS_RG_TRICKARROW`): ratio corrected to 200% (2 hits ×
+    100% ATK each; was incorrectly set to 100%).
+  - **Raid** (`RG_RAID`): PS override `100 + 100×lv`% gives 600% at max level
+    — already correct from a prior pass. Confirmed.
+  - **Vulture's Eye bow Double Attack** (`RG_BOW_DOUBLE_ATTACK` mechanic flag):
+    on PS, having both `TF_DOUBLE` (Double Attack) and `AC_VULTURE`
+    (Vulture's Eye) with a bow equipped enables the Double Attack proc on
+    auto-attacks. Proc rate = `doubleRate × min(TF_DOUBLE_lv, AC_VULTURE_lv)`.
+  - **Yser Card** (ID 8236, footgear): now functional — adds +10% Backstab
+    damage, +10% Raid damage, and +5 HIT via `bSkillAtk` bonuses. Description
+    corrected (SP cost reduction −2, was −3).
+  - **`bSkillAtk` in `_runBranch`**: the weapon skill branch now applies
+    `gearBonuses.skill_atk` bonuses (same step that already existed in the
+    magic and trap branches). This makes all `bonus2 bSkillAtk` card bonuses
+    work for weapon-type skills going forward.
+
 - **PS Knight rework** (`Payon Stories Knight Patch (1).pdf`) — the following
   changes are now modelled in the damage calculator:
   - **Sword Quickening CRIT**: +1% Critical Hit chance per skill level (was
@@ -66,7 +89,7 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
-- **PS Assassin dual-wield — +10% combined damage bonus** — the
+- **PS Assassin dual-wield — combined damage PS buff** — the
   `DUAL_WIELD_PS_DAMAGE_BONUS` mechanic flag (Payon Stories only) applies a
   ×1.10 multiplier to the combined three-hit total (2×RH + LH) after mastery
   factors are applied. The headline damage range and DPS both reflect it; a

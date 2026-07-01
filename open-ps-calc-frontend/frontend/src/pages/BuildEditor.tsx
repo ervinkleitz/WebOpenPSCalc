@@ -819,6 +819,7 @@ export default function BuildEditor() {
               <li>Monk — Triple Attack proc on auto-attack (procs can crit during Fury)</li>
               <li>Crusader — Reflect Shield formula, Spear Quicken (Hit/Flee), Magnum endow restricted to auto-attacks</li>
               <li>Knight — Sword Quickening CRIT, Blade Mastery covers 1H Sword, Spear Stab max level 5</li>
+              <li>Rogue — Backstab formula (200+30×lv, +40% opportunity bonus), Trick Arrow 2-hit 200%, Raid 600%, Vulture's Eye enables bow Double Attack, Yser Card functional</li>
             </ul>
           </div>
         )}
@@ -1343,6 +1344,23 @@ export default function BuildEditor() {
                 onSelect={(r) => setSkill({ id: r.id, level: 1, label: r.label, max_level: r.max_level ?? 10 })}
               />
             </div>
+            {skill.id === 212 && data.server === "payon_stories" && (
+              <div className="field field-checkbox" style={{ marginTop: "0.5rem" }}>
+                <label title="PS Rogue rework: monster not currently targeting the Rogue (PvP: player not facing the Rogue) — grants ×1.4 multiplicative damage bonus">
+                  <input
+                    type="checkbox"
+                    checked={!!(data.support_buffs as Record<string, unknown>)?.backstab_opportunity}
+                    onChange={(e) => setData((prev) => {
+                      const next: Record<string, unknown> = { ...(prev.support_buffs || {}) };
+                      if (e.target.checked) next.backstab_opportunity = true;
+                      else delete next.backstab_opportunity;
+                      return { ...prev, support_buffs: next };
+                    })}
+                  />
+                  <span>Backstab opportunity (+40%)</span>
+                </label>
+              </div>
+            )}
           </Panel>
 
           <Panel eyebrow="08" title="Target">
