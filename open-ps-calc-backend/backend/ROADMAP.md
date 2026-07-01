@@ -66,25 +66,27 @@ without re-auditing everything from scratch.
   adds 2% damage per level vs Poison-element targets). `AS_ENCHANTPOISON`
   also added to `dataLoader.js`'s `DAMAGE_RELEVANT` and
   `ACTIVE_SKILL_TYPE_EXCEPTIONS` so the skill appears in the passive panel.
-  **Still missing**: the upstream profile also has ~13 more `mechanic_flags`
-  with no consumer anywhere in this JS port yet (`SC_CLOAKING_BONUS`,
+  **PS class reworks added** (see "Done this pass"):
+  `SM_MAGNUM_ENDOW_ATTACK_ONLY` (Crusader), `RG_BACKSTAP_OPPORTUNITY` and
+  `RG_BOW_DOUBLE_ATTACK` (Rogue). Knight rework uses no new mechanic flags —
+  implemented via `SC_TWOHANDQUICKEN.cri_per_lv`, `skill_level_cap_overrides`,
+  and `mastery_prefer_fallback`.
+  **Still missing**: upstream has ~10 more `mechanic_flags` with no consumer
+  anywhere in this JS port yet (`SC_CLOAKING_BONUS`,
   `BA_MUSICALSTRIKE_PERFORMING_BONUS`, `DC_THROWARROW_PERFORMING_BONUS`,
-  `RG_BACKSTAP_OPPORTUNITY_BONUS`, `GS_BLOCK_ENDOW`,
-  `MG_SOULSTRIKE_MDEF_IGNORE`, `WZ_FIREPILLAR_MDEF_IGNORE`,
+  `GS_BLOCK_ENDOW`, `MG_SOULSTRIKE_MDEF_IGNORE`, `WZ_FIREPILLAR_MDEF_IGNORE`,
   `MO_EXTREMITYFIST_NK_NORMAL_DEF`, `PR_TURNUNDEAD_PS_BONUS`,
   `PS_HOLYSTRIKE_PROC`, `SC_GS_ADJUSTMENT_LR_REDUCE`,
-  `NJ_ISSEN_MIRROR_BONUS`) — these need new
-  modifier code, not just data, so left for the `battle_pipeline.js`
-  deferred-items pass. Also: 3 of the 36 weapon ratios
-  (`PS_RG_TRICKARROW`, `PS_RG_QUICKSTEP`, `PS_PR_HOLYSTRIKE`) are PS-custom
-  skills (`ps_custom_constants.json` IDs 2631/2633/2622, defined in
-  `ps_skill_db.json`) that **`dataLoader.getSkill()` can't resolve at all**
-  — it only ever reads vanilla `db/skills.json` regardless of profile, so
-  these 3 skills can't currently be selected/calculated by this engine no
-  matter what data exists for them. Real architecture gap, not just a data
-  gap — needs `getSkill()` (and skill search) to consult `ps_skill_db.json`
-  + `ps_custom_constants.json` when `use_ps_data` is set. The ratio data is
-  ready for whenever that's fixed.
+  `NJ_ISSEN_MIRROR_BONUS`) — these need new modifier code, not just data.
+  Also: 3 of the 36 weapon ratios (`PS_RG_TRICKARROW`, `PS_RG_QUICKSTEP`,
+  `PS_PR_HOLYSTRIKE`) are PS-custom skills (`ps_custom_constants.json` IDs
+  2631/2633/2622, defined in `ps_skill_db.json`) that **`dataLoader.getSkill()`
+  can't resolve at all** — it only ever reads vanilla `db/skills.json`
+  regardless of profile, so these 3 skills can't currently be
+  selected/calculated by this engine no matter what data exists for them.
+  Real architecture gap, not just a data gap — needs `getSkill()` (and skill
+  search) to consult `ps_skill_db.json` + `ps_custom_constants.json` when
+  `use_ps_data` is set. The ratio data is ready for whenever that's fixed.
 
 - **`core/calculators/modifiers/skill_ratio.py` → `.../modifiers/skillRatio.js`**
   — dispatch/precedence logic complete. `BF_WEAPON_RATIOS` is now the full
@@ -140,11 +142,19 @@ without re-auditing everything from scratch.
   when an off-hand weapon is equipped — PS mode shows combined damage range
   and two-section step list (with a bonus row when `dw_ps_bonus_pct > 0`);
   Vanilla mode recomputes single-weapon DPS.
+  **PS Crusader rework implemented** — see "Done this pass".
+  **PS Knight rework implemented** — see "Done this pass".
+  **PS Rogue rework implemented** — Backstab Opportunity (×1.4, user-toggled
+  via `support_buffs.backstab_opportunity`), Vulture's Eye bow Double Attack
+  (`min(TF_DOUBLE_lv, AC_VULTURE_lv)` proc, `RG_BOW_DOUBLE_ATTACK` flag),
+  Yser Card functional (`bSkillAtk` for RG_BACKSTAP/RG_RAID, +5 HIT).
+  `_runBranch` now applies `gearBonuses.skill_atk` (bSkillAtk) after the
+  skill ratio step, matching the existing magic/trap branch behaviour.
   Still deferred: `GS_CHAINACTION` proc,
   item autocasts, NJ_ISSEN's fixed-damage formula,
   CR_SHIELDBOOMERANG's special case, several small PS-only multiplicative
-  bonuses (Cloaking, Lex Aeterna, Mailbreaker/Venom Dust/Raided, Backstab
-  Opportunity, "performing" bonuses), `bDoubleRate` gear bonus, `bWeaponAtk`.
+  bonuses (Cloaking, Lex Aeterna, Mailbreaker/Venom Dust/Raided,
+  "performing" bonuses), `bDoubleRate` gear bonus, `bWeaponAtk`.
 
 ## Not yet started
 
@@ -206,6 +216,28 @@ without re-auditing everything from scratch.
   off-hand weapon: 2×RH×`AS_RIGHT`_factor + LH×`AS_LEFT`_factor per swing),
   and a ×1.10 PS combined-damage bonus (`DUAL_WIELD_PS_DAMAGE_BONUS`) applied
   to the three-hit total — all gated behind `PAYON_STORIES` mechanic flags.
+- **PS Crusader rework** (`PSRO_Crusader_Rework_2026.pdf`) — Reflect Shield PS
+  formula (`floor(SoftDEF × (1 + 1.75 × HardDEF/100) × lv/10)`, DEF-ignoring,
+  hit-checked, element/card-enhanced); DPS suppressed (`dps_valid: false`) since
+  it triggers on enemy attack speed, not player ASPD. Armor element resolved via
+  `resolveArmorElement` (handles Ghostring card etc.). Spear Quicken grants Hit/
+  Flee instead of Crit (`SC_SPEARQUICKEN` in `PS_PASSIVE_OVERRIDES`). Magnum
+  Break fire endow restricted to auto-attacks (`SM_MAGNUM_ENDOW_ATTACK_ONLY`
+  flag). Stone Discus now only boosts Shield Boomerang (not Shield Charge).
+- **PS Knight rework** (`Payon Stories Knight Patch (1).pdf`) — Sword Quickening
+  CRIT: +1%/lv via `SC_TWOHANDQUICKEN.cri_per_lv: 10` in `PS_PASSIVE_OVERRIDES`.
+  Spear Stab capped at level 5 via `skill_level_cap_overrides`. Blade Mastery
+  covers 1H Sword: `mastery_prefer_fallback { SM_SWORD: "KN_TWOHANDMASTERY" }`
+  routes 1H Sword mastery to Blade Mastery when the Knight has levels in it.
+- **PS Rogue rework** (`Rogue_Patchnotes_PayonStories.pdf`) — Backstab ratio
+  corrected to `200+30×lv`% (was `200+40×lv` in PS override). Backstab
+  Opportunity (+40% multiplicative) gated on `RG_BACKSTAP_OPPORTUNITY` mechanic
+  flag and `support_buffs.backstab_opportunity`; UI checkbox in Skill panel
+  (skill ID 212, PS server). Trick Arrow ratio corrected to 200% (2×100% hits).
+  Vulture's Eye enables bow Double Attack (`RG_BOW_DOUBLE_ATTACK` flag;
+  proc = `doubleRate × min(TF_DOUBLE_lv, AC_VULTURE_lv)`). Yser Card (ID 8236)
+  now functional: `bSkillAtk` for RG_BACKSTAP/RG_RAID (+10% each) and +5 HIT.
+  `_runBranch` now applies `gearBonuses.skill_atk` bonuses after skill ratio.
 - Magic pipeline (#1 above moved to "Fully ported").
 - Card slots on equipment — up to 4 per item, read from `item.slots`,
   written to `equipped["<slot>_cardN"]`, already consumed by
