@@ -70,6 +70,7 @@ export interface PassiveSkill {
 export interface EquippedItemInfo {
   id: number;
   name: string;
+  type?: string;
   slots?: number;
   refineable?: boolean;
   job?: number[];

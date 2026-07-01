@@ -109,6 +109,21 @@ const EQUIP_SLOTS = [
   { key: "ammo", label: "Ammo", itemType: "IT_AMMO" },
 ] as const;
 
+// Cards are filtered to the slot they're being compounded into.
+// left_hand uses EQP_WEAPON when a weapon is equipped (dual-wield), EQP_SHIELD otherwise.
+const SLOT_CARD_LOC: Record<string, string | undefined> = {
+  right_hand:      "EQP_WEAPON",
+  left_hand:       "EQP_SHIELD",
+  head_top:        "EQP_HEAD_TOP",
+  head_mid:        "EQP_HEAD_MID",
+  head_low:        "EQP_HEAD_LOW",
+  armor:           "EQP_ARMOR",
+  garment:         "EQP_GARMENT",
+  shoes:           "EQP_SHOES",
+  accessory_left:  "EQP_ACC",
+  accessory_right: "EQP_ACC",
+};
+
 const DEFAULT_BUILD: BuildData = {
   name: "New Build",
   job_name: '',
@@ -924,6 +939,9 @@ export default function BuildEditor() {
                 const cardSlotCount = item?.slots ?? 0;
                 const isRefineable = item?.refineable ?? false;
                 const isInvalid = invalidSlots.has(slot.key);
+                const cardLoc = slot.key === "left_hand" && item?.type === "IT_WEAPON"
+                  ? "EQP_WEAPON"
+                  : SLOT_CARD_LOC[slot.key];
                 return (
                   <div key={slot.key} className="field">
                     <label>{slot.label}</label>
@@ -993,7 +1011,7 @@ export default function BuildEditor() {
                               ) : (
                                 <SearchPicker
                                   placeholder={`Card slot ${i + 1}…`}
-                                  search={itemSearch("IT_CARD")}
+                                  search={itemSearch("IT_CARD", cardLoc)}
                                   onSelect={(r) => {
                                     setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } }));
                                     updateField(["equipped", cardKey], r.id);
