@@ -174,6 +174,11 @@ without re-auditing everything from scratch.
   **PS Wizard rework — 50% MDEF ignore** for `WZ_FIREPILLAR` and
   `HW_NAPALMVULCAN` wired via per-skill `mdefIgnorePct` parameter already
   present in `calculateMagicDefenseFix` (was always passed 0 before).
+  **`NK_IGNORE_ELEMENT` now wired** — `damage_type: ["IgnoreElement"]` in the
+  skill DB was never surfaced as a flag; `calculateAttrFix` always ran in
+  `_runBranch`. Fixed by adding `skill.nk_ignore_ele` alongside the existing
+  `nk_ignore_def`/`nk_ignore_flee` flags in `calculate()`; `_runBranch` now
+  skips AttrFix when set. Primary beneficiary: `AS_SPLASHER` (Venom Splasher).
   Still deferred: `GS_CHAINACTION` proc,
   item autocasts, NJ_ISSEN's fixed-damage formula,
   CR_SHIELDBOOMERANG's special case, several small PS-only multiplicative

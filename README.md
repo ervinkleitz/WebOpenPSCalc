@@ -147,6 +147,10 @@ motivated several changes beyond a straight 1:1 port:
   `gearBonusAggregator` parses `autobonus` inner scripts into
   `gearBonuses.auto_bonuses`; `build.flags.force_procs` applies them as
   permanent bonuses.
+- **`NK_IGNORE_ELEMENT` fix** — skills with `"IgnoreElement"` in their `damage_type`
+  (e.g. Venom Splasher / `AS_SPLASHER`) now correctly bypass the element modifier table.
+  Previously `calculateAttrFix` always ran in the weapon branch regardless of this flag,
+  producing wrong damage against non-neutral element targets.
 - **PS Wizard / High Wizard rework** — changes from `Wizard_and_High_Wizard_Trans_Class_Changes.pdf`
   are modelled: Frost Nova reworked formula (190+15×lv base, +10%/Frost Diver lv, max lv 5);
   Lord of Vermillion total 200×lv% (4 waves summed, 2000% at lv 10); Napalm Vulcan
