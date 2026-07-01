@@ -32,6 +32,11 @@ instead of release version. Dates are taken from actual git commit history.
     weapon (previously Shotgun only). `weapon_types` updated to
     `["Shotgun", "Grenade"]` for both skills in `PS_PASSIVE_RESISTS`.
 
+- **Select-all on number inputs** — clicking into any numeric input (base level,
+  job level, base stats, refine level, passive skill levels, consumable ATK/MATK,
+  song buff levels, skill level, custom target fields) now selects the existing
+  value so it can be replaced immediately without manually clearing it first.
+
 - **PS Rogue rework** (`Rogue_Patchnotes_PayonStories.pdf`) — the following
   damage-relevant changes are now modelled:
   - **Backstab formula**: changed from `300 + 40×lv`% (vanilla) to

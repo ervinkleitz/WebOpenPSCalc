@@ -886,6 +886,7 @@ export default function BuildEditor() {
                   min={1}
                   max={BASE_LEVEL_CAP}
                   value={data.base_level}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => updateField(["base_level"], Math.max(1, Math.min(BASE_LEVEL_CAP, Number(e.target.value))))}
                 />
               </div>
@@ -897,6 +898,7 @@ export default function BuildEditor() {
                   min={1}
                   max={getJobLevelCap(data.job_id)}
                   value={data.job_level}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => updateField(["job_level"], Math.max(1, Math.min(getJobLevelCap(data.job_id), Number(e.target.value))))}
                 />
               </div>
@@ -1040,6 +1042,7 @@ export default function BuildEditor() {
                         style={{ marginTop: "0.4rem" }}
                         value={data.refine[slot.key] || 0}
                         onChange={(e) => updateField(["refine", slot.key], Math.min(10, Math.max(0, Number(e.target.value))))}
+                        onFocus={(e) => e.target.select()}
                         title="Refine level"
                       />
                     )}
@@ -1127,6 +1130,7 @@ export default function BuildEditor() {
                       min={0}
                       max={ps.max_level}
                       value={(data.mastery_levels || {})[ps.mastery_key] ?? 0}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => {
                         const lv = Math.max(0, Math.min(ps.max_level, Number(e.target.value)));
                         setData((prev) => ({
@@ -1162,6 +1166,7 @@ export default function BuildEditor() {
                   type="number"
                   min={0}
                   value={data.consumable_buffs?.atk_item ?? 0}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => updateConsumable("atk_item", Number(e.target.value) || undefined)}
                 />
               </div>
@@ -1172,6 +1177,7 @@ export default function BuildEditor() {
                   type="number"
                   min={0}
                   value={data.consumable_buffs?.matk_item ?? 0}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => updateConsumable("matk_item", Number(e.target.value) || undefined)}
                 />
               </div>
@@ -1314,6 +1320,7 @@ export default function BuildEditor() {
                           min={0}
                           max={b.max}
                           value={data.song_state?.[b.key] ?? 0}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => updateBuffField("song_state", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
                         />
                       </div>
@@ -1354,6 +1361,7 @@ export default function BuildEditor() {
                   max={skill.max_level}
                   style={{ width: 60 }}
                   value={skill.level}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => setSkill((s) => ({ ...s, level: Math.max(1, Math.min(s.max_level, Number(e.target.value))) }))}
                 />
               )}
@@ -1415,29 +1423,29 @@ export default function BuildEditor() {
                 <div className="field-row">
                   <div className="field">
                     <label>DEF</label>
-                    <input className="mono" type="number" value={customTarget.def_} onChange={(e) => setCustomTarget((t) => ({ ...t, def_: Number(e.target.value) }))} />
+                    <input className="mono" type="number" value={customTarget.def_} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, def_: Number(e.target.value) }))} />
                   </div>
                   <div className="field">
                     <label>MDEF</label>
-                    <input className="mono" type="number" value={customTarget.mdef_} onChange={(e) => setCustomTarget((t) => ({ ...t, mdef_: Number(e.target.value) }))} />
+                    <input className="mono" type="number" value={customTarget.mdef_} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, mdef_: Number(e.target.value) }))} />
                   </div>
                   <div className="field">
                     <label>VIT</label>
-                    <input className="mono" type="number" value={customTarget.vit} onChange={(e) => setCustomTarget((t) => ({ ...t, vit: Number(e.target.value) }))} />
+                    <input className="mono" type="number" value={customTarget.vit} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, vit: Number(e.target.value) }))} />
                   </div>
                 </div>
                 <div className="field-row">
                   <div className="field">
                     <label>Level</label>
-                    <input className="mono" type="number" value={customTarget.level} onChange={(e) => setCustomTarget((t) => ({ ...t, level: Number(e.target.value) }))} />
+                    <input className="mono" type="number" value={customTarget.level} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, level: Number(e.target.value) }))} />
                   </div>
                   <div className="field">
                     <label>AGI</label>
-                    <input className="mono" type="number" value={customTarget.agi} onChange={(e) => setCustomTarget((t) => ({ ...t, agi: Number(e.target.value) }))} />
+                    <input className="mono" type="number" value={customTarget.agi} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, agi: Number(e.target.value) }))} />
                   </div>
                   <div className="field">
                     <label>LUK</label>
-                    <input className="mono" type="number" value={customTarget.luk} onChange={(e) => setCustomTarget((t) => ({ ...t, luk: Number(e.target.value) }))} />
+                    <input className="mono" type="number" value={customTarget.luk} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, luk: Number(e.target.value) }))} />
                   </div>
                 </div>
                 <div className="field-row">
@@ -1467,7 +1475,7 @@ export default function BuildEditor() {
                   </div>
                   <div className="field">
                     <label>Element level</label>
-                    <input className="mono" type="number" min={1} max={4} value={customTarget.element_level} onChange={(e) => setCustomTarget((t) => ({ ...t, element_level: Number(e.target.value) }))} />
+                    <input className="mono" type="number" min={1} max={4} value={customTarget.element_level} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, element_level: Number(e.target.value) }))} />
                   </div>
                   <div className="field">
                     <label>Boss?</label>
