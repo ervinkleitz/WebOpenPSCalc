@@ -46,6 +46,7 @@ const { calculateSkillRatio } = require("./modifiers/skillRatio");
 const { calculateSkillTiming } = require("./skillTiming");
 const { calculateDps } = require("./dpsCalculator");
 const { effectiveIsRanged, resolveWeapon } = require("../buildManager");
+const { resolveArmorElement } = require("../buildApplicator");
 
 // battle.c:3173-3410 BF_MAGIC skillratio switch (#else RENEWAL) — per-hit ratios.
 // These are explicit overrides; unlisted skills fall back to skills.json ratio_per_level.
@@ -475,9 +476,12 @@ class BattlePipeline {
       hercules_ref: "wiki.payonstories.com/Reflect_Shield — PS rework",
     });
 
-    // Ignores target DEF — no defenseFix step
-    pmf = calculateAttrFix(weapon, target, pmf, result, build, 0 /* Ele_Neutral */);
-    pmf = calculateCardFix(build, gearBonuses, 0 /* Ele_Neutral */, target, false /* melee */, pmf, result);
+    // Ignores target DEF — no defenseFix step.
+    // "Enhanced by cards and armor attributes" (PDF): damage element follows the
+    // player's armor element (changed by cards like Ghostring, Evil Druid, etc.).
+    const rsEle = resolveArmorElement(build.armor_element ?? 0, gearBonuses);
+    pmf = calculateAttrFix(weapon, target, pmf, result, build, rsEle);
+    pmf = calculateCardFix(build, gearBonuses, rsEle, target, false /* melee */, pmf, result);
     pmf = calculateFinalRateBonus(false, pmf, this.config, result);
     pmf = floorAt(pmf, 1);
 
