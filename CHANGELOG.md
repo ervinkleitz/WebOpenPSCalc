@@ -5,66 +5,6 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
-## 2026-07-01 (4)
-
-### Fixed
-
-- **Venom Splasher (`AS_SPLASHER`) element modifier bug** — `IgnoreElement` was
-  listed in the skill's `damage_type` but `nk_ignore_ele` was never set, so
-  `calculateAttrFix` always ran in the weapon branch. Against non-neutral element
-  targets this incorrectly multiplied the explosion damage by the element table
-  modifier (e.g. a Fire-element weapon vs an Earth monster would wrongly apply
-  a 50% penalty). Against neutral targets the numbers were unaffected (100×).
-  Fixed by wiring `nk_ignore_ele` alongside `nk_ignore_def`/`nk_ignore_flee`
-  in `calculate()` and skipping AttrFix in `_runBranch` when set. The breakdown
-  now shows "BYPASSED — NK\_IGNORE\_ELEMENT" in the steps to make it explicit.
-
-## 2026-07-01 (3)
-
-### Added
-
-- **PS Wizard / High Wizard rework** (`Wizard_and_High_Wizard_Trans_Class_Changes.pdf`) —
-  the following changes are now modelled:
-  - **Frost Nova** (`WZ_FROSTNOVA`): PS rework formula `(175+15×lv) + 10×FrostDiverLv`%
-    (190/205/220/235/250% base at levels 1–5, up to +100% with Frost Diver 10).
-    Max level capped at 5.
-  - **Lord of Vermillion** (`WZ_VERMILION`): 4 waves, each wave deals `20×lv×waveNum`%
-    MATK. Total = `200×lv`% (2000% at level 10). Added to `PS_BF_MAGIC_RATIOS`.
-  - **Napalm Vulcan** (`HW_NAPALMVULCAN`): element changed from Ghost to Shadow (Dark,
-    element 7) via `skill_elements` override in the PS profile. 50% hard MDEF
-    ignore added via the `HW_NAPALMVULCAN_MDEF_IGNORE` mechanic flag.
-  - **Fire Pillar** (`WZ_FIREPILLAR`): 50% hard MDEF ignore added via the
-    `WZ_FIREPILLAR_MDEF_IGNORE` mechanic flag. Max level capped at 5.
-  - **Mystical Amplification** (`WZ_AMPLIFYMAGICPOWER` / `SC_AMPLIFYMAGICPOWER`):
-    PS rework scales MATK boost per level — `min(lv,5)×10`% (10/20/30/40/50%).
-    Vanilla remains flat 50% regardless of level. Max level capped at 5.
-    Added to the buffs panel (Wizard / High Wizard).
-  - **Sightrasher** (`WZ_SIGHTRASHER`): max level capped at 5. Formula already
-    correct (`100+75×lv`% = 175/250/325/400/475%).
-  - **Soul Drain** (`HW_SOULDRAIN`): passive +1% MaxHP per level (max +10% at
-    level 10). Exposed as a passive skill slider; added to `DAMAGE_RELEVANT`
-    and `ACTIVE_SKILL_TYPE_EXCEPTIONS` in `dataLoader.js`.
-  - Reworks banner updated to include Wizard / High Wizard.
-
-## 2026-07-01 (2)
-
-### Added
-
-- **Cards always proc toggle** — the damage breakdown panel now shows a
-  "Cards always proc" checkbox when the current loadout contains cards with
-  proc-based effects (e.g. Bonechewer Card). When checked, the calculator
-  treats all `autobonus`-based card procs as permanently active and
-  recalculates immediately. This shows what damage looks like if you're
-  lucky enough to have the proc up all the time (or for planning purposes).
-  The toggle disappears when no proc cards are slotted.
-  - Backend: `gearBonusAggregator.compute()` now parses `autobonus` scripts
-    and stores them in `gearBonuses.auto_bonuses`. When `build.flags.force_procs`
-    is set, the inner bonus effects are applied as permanent bonuses. The
-    calculate route returns `has_auto_bonuses: boolean` in its response.
-  - Frontend: `forceProcs` state in `BuildEditor`, passed through
-    `ResultsPanel` → `DamageSummary`. Toggle triggers an immediate
-    recalculation with the new flag.
-
 ## 2026-07-01
 
 ### Added
@@ -114,6 +54,44 @@ instead of release version. Dates are taken from actual git commit history.
   - **Spear Stab ratio 100+40×lv**: Already implemented in `PS_BF_WEAPON_RATIOS`.
     Confirmed correct.
 
+- **Cards always proc toggle** — the damage breakdown panel now shows a
+  "Cards always proc" checkbox when the current loadout contains cards with
+  proc-based effects (e.g. Bonechewer Card). When checked, the calculator
+  treats all `autobonus`-based card procs as permanently active and
+  recalculates immediately. This shows what damage looks like if you're
+  lucky enough to have the proc up all the time (or for planning purposes).
+  The toggle disappears when no proc cards are slotted.
+  - Backend: `gearBonusAggregator.compute()` now parses `autobonus` scripts
+    and stores them in `gearBonuses.auto_bonuses`. When `build.flags.force_procs`
+    is set, the inner bonus effects are applied as permanent bonuses. The
+    calculate route returns `has_auto_bonuses: boolean` in its response.
+  - Frontend: `forceProcs` state in `BuildEditor`, passed through
+    `ResultsPanel` → `DamageSummary`. Toggle triggers an immediate
+    recalculation with the new flag.
+
+- **PS Wizard / High Wizard rework** (`Wizard_and_High_Wizard_Trans_Class_Changes.pdf`) —
+  the following changes are now modelled:
+  - **Frost Nova** (`WZ_FROSTNOVA`): PS rework formula `(175+15×lv) + 10×FrostDiverLv`%
+    (190/205/220/235/250% base at levels 1–5, up to +100% with Frost Diver 10).
+    Max level capped at 5.
+  - **Lord of Vermillion** (`WZ_VERMILION`): 4 waves, each wave deals `20×lv×waveNum`%
+    MATK. Total = `200×lv`% (2000% at level 10). Added to `PS_BF_MAGIC_RATIOS`.
+  - **Napalm Vulcan** (`HW_NAPALMVULCAN`): element changed from Ghost to Shadow (Dark,
+    element 7) via `skill_elements` override in the PS profile. 50% hard MDEF
+    ignore added via the `HW_NAPALMVULCAN_MDEF_IGNORE` mechanic flag.
+  - **Fire Pillar** (`WZ_FIREPILLAR`): 50% hard MDEF ignore added via the
+    `WZ_FIREPILLAR_MDEF_IGNORE` mechanic flag. Max level capped at 5.
+  - **Mystical Amplification** (`WZ_AMPLIFYMAGICPOWER` / `SC_AMPLIFYMAGICPOWER`):
+    PS rework scales MATK boost per level — `min(lv,5)×10`% (10/20/30/40/50%).
+    Vanilla remains flat 50% regardless of level. Max level capped at 5.
+    Added to the buffs panel (Wizard / High Wizard).
+  - **Sightrasher** (`WZ_SIGHTRASHER`): max level capped at 5. Formula already
+    correct (`100+75×lv`% = 175/250/325/400/475%).
+  - **Soul Drain** (`HW_SOULDRAIN`): passive +1% MaxHP per level (max +10% at
+    level 10). Exposed as a passive skill slider; added to `DAMAGE_RELEVANT`
+    and `ACTIVE_SKILL_TYPE_EXCEPTIONS` in `dataLoader.js`.
+  - Reworks banner updated to include Wizard / High Wizard.
+
 ### Changed
 
 - **PS Crusader rework** (`PSRO_Crusader_Rework_2026.pdf`) — the following
@@ -145,6 +123,18 @@ instead of release version. Dates are taken from actual git commit history.
   weapon is equipped there (dual-wield) and shield cards when a shield is
   equipped.
 
+### Fixed
+
+- **Venom Splasher (`AS_SPLASHER`) element modifier bug** — `IgnoreElement` was
+  listed in the skill's `damage_type` but `nk_ignore_ele` was never set, so
+  `calculateAttrFix` always ran in the weapon branch. Against non-neutral element
+  targets this incorrectly multiplied the explosion damage by the element table
+  modifier (e.g. a Fire-element weapon vs an Earth monster would wrongly apply
+  a 50% penalty). Against neutral targets the numbers were unaffected (100×).
+  Fixed by wiring `nk_ignore_ele` alongside `nk_ignore_def`/`nk_ignore_flee`
+  in `calculate()` and skipping AttrFix in `_runBranch` when set. The breakdown
+  now shows "BYPASSED — NK\_IGNORE\_ELEMENT" in the steps to make it explicit.
+
 ## 2026-06-30
 
 ### Added
@@ -156,6 +146,30 @@ instead of release version. Dates are taken from actual git commit history.
   "PS Dual-Wield Bonus ×1.10" row appears at the bottom of the step list in
   PS mode.
 
+- **PS Monk rework — Triple Attack proc** — `MO_TRIPLEATTACK` now procs on
+  auto-attacks for Monk/Champion on Payon Stories. Proc rates: 28/26/24/22/20 %
+  at skill levels 1–5; Knuckle weapons gain +0.2 × skill level % per 10 job
+  levels. When the **Fury** buff (SC_EXPLOSIONSPIRITS) is active, Triple Attack
+  procs can crit. Skill level tracked via the passive panel; Fury toggled via
+  Self Buffs.
+
+- **PS Assassin rework — dual-wield three-hit model** *(beta)* — Assassin and
+  Assassin Cross with a weapon in the off-hand now use a three-hit auto-attack
+  model per swing: hit 1 = RH × `AS_RIGHT` factor, hit 2 = same roll as hit 1
+  (× `AS_RIGHT` factor), hit 3 = LH × `AS_LEFT` factor. PS mastery factors:
+  `AS_RIGHT` lv1–5 → 80/90/100/110/120 %; `AS_LEFT` lv1–5 → 60/70/80/90/100 %.
+  Without mastery (lv 0), vanilla base penalties apply (RH 50 %, LH 30 %).
+  Gated by the `DUAL_WIELD_PS_THREE_HIT` mechanic flag — remove from
+  `serverProfiles.js` to revert to single-weapon calculation.
+
+- **Damage panel — PS / Vanilla toggle** *(dual-wield builds only)* — a
+  `[PS (3-hit) beta | Vanilla]` pill toggle appears in the damage results panel
+  when an Assassin/Assassin Cross has an off-hand weapon equipped. **PS mode**
+  shows the combined three-hit damage range (2×RH + LH with mastery factors)
+  and the combined DPS; the step list expands into two labeled sections (hits 1
+  & 2 = RH weapon, hit 3 = LH weapon). **Vanilla mode** shows the single
+  right-hand weapon result and recomputes DPS without the off-hand contribution.
+
 ### Changed
 
 - **Damage panel moved inline** — the damage breakdown is now rendered
@@ -163,10 +177,12 @@ instead of release version. Dates are taken from actual git commit history.
   a modal overlay. Clicking **Calculate** always scrolls the panel into view,
   even when it was already open from a previous calculation. A × close button
   dismisses the panel without losing the result.
+
 - **Equipment search — auto-select on single result** — while typing in any
   equipment, card, or skill search field, if the results list narrows to
   exactly one selectable (non-disabled) item it is committed automatically
   without requiring Enter or a mouse click.
+
 - **Equipment search — Tab selects closest match** — pressing Tab while a
   search dropdown is open now commits the keyboard-highlighted item if one is
   active, or the first non-disabled result otherwise, before moving focus.
@@ -177,43 +193,13 @@ instead of release version. Dates are taken from actual git commit history.
 - **Refine level cap** — refine input now enforces a maximum of +10
   (pre-renewal cap), both via the input's `max` attribute and a clamped
   `onChange` handler so typed values above +10 are corrected immediately.
+
 - **ASPD display precision** — base stats panel shows one decimal place
   (e.g. 186.3) instead of a rounded integer, matching the damage results panel.
   The formula uses a single `Math.floor` on the combined AGI/DEX reduction,
   matching eAthena's integer-division behaviour exactly.
 
-### Added
-
-- **PS Monk rework — Triple Attack proc** — `MO_TRIPLEATTACK` now procs on
-  auto-attacks for Monk/Champion on Payon Stories. Proc rates: 28/26/24/22/20 %
-  at skill levels 1–5; Knuckle weapons gain +0.2 × skill level % per 10 job
-  levels. When the **Fury** buff (SC_EXPLOSIONSPIRITS) is active, Triple Attack
-  procs can crit. Skill level tracked via the passive panel; Fury toggled via
-  Self Buffs.
-- **PS Assassin rework — dual-wield three-hit model** *(beta)* — Assassin and
-  Assassin Cross with a weapon in the off-hand now use a three-hit auto-attack
-  model per swing: hit 1 = RH × `AS_RIGHT` factor, hit 2 = same roll as hit 1
-  (× `AS_RIGHT` factor), hit 3 = LH × `AS_LEFT` factor. PS mastery factors:
-  `AS_RIGHT` lv1–5 → 80/90/100/110/120 %; `AS_LEFT` lv1–5 → 60/70/80/90/100 %.
-  Without mastery (lv 0), vanilla base penalties apply (RH 50 %, LH 30 %).
-  Gated by the `DUAL_WIELD_PS_THREE_HIT` mechanic flag — remove from
-  `serverProfiles.js` to revert to single-weapon calculation.
-- **Damage panel — PS / Vanilla toggle** *(dual-wield builds only)* — a
-  `[PS (3-hit) beta | Vanilla]` pill toggle appears in the damage results panel
-  when an Assassin/Assassin Cross has an off-hand weapon equipped. **PS mode**
-  shows the combined three-hit damage range (2×RH + LH with mastery factors)
-  and the combined DPS; the step list expands into two labeled sections (hits 1
-  & 2 = RH weapon, hit 3 = LH weapon). **Vanilla mode** shows the single
-  right-hand weapon result and recomputes DPS without the off-hand contribution.
-
-## 2026-06-29 (ASPD precision)
-
-### Fixed
-
-- **ASPD display** — base stats panel now shows one decimal place (e.g. 186.3)
-  instead of a rounded integer, matching the damage results panel.
-
-## 2026-06-29 (Monk rework)
+## 2026-06-29
 
 ### Added
 
@@ -232,25 +218,6 @@ instead of release version. Dates are taken from actual git commit history.
   - Triple Attack skill level is tracked via the passive-skills panel; Fury is
     activated through the Self Buffs section.
 
-## 2026-06-29 (UI polish)
-
-### Fixed
-
-- **Build name not updating on save** — saving a build under a new name in the
-  Save / Load panel now immediately reflects the name in the Character section.
-
-### Changed
-
-- **Title renamed** — "Open PS Damage Calc" shortened to "Open PS Calc" in the
-  navbar.
-- **Consistent popups** — the Damage breakdown panel is now a centred modal
-  overlay matching the Changelog and Save / Load dialogs, instead of an inline
-  collapsible section.
-
-## 2026-06-29 (Hunter rework)
-
-### Added
-
 - **PS Hunter Rework — Trap damage formulas** — Land Mine, Blast Mine, Freezing
   Trap, and Claymore Trap now use the reworked INT/DEX-based formulas:
   - Land Mine: `lv × (JobLv+DEX) × (BaseLv+INT) / 45` (Earth element)
@@ -261,32 +228,6 @@ instead of release version. Dates are taken from actual git commit history.
   Traps bypass DEF. All four show up in the skill picker for Hunter/Sniper and
   produce a full step-by-step damage breakdown. Element vs target and race/size
   card bonuses still apply.
-
-### Changed
-
-- **Dory Card** — Damage bonus reduced from 30%/15% to 5% for both Freezing Trap
-  and Claymore Trap, matching the reworked card's new effect.
-- **Wolpertinger Card** — Damage bonus reduced from 15% to 5% for both Blast Mine
-  and Land Mine.
-- **Setting Dirk** — All-trap damage bonus reduced from 20% to 5% per trap skill.
-
-## 2026-06-29
-
-### Changed
-
-- **URL compression** — Build share URLs are now compressed with LZ-string,
-  reducing typical URL length by ~50–60 %. Old uncompressed URLs (with `?b=`)
-  continue to load without any action required.
-
-- **Calculate → scroll to results** — Clicking "Calculate damage" now smoothly
-  scrolls the results panel into view, even when the panel is already open.
-
-- **Base stat inputs** — Focusing a stat input now selects its value so typing
-  immediately replaces it instead of appending to the existing number.
-
-## 2026-06-29 (Assassin/Thief rework)
-
-### Added
 
 - **PS Assassin Rework — Katar second hit** — Implemented the katar second-hit
   branch for auto-attacks (Katar + TF_DOUBLE learned). Proc rate is 2× the PS
@@ -304,9 +245,44 @@ instead of release version. Dates are taken from actual git commit history.
 - **PS Thief Rework — Envenom weapon element** — TF_POISON (Envenom) now uses
   the weapon's element instead of forced Poison on Payon Stories.
 
-## 2026-06-29
+- **Credits footer** — Added a footer crediting Discord testers (Metan,
+  hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet) and tochoco.latte
+  for the initial base engine.
+
+### Changed
+
+- **Title renamed** — "Open PS Damage Calc" shortened to "Open PS Calc" in the
+  navbar.
+
+- **Consistent popups** — the Damage breakdown panel is now a centred modal
+  overlay matching the Changelog and Save / Load dialogs, instead of an inline
+  collapsible section.
+
+- **Dory Card** — Damage bonus reduced from 30%/15% to 5% for both Freezing Trap
+  and Claymore Trap, matching the reworked card's new effect.
+
+- **Wolpertinger Card** — Damage bonus reduced from 15% to 5% for both Blast Mine
+  and Land Mine.
+
+- **Setting Dirk** — All-trap damage bonus reduced from 20% to 5% per trap skill.
+
+- **URL compression** — Build share URLs are now compressed with LZ-string,
+  reducing typical URL length by ~50–60 %. Old uncompressed URLs (with `?b=`)
+  continue to load without any action required.
+
+- **Calculate → scroll to results** — Clicking "Calculate damage" now smoothly
+  scrolls the results panel into view, even when the panel is already open.
+
+- **Base stat inputs** — Focusing a stat input now selects its value so typing
+  immediately replaces it instead of appending to the existing number.
 
 ### Fixed
+
+- **ASPD display** — base stats panel now shows one decimal place (e.g. 186.3)
+  instead of a rounded integer, matching the damage results panel.
+
+- **Build name not updating on save** — saving a build under a new name in the
+  Save / Load panel now immediately reflects the name in the Character section.
 
 - **Stat distribution cost formula** — Corrected the stat point cost formula
   to match [payonrocalc.jaludev.com](https://payonrocalc.jaludev.com/) (the
@@ -322,13 +298,7 @@ instead of release version. Dates are taken from actual git commit history.
   Payon Stories rebalance rules. Monk and Champion are capped at Awakening
   Potion. Acolyte was already correct via the 1st-job cap.
 
-### Added
-
-- **Credits footer** — Added a footer crediting Discord testers (Metan,
-  hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet) and tochoco.latte
-  for the initial base engine.
-
-## 2026-06-28 (Monk rework)
+## 2026-06-28
 
 ### Added
 
@@ -351,28 +321,6 @@ instead of release version. Dates are taken from actual git commit history.
   `SC_EXPLOSIONSPIRITS: { cri_base: 175, cri_per_lv: 25 }` in
   `PS_PASSIVE_OVERRIDES`; statusCalculator reads the override, falling back to
   vanilla `75 + 25×lv` if no override is present.
-
-### Changed
-
-- **PS Monk Rework — Triple Attack** condensed to 5 levels (140/180/220/260/300%
-  ATK, activation rates 28/26/24/22/20%). Added PS ratio `(lv) => 100 + 40 * lv`
-  to `PS_BF_WEAPON_RATIOS`. Requirements updated to "Martial Arts 5".
-
-- **PS Monk Rework — Chain Combo** damage adjusted to 260/320/380/440/500% ATK
-  (was 240/320/400/480/560). Ratio formula updated to `(lv) => 200 + 60 * lv`.
-
-- **PS Monk Rework — Combo Finish** damage increased to 345/435/525/615/705% ATK
-  (was 340/425/510/595/680). Ratio formula updated to `(lv) => 255 + 90 * lv`.
-
-- **Skill descriptions updated** for Martial Arts, Dodge (removed note), Triple
-  Attack, Chain Combo, Combo Finish, Critical Explosion, Asura Strike, Finger
-  Offensive (cast time 1+0.8/sphere), Steel Body, Blade Stop (Martial Arts 5
-  req), Spirits Recovery, Absorb Spirits (100% success, new SP formula), Ki
-  Translation (SP 40→20, cast 2s→1s, ACD 1s→0.5s), Ki Explosion (ACD 2s→1s).
-
-## 2026-06-28
-
-### Added
 
 - **Skill pill toggle in damage modal** — when a skill is selected, a pill
   button showing `[Skill Name Lv N]` appears alongside the existing
@@ -470,6 +418,31 @@ instead of release version. Dates are taken from actual git commit history.
   first. Previously the picker stayed blank until at least one character
   was entered.
 
+### Changed
+
+- **PS Monk Rework — Triple Attack** condensed to 5 levels (140/180/220/260/300%
+  ATK, activation rates 28/26/24/22/20%). Added PS ratio `(lv) => 100 + 40 * lv`
+  to `PS_BF_WEAPON_RATIOS`. Requirements updated to "Martial Arts 5".
+
+- **PS Monk Rework — Chain Combo** damage adjusted to 260/320/380/440/500% ATK
+  (was 240/320/400/480/560). Ratio formula updated to `(lv) => 200 + 60 * lv`.
+
+- **PS Monk Rework — Combo Finish** damage increased to 345/435/525/615/705% ATK
+  (was 340/425/510/595/680). Ratio formula updated to `(lv) => 255 + 90 * lv`.
+
+- **Skill descriptions updated** for Martial Arts, Dodge (removed note), Triple
+  Attack, Chain Combo, Combo Finish, Critical Explosion, Asura Strike, Finger
+  Offensive (cast time 1+0.8/sphere), Steel Body, Blade Stop (Martial Arts 5
+  req), Spirits Recovery, Absorb Spirits (100% success, new SP formula), Ki
+  Translation (SP 40→20, cast 2s→1s, ACD 1s→0.5s), Ki Explosion (ACD 2s→1s).
+
+- **Damage breakdown is now an inline panel** at the top of the page
+  rather than a modal overlay. It appears automatically when a
+  calculation runs, has a gold accent top border for visibility, and can
+  be dismissed with the × button.
+
+- **Combat stats grid** widened from 2 columns to 3.
+
 ### Fixed
 
 - **Shield Boomerang damage formula** corrected to the PS formula:
@@ -521,15 +494,6 @@ instead of release version. Dates are taken from actual git commit history.
   remaining instead of 1. Remaining display, affordability cap on stat inputs,
   and per-stat cost badge all updated.
 
-### Changed
-
-- **Damage breakdown is now an inline panel** at the top of the page
-  rather than a modal overlay. It appears automatically when a
-  calculation runs, has a gold accent top border for visibility, and can
-  be dismissed with the × button.
-
-- **Combat stats grid** widened from 2 columns to 3.
-
 ### Removed
 
 - **"Avg damage" metric card** from the damage breakdown headline — redundant
@@ -550,16 +514,16 @@ instead of release version. Dates are taken from actual git commit history.
   dedicated `POST /calculate/gear-stat-bonuses` route that runs a single
   pass of the item-script engine (no full damage calc required), debounced
   300 ms so rapid changes don't flood the server.
+
 - **Slot count shown in equipment dropdown labels** — items with card slots
   now display as `Name[N]` (e.g. `Main Gauche[4]`); slotless items show the
   plain name. Cards themselves have 0 slots so they're unaffected.
+
 - **Keyboard navigation in equipment (and all) search dropdowns.**
   Arrow keys move a highlight through the results list; Enter confirms the
   highlighted item; Escape closes the list. Tab selects the highlighted
   item (if any) and lets focus move to the next field naturally without
   requiring a separate click or Enter press.
-
-### Added
 
 - **Job-level stat bonus now shown next to base stats**, RO-status-window
   style: each stat is a card with the total (base + job bonus) in bold
@@ -571,6 +535,56 @@ instead of release version. Dates are taken from actual git commit history.
   in the final numbers. Verified against `statusCalculator.js`: Knight
   at job level 50 shows the same +8 STR/+2 AGI/+10 VIT/+6 DEX/+4 LUK
   the backend was already computing.
+
+- **Enchant Poison and Cursed Water (Shadow) to the weapon endow
+  dropdown.** Enchant Poison (`AS_ENCHANTPOISON`/`SC_ENCHANTPOISON`)
+  and Cursed Water (item → `ITEM_ENCHANTARMS` skill level 8 → Dark
+  element, per `item_db.json` #12020) were already handled by the
+  engine's element-resolution logic in `buildApplicator.js`, but
+  Enchant Poison only checked `active_status_levels` (which the UI
+  never wrote to) and Cursed Water/`SC_ENCHANTARMS` had no handling at
+  all. Both now route through the same `weapon_endow_sc` dropdown field
+  as the existing Priest endows. Verified: Cursed Water vs. a
+  Holy-element target gives the expected Dark-vs-Holy 125% Attr Fix,
+  and Enchant Poison vs. an Earth-element target gives the expected
+  Poison-vs-Earth 125%.
+
+- **"Start over" button** to start a fresh build without manually
+  clearing every field — resets the form, target, and skill back to
+  defaults (with a confirmation prompt, since it's not undoable once
+  the URL state is overwritten).
+
+- **Saved builds in localStorage** ("Save / Load"), up to 10, each with
+  a custom name. Save the build currently open (saving under an
+  existing name overwrites that slot instead of using a new one),
+  load any saved build back into the editor, or delete one. This is
+  separate from the existing URL-based share link — saved builds
+  persist locally across sessions without needing to keep a link
+  around, but don't sync between devices/browsers.
+
+- Poem of Bragi (`BA_POEMBRAGI`, Bard/Clown) to the Bard/Dancer songs
+  section. It reduces cast time and after-cast delay (`skillTiming.js`),
+  not ASPD directly — so it only changes DPS when testing an actual
+  skill, not a normal attack (normal-attack period is ASPD-only).
+  Verified with MG_FIREBALL: period 2470ms→1429ms, DPS 153.8→265.9 at
+  Bragi level 10.
+
+- Deluge and Violent Gale added alongside Volcano as a single "Ground
+  effect" dropdown (Sage) — all three share one mutually-exclusive
+  `support_buffs.ground_effect` slot in the engine (you can only stand in
+  one ground spell at a time), so they're now one shared control instead
+  of a Volcano-only number input. Both are damage-relevant via the same
+  elemental enchant bonus as Volcano (see the `attrFix.js` fix above).
+
+- Min/max damage range shown under the avg damage metric in the damage
+  breakdown. The backend already computed `min_damage`/`max_damage` on
+  every `DamageResult` (normal and crit); the frontend type/render just
+  never surfaced them.
+
+- Three more Priest party buffs: Blessing (+STR/+INT/+DEX), Increase AGI
+  (+2+level AGI), and Gloria (+30 LUK) — reported missing after shipping
+  the initial Party buffs section; all three were already read from
+  `support_buffs` by `statusCalculator.js`, just not exposed yet.
 
 ### Changed
 
@@ -586,34 +600,6 @@ instead of release version. Dates are taken from actual git commit history.
   appears to have retuned them to the trans cap. Switching jobs now
   clamps the current job level down if it exceeds the new job's cap.
 
-### Added
-
-- **Enchant Poison and Cursed Water (Shadow) to the weapon endow
-  dropdown.** Enchant Poison (`AS_ENCHANTPOISON`/`SC_ENCHANTPOISON`)
-  and Cursed Water (item → `ITEM_ENCHANTARMS` skill level 8 → Dark
-  element, per `item_db.json` #12020) were already handled by the
-  engine's element-resolution logic in `buildApplicator.js`, but
-  Enchant Poison only checked `active_status_levels` (which the UI
-  never wrote to) and Cursed Water/`SC_ENCHANTARMS` had no handling at
-  all. Both now route through the same `weapon_endow_sc` dropdown field
-  as the existing Priest endows. Verified: Cursed Water vs. a
-  Holy-element target gives the expected Dark-vs-Holy 125% Attr Fix,
-  and Enchant Poison vs. an Earth-element target gives the expected
-  Poison-vs-Earth 125%.
-- **"Start over" button** to start a fresh build without manually
-  clearing every field — resets the form, target, and skill back to
-  defaults (with a confirmation prompt, since it's not undoable once
-  the URL state is overwritten).
-- **Saved builds in localStorage** ("Save / Load"), up to 10, each with
-  a custom name. Save the build currently open (saving under an
-  existing name overwrites that slot instead of using a new one),
-  load any saved build back into the editor, or delete one. This is
-  separate from the existing URL-based share link — saved builds
-  persist locally across sessions without needing to keep a link
-  around, but don't sync between devices/browsers.
-
-### Changed
-
 - **Redesigned the header into a single compact top bar**, replacing
   the old two-header layout (a generic app-level topbar plus a
   separate per-page header with the build name and actions as an H1).
@@ -621,6 +607,7 @@ instead of release version. Dates are taken from actual git commit history.
   and every action (Start over, Save / Load, Changelog, Copy share link,
   Calculate damage) lives in one sticky row — freeing up significant
   vertical space for the actual calculator panels below.
+
 - **Moved "Calculate damage" into the top bar** (now sticky, so it's
   reachable while scrolled anywhere on the page) and **moved the
   damage breakdown out of an always-present inline panel and into a
@@ -643,6 +630,7 @@ instead of release version. Dates are taken from actual git commit history.
   since the bonus is an extra free cast, not a stronger one). Verified:
   Fire Bolt DPS exactly doubles with it active; an unaffected skill
   (Napalm Beat) is untouched.
+
 - **Frost Diver and Fire Wall to the Wizard passive-skills panel.**
   Both feed a damage multiplier into a *different* skill rather than
   attacking on their own — confirmed against
@@ -661,6 +649,18 @@ instead of release version. Dates are taken from actual git commit history.
   840%→1080% MATK at Frost Diver/Fire Wall level 10, matching the wiki's
   worked examples exactly.
 
+- Party buffs are now grouped by source class (Priest, Blacksmith, Sage)
+  under their own subheadings, instead of one flat grid with a "(Source)"
+  suffix on every label.
+
+- Priest/Blacksmith party buffs (Impositio Manus, Blessing, Increase AGI,
+  Gloria, Overthrust, Overthrust Max, Adrenaline Rush) switched from a
+  numeric level input to a checkbox — checking it applies the buff's max
+  level, since these are received from a party member and you don't
+  control the caster's actual level anyway. Sage's ground effect dropdown
+  now applies max level automatically on selection instead of a separate
+  level input.
+
 ### Fixed
 
 - **Living Magma Card's Fire-monster magic damage bonus did nothing.**
@@ -675,6 +675,7 @@ instead of release version. Dates are taken from actual git commit history.
   `magicEleName` (attack element) plumbing. Verified: Fire Bolt vs. a
   Fire-element target now gets +10% with the card equipped and +0%
   against a Water-element target, as expected.
+
 - While auditing other custom cards for the same class of bug, found
   Sidewinder Card's `bonus bDoubleRate,5` (a flat +5% double-attack
   chance, on top of the `skill TF_DOUBLE,2` it also grants) was parsed
@@ -685,6 +686,7 @@ instead of release version. Dates are taken from actual git commit history.
   the TF_DOUBLE skill itself). Verified: equipping it on a non-dagger
   weapon now gives a 5% proc chance even though TF_DOUBLE itself
   requires a dagger.
+
 - **Advanced Book (Sage/Professor) was capped and labeled wrong.** It
   showed up in the passive-skills panel as "Study" with a max level of
   10 — that's the vanilla pre-renewal data; PS retunes it to max level
@@ -699,6 +701,7 @@ instead of release version. Dates are taken from actual git commit history.
   to). Now reads the PS name/cap the same way every other skill does,
   and the ATK/ASPD-per-level table matches the wiki exactly (lv5:
   +30 ATK / +7% ASPD on Book weapons, not vanilla's level×3 / level×5%).
+
 - **Item scripts with quoted skill-name params (e.g. `bonus2
   bSkillAtk,"WZ_VERMILION",20`) silently lost the quotes and never
   matched anything**, since the lookup keys downstream (`WZ_VERMILION`)
@@ -714,11 +717,13 @@ instead of release version. Dates are taken from actual git commit history.
   with Frozen Thunder equipped went from ~40 to ~74 (damage +20%, cast
   time -20%, compounding), where before this fix neither bonus applied
   at all.
+
 - The BF_MAGIC skill-ATK gear bonus (`bSkillAtk` on staves/spellbooks
   for specific magic skills) was folded silently into the skill-ratio
   step instead of getting its own breakdown row, unlike the equivalent
   BF_WEAPON path. Added a separate "Skill ATK Bonus" step so it's
   visible in the damage breakdown.
+
 - **Long checkbox labels in the Buffs panel overlapped neighboring grid
   cells.** Flex items default to a min-width equal to their content's
   max-content size, so text like "Impositio Manus" never wrapped inside
@@ -727,6 +732,7 @@ instead of release version. Dates are taken from actual git commit history.
   wrap inside its column. Per-buff source/mechanic detail that used to be
   crammed inline (or in a `title` attribute) now lives in an info-icon
   popover on each group heading instead.
+
 - **Changelog edits weren't showing up in the in-app viewer without a
   manual dev-server restart.** Vite's dev-server file watcher only
   tracks files under this project's own root by default; `CHANGELOG.md`
@@ -737,33 +743,6 @@ instead of release version. Dates are taken from actual git commit history.
   reload on change. Verified by appending a test marker to the file and
   confirming it appeared without restarting anything, then removed the
   marker.
-
-### Changed
-
-- Party buffs are now grouped by source class (Priest, Blacksmith, Sage)
-  under their own subheadings, instead of one flat grid with a "(Source)"
-  suffix on every label.
-
-### Added
-
-- Poem of Bragi (`BA_POEMBRAGI`, Bard/Clown) to the Bard/Dancer songs
-  section. It reduces cast time and after-cast delay (`skillTiming.js`),
-  not ASPD directly — so it only changes DPS when testing an actual
-  skill, not a normal attack (normal-attack period is ASPD-only).
-  Verified with MG_FIREBALL: period 2470ms→1429ms, DPS 153.8→265.9 at
-  Bragi level 10.
-
-### Changed
-
-- Priest/Blacksmith party buffs (Impositio Manus, Blessing, Increase AGI,
-  Gloria, Overthrust, Overthrust Max, Adrenaline Rush) switched from a
-  numeric level input to a checkbox — checking it applies the buff's max
-  level, since these are received from a party member and you don't
-  control the caster's actual level anyway. Sage's ground effect dropdown
-  now applies max level automatically on selection instead of a separate
-  level input.
-
-### Fixed
 
 - **Volcano's UI cap and source label were wrong for Payon Stories.**
   The party buffs panel let Volcano go up to level 5 and labeled it
@@ -778,6 +757,7 @@ instead of release version. Dates are taken from actual git commit history.
   `PS_VOL_MATK_PCT` and `PS_ENCHANT_EFF` both already being 3-element
   arrays in the engine. The cap is now server-aware (3 on Payon Stories,
   5 on standard pre-renewal) instead of one wrong hardcoded number for both.
+
 - **`attrFix.js`'s Volcano/Deluge/Violent Gale elemental "enchant" bonus
   was checking the wrong element entirely** — its local `ELE_FIRE`/
   `ELE_WATER`/`ELE_WIND` constants (4/5/6) didn't match this engine's
@@ -788,23 +768,6 @@ instead of release version. Dates are taken from actual git commit history.
   instead of Water/Wind/Fire respectively. Found by testing the new
   ground-effect UI end-to-end with a real matching weapon and getting no
   bonus; fixed the constants and verified all three now match correctly.
-
-### Added
-
-- Deluge and Violent Gale added alongside Volcano as a single "Ground
-  effect" dropdown (Sage) — all three share one mutually-exclusive
-  `support_buffs.ground_effect` slot in the engine (you can only stand in
-  one ground spell at a time), so they're now one shared control instead
-  of a Volcano-only number input. Both are damage-relevant via the same
-  elemental enchant bonus as Volcano (see the `attrFix.js` fix above).
-- Min/max damage range shown under the avg damage metric in the damage
-  breakdown. The backend already computed `min_damage`/`max_damage` on
-  every `DamageResult` (normal and crit); the frontend type/render just
-  never surfaced them.
-- Three more Priest party buffs: Blessing (+STR/+INT/+DEX), Increase AGI
-  (+2+level AGI), and Gloria (+30 LUK) — reported missing after shipping
-  the initial Party buffs section; all three were already read from
-  `support_buffs` by `statusCalculator.js`, just not exposed yet.
 
 ## 2026-06-21
 
