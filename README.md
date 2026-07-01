@@ -138,6 +138,15 @@ motivated several changes beyond a straight 1:1 port:
   mastery routes to it instead of vanilla Sword Mastery via the
   `mastery_prefer_fallback` mechanism; Counter Attack 200% and Sword Quickening
   1H ASPD (+10%) were already in place from a prior pass.
+- **Cards always proc toggle** — the damage breakdown panel shows a compact
+  **Normal | Always** segmented control whenever the equipped loadout contains
+  cards with `autobonus`-based proc effects (e.g. Bonechewer Card). Switching
+  to *Always* recalculates immediately with those proc bonuses treated as
+  permanently active, so you can see worst/best-case damage without leaving the
+  panel. The control is hidden when no proc cards are slotted. Backend:
+  `gearBonusAggregator` parses `autobonus` inner scripts into
+  `gearBonuses.auto_bonuses`; `build.flags.force_procs` applies them as
+  permanent bonuses.
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.
