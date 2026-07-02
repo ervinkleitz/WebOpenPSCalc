@@ -5,6 +5,26 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-02
+
+### Added
+
+- **PS Sage rework** — damage-relevant changes from the Sage Rework publication are now modelled:
+  - **Soul Strike** (`MG_SOULSTRIKE`): ignores 50% of hard MDEF when skill level 10 is learned
+    (`MG_SOULSTRIKE_MDEF_IGNORE`); also deals `+5% × skill level` bonus damage against Undead
+    race targets (`MG_SOULSTRIKE_UNDEAD_BONUS`), shown as a dedicated step in the breakdown.
+  - **Fireball** (`MG_FIREBALL`): per-level MATK table `(70 + 30 × lv)`% — lv 1 = 70%, lv 10 =
+    340%. Already stored as a PS ratio override `(lv) => 40 + 30 * lv`; confirmed correct against
+    the published table.
+  - **Earth Spike** (`WZ_EARTHSPIKE`): 140% MATK per hit × skill level (e.g. lv 5 = 700% total).
+    Already stored as PS ratio override `() => 140`; confirmed correct.
+  - **Heavens Drive** (`WZ_HEAVENDRIVE`): same 140% per hit formula. Already stored; confirmed.
+  - **Advanced Book** (`SA_ADVANCEDBOOK`): flat ATK +10/15/20/25/30 and ASPD +3–7% at levels
+    1–5 (no MATK% bonus). Already stored in `serverProfiles.js`; confirmed correct.
+  - **Volcano / Deluge / Violent Gale** persistence buffs at max level 3: fire/water/wind
+    +10/15/20% DMG, Volcano +10/20/30 ATK and +2/4/6% MATK, Violent Gale +3/8/15 Flee.
+    Already stored and capped at level 3; confirmed correct.
+
 ## 2026-07-01
 
 ### Fixed

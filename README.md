@@ -158,6 +158,14 @@ motivated several changes beyond a straight 1:1 port:
   (max lv 5); Mystical Amplification per-level MATK scaling (+10%/lv on PS, flat 50%
   vanilla, max lv 5, exposed in the buffs panel); Sightrasher max lv 5; Soul Drain
   passive +1% MaxHP per level (slider in the passives panel).
+- **PS Sage rework** — damage-relevant changes from the Sage Rework publication are modelled:
+  Soul Strike ignores 50% MDEF when skill level 10 is learned (`MG_SOULSTRIKE_MDEF_IGNORE`);
+  Soul Strike also deals `+5% × skill level` bonus damage vs Undead race
+  (`MG_SOULSTRIKE_UNDEAD_BONUS`, shown as a dedicated breakdown step). Fireball uses the
+  per-level table `(70 + 30 × lv)`% (lv 1 = 70%, lv 10 = 340%) — already stored in
+  `PS_BF_MAGIC_RATIOS` and confirmed correct. Earth Spike and Heavens Drive at 140% per hit
+  confirmed correct. Advanced Book flat ATK +10–30 (lv 1–5) confirmed correct.
+  Volcano / Deluge / Violent Gale persistence buffs at max level 3 confirmed correct.
 - **PS Gunslinger rework** — damage-relevant changes from the Gunslinger Balancing
   Patch are modelled: Triple Action 420% total (100+40×lv at max level 1, was 450%);
   Ground Drift 200+60×lv% (max 800%, was 100+50×lv%); Soul Bullet (50+DEX+BaseLvl)%;

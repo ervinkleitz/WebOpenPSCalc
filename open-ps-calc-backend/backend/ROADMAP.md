@@ -179,6 +179,16 @@ without re-auditing everything from scratch.
   `_runBranch`. Fixed by adding `skill.nk_ignore_ele` alongside the existing
   `nk_ignore_def`/`nk_ignore_flee` flags in `calculate()`; `_runBranch` now
   skips AttrFix when set. Primary beneficiary: `AS_SPLASHER` (Venom Splasher).
+  **PS Sage rework implemented** (`Payon Stories Sage Rework Publication (Final).pdf`) —
+  `MG_SOULSTRIKE`: 50% MDEF ignore via `MG_SOULSTRIKE_MDEF_IGNORE` flag (same pattern as
+  Fire Pillar / Napalm Vulcan); +5% damage per skill level vs Undead race via
+  `MG_SOULSTRIKE_UNDEAD_BONUS` flag, applied as a dedicated pipeline step after AttrFix.
+  `MG_FIREBALL`: per-level table `40 + 30 × lv` (70%→340%) already stored in
+  `PS_BF_MAGIC_RATIOS` — confirmed correct against published table.
+  `WZ_EARTHSPIKE` / `WZ_HEAVENDRIVE`: 140% per hit already stored — confirmed correct.
+  `SA_ADVANCEDBOOK`: flat ATK +10–30 and ASPD +3–7% at levels 1–5 already in
+  `PS_PASSIVE_OVERRIDES` — confirmed correct.
+  Volcano/Deluge/Violent Gale persistence buffs (max level 3) already stored and capped.
   **PS Gunslinger rework implemented** — verified all damage-relevant rework
   items: `GS_TRIPLEACTION` (140%/hit × 3 = 420% total, PS ratio `100+40×lv` at
   max level 1, was 450% vanilla); `GS_GROUNDDRIFT` (`200+60×lv`%, max 800% at

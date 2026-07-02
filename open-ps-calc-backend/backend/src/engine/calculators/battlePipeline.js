@@ -244,6 +244,7 @@ class BattlePipeline {
     const mdefIgnorePct =
       (profile.mechanic_flags.has("WZ_FIREPILLAR_MDEF_IGNORE") && skillName === "WZ_FIREPILLAR") ? 50
       : (profile.mechanic_flags.has("HW_NAPALMVULCAN_MDEF_IGNORE") && skillName === "HW_NAPALMVULCAN") ? 50
+      : (profile.mechanic_flags.has("MG_SOULSTRIKE_MDEF_IGNORE") && skillName === "MG_SOULSTRIKE") ? 50
       : 0;
     if (!skill.nk_ignore_def) {
       pmf = calculateMagicDefenseFix(target, gearBonuses || {}, pmf, result, mdefIgnorePct);
@@ -267,6 +268,19 @@ class BattlePipeline {
     }
     if (skillName in (profile.skill_elements || {})) effAtkEle = profile.skill_elements[skillName];
     pmf = calculateAttrFix(weapon, target, pmf, result, build, effAtkEle);
+
+    // 4b. PS Soul Strike: +5% damage per skill level vs Undead race
+    if (profile.mechanic_flags.has("MG_SOULSTRIKE_UNDEAD_BONUS") && skillName === "MG_SOULSTRIKE" && target.race === "Undead") {
+      const bonus = skill.level * 5;
+      const multiplier = 1 + bonus / 100;
+      pmf = pmf.map((p) => [p[0] * multiplier, p[1]]);
+      const [mn, mx, av] = pmfStats(pmf);
+      result.add_step({
+        name: "Soul Strike vs Undead", value: av, min_value: mn, max_value: mx, multiplier,
+        note: `PS: +${bonus}% vs Undead (5% × lv ${skill.level})`,
+        formula: `dmg × ${multiplier.toFixed(2)}`, hercules_ref: "",
+      });
+    }
 
     // 5. Magic card bonuses (bMagicAddRace, bMagicAddEle)
     const ELE_TO_KEY_MAGIC = [

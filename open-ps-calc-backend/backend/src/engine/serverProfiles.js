@@ -199,6 +199,12 @@ const PS_MECHANIC_FLAGS = new Set([
   // Fire Pillar and Napalm Vulcan each ignore 50% of hard MDEF.
   "WZ_FIREPILLAR_MDEF_IGNORE",
   "HW_NAPALMVULCAN_MDEF_IGNORE",
+  // PS Sage rework: Soul Strike ignores 50% MDEF when skill level 10 is learned.
+  // In the calc we apply it whenever Soul Strike is the selected skill (level 10
+  // is virtually always learned in any damage build).
+  "MG_SOULSTRIKE_MDEF_IGNORE",
+  // PS Sage rework: Soul Strike deals +5% damage per skill level against Undead race.
+  "MG_SOULSTRIKE_UNDEAD_BONUS",
   // Mystical Amplification scales with skill level on PS: +10% MATK per level
   // (lv1=10%, lv2=20%, …, lv5=50%). Vanilla gives flat 50% at any level.
   "SC_AMPLIFYMAGICPOWER_SCALING",

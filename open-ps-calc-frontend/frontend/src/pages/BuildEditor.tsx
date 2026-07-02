@@ -833,6 +833,7 @@ export default function BuildEditor() {
                 <li>Rogue — Backstab formula (200+30×lv, +40% opportunity bonus), Trick Arrow 2-hit 200%, Raid 600%, Vulture's Eye enables bow Double Attack, Yser Card functional</li>
                 <li>Wizard / High Wizard — Frost Nova base formula (190+15×lv, +10% per Frost Diver lv), Lord of Vermillion 200×lv% total (4 waves), Napalm Vulcan Shadow element + 50% MDEF ignore, Fire Pillar 50% MDEF ignore, Mystical Amplification +10%/lv (max lv 5), Sightrasher max lv 5, Soul Drain +1% MaxHP/lv</li>
                 <li>Gunslinger — Triple Action 420% total (100+40×lv), Ground Drift 200+60×lv% (max 800%), Soul Bullet (50+DEX+BaseLvl)%, Heavy-Tipped Bullet ATK 45 +10% all races; Dust/Full Buster/Spread Attack 7% Neutral resist now also triggers with Grenade Launcher</li>
+                <li>Sage — Soul Strike ignores 50% MDEF (lv 10 learned) and deals +5%×lv bonus vs Undead race; Fireball (70+30×lv)% per hit (lv 1–10: 70%→340%); Earth Spike and Heavens Drive 140%×lv per hit; Advanced Book ATK +10–30 flat (lv 1–5); Volcano/Deluge/Violent Gale persistence buffs at max level 3</li>
               </ul>
             )}
           </div>
