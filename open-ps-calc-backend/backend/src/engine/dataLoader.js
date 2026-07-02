@@ -79,6 +79,12 @@ class DataLoader {
     if ((loc.includes("EQP_HEAD_MID") || loc.includes("EQP_HEAD_LOW")) && (item.refineable ?? true)) {
       return { ...item, refineable: false };
     }
+    // Source data lists all Whip weapons as job [19, 4020] (Bard/Clown) but they belong to
+    // Dancer (20) and Gypsy (4021). Musical Instruments carry the correct [19, 4020] restriction
+    // plus gender SEX_MALE; Whips have no gender field so the job array is the only guard.
+    if (item.weapon_type === "Whip" && Array.isArray(item.job) && item.job.includes(19) && !item.job.includes(20)) {
+      return { ...item, job: item.job.map((j) => (j === 19 ? 20 : j === 4020 ? 4021 : j)) };
+    }
     return item;
   }
 

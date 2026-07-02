@@ -7,6 +7,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-01
 
+### Fixed
+
+- **Dancer/Gypsy can now equip Whip weapons** — all Whip-type items in the item
+  database were incorrectly restricted to job `[19, 4020]` (Bard/Clown). The
+  source data relies on a `SEX_MALE` gender field to lock Musical Instruments to
+  Bard/Clown, but Whips carry no gender restriction and therefore must use job
+  `[20, 4021]` (Dancer/Gypsy). Fixed via a normalisation pass in `dataLoader.js`
+  that remaps the job array for any item whose `weapon_type` is `"Whip"`.
+
 ### Added
 
 - **PS Gunslinger rework** — changes from the Gunslinger Balancing Patch are now
