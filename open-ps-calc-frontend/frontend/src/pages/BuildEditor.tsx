@@ -416,7 +416,7 @@ export default function BuildEditor() {
     (localStorage.getItem("theme") as "dark" | "light") || "dark"
   );
   const [themeHintSeen, setThemeHintSeen] = useState(() => localStorage.getItem("themeHintSeen") === "1");
-  const [reworksBannerCollapsed, setReworksBannerCollapsed] = useState(() => localStorage.getItem("reworksBannerCollapsed") === "1");
+  const [reworksBannerCollapsed, setReworksBannerCollapsed] = useState(() => localStorage.getItem("reworksBannerCollapsed") !== "0");
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
