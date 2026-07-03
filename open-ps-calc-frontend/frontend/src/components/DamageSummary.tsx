@@ -73,16 +73,6 @@ function stepDisplayVal(step: Step): string {
   return step.value != null ? String(Math.round(step.value)) : "—";
 }
 
-function StepRow({ step }: { step: Step }) {
-  return (
-    <div className={`step-row${step.info ? " step-row--info" : ""}`}>
-      <span className="step-name">{step.name}</span>
-      <span className="step-value">{stepDisplayVal(step)}</span>
-      {step.note && <span className="step-note">{step.note}</span>}
-      {step.formula && <span className="step-formula">{step.formula}</span>}
-    </div>
-  );
-}
 
 function connectorInfo(step: Step, prev: Step): { label: string; cls: string } {
   const m = step.multiplier ?? 1.0;
@@ -171,18 +161,14 @@ function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit, psBonusPct }: {
   return (
     <>
       <div className="dw-section-label">Hit 1 &amp; 2 — RH {isCrit ? "crit" : "hit"} × {rhPct}% each</div>
-      <div className="step-list">
-        {rh.steps.map((s, i) => <StepRow step={s} key={i} />)}
-      </div>
-      <div className="dw-section-label" style={{ marginTop: "0.5rem" }}>Hit 3 — LH {isCrit ? "crit" : "hit"} × {lhPct}%</div>
-      <div className="step-list">
-        {lh.steps.map((s, i) => <StepRow step={s} key={i} />)}
-      </div>
+      <PipelineView steps={rh.steps} />
+      <div className="dw-section-label" style={{ marginTop: "0.75rem" }}>Hit 3 — LH {isCrit ? "crit" : "hit"} × {lhPct}%</div>
+      <PipelineView steps={lh.steps} />
       {psBonusPct != null && psBonusPct > 0 && (
-        <div className="step-row" style={{ marginTop: "0.5rem" }}>
-          <span className="step-name">PS Dual-Wield Bonus</span>
-          <span className="step-value">×{(1 + psBonusPct / 100).toFixed(2)}</span>
-          <span className="step-note">applied to combined total (+{psBonusPct}%)</span>
+        <div className="dw-ps-bonus-row">
+          <span className="dw-ps-bonus-label">PS Dual-Wield Bonus</span>
+          <span className="dw-ps-bonus-val">×{(1 + psBonusPct / 100).toFixed(2)}</span>
+          <span className="dw-ps-bonus-note">applied to combined total (+{psBonusPct}%)</span>
         </div>
       )}
     </>

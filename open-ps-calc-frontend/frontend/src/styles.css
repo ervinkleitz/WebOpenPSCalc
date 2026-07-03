@@ -608,6 +608,10 @@ label {
 .falcon-row .falcon-value { font-family: var(--mono); font-size: 0.95rem; color: var(--accent); }
 .falcon-note { font-size: 0.74rem; color: var(--text-faint); padding: 0.15rem 0.2rem; }
 .dw-section-label { font-size: 0.74rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0; margin-bottom: 0.25rem; }
+.dw-ps-bonus-row { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.75rem; padding: 0.35rem 0.5rem; background: var(--surface2); border-radius: 6px; }
+.dw-ps-bonus-label { font-size: 0.8rem; color: var(--text); flex: 1; }
+.dw-ps-bonus-val { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); font-weight: 600; }
+.dw-ps-bonus-note { font-size: 0.72rem; color: var(--text-faint); }
 .beta-tag { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #e6a817; background: rgba(230,168,23,0.15); border-radius: 3px; padding: 0.1rem 0.35rem; margin-left: 0.3rem; vertical-align: middle; }
 .proc-mode-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.3rem 0 0.45rem; }
 .proc-mode-label { font-size: 0.74rem; color: var(--text-faint); letter-spacing: 0.02em; }
