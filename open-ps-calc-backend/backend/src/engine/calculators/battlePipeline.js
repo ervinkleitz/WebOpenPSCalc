@@ -665,10 +665,10 @@ class BattlePipeline {
     const result = createDamageResult();
     const isRanged = resolveIsRanged(build, weapon, skill);
 
-    result.add_step({ name: "Status BATK", value: status.batk, note: `STR=${status.str} DEX=${status.dex}`, formula: "str + (str//10)^2 + dex//5 + luk//5", hercules_ref: "status.c status_calc_batk" });
-    result.add_step({ name: "Weapon ATK", value: weapon.atk, note: "Raw weapon ATK from item_db", formula: "weapon.atk", hercules_ref: "battle.c battle_calc_base_damage2" });
+    result.add_step({ name: "Status BATK", value: status.batk, note: `STR=${status.str} DEX=${status.dex}`, formula: "str + (str//10)^2 + dex//5 + luk//5", hercules_ref: "status.c status_calc_batk", info: true });
+    result.add_step({ name: "Weapon ATK", value: weapon.atk, note: "Raw weapon ATK from item_db", formula: "weapon.atk", hercules_ref: "battle.c battle_calc_base_damage2", info: true });
     if (isCrit) {
-      result.add_step({ name: "Branch", value: 0, note: "CRIT BRANCH — damage=atkmax, DEF bypassed", formula: "flag.cri=1", hercules_ref: "battle.c:4988-4989" });
+      result.add_step({ name: "Branch", value: 0, note: "CRIT BRANCH — damage=atkmax, DEF bypassed", formula: "flag.cri=1", hercules_ref: "battle.c:4988-4989", info: true });
     }
 
     const ctx = createCalcContext({

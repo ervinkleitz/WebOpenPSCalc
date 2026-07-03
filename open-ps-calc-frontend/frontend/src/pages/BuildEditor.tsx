@@ -9,7 +9,7 @@ import ChangelogModal from "../components/ChangelogModal";
 import ResultsPanel from "../components/ResultsPanel";
 import SavedBuildsModal from "../components/SavedBuildsModal";
 import {
-  BuildData, SkillState, CustomTarget, TargetMode,
+  BuildData, SkillState, CustomTarget, TargetMode, TargetMods,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
 } from "../types";
 
@@ -324,6 +324,15 @@ const DEFAULT_CUSTOM_TARGET: CustomTarget = {
   element: 0, element_level: 1, is_boss: false, luk: 0, agi: 0, int_: 0,
 };
 
+const DEFAULT_TARGET_MODS: TargetMods = {
+  element_status: "",
+  lex_aeterna: false,
+  quagmire: false,
+  signum_crucis: false,
+  sleep: false,
+  stun: false,
+};
+
 function encodeState(state: UrlEditorState): string {
   return "z1_" + LZString.compressToEncodedURIComponent(JSON.stringify(state));
 }
@@ -356,11 +365,12 @@ export default function BuildEditor() {
   const [skill, setSkill] = useState<SkillState>({ ...DEFAULT_SKILL, ...(initialState?.skill ?? {}) });
   const [targetMode, setTargetMode] = useState<TargetMode>(initialState?.targetMode ?? "monster");
   const [customTarget, setCustomTarget] = useState<CustomTarget>(initialState?.customTarget ?? DEFAULT_CUSTOM_TARGET);
+  const [targetMods, setTargetMods] = useState<TargetMods>(initialState?.targetMods ?? DEFAULT_TARGET_MODS);
 
   const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
   const [passiveSkills, setPassiveSkills] = useState<PassiveSkill[]>([]);
   const [itemCache, setItemCache] = useState<Record<number, EquippedItemInfo>>({});
-  const [mobInfo, setMobInfo] = useState<{ name: string; level: number } | null>(null);
+  const [mobInfo, setMobInfo] = useState<{ name: string; level: number; race?: string } | null>(null);
   const [jobBonusStats, setJobBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [equipBonusStats, setEquipBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [buffBonusStats, setBuffBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
@@ -392,6 +402,15 @@ export default function BuildEditor() {
     }
     return { ...data, equipped };
   }, [data, invalidSlots]);
+
+  // Signum Crucis only works on Undead and Demon targets.
+  const signumApplicable = useMemo(() => {
+    if (targetMode === "custom") {
+      return customTarget.race === "Undead" || customTarget.race === "Demon";
+    }
+    // Monster mode: allow if no mob selected yet (unknown), or once loaded check race.
+    return !data.target_mob_id || mobInfo?.race === "Undead" || mobInfo?.race === "Demon";
+  }, [targetMode, customTarget.race, data.target_mob_id, mobInfo?.race]);
 
   const totalStatPoints = useMemo(
     () => getTotalStatPoints(data.base_level, data.job_id),
@@ -443,11 +462,11 @@ export default function BuildEditor() {
   // Keep URL in sync with editor state (debounced 400ms)
   useEffect(() => {
     const timer = setTimeout(() => {
-      const state: UrlEditorState = { build: data, skill, targetMode, customTarget };
+      const state: UrlEditorState = { build: data, skill, targetMode, customTarget, targetMods };
       setSearchParams({ b: encodeState(state) }, { replace: true });
     }, 400);
     return () => clearTimeout(timer);
-  }, [data, skill, targetMode, customTarget]);
+  }, [data, skill, targetMode, customTarget, targetMods]);
 
   // Resolve names for already-equipped items
   useEffect(() => {
@@ -565,6 +584,13 @@ export default function BuildEditor() {
       .catch(() => setMobInfo(null));
   }, [data.target_mob_id, data.server]);
 
+  // Auto-clear Signum Crucis when the target changes to a non-applicable race.
+  useEffect(() => {
+    if (!signumApplicable) {
+      setTargetMods((m) => m.signum_crucis ? { ...m, signum_crucis: false } : m);
+    }
+  }, [signumApplicable]);
+
   const updateField = useCallback((path: string[], value: unknown) => {
     setData((prev) => {
       const next = structuredClone(prev) as any;
@@ -637,8 +663,8 @@ export default function BuildEditor() {
       const buildWithFlags = fp
         ? { ...sanitizedBuild, flags: { ...(sanitizedBuild.flags || {}), force_procs: true } }
         : sanitizedBuild;
-      const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target };
-      const skillPayload  = { build: buildWithFlags, skill: { id: skill.id, level: skill.level }, target };
+      const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target, target_mods: targetMods };
+      const skillPayload  = { build: buildWithFlags, skill: { id: skill.id, level: skill.level }, target, target_mods: targetMods };
       const [normalRes, skillRes] = await Promise.all([
         api.calculate(normalPayload),
         skill.id !== 0 ? api.calculate(skillPayload) : Promise.resolve(null),
@@ -668,6 +694,7 @@ export default function BuildEditor() {
     setSkill(DEFAULT_SKILL);
     setTargetMode("monster");
     setCustomTarget(DEFAULT_CUSTOM_TARGET);
+    setTargetMods(DEFAULT_TARGET_MODS);
     setCalcResult(null);
     setCalcError("");
     setResultsOpen(false);
@@ -678,6 +705,7 @@ export default function BuildEditor() {
     setSkill({ ...DEFAULT_SKILL, ...state.skill });
     setTargetMode(state.targetMode);
     setCustomTarget(state.customTarget);
+    setTargetMods(state.targetMods ?? DEFAULT_TARGET_MODS);
     setCalcResult(null);
     setCalcError("");
     setResultsOpen(false);
@@ -735,7 +763,7 @@ export default function BuildEditor() {
     [data.server],
   );
 
-  const currentEditorState: UrlEditorState = { build: data, skill, targetMode, customTarget };
+  const currentEditorState: UrlEditorState = { build: data, skill, targetMode, customTarget, targetMods };
 
   return (
     <div className="app-shell">
@@ -1487,6 +1515,63 @@ export default function BuildEditor() {
                 </div>
               </>
             )}
+
+            {/* Target debuffs */}
+            <div className="buff-section-header" style={{ marginTop: "1rem" }}>
+              Target debuffs
+              <InfoTooltip>
+                Debuffs applied to the target before the damage calculation.
+                Element status overrides the target&apos;s element and may trigger mechanic effects
+                (Frozen/Stone Curse halve hard DEF and grant auto-hit).
+                Lex Aeterna doubles all damage results.
+                Skill debuffs and statuses apply their game mechanics to the target.
+              </InfoTooltip>
+            </div>
+
+            <div className="field">
+              <label title="Override target element; Frozen and Stone Curse also halve hard DEF and grant auto-hit">
+                Element status
+              </label>
+              <select value={targetMods.element_status} onChange={(e) => setTargetMods((m) => ({ ...m, element_status: e.target.value }))}>
+                <option value="">None</option>
+                <option value="Poison">Poisoned (→ Poison element)</option>
+                <option value="Frozen">Frozen (→ Water, −50% hard DEF, auto-hit)</option>
+                <option value="Stone">Stone Curse (→ Earth, −50% hard DEF, auto-hit)</option>
+              </select>
+            </div>
+
+            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
+              <label title="SC_LEXAETERNA: next hit deals ×2 damage. Applied to all damage branches.">
+                <input type="checkbox" checked={targetMods.lex_aeterna} onChange={(e) => setTargetMods((m) => ({ ...m, lex_aeterna: e.target.checked }))} />
+                <span>Lex Aeterna (×2 damage)</span>
+              </label>
+            </div>
+
+            <span className="buff-group-label" style={{ display: "block", marginTop: "0.75rem" }}>Debuff skills &amp; statuses</span>
+            <div className="field field-checkbox">
+              <label title="WZ_QUAGMIRE: removes flee from target — all physical attacks auto-hit">
+                <input type="checkbox" checked={targetMods.quagmire} onChange={(e) => setTargetMods((m) => ({ ...m, quagmire: e.target.checked }))} />
+                <span>Quagmire (auto-hit)</span>
+              </label>
+            </div>
+            <div className="field field-checkbox">
+              <label title={signumApplicable ? "PR_SIGNUM Lv10: hard DEF −35% (5 + 3×lv). Undead / Demon only." : "PR_SIGNUM only applies to Undead and Demon targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>
+                <input type="checkbox" checked={targetMods.signum_crucis} disabled={!signumApplicable} onChange={(e) => setTargetMods((m) => ({ ...m, signum_crucis: e.target.checked }))} />
+                <span>Signum Crucis Lv10 (−35% hard DEF)</span>
+              </label>
+            </div>
+            <div className="field field-checkbox">
+              <label title="SC_SLEEP: target cannot evade (auto-hit) and crit rate is doubled">
+                <input type="checkbox" checked={targetMods.sleep} onChange={(e) => setTargetMods((m) => ({ ...m, sleep: e.target.checked }))} />
+                <span>Asleep (auto-hit, ×2 crit rate)</span>
+              </label>
+            </div>
+            <div className="field field-checkbox">
+              <label title="SC_STUN: target cannot evade (auto-hit)">
+                <input type="checkbox" checked={targetMods.stun} onChange={(e) => setTargetMods((m) => ({ ...m, stun: e.target.checked }))} />
+                <span>Stunned (auto-hit)</span>
+              </label>
+            </div>
           </Panel>
 
         </div>

@@ -163,6 +163,18 @@ motivated several changes beyond a straight 1:1 port:
   (max lv 5); Mystical Amplification per-level MATK scaling (+10%/lv on PS, flat 50%
   vanilla, max lv 5, exposed in the buffs panel); Sightrasher max lv 5; Soul Drain
   passive +1% MaxHP per level (slider in the passives panel).
+- **Target debuff system** — Panel 08 (Target) now has a "Target debuffs" section. Element status
+  overrides the target's element (Poisoned → Poison, Frozen → Water, Stone Curse → Earth) and
+  triggers mechanic effects already wired in `defenseFix.js`/`hitChance.js` (Frozen/Stone halve
+  hard DEF and grant auto-hit). Lex Aeterna checkbox applies ×2 to all damage branches with a
+  visible step in each breakdown. Debuff skill/status checkboxes: Quagmire (flee removed →
+  auto-hit via `SC_QUAGMIRE` in `hitChance.js`), Signum Crucis Lv10 (hard DEF −35%, Undead/Demon
+  only — checkbox disabled for inapplicable targets), Asleep (`SC_SLEEP`: auto-hit + ×2 crit
+  rate), Stunned (`SC_STUN`: auto-hit). State is URL-encoded alongside the build so shared links
+  include debuff selections.
+- **Damage pipeline display** — each step row shows a `min–max` range below the average when the
+  damage distribution is non-trivial, and sub-component steps (Status BATK, Weapon ATK, Branch
+  label) are visually dimmed/italicised to distinguish them from running-total steps.
 - **Snake Card + Cave Viper Card combo** — equipping both grants +15% Poison on hit and +20 ATK.
   Cave Viper Card (headgear) also updated: now adds +20% Poison on hit in addition to its existing
   +10% damage to Poison-element targets.

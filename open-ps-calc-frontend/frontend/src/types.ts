@@ -86,9 +86,19 @@ export interface SearchResult {
 
 export type TargetMode = "monster" | "custom";
 
+export interface TargetMods {
+  element_status: string;
+  lex_aeterna: boolean;
+  quagmire: boolean;
+  signum_crucis: boolean;
+  sleep: boolean;
+  stun: boolean;
+}
+
 export interface UrlEditorState {
   build: BuildData;
   skill: SkillState;
   targetMode: TargetMode;
   customTarget: CustomTarget;
+  targetMods?: TargetMods;
 }

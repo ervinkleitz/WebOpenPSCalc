@@ -49,7 +49,7 @@
 
 * { box-sizing: border-box; }
 
-html, body, #root { height: 100%; }
+html, body, #root { min-height: 100%; }
 
 body {
   margin: 0;
@@ -470,8 +470,11 @@ label {
 }
 .step-row .step-name { font-size: 0.82rem; color: var(--text); }
 .step-row .step-value { font-family: var(--mono); font-size: 0.95rem; text-align: right; color: var(--accent); }
+.step-row .step-range { display: block; font-size: 0.71rem; color: var(--text-dim); text-align: right; }
 .step-row .step-note { grid-column: 1 / -1; font-size: 0.74rem; color: var(--text-faint); }
 .step-row .step-formula { grid-column: 1 / -1; font-size: 0.72rem; color: var(--text-dim); font-family: var(--mono); }
+.step-row--info .step-name { color: var(--text-dim); font-style: italic; }
+.step-row--info .step-value { color: var(--text-dim); font-size: 0.82rem; }
 
 .falcon-section { margin-top: 1.2rem; }
 .falcon-rows { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.4rem; }

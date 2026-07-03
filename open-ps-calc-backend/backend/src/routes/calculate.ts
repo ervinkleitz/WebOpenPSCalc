@@ -13,9 +13,58 @@ const { computeFalconDamage } = require("../engine/calculators/falconCalc");
 
 const router = Router();
 
+function scaleDamageResult(r: any): any {
+  if (!r) return r;
+  const newMin = Math.floor(r.min_damage * 2);
+  const newMax = Math.floor(r.max_damage * 2);
+  const newAvg = Math.floor(r.avg_damage * 2);
+  const newPmf: Record<string, number> = {};
+  for (const [k, p] of Object.entries(r.pmf as Record<string, number> || {})) {
+    const newKey = String(Math.floor(Number(k) * 2));
+    newPmf[newKey] = (newPmf[newKey] || 0) + (p as number);
+  }
+  r.min_damage = newMin;
+  r.max_damage = newMax;
+  r.avg_damage = newAvg;
+  r.pmf = newPmf;
+  if (Array.isArray(r.steps)) {
+    r.steps.push({
+      name: "Lex Aeterna",
+      value: newAvg,
+      min_value: newMin,
+      max_value: newMax,
+      multiplier: 2.0,
+      note: "×2 damage (SC_LEXAETERNA)",
+      formula: "damage × 2",
+      hercules_ref: "battle.c: battle_calc_damage (SC_LEXAETERNA)",
+    });
+  }
+  return r;
+}
+
+function applyLexAeterna(br: any): void {
+  br.normal          = scaleDamageResult(br.normal);
+  br.crit            = scaleDamageResult(br.crit);
+  br.magic           = scaleDamageResult(br.magic);
+  br.katar_second    = scaleDamageResult(br.katar_second);
+  br.katar_second_crit = scaleDamageResult(br.katar_second_crit);
+  br.double_hit      = scaleDamageResult(br.double_hit);
+  br.double_hit_crit = scaleDamageResult(br.double_hit_crit);
+  br.second_hit      = scaleDamageResult(br.second_hit);
+  br.second_hit_crit = scaleDamageResult(br.second_hit_crit);
+  br.lh_normal       = scaleDamageResult(br.lh_normal);
+  br.lh_crit         = scaleDamageResult(br.lh_crit);
+  br.dw_lh_normal    = scaleDamageResult(br.dw_lh_normal);
+  br.dw_lh_crit      = scaleDamageResult(br.dw_lh_crit);
+  for (const key of Object.keys(br.proc_branches || {})) {
+    br.proc_branches[key] = scaleDamageResult(br.proc_branches[key]);
+  }
+  br.dps = br.dps * 2;
+}
+
 router.post("/", (req: Request, res: Response) => {
   try {
-    const { build: buildData, skill: skillInput, target: targetInput } = req.body || {};
+    const { build: buildData, skill: skillInput, target: targetInput, target_mods: targetModsInput } = req.body || {};
     if (!buildData) return res.status(400).json({ error: "build is required" });
 
     const build = buildFromSaveSchema(buildData);
@@ -32,6 +81,30 @@ router.post("/", (req: Request, res: Response) => {
       target = createTarget(targetInput || {});
     }
 
+    // Apply target debuffs from target_mods
+    if (targetModsInput) {
+      const sc: Record<string, boolean> = { ...(target.target_active_scs || {}) };
+      // Element status: override element and apply associated SC effects
+      if (targetModsInput.element_status === "Poison") {
+        target.element = 5;
+      } else if (targetModsInput.element_status === "Frozen") {
+        target.element = 1;
+        sc.SC_FREEZE = true;
+      } else if (targetModsInput.element_status === "Stone") {
+        target.element = 2;
+        sc.SC_STONE = true;
+      }
+      // Status debuffs
+      if (targetModsInput.sleep)  sc.SC_SLEEP  = true;
+      if (targetModsInput.stun)   sc.SC_STUN   = true;
+      if (targetModsInput.quagmire) sc.SC_QUAGMIRE = true;
+      target.target_active_scs = sc;
+      // Skill debuffs: DEF reductions (Signum Crucis only affects Undead / Demon)
+      if (targetModsInput.signum_crucis && (target.race === "Undead" || target.race === "Demon")) {
+        target.def_percent = Math.max(0, (target.def_percent ?? 100) - 35);
+      }
+    }
+
     const skill = createSkillInstance({
       id: skillInput ? Number(skillInput.id) || 0 : 0,
       level: skillInput ? Math.max(1, Number(skillInput.level) || 1) : 1,
@@ -39,6 +112,10 @@ router.post("/", (req: Request, res: Response) => {
 
     const pipeline = new BattlePipeline(config);
     const battleResult = pipeline.calculate(status, weapon, skill, target, effBuild, gearBonuses);
+
+    if (targetModsInput?.lex_aeterna) {
+      applyLexAeterna(battleResult);
+    }
 
     const gear_stat_bonuses = {
       str_: gearBonuses.str_, agi: gearBonuses.agi, vit: gearBonuses.vit,

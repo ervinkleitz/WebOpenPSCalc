@@ -3,7 +3,7 @@
  */
 function calculateHitChance(status, target, config) {
   const targetScs = target.target_active_scs;
-  if (targetScs.SC_STONE || targetScs.SC_FREEZE || targetScs.SC_STUN || targetScs.SC_SLEEP) {
+  if (targetScs.SC_STONE || targetScs.SC_FREEZE || targetScs.SC_STUN || targetScs.SC_SLEEP || targetScs.SC_QUAGMIRE) {
     return [100.0, 0.0];
   }
 

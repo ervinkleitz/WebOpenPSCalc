@@ -3,8 +3,11 @@ import { useState } from "react";
 interface Step {
   name: string;
   value?: number;
+  min_value?: number;
+  max_value?: number;
   note?: string;
   formula?: string;
+  info?: boolean;
 }
 
 interface DamageBranch {
@@ -63,10 +66,17 @@ type Branch = "skill" | "normal" | "crit" | "falcon" | "katar";
 type DwMode = "ps" | "vanilla";
 
 function StepRow({ step }: { step: Step }) {
+  const showRange = step.min_value != null && step.max_value != null
+    && Math.round(step.min_value) !== Math.round(step.max_value);
   return (
-    <div className="step-row">
+    <div className={`step-row${step.info ? " step-row--info" : ""}`}>
       <span className="step-name">{step.name}</span>
-      <span className="step-value">{step.value != null ? Math.round(step.value) : "—"}</span>
+      <span className="step-value">
+        {step.value != null ? Math.round(step.value) : "—"}
+        {showRange && (
+          <span className="step-range">{Math.round(step.min_value!)}–{Math.round(step.max_value!)}</span>
+        )}
+      </span>
       {step.note && <span className="step-note">{step.note}</span>}
       {step.formula && <span className="step-formula">{step.formula}</span>}
     </div>

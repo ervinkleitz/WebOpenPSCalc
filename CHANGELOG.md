@@ -5,9 +5,57 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-03
+
+### Added
+
+- **Damage pipeline min–max range display** — each step row in the damage breakdown now shows a
+  `min–max` range below the average value when the damage distribution is non-trivial (min ≠ max).
+  Clarifies that the "value" column is always the running average, not the single-hit result;
+  useful for seeing how variance accumulates through the pipeline.
+- **Informational step styling** — steps that are sub-components rather than running-total
+  accumulations (Status BATK, Weapon ATK, and the crit/normal Branch label) are now visually
+  dimmed and italicised in the pipeline panel (`.step-row--info` CSS modifier), distinguishing
+  them from steps that represent the actual cumulative damage state.
+
+### Fixed
+
+- **Quagmire auto-hit** — enabling Quagmire set the target's `flee` to 0, but `hitChance.js`
+  uses `target.flee > 0 ? target.flee : target.level + target.agi` as a fallback, so auto-hit was
+  never granted. Fixed by adding `SC_QUAGMIRE` to the auto-hit condition block alongside
+  `SC_STONE / SC_FREEZE / SC_STUN / SC_SLEEP`.
+- **Signum Crucis race restriction** — the Signum Crucis checkbox was previously not restricted to
+  applicable targets. It is now disabled (opacity 0.4, not-allowed cursor) and auto-cleared in the
+  frontend whenever the selected target is not Undead or Demon; the backend also race-guards the
+  DEF reduction (`target.race === "Undead" || "Demon"`), so sending `signum_crucis: true` for an
+  inapplicable race has no effect.
+- **Body background-image gradient tiling at page bottom** — `html, body, #root` had
+  `height: 100%` (exactly viewport height), causing the decorative radial-gradient
+  `background-image` on `body` to tile into the overflow area when page content exceeded the
+  viewport (visible as a mismatched coloured patch below the left column when the Target panel was
+  expanded). Changed to `min-height: 100%` so the body grows with content and the gradients stay
+  anchored at the actual document top and bottom.
+
 ## 2026-07-02
 
 ### Added
+
+- **Target debuff system** — Panel 08 (Target) now has a "Target debuffs" section with:
+  - *Element status* dropdown: Poisoned (→ Poison element), Frozen (→ Water element + halve hard
+    DEF + auto-hit via `SC_FREEZE`), Stone Curse (→ Earth element + halve hard DEF + auto-hit via
+    `SC_STONE`). Uses existing `defenseFix.js` / `hitChance.js` mechanic paths.
+  - *Lex Aeterna* checkbox: applies ×2 to all damage branches (`normal`, `crit`, `magic`,
+    `katar_second`, `double_hit`, `second_hit`, LH branches, proc branches) and to DPS.
+    A "Lex Aeterna" step is appended to each branch's breakdown so the multiplier is visible.
+  - *Quagmire* checkbox: sets `SC_QUAGMIRE` on the target → auto-hit (flee cannot be used to
+    dodge). `hitChance.js` updated to return 100% hit for `SC_QUAGMIRE`, matching the same path
+    used by `SC_STONE/SC_FREEZE/SC_STUN/SC_SLEEP`.
+  - *Signum Crucis Lv10* checkbox: hard DEF −35% (`def_percent` reduced by 35 pp). Use vs
+    Undead / Demon targets.
+  - *Asleep* checkbox: `SC_SLEEP` on target → auto-hit and ×2 crit rate (existing paths in
+    `hitChance.js` and `critChance.js`).
+  - *Stunned* checkbox: `SC_STUN` on target → auto-hit (existing path in `hitChance.js`).
+  - Debuff state (`TargetMods`) persisted in the URL `?b=` param alongside build/skill/target.
 
 - **Snake Card** (4037) + **Cave Viper Card** (8001) combo — equipping both grants an additional
   +15% chance to inflict Poison on hit and +20 ATK. Combo entry added to `ps_item_combo_db.json`.

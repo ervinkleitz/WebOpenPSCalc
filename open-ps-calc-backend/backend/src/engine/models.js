@@ -311,6 +311,7 @@ function createDamageStep(opts) {
     note: opts.note ?? "",
     formula: opts.formula ?? "",
     hercules_ref: opts.hercules_ref ?? "",
+    info: opts.info ?? false,
   };
   if (step.min_value === 0 && step.max_value === 0) {
     step.min_value = step.value;
