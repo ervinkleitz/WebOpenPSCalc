@@ -5,6 +5,23 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-04
+
+### Added
+
+- **Equipment slot browse list** — clicking an empty equipment slot input now shows up to 100
+  items equippable by the current job (filtered server-side via `?job=` parameter), ensuring
+  PS-exclusive high-ID items such as Setting Dirk appear in the initial dropdown. Typed searches
+  still show all matching items (equippable first, non-equippable dimmed) with a limit of 20.
+
+### Fixed
+
+- **Pipeline Final Damage value alignment** — the Final Damage row had no dot-leader spacer, so
+  its value hugged the label rather than aligning to the right edge. Added
+  `justify-content: space-between` to `.pipeline-row--final`.
+- **Pipeline left border rail removed** — `.pipeline-track` had a decorative `border-left` that
+  made the layout feel cramped. Removed together with the compensating `margin-left`.
+
 ## 2026-07-03
 
 ### Added
