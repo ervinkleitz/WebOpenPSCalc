@@ -35,6 +35,10 @@ export default defineConfig({
         target: "http://localhost:4000",
         changeOrigin: true,
       },
+      "/stats": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+      },
     },
     fs: {
       allow: [repoRoot],

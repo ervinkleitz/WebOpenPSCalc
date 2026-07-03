@@ -154,15 +154,15 @@ export default function StatsPage() {
         <>
           <div className="stats-metrics">
             <div className="stats-metric">
-              <div className="stats-metric-val">{data.total_views.toLocaleString()}</div>
+              <div className="stats-metric-val">{(data.total_views ?? 0).toLocaleString()}</div>
               <div className="stats-metric-label">Page views</div>
             </div>
             <div className="stats-metric">
-              <div className="stats-metric-val">{data.unique_ips.toLocaleString()}</div>
+              <div className="stats-metric-val">{(data.unique_ips ?? 0).toLocaleString()}</div>
               <div className="stats-metric-label">Unique visitors</div>
             </div>
             <div className="stats-metric">
-              <div className="stats-metric-val">{data.total_calcs.toLocaleString()}</div>
+              <div className="stats-metric-val">{(data.total_calcs ?? 0).toLocaleString()}</div>
               <div className="stats-metric-label">Calculations</div>
             </div>
           </div>
