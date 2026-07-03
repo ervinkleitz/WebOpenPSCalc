@@ -7,43 +7,18 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-03
 
-### Fixed
-
-- **Dual-wield damage pipeline uses new style** — the RH and LH step lists in the PS Assassin
-  dual-wield breakdown now render with `PipelineView` (chip inputs + connector arrows) instead of
-  the old flat step-list rows.
-- **Wildcard bonuses no longer applied to empty slots** — stale `wildcard_slots` data in the URL
-  could activate wildcard mode for a slot with no item equipped (e.g. `left_hand: null`), causing
-  phantom race/size/element bonuses to be added to the calculation. Auto-activation and
-  `onCalculate` now both guard against empty slots.
-
-## 2026-07-04
-
 ### Added
 
-- **Wildcard card mix** — each equipment slot with card sockets now has a "Cards / Wildcard mix"
-  toggle. In wildcard mode the card pickers are replaced by per-slot rows of three dropdowns
-  (bonus type: Race/Size/Element; target; bonus %). The selected bonuses are sent to the engine
-  as `wildcard_bonuses` and merged into the gear-bonus dictionaries (`add_race`, `add_size`,
-  `add_ele`) alongside any real cards, allowing hypothetical mixed-card scenarios without
-  needing the actual item IDs.
+- **Wildcard card mix** — weapon slots with card sockets now have a "Cards / Wildcard mix" toggle.
+  In wildcard mode the card pickers are replaced by per-slot rows where each card position is set
+  to a generic bonus type (Race / Size / Element) and a bonus %. Size is hardcoded to 15% + 5 ATK;
+  Race and Element default to 20% with 4 / 10 / 15 / 20 options for PS custom cards. Bonuses
+  always apply to all races/sizes/elements (RC_All, Size_All, Ele_All) and are merged into the
+  engine's gear-bonus dictionaries alongside real cards.
 - **Equipment slot browse list** — clicking an empty equipment slot input now shows up to 100
   items equippable by the current job (filtered server-side via `?job=` parameter), ensuring
   PS-exclusive high-ID items such as Setting Dirk appear in the initial dropdown. Typed searches
   still show all matching items (equippable first, non-equippable dimmed) with a limit of 20.
-
-### Fixed
-
-- **Pipeline Final Damage value alignment** — the Final Damage row had no dot-leader spacer, so
-  its value hugged the label rather than aligning to the right edge. Added
-  `justify-content: space-between` to `.pipeline-row--final`.
-- **Pipeline left border rail removed** — `.pipeline-track` had a decorative `border-left` that
-  made the layout feel cramped. Removed together with the compensating `margin-left`.
-
-## 2026-07-03
-
-### Added
-
 - **Visual pipeline damage breakdown** — the damage step list is redesigned as a proper pipeline:
   - Informational sub-components (Status BATK, Weapon ATK, Branch label) are shown as compact
     chips above the pipeline rather than inline rows.
@@ -59,6 +34,18 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Dual-wield damage pipeline uses new style** — the RH and LH step lists in the PS Assassin
+  dual-wield breakdown now render with `PipelineView` (chip inputs + connector arrows) instead of
+  the old flat step-list rows.
+- **Wildcard bonuses no longer applied to empty slots** — stale `wildcard_slots` data in the URL
+  could activate wildcard mode for a slot with no item equipped (e.g. `left_hand: null`), causing
+  phantom race/size/element bonuses to be added to the calculation. Auto-activation and
+  `onCalculate` now both guard against empty slots.
+- **Pipeline Final Damage value alignment** — the Final Damage row had no dot-leader spacer, so
+  its value hugged the label rather than aligning to the right edge. Added
+  `justify-content: space-between` to `.pipeline-row--final`.
+- **Pipeline left border rail removed** — `.pipeline-track` had a decorative `border-left` that
+  made the layout feel cramped. Removed together with the compensating `margin-left`.
 - **Quagmire auto-hit** — enabling Quagmire set the target's `flee` to 0, but `hitChance.js`
   uses `target.flee > 0 ? target.flee : target.level + target.agi` as a fallback, so auto-hit was
   never granted. Fixed by adding `SC_QUAGMIRE` to the auto-hit condition block alongside
