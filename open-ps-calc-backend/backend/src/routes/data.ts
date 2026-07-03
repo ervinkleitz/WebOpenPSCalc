@@ -66,6 +66,9 @@ router.get("/skills", (req: Request, res: Response) => {
   const server = applyServerProfile(req);
   const profile = getProfile(server);
   let skills = loader.getAllSkills();
+  if (req.query.damage_only === "true") {
+    skills = skills.filter((s: any) => s.attack_type === "Weapon" || s.attack_type === "Magic");
+  }
   if (req.query.q) {
     const q = String(req.query.q).toLowerCase();
     skills = skills.filter((s: any) =>

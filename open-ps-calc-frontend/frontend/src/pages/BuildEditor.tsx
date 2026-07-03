@@ -829,7 +829,7 @@ export default function BuildEditor() {
 
   const skillSearch = useCallback(
     (query: string): Promise<SearchResult[]> =>
-      api.searchSkills({ q: query, limit: 12, server: data.server })
+      api.searchSkills({ q: query, limit: 12, server: data.server, damage_only: "true" })
         .then((r) => r.items.map((s: any) => ({ id: s.id, label: s.display_name || s.name || `Skill ${s.id}`, sublabel: s.name, max_level: s.max_level ?? 10 }))),
     [data.server],
   );

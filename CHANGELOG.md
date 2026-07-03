@@ -32,6 +32,10 @@ instead of release version. Dates are taken from actual git commit history.
     distinction is sufficient).
   - Step values show `min–max` when the damage distribution has a non-trivial range.
 
+### Changed
+
+- **Skill search only shows damage skills** — the skill picker in Panel 07 now filters to skills with `attack_type` of `Weapon` or `Magic`, hiding passives (Sword Mastery, Endure, etc.) and non-damaging utility skills.
+
 ### Fixed
 
 - **Permanent page view history** — a `consolidate.js` script reads all nginx access logs (including rotated `.gz` files) and writes page view events into `stats.ndjson`, so history is preserved beyond log rotation. Runs automatically on every deploy for fast incremental updates; a daily 2 AM cron keeps it current between deploys. The stats route now reads archived views from NDJSON and live views from nginx, splitting at the consolidation cursor to avoid double-counting.
