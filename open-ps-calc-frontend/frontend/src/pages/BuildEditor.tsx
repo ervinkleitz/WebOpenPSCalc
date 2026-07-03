@@ -375,12 +375,13 @@ export default function BuildEditor() {
   const [targetMods, setTargetMods] = useState<TargetMods>(initialState?.targetMods ?? DEFAULT_TARGET_MODS);
 
   // Which equipment slot groups are in wildcard (custom card mix) mode.
-  // Auto-enable for any weapon slot that already has wildcard_slots data (e.g. loaded from URL).
+  // Auto-enable only for slots that have both wildcard data AND an item actually equipped there.
   const [wildcardMode, setWildcardMode] = useState<Record<string, boolean>>(() => {
     const slots = initialState?.build?.wildcard_slots ?? {};
+    const equipped = initialState?.build?.equipped ?? {};
     const init: Record<string, boolean> = {};
     for (const [k, v] of Object.entries(slots)) {
-      if (Array.isArray(v) && v.length > 0) init[k] = true;
+      if (Array.isArray(v) && v.length > 0 && equipped[k] != null) init[k] = true;
     }
     return init;
   });
@@ -696,6 +697,7 @@ export default function BuildEditor() {
       const equippedOverride = { ...sanitizedBuild.equipped };
       for (const [slotKey, active] of Object.entries(wildcardMode)) {
         if (!active) continue;
+        if (equippedOverride[slotKey] == null) continue; // slot is empty — skip
         for (let i = 1; i <= 4; i++) delete equippedOverride[`${slotKey}_card${i}`];
         for (const ws of (data.wildcard_slots?.[slotKey] || [])) {
           const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : "Ele_All";
