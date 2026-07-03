@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 
 interface Step {
   name: string;
@@ -114,27 +114,29 @@ function PipelineView({ steps }: { steps: Step[] }) {
           ))}
         </div>
       )}
-      {nodes.map((step, i) => {
-        const prev = nodes[i - 1];
-        const conn = prev ? connectorInfo(step, prev) : null;
-        const isFinal = step.name === "Final Damage";
-        return (
-          <div key={i} className="pipeline-node">
-            {conn && (
-              <div className={`pipeline-conn ${conn.cls}`}>
-                <div className="pipeline-conn-track" />
-                <span className="pipeline-conn-badge">{conn.label}</span>
-                {step.note && <span className="pipeline-conn-note">{step.note}</span>}
-                <div className="pipeline-conn-track" />
+      <div className="pipeline-track">
+        {nodes.map((step, i) => {
+          const prev = nodes[i - 1];
+          const conn = prev ? connectorInfo(step, prev) : null;
+          const isFinal = step.name === "Final Damage";
+          return (
+            <Fragment key={i}>
+              {conn && (
+                <div className={`pipeline-conn ${conn.cls}`}>
+                  <span className="pipeline-conn-arrow">↓</span>
+                  <span className="pipeline-conn-badge">{conn.label}</span>
+                  {step.note && <span className="pipeline-conn-note">{step.note}</span>}
+                </div>
+              )}
+              <div className={`pipeline-row${isFinal ? " pipeline-row--final" : ""}`}>
+                <span className="pipeline-row-name">{step.name}</span>
+                {!isFinal && <span className="pipeline-row-dots" aria-hidden="true" />}
+                <span className="pipeline-row-val">{stepDisplayVal(step)}</span>
               </div>
-            )}
-            <div className={`pipeline-card${isFinal ? " pipeline-card--final" : ""}`}>
-              <span className="pipeline-card-name">{step.name}</span>
-              <span className="pipeline-card-val">{stepDisplayVal(step)}</span>
-            </div>
-          </div>
-        );
-      })}
+            </Fragment>
+          );
+        })}
+      </div>
     </div>
   );
 }

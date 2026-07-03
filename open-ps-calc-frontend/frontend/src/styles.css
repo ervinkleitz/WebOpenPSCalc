@@ -477,47 +477,61 @@ label {
 
 /* ---- Pipeline view ---- */
 .pipeline-view { display: flex; flex-direction: column; }
-.pipeline-inputs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem; }
+.pipeline-inputs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.55rem; }
 .pipeline-chip {
-  display: inline-flex; align-items: center; gap: 0.35rem;
+  display: inline-flex; align-items: center; gap: 0.3rem;
   background: var(--bg-panel-raised); border: 1px solid var(--border-soft);
-  border-radius: var(--radius); padding: 0.18rem 0.55rem; font-size: 0.74rem;
+  border-radius: var(--radius); padding: 0.15rem 0.5rem; font-size: 0.73rem;
 }
 .pipeline-chip-label { color: var(--text-dim); font-style: italic; }
 .pipeline-chip-val { font-family: var(--mono); color: var(--text-dim); }
 
-.pipeline-node { display: flex; flex-direction: column; }
+.pipeline-track {
+  display: flex; flex-direction: column;
+  border-left: 2px solid var(--border-soft);
+  margin-left: 0.3rem; padding-left: 0.65rem;
+}
+
+.pipeline-row {
+  display: flex; align-items: baseline; gap: 0;
+  padding: 0.28rem 0;
+}
+.pipeline-row--final {
+  border-top: 1px solid var(--border-soft);
+  margin-top: 0.15rem; padding-top: 0.35rem;
+}
+.pipeline-row-name { font-size: 0.82rem; color: var(--text); flex-shrink: 0; }
+.pipeline-row-dots {
+  flex: 1; min-width: 1rem;
+  height: 1px;
+  margin: 0 0.55rem 0.15rem;
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 7px 1px;
+  background-repeat: repeat-x;
+  background-position: center;
+}
+.pipeline-row-val { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); flex-shrink: 0; }
+.pipeline-row--final .pipeline-row-name { color: var(--accent); font-weight: 600; }
+.pipeline-row--final .pipeline-row-val { font-size: 0.95rem; }
+.pipeline-row--final .pipeline-row-dots { display: none; }
 
 .pipeline-conn {
-  display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0;
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.04rem 0; min-width: 0;
 }
-.pipeline-conn-track { width: 1px; height: 0.3rem; background: var(--border); }
+.pipeline-conn-arrow { color: var(--border); font-size: 0.65rem; flex-shrink: 0; }
 .pipeline-conn-badge {
-  font-family: var(--mono); font-size: 0.75rem; white-space: nowrap;
-  padding: 0.08rem 0.5rem;
-  background: var(--bg); border: 1px solid var(--border-soft); border-radius: var(--radius);
+  font-family: var(--mono); font-size: 0.71rem; white-space: nowrap; flex-shrink: 0;
 }
-.conn-boost .pipeline-conn-badge { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+.conn-boost .pipeline-conn-badge { color: var(--good); }
 .conn-reduce .pipeline-conn-badge { color: var(--text-dim); }
-.conn-add .pipeline-conn-badge { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
-.conn-sub .pipeline-conn-badge { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 40%, transparent); }
+.conn-add .pipeline-conn-badge { color: var(--good); }
+.conn-sub .pipeline-conn-badge { color: var(--crit); }
 .conn-pass .pipeline-conn-badge { color: var(--text-faint); }
 .pipeline-conn-note {
-  font-size: 0.66rem; color: var(--text-faint); text-align: center;
-  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.65rem; color: var(--text-faint);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
 }
-
-.pipeline-card {
-  display: flex; justify-content: space-between; align-items: center;
-  background: var(--bg-panel-raised); border: 1px solid var(--border-soft);
-  border-radius: var(--radius); padding: 0.45rem 0.75rem;
-}
-.pipeline-card--final {
-  border-color: var(--accent-dim);
-  background: linear-gradient(90deg, var(--bg-panel-raised), var(--accent-soft));
-}
-.pipeline-card-name { font-size: 0.82rem; color: var(--text); }
-.pipeline-card-val { font-family: var(--mono); font-size: 0.95rem; color: var(--accent); }
 
 .falcon-section { margin-top: 1.2rem; }
 .falcon-rows { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.4rem; }
