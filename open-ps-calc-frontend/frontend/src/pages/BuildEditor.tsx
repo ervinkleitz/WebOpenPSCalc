@@ -729,23 +729,32 @@ export default function BuildEditor() {
     rows.sort((a, b) => (a.disabled ? 1 : 0) - (b.disabled ? 1 : 0));
 
   const itemSearch = useCallback(
-    (itemType: string, loc?: string) => (query: string): Promise<SearchResult[]> =>
-      api.searchItems({ type: itemType, ...(loc ? { loc } : {}), q: query, limit: 20, server: data.server })
+    (itemType: string, loc?: string) => (query: string): Promise<SearchResult[]> => {
+      const browse = !query.trim();
+      const params: Record<string, unknown> = {
+        type: itemType, ...(loc ? { loc } : {}), q: query, limit: 20, server: data.server,
+        ...(browse ? { job: data.job_id } : {}),
+      };
+      return api.searchItems(params)
         .then((r) => sortResults(r.items.map((it: any) => ({
           id: it.id, label: itemLabel(it), sublabel: `#${it.id}`, disabled: !canEquip(it),
-        })))),
+        }))));
+    },
     [data.server, data.job_id, canEquip],
   );
 
   const leftHandSearch = useCallback(
-    (query: string): Promise<SearchResult[]> =>
-      Promise.all([
-        api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: 20, server: data.server }),
-        api.searchItems({ type: "IT_WEAPON", q: query, limit: 20, server: data.server }),
+    (query: string): Promise<SearchResult[]> => {
+      const browse = !query.trim();
+      const jobParam = browse ? { job: data.job_id } : {};
+      return Promise.all([
+        api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: 20, server: data.server, ...jobParam }),
+        api.searchItems({ type: "IT_WEAPON", q: query, limit: 20, server: data.server, ...jobParam }),
       ]).then(([shields, weapons]) => sortResults([
         ...shields.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Shield #${it.id}`, disabled: !canEquip(it) })),
         ...weapons.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Weapon #${it.id}`, disabled: !canEquip(it) })),
-      ])),
+      ]));
+    },
     [data.server, data.job_id, canEquip],
   );
 
