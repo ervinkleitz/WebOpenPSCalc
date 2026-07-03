@@ -9,6 +9,23 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **PS Bleeding revamp** — reworked bleeding status and affected gear/skills for Payon Stories:
+  - **Mechanic** (`PS_BLEEDING_REVAMP`): Bleeding now deals 5% max HP every 0.5s for 2.5s (25%
+    total), can kill, grants 35s immunity after expiry, and cannot be applied to targets ≥15 base
+    levels higher than the attacker.
+  - **Breeze Card** (4390): ATK bonus changed 5 → 8; Bleed on hit changed 5% → 2%.
+    Combo with **Muka Card** now adds +6% Bleed on hit (combo entry added to
+    `ps_item_combo_db.json`).
+  - **Hakujin** (13014, 13015): Added 8% Bleed on hit.
+  - **Huuma Giant Wheel Shuriken** (13301, 13302): Bleed on hit removed.
+  - **Hatii Claw** (1815): Bleed on hit changed 2% → 5%.
+  - **Skogul** (mob): Bleed chance on attack reduced 30% → 25% *(mob-side; not modelled in
+    the outgoing-damage calculator)*.
+  - **Killer Mantis** (mob): Bleed chance on attack increased 6% → 10% *(mob-side)*.
+  - **Wounding Shot** (`GS_PIERCINGSHOT`): Base Bleed chance reduced 40% → 15%; consuming 1
+    coin restores it to 40% *(skill-side; not modelled in the damage calculator)*.
+  - **Acid Terror** (`AM_ACIDTERROR`): Bleed chance reduced 15% → 10% *(skill-side)*.
+
 - **PS Sage rework** — damage-relevant changes from the Sage Rework publication are now modelled:
   - **Soul Strike** (`MG_SOULSTRIKE`): ignores 50% of hard MDEF when skill level 10 is learned
     (`MG_SOULSTRIKE_MDEF_IGNORE`); also deals `+5% × skill level` bonus damage against Undead

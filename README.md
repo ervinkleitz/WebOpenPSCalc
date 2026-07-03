@@ -158,6 +158,14 @@ motivated several changes beyond a straight 1:1 port:
   (max lv 5); Mystical Amplification per-level MATK scaling (+10%/lv on PS, flat 50%
   vanilla, max lv 5, exposed in the buffs panel); Sightrasher max lv 5; Soul Drain
   passive +1% MaxHP per level (slider in the passives panel).
+- **PS Bleeding revamp** — reworked bleeding status mechanics (`PS_BLEEDING_REVAMP`): 5% max HP
+  every 0.5s for 2.5s (25% total, can kill), 35s immunity after, cannot be applied to targets
+  ≥15 base levels higher than the attacker. Gear changes modelled: Breeze Card now gives +8 ATK
+  and 2% Bleed on hit (down from +5/5%); Breeze Card + Muka Card combo adds +6% Bleed on hit;
+  Hakujin (13014/13015) adds 8% Bleed on hit; Huuma Giant Wheel Shuriken (13301/13302) loses its
+  Bleed on hit; Hatii Claw Bleed on hit increased 2% → 5%. Skill-side and mob-side bleed chance
+  changes (Wounding Shot, Acid Terror, Skogul, Killer Mantis) are noted but not modelled in the
+  outgoing-damage calculator.
 - **PS Sage rework** — damage-relevant changes from the Sage Rework publication are modelled:
   Soul Strike ignores 50% MDEF when skill level 10 is learned (`MG_SOULSTRIKE_MDEF_IGNORE`);
   Soul Strike also deals `+5% × skill level` bonus damage vs Undead race

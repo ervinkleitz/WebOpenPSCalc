@@ -22,5 +22,9 @@
   {
     "items": ["Gunner_Goggles", "Oxygen_Mask"],
     "script": "bonus2 bAddItemHealRate,501,20; bonus2 bAddItemHealRate,502,20; bonus2 bAddItemHealRate,503,20; bonus2 bAddItemHealRate,504,20;"
+  },
+  {
+    "items": ["Breeze_Card", "Muka_Card"],
+    "script": "bonus2 bAddEff,Eff_Bleeding,600;"
   }
 ]

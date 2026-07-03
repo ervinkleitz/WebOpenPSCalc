@@ -205,6 +205,9 @@ const PS_MECHANIC_FLAGS = new Set([
   "MG_SOULSTRIKE_MDEF_IGNORE",
   // PS Sage rework: Soul Strike deals +5% damage per skill level against Undead race.
   "MG_SOULSTRIKE_UNDEAD_BONUS",
+  // PS Bleeding revamp: 5% max HP / 0.5s for 2.5s, can kill, 35s immunity after,
+  // and cannot be inflicted on targets +15 base levels higher than the attacker.
+  "PS_BLEEDING_REVAMP",
   // Mystical Amplification scales with skill level on PS: +10% MATK per level
   // (lv1=10%, lv2=20%, …, lv5=50%). Vanilla gives flat 50% at any level.
   "SC_AMPLIFYMAGICPOWER_SCALING",

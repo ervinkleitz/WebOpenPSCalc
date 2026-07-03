@@ -4510,5 +4510,23 @@
     "description": "Encrypted Rekenber documents that were mostly destroyed in a furnace.",
     "name": "Burnt Communique",
     "slots": 0
+  },
+  "1815": {
+    "script": "bonus bAtkEle,Ele_Dark; bonus bMaxHPrate,-2; bonus2 bAddEff,Eff_Bleeding,500;"
+  },
+  "4390": {
+    "script": "bonus bBaseAtk,8; bonus2 bAddEff,Eff_Bleeding,200;"
+  },
+  "13014": {
+    "script": "bonus bInt,2; bonus3 bAutoSpell,AL_HEAL,1,10; bonus2 bAddEff,Eff_Bleeding,800;"
+  },
+  "13015": {
+    "script": "bonus bInt,2; bonus3 bAutoSpell,AL_HEAL,1,10; bonus2 bAddEff,Eff_Bleeding,800;"
+  },
+  "13301": {
+    "script": "bonus bUnbreakableWeapon,0;"
+  },
+  "13302": {
+    "script": "bonus bUnbreakableWeapon,0;"
   }
 }
