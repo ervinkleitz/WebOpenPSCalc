@@ -9,6 +9,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Snake Card** (4037) + **Cave Viper Card** (8001) combo — equipping both grants an additional
+  +15% chance to inflict Poison on hit and +20 ATK. Combo entry added to `ps_item_combo_db.json`.
+
+- **Cave Viper Card** (8001): Added +20% chance to inflict Poison on hit (`bAddEff,Eff_Poison`).
+  The existing +10% damage to Poison-element targets is unchanged. The kill-drop mechanic (chance
+  to drop Poison Arrows on killing Poison-element enemies) is not modelled in the damage calculator.
+
 - **PS Bleeding revamp** — reworked bleeding status and affected gear/skills for Payon Stories:
   - **Mechanic** (`PS_BLEEDING_REVAMP`): Bleeding now deals 5% max HP every 0.5s for 2.5s (25%
     total), can kill, grants 35s immunity after expiry, and cannot be applied to targets ≥15 base

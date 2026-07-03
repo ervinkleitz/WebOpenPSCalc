@@ -163,6 +163,9 @@ motivated several changes beyond a straight 1:1 port:
   (max lv 5); Mystical Amplification per-level MATK scaling (+10%/lv on PS, flat 50%
   vanilla, max lv 5, exposed in the buffs panel); Sightrasher max lv 5; Soul Drain
   passive +1% MaxHP per level (slider in the passives panel).
+- **Snake Card + Cave Viper Card combo** — equipping both grants +15% Poison on hit and +20 ATK.
+  Cave Viper Card (headgear) also updated: now adds +20% Poison on hit in addition to its existing
+  +10% damage to Poison-element targets.
 - **PS Bleeding revamp** — reworked bleeding status mechanics (`PS_BLEEDING_REVAMP`): 5% max HP
   every 0.5s for 2.5s (25% total, can kill), 35s immunity after, cannot be applied to targets
   ≥15 base levels higher than the attacker. Gear changes modelled: Breeze Card now gives +8 ATK

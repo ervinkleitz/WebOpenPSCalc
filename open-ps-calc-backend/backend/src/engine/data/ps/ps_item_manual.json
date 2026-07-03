@@ -157,7 +157,7 @@
     ],
     "slots": 0,
     "aegis_name": "Cave_Viper_Card",
-    "script": "bonus2 bAddAtkEle,Ele_Poison,10;"
+    "script": "bonus2 bAddAtkEle,Ele_Poison,10; bonus2 bAddEff,Eff_Poison,2000;"
   },
   "8089": {
     "type": "IT_CARD",
