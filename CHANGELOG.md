@@ -34,6 +34,7 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **nginx routing** — replaced the broad `/stats/` prefix location block with exact-match blocks for `/stats/ping` and `/stats/data` so the SPA page at `/stats` is no longer intercepted and proxied to the backend.
 - **Dual-wield damage pipeline uses new style** — the RH and LH step lists in the PS Assassin
   dual-wield breakdown now render with `PipelineView` (chip inputs + connector arrows) instead of
   the old flat step-list rows.
