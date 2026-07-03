@@ -764,6 +764,10 @@ export default function BuildEditor() {
         let desc: string = item.description || "";
         // Strip unidentified-item prefix that appears in vanilla pre-re descriptions
         desc = desc.replace(/^Unknown Item[^.\n]*\.\n?/i, "");
+        // Convert HTML line breaks (PS item overrides use raw game-client HTML)
+        desc = desc.replace(/<br\s*\/?>/gi, "\n");
+        // Strip remaining HTML tags (e.g. <font color='...'> from PS descriptions)
+        desc = desc.replace(/<[^>]+>/g, "");
         // Normalize game-client visual separator lines
         desc = desc.replace(/_\n/g, "\n").trim();
         return desc || null;
