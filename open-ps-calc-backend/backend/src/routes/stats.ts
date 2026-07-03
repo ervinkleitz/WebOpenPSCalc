@@ -30,7 +30,7 @@ function readNdjsonEvents(fromTs: number, toTs: number): any[] {
   return events;
 }
 
-router.post("/pageview", (req: Request, res: Response) => {
+router.post("/ping", (req: Request, res: Response) => {
   logPageView(req);
   res.json({ ok: true });
 });

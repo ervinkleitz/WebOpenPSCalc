@@ -65,7 +65,7 @@ export const api = {
 
 export const statsApi = {
   recordPageView: () =>
-    fetch("/stats/pageview", { method: "POST" }).catch(() => {}),
+    fetch("/stats/ping", { method: "POST" }).catch(() => {}),
   getData: (password: string, params: Record<string, string>) =>
     statsRequest("/data", password, params),
 };
