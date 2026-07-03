@@ -95,6 +95,13 @@ jobs:
              printf 'STATS_PASSWORD=%s\n' \"\$val\" >> \"\$ENVFILE.tmp\"
              mv \"\$ENVFILE.tmp\" \"\$ENVFILE\""
 
+      - name: Patch nginx config
+        run: |
+          rsync -az deploy/patch-nginx.sh \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/patch-nginx.sh"
+          ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
+            "bash /tmp/patch-nginx.sh"
+
       - name: Install backend deps & restart via pm2
         run: |
           ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" 'bash -s' -- "${{ secrets.EC2_DEPLOY_PATH }}" < deploy/remote-deploy.sh
