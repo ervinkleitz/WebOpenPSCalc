@@ -470,11 +470,54 @@ label {
 }
 .step-row .step-name { font-size: 0.82rem; color: var(--text); }
 .step-row .step-value { font-family: var(--mono); font-size: 0.95rem; text-align: right; color: var(--accent); }
-.step-row .step-range { display: block; font-size: 0.71rem; color: var(--text-dim); text-align: right; }
 .step-row .step-note { grid-column: 1 / -1; font-size: 0.74rem; color: var(--text-faint); }
 .step-row .step-formula { grid-column: 1 / -1; font-size: 0.72rem; color: var(--text-dim); font-family: var(--mono); }
 .step-row--info .step-name { color: var(--text-dim); font-style: italic; }
 .step-row--info .step-value { color: var(--text-dim); font-size: 0.82rem; }
+
+/* ---- Pipeline view ---- */
+.pipeline-view { display: flex; flex-direction: column; }
+.pipeline-inputs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem; }
+.pipeline-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: var(--bg-panel-raised); border: 1px solid var(--border-soft);
+  border-radius: var(--radius); padding: 0.18rem 0.55rem; font-size: 0.74rem;
+}
+.pipeline-chip-label { color: var(--text-dim); font-style: italic; }
+.pipeline-chip-val { font-family: var(--mono); color: var(--text-dim); }
+
+.pipeline-node { display: flex; flex-direction: column; }
+
+.pipeline-conn {
+  display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0;
+}
+.pipeline-conn-track { width: 1px; height: 0.3rem; background: var(--border); }
+.pipeline-conn-badge {
+  font-family: var(--mono); font-size: 0.75rem; white-space: nowrap;
+  padding: 0.08rem 0.5rem;
+  background: var(--bg); border: 1px solid var(--border-soft); border-radius: var(--radius);
+}
+.conn-boost .pipeline-conn-badge { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+.conn-reduce .pipeline-conn-badge { color: var(--text-dim); }
+.conn-add .pipeline-conn-badge { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+.conn-sub .pipeline-conn-badge { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 40%, transparent); }
+.conn-pass .pipeline-conn-badge { color: var(--text-faint); }
+.pipeline-conn-note {
+  font-size: 0.66rem; color: var(--text-faint); text-align: center;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.pipeline-card {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-panel-raised); border: 1px solid var(--border-soft);
+  border-radius: var(--radius); padding: 0.45rem 0.75rem;
+}
+.pipeline-card--final {
+  border-color: var(--accent-dim);
+  background: linear-gradient(90deg, var(--bg-panel-raised), var(--accent-soft));
+}
+.pipeline-card-name { font-size: 0.82rem; color: var(--text); }
+.pipeline-card-val { font-family: var(--mono); font-size: 0.95rem; color: var(--accent); }
 
 .falcon-section { margin-top: 1.2rem; }
 .falcon-rows { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.4rem; }
