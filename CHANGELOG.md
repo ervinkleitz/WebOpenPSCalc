@@ -34,7 +34,7 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
-- **Historical nginx log coverage** — page view stats now read all rotated log files (`access.log.1`, `access.log.{n}.gz`) in addition to the current `access.log`, giving full history up to however many rotations nginx retains. Gzip files are decompressed on-the-fly via `zlib.createGunzip()`.
+- **Permanent page view history** — a `consolidate.js` script reads all nginx access logs (including rotated `.gz` files) and writes page view events into `stats.ndjson`, so history is preserved beyond log rotation. Runs automatically on every deploy for fast incremental updates; a daily 2 AM cron keeps it current between deploys. The stats route now reads archived views from NDJSON and live views from nginx, splitting at the consolidation cursor to avoid double-counting.
 - **nginx routing** — replaced the broad `/stats/` prefix location block with exact-match blocks for `/stats/ping` and `/stats/data` so the SPA page at `/stats` is no longer intercepted and proxied to the backend.
 - **Dual-wield damage pipeline uses new style** — the RH and LH step lists in the PS Assassin
   dual-wield breakdown now render with `PipelineView` (chip inputs + connector arrows) instead of

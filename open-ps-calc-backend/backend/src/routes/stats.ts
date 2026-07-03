@@ -5,8 +5,18 @@ const { logPageView, readNginxPageViews, batchResolveGeo, geoCache } = require("
 const { loader } = require("../engine/dataLoader");
 
 const router = Router();
-const STATS_FILE = path.join(__dirname, "../../../data-store/stats.ndjson");
+const STATS_FILE   = path.join(__dirname, "../../../data-store/stats.ndjson");
+const CURSOR_FILE  = path.join(__dirname, "../../../data-store/consolidation-cursor.json");
 const STATS_PASSWORD = process.env.STATS_PASSWORD;
+
+// Returns the timestamp up to which nginx logs have been consolidated into
+// NDJSON. Returns 0 if consolidation has never run.
+function readCursor(): number {
+  try {
+    const raw = fs.readFileSync(CURSOR_FILE, "utf8");
+    return JSON.parse(raw).lastConsolidatedTs || 0;
+  } catch { return 0; }
+}
 
 function checkPassword(req: Request, res: Response): boolean {
   if (!STATS_PASSWORD) return true;
@@ -53,25 +63,35 @@ router.get("/data", async (req: Request, res: Response) => {
     fromTs = days === 0 ? 0 : now - days * 86_400_000;
   }
 
-  // Page views come from nginx (authoritative); calculate events from NDJSON.
+  // Cursor splits page view sources:
+  //   [0, cursor)      → already consolidated into NDJSON (skip nginx for this range)
+  //   [cursor, toTs]   → live nginx logs (not yet consolidated)
+  // When cursor is 0, fall back to reading nginx for the full range (pre-consolidation).
+  const cursor = readCursor();
+  const nginxFrom = Math.max(fromTs, cursor);       // nginx only needed for recent gap
+  const needNginx = nginxFrom <= toTs;
+
   const [nginxViews, ndjsonEvents] = await Promise.all([
-    readNginxPageViews(fromTs, toTs),
+    needNginx ? readNginxPageViews(nginxFrom, toTs) : Promise.resolve([]),
     Promise.resolve(readNdjsonEvents(fromTs, toTs)),
   ]);
 
-  // Resolve geo for nginx IPs that haven't been seen before (batch lookup).
+  // Attach geo to recent nginx views (batch-resolve IPs not yet in cache).
   await batchResolveGeo(nginxViews.map((e: any) => e.ip));
-
-  // Attach cached geo to nginx events.
-  const viewEvents = nginxViews.map((e: any) => ({
+  const recentViews = nginxViews.map((e: any) => ({
     ...e,
     ...(geoCache.get(e.ip) || { country: "Unknown", city: "" }),
   }));
 
-  // NDJSON calculate events only (skip page_view duplicates now that nginx is the source).
+  // Archived page_views from NDJSON (already geo-enriched by consolidate.js).
+  // Only include events before the cursor to avoid double-counting.
+  const archivedViews = cursor > 0
+    ? ndjsonEvents.filter((e: any) => e.type === "page_view" && e.ts < cursor)
+    : [];
+
   const calcEvents = ndjsonEvents.filter((e: any) => e.type === "calculate");
 
-  const allEvents = [...viewEvents, ...calcEvents];
+  const allEvents = [...archivedViews, ...recentViews, ...calcEvents];
 
   const uniqueIps     = new Set<string>();
   const byDay: Record<string, { date: string; views: number; calcs: number }> = {};
@@ -151,6 +171,7 @@ router.get("/data", async (req: Request, res: Response) => {
     from_ts:      fromTs,
     to_ts:        toTs,
     nginx_available: fs.existsSync(process.env.NGINX_LOG_PATH || "/var/log/nginx/access.log"),
+    consolidated_through: cursor > 0 ? new Date(cursor).toISOString() : null,
   });
 });
 
