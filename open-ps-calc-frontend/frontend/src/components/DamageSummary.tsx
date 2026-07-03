@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 
 interface Step {
   name: string;
@@ -65,20 +65,78 @@ interface Props {
 type Branch = "skill" | "normal" | "crit" | "falcon" | "katar";
 type DwMode = "ps" | "vanilla";
 
-function StepRow({ step }: { step: Step }) {
-  const showRange = step.min_value != null && step.max_value != null
+function stepDisplayVal(step: Step): string {
+  const hasRange = step.min_value != null && step.max_value != null
     && Math.round(step.min_value) !== Math.round(step.max_value);
+  if (hasRange) return `${Math.round(step.min_value!)}–${Math.round(step.max_value!)}`;
+  return step.value != null ? String(Math.round(step.value)) : "—";
+}
+
+function StepRow({ step }: { step: Step }) {
   return (
     <div className={`step-row${step.info ? " step-row--info" : ""}`}>
       <span className="step-name">{step.name}</span>
-      <span className="step-value">
-        {step.value != null ? Math.round(step.value) : "—"}
-        {showRange && (
-          <span className="step-range">{Math.round(step.min_value!)}–{Math.round(step.max_value!)}</span>
-        )}
-      </span>
+      <span className="step-value">{stepDisplayVal(step)}</span>
       {step.note && <span className="step-note">{step.note}</span>}
       {step.formula && <span className="step-formula">{step.formula}</span>}
+    </div>
+  );
+}
+
+function connectorInfo(step: Step, prev: Step): { label: string; cls: string } {
+  const m = step.multiplier ?? 1.0;
+  if (Math.abs(m - 1.0) > 0.001) {
+    const pct = Math.round((m - 1) * 100);
+    const sign = pct >= 0 ? "+" : "";
+    return {
+      label: `× ${m % 1 === 0 ? m.toFixed(0) : m.toFixed(2)}  (${sign}${pct}%)`,
+      cls: m >= 1 ? "conn-boost" : "conn-reduce",
+    };
+  }
+  const delta = Math.round((step.value ?? 0) - (prev.value ?? 0));
+  if (delta > 0) return { label: `+ ${delta}`, cls: "conn-add" };
+  if (delta < 0) return { label: `− ${-delta}`, cls: "conn-sub" };
+  return { label: "→", cls: "conn-pass" };
+}
+
+function PipelineView({ steps }: { steps: Step[] }) {
+  const chips = steps.filter(s => s.info);
+  const nodes = steps.filter(s => !s.info);
+  return (
+    <div className="pipeline-view">
+      {chips.length > 0 && (
+        <div className="pipeline-inputs">
+          {chips.map((s, i) => (
+            <span key={i} className="pipeline-chip">
+              <span className="pipeline-chip-label">{s.name}</span>
+              <span className="pipeline-chip-val">{stepDisplayVal(s)}</span>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="pipeline-track">
+        {nodes.map((step, i) => {
+          const prev = nodes[i - 1];
+          const conn = prev ? connectorInfo(step, prev) : null;
+          const isFinal = step.name === "Final Damage";
+          return (
+            <Fragment key={i}>
+              {conn && (
+                <div className={`pipeline-conn ${conn.cls}`}>
+                  <span className="pipeline-conn-arrow">↓</span>
+                  <span className="pipeline-conn-badge">{conn.label}</span>
+                  {step.note && <span className="pipeline-conn-note">{step.note}</span>}
+                </div>
+              )}
+              <div className={`pipeline-row${isFinal ? " pipeline-row--final" : ""}`}>
+                <span className="pipeline-row-name">{step.name}</span>
+                {!isFinal && <span className="pipeline-row-dots" aria-hidden="true" />}
+                <span className="pipeline-row-val">{stepDisplayVal(step)}</span>
+              </div>
+            </Fragment>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -339,9 +397,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           psBonusPct={dwPsBonusPct}
         />
       ) : !notImplemented && activeDamage ? (
-        <div className="step-list">
-          {activeDamage.steps.map((step, i) => <StepRow step={step} key={i} />)}
-        </div>
+        <PipelineView steps={activeDamage.steps} />
       ) : null}
     </div>
   );
