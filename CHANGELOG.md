@@ -34,6 +34,7 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **Stats chart hover tooltip** — hovering a day column in the daily activity chart now shows a styled tooltip with the date, exact views count, and exact calcs count. The two bar series are visually more distinct (wider bars, larger gap between them, column highlight on hover).
 - **Skill search only shows damage skills** — the skill picker in Panel 07 now filters to skills with `attack_type` of `Weapon` or `Magic`, hiding passives (Sword Mastery, Endure, etc.) and non-damaging utility skills.
 
 ### Fixed

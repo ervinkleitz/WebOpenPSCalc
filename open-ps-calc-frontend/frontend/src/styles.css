@@ -883,12 +883,20 @@ label {
 .stats-legend-dot--calcs { background: #e6a817; }
 
 .stats-chart { display: flex; align-items: flex-end; gap: 3px; height: 140px; overflow-x: auto; padding-bottom: 1.5rem; position: relative; }
-.stats-chart-col { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1 0 28px; min-width: 28px; height: 100%; justify-content: flex-end; }
-.stats-chart-bars { display: flex; align-items: flex-end; gap: 2px; height: calc(100% - 1.4rem); }
-.stats-bar { width: 11px; border-radius: 2px 2px 0 0; min-height: 1px; transition: height 0.2s; }
+.stats-chart-col { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1 0 32px; min-width: 32px; height: 100%; justify-content: flex-end; cursor: default; border-radius: 2px; }
+.stats-chart-col--hover { background: rgba(255,255,255,0.04); }
+.stats-chart-bars { display: flex; align-items: flex-end; gap: 5px; height: calc(100% - 1.4rem); }
+.stats-bar { width: 12px; border-radius: 2px 2px 0 0; min-height: 1px; transition: height 0.2s; }
 .stats-bar--views { background: var(--accent); opacity: 0.85; }
 .stats-bar--calcs { background: #e6a817; opacity: 0.85; }
 .stats-chart-label { font-size: 0.6rem; color: var(--text-faint); white-space: nowrap; line-height: 1; }
+.stats-tooltip { position: fixed; transform: translate(-50%, -100%); pointer-events: none; background: var(--bg-panel, #1e2029); border: 1px solid var(--border, #333); border-radius: 4px; padding: 0.45rem 0.65rem; font-size: 0.75rem; z-index: 200; box-shadow: 0 2px 10px rgba(0,0,0,0.45); min-width: 120px; white-space: nowrap; }
+.stats-tooltip-date { font-weight: 600; margin-bottom: 0.3rem; color: var(--text); }
+.stats-tooltip-row { display: flex; align-items: center; gap: 0.4rem; color: var(--text-faint); line-height: 1.6; }
+.stats-tooltip-val { margin-left: auto; padding-left: 0.75rem; font-variant-numeric: tabular-nums; color: var(--text); }
+.stats-tooltip-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.stats-tooltip-dot--views { background: var(--accent); }
+.stats-tooltip-dot--calcs { background: #e6a817; }
 
 .stats-two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
 .stats-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }

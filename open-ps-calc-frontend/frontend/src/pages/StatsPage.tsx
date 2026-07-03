@@ -22,26 +22,53 @@ interface StatsData {
 type Preset = "7" | "30" | "0" | "custom";
 
 function BarChart({ days, maxVal }: { days: DayEntry[]; maxVal: number }) {
+  const [tooltip, setTooltip] = useState<{ day: DayEntry; x: number; y: number } | null>(null);
+
   if (!days.length) return <p className="stats-empty">No data for this period.</p>;
+
   return (
-    <div className="stats-chart">
+    <div className="stats-chart" onMouseLeave={() => setTooltip(null)}>
       {days.map((d) => (
-        <div key={d.date} className="stats-chart-col">
+        <div
+          key={d.date}
+          className={`stats-chart-col${tooltip?.day.date === d.date ? " stats-chart-col--hover" : ""}`}
+          onMouseEnter={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            setTooltip({ day: d, x: r.left + r.width / 2, y: r.top });
+          }}
+        >
           <div className="stats-chart-bars">
             <div
               className="stats-bar stats-bar--views"
               style={{ height: maxVal > 0 ? `${(d.views / maxVal) * 100}%` : "0%" }}
-              title={`Views: ${d.views}`}
             />
             <div
               className="stats-bar stats-bar--calcs"
               style={{ height: maxVal > 0 ? `${(d.calcs / maxVal) * 100}%` : "0%" }}
-              title={`Calcs: ${d.calcs}`}
             />
           </div>
           <div className="stats-chart-label">{d.date.slice(5)}</div>
         </div>
       ))}
+
+      {tooltip && (
+        <div
+          className="stats-tooltip"
+          style={{ left: tooltip.x, top: tooltip.y - 8 }}
+        >
+          <div className="stats-tooltip-date">{tooltip.day.date}</div>
+          <div className="stats-tooltip-row">
+            <span className="stats-tooltip-dot stats-tooltip-dot--views" />
+            <span>Views</span>
+            <span className="stats-tooltip-val">{tooltip.day.views.toLocaleString()}</span>
+          </div>
+          <div className="stats-tooltip-row">
+            <span className="stats-tooltip-dot stats-tooltip-dot--calcs" />
+            <span>Calcs</span>
+            <span className="stats-tooltip-val">{tooltip.day.calcs.toLocaleString()}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
