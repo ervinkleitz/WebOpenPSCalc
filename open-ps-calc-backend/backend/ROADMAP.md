@@ -84,13 +84,16 @@ without re-auditing everything from scratch.
   slider via `DAMAGE_RELEVANT` / `ACTIVE_SKILL_TYPE_EXCEPTIONS`. Level caps
   added: `WZ_FROSTNOVA:5`, `WZ_FIREPILLAR:5`, `WZ_SIGHTRASHER:5`,
   `WZ_AMPLIFYMAGICPOWER:5`.
-  **Still missing**: upstream has ~10 more `mechanic_flags` with no consumer
+  **Still missing**: upstream has ~9 more `mechanic_flags` with no consumer
   anywhere in this JS port yet (`SC_CLOAKING_BONUS`,
   `BA_MUSICALSTRIKE_PERFORMING_BONUS`, `DC_THROWARROW_PERFORMING_BONUS`,
-  `GS_BLOCK_ENDOW`, `MG_SOULSTRIKE_MDEF_IGNORE`,
-  `MO_EXTREMITYFIST_NK_NORMAL_DEF`, `PR_TURNUNDEAD_PS_BONUS`,
-  `PS_HOLYSTRIKE_PROC`, `SC_GS_ADJUSTMENT_LR_REDUCE`,
-  `NJ_ISSEN_MIRROR_BONUS`) — these need new modifier code, not just data.
+  `GS_BLOCK_ENDOW`, `MO_EXTREMITYFIST_NK_NORMAL_DEF`,
+  `PR_TURNUNDEAD_PS_BONUS`, `PS_HOLYSTRIKE_PROC`,
+  `SC_GS_ADJUSTMENT_LR_REDUCE`, `NJ_ISSEN_MIRROR_BONUS`) — these need new
+  modifier code, not just data. (`MG_SOULSTRIKE_MDEF_IGNORE`,
+  `WZ_FIREPILLAR_MDEF_IGNORE`, `HW_NAPALMVULCAN_MDEF_IGNORE`, and
+  `RG_BACKSTAP_OPPORTUNITY` were previously listed here but are now
+  implemented — see battle pipeline and "Done this pass" below.)
   Also: 3 of the 36 weapon ratios (`PS_RG_TRICKARROW`, `PS_RG_QUICKSTEP`,
   `PS_PR_HOLYSTRIKE`) are PS-custom skills (`ps_custom_constants.json` IDs
   2631/2633/2622, defined in `ps_skill_db.json`) that **`dataLoader.getSkill()`
@@ -241,6 +244,26 @@ without re-auditing everything from scratch.
   build-vs-build comparison).
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
+
+- **PS Bleeding revamp** — purely data/item-layer changes; no new engine
+  modifier code required. Six item script overrides in `ps_item_overrides.json`
+  (Breeze Card ATK 5→8 / bleed 5%→2%; Hatii Claw bleed 2%→5%; Hakujin
+  13014/13015 +8% bleed; Huuma Giant Wheel Shuriken 13301/13302 bleed removed).
+  Breeze Card + Muka Card combo (+6% bleed on hit) added to
+  `ps_item_combo_db.json`. `PS_BLEEDING_REVAMP` mechanic flag added to
+  `serverProfiles.js` documenting the DOT mechanic change (5% maxHP / 0.5s for
+  2.5s, can kill, 35s immunity, cannot inflict on targets ≥15 base levels higher
+  than attacker) — the DOT itself is not modelled in the outgoing-damage
+  calculator. Skill-side (Wounding Shot, Acid Terror) and mob-side (Skogul,
+  Killer Mantis) bleed-chance changes are noted in the changelog but not
+  modelled.
+
+- **Dancer/Gypsy Whip equip fix** — `dataLoader.js` now runs a normalisation
+  pass over the item DB that remaps the `job` array for any item whose
+  `weapon_type` is `"Whip"` from `[19, 4020]` (Bard/Clown, which uses a
+  `SEX_MALE` lock in the source data) to `[20, 4021]` (Dancer/Gypsy). Whips
+  carry no gender restriction in the source data, so the vanilla DB's bitmask
+  was wrong for this equipment class.
 
 - **PS Monk rework — Triple Attack proc** — `MO_TRIPLEATTACK` procs on
   auto-attacks for Monk/Champion; proc rates level-indexed `[28,26,24,22,20]%`,

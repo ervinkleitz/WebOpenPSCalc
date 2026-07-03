@@ -122,6 +122,11 @@ motivated several changes beyond a straight 1:1 port:
   compound into that slot type (weapon cards for weapon slots, armor cards
   for armor slots, etc.). The left-hand slot shows weapon cards when a
   weapon is equipped there (dual-wield) and shield cards otherwise.
+- **Dancer/Gypsy can equip Whip weapons** — the vanilla item DB marked all
+  Whip-type items with job `[19, 4020]` (Bard/Clown) due to a `SEX_MALE`
+  field that locks Musical Instruments; Whips carry no gender restriction and
+  belong to Dancer/Gypsy `[20, 4021]`. Fixed via a normalisation pass in
+  `dataLoader.js`.
 - **PS Rogue rework** — changes from `Rogue_Patchnotes_PayonStories.pdf` are
   modelled: Backstab formula `200+30×lv`% with a user-toggleable +40%
   opportunity bonus (monster not targeting Rogue); Trick Arrow corrected to
