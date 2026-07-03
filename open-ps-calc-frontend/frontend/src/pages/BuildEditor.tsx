@@ -758,6 +758,19 @@ export default function BuildEditor() {
     [data.server, data.job_id, canEquip],
   );
 
+  const fetchItemTooltip = useCallback(
+    (id: number): Promise<string | null> =>
+      api.getItem(id, data.server).then((item: any) => {
+        let desc: string = item.description || "";
+        // Strip unidentified-item prefix that appears in vanilla pre-re descriptions
+        desc = desc.replace(/^Unknown Item[^.\n]*\.\n?/i, "");
+        // Normalize game-client visual separator lines
+        desc = desc.replace(/_\n/g, "\n").trim();
+        return desc || null;
+      }).catch(() => null),
+    [data.server],
+  );
+
   const mobSearch = useCallback(
     (query: string): Promise<SearchResult[]> =>
       api.searchMobs({ q: query, limit: 12, server: data.server })
@@ -1069,6 +1082,7 @@ export default function BuildEditor() {
                             .then((full) => setItemCache((prev) => ({ ...prev, [r.id]: full })))
                             .catch(() => setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } })));
                         }}
+                        fetchTooltip={fetchItemTooltip}
                       />
                     )}
                     {isRefineable && equippedId != null && (
@@ -1105,6 +1119,7 @@ export default function BuildEditor() {
                                     setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } }));
                                     updateField(["equipped", cardKey], r.id);
                                   }}
+                                  fetchTooltip={fetchItemTooltip}
                                 />
                               )}
                             </div>

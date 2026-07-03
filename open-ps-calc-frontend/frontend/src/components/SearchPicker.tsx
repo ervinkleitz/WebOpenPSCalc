@@ -5,15 +5,19 @@ interface Props {
   placeholder: string;
   search: (query: string) => Promise<SearchResult[]>;
   onSelect: (result: SearchResult) => void;
+  fetchTooltip?: (id: number) => Promise<string | null>;
 }
 
-export default function SearchPicker({ placeholder, search, onSelect }: Props) {
+export default function SearchPicker({ placeholder, search, onSelect, fetchTooltip }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const tooltipCache = useRef<Map<number, string | null>>(new Map());
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -43,14 +47,12 @@ export default function SearchPicker({ placeholder, search, onSelect }: Props) {
     return () => clearTimeout(handle);
   }, [query, search]);
 
-  // Scroll the keyboard-focused item into view inside the results list.
   useEffect(() => {
     if (activeIndex < 0 || !listRef.current) return;
     const item = listRef.current.children[activeIndex] as HTMLElement | undefined;
     item?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
-  // Returns the next non-disabled index in direction +1 or -1, or -1 if none.
   function findEnabled(from: number, dir: 1 | -1): number {
     let i = from + dir;
     while (i >= 0 && i < results.length) {
@@ -110,6 +112,28 @@ export default function SearchPicker({ placeholder, search, onSelect }: Props) {
     }
   }
 
+  function handleMouseEnter(e: React.MouseEvent<HTMLDivElement>, id: number) {
+    if (!fetchTooltip) return;
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    hoverTimer.current = setTimeout(() => {
+      const cached = tooltipCache.current.get(id);
+      if (cached !== undefined) {
+        if (cached) setTooltip({ text: cached, x: rect.right, y: rect.top });
+      } else {
+        fetchTooltip(id).then((text) => {
+          tooltipCache.current.set(id, text);
+          if (text) setTooltip({ text, x: rect.right, y: rect.top });
+        });
+      }
+    }, 180);
+  }
+
+  function handleMouseLeave() {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    setTooltip(null);
+  }
+
   return (
     <div className="search-combo" ref={boxRef}>
       <input
@@ -131,11 +155,21 @@ export default function SearchPicker({ placeholder, search, onSelect }: Props) {
               key={r.id}
               className={`search-result-item${i === activeIndex ? " active" : ""}${r.disabled ? " disabled" : ""}`}
               onClick={() => selectResult(r)}
+              onMouseEnter={(e) => handleMouseEnter(e, r.id)}
+              onMouseLeave={handleMouseLeave}
             >
               <span>{r.label}</span>
               <span className="id">{r.sublabel}</span>
             </div>
           ))}
+        </div>
+      )}
+      {tooltip && (
+        <div
+          className="search-tooltip"
+          style={{ left: tooltip.x + 10, top: tooltip.y }}
+        >
+          {tooltip.text}
         </div>
       )}
     </div>

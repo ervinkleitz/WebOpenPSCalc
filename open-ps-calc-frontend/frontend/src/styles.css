@@ -428,6 +428,22 @@ label {
 .search-result-item.disabled:hover, .search-result-item.disabled.active { background: transparent; }
 .search-result-item .id { color: var(--text-faint); font-family: var(--mono); font-size: 0.75rem; }
 
+.search-tooltip {
+  position: fixed;
+  z-index: 200;
+  max-width: 260px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  line-height: 1.45;
+}
+
 .selected-pill {
   display: flex; align-items: center; justify-content: space-between;
   background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
