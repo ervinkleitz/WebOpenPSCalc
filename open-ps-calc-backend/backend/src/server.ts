@@ -3,11 +3,16 @@ import express from "express";
 import cors from "cors";
 import dataRoutes from "./routes/data";
 import calculateRoutes from "./routes/calculate";
+import statsRoutes from "./routes/stats";
+const { logCalculate } = require("./middleware/statsLogger");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
+
+// Stats routes are outside the API key gate and use their own password.
+app.use("/stats", statsRoutes);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 

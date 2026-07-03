@@ -1,5 +1,18 @@
 const API_KEY = import.meta.env.VITE_API_KEY;
 
+async function statsRequest(path: string, password: string, params?: Record<string, string>) {
+  const url = `/stats${path}${params ? "?" + new URLSearchParams(params) : ""}`;
+  const res = await fetch(url, { headers: { "X-Stats-Password": password } });
+  const text = await res.text();
+  let data: unknown = null;
+  if (text) { try { data = JSON.parse(text); } catch { data = text; } }
+  if (!res.ok) {
+    const message = (data && typeof data === "object" && (data as any).error) || `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+  return data as any;
+}
+
 async function request(path: string, { method = "GET", body }: { method?: string; body?: unknown } = {}) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (API_KEY) headers["X-API-Key"] = API_KEY;
@@ -48,4 +61,11 @@ export const api = {
     }>,
   calculate: (payload: unknown) =>
     request("/calculate", { method: "POST", body: payload }) as Promise<any>,
+};
+
+export const statsApi = {
+  recordPageView: () =>
+    fetch("/stats/pageview", { method: "POST" }).catch(() => {}),
+  getData: (password: string, params: Record<string, string>) =>
+    statsRequest("/data", password, params),
 };

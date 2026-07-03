@@ -1,14 +1,17 @@
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import BuildEditor from "./pages/BuildEditor";
+import StatsPage from "./pages/StatsPage";
+import { statsApi } from "./api/client";
 
-// BuildEditor is the only page, and it owns the full sticky top bar itself
-// (brand + build name + actions) -- a separate app-level topbar above it
-// would just be a second header eating vertical space for no reason.
 export default function App() {
+  useEffect(() => { statsApi.recordPageView(); }, []);
+
   return (
     <div className="app-shell">
       <Routes>
         <Route path="/" element={<BuildEditor />} />
+        <Route path="/stats" element={<StatsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
