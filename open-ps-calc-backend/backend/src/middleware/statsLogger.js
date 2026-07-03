@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
+const zlib = require("zlib");
 
 const STATS_FILE = path.join(__dirname, "../../../data-store/stats.ndjson");
 const NGINX_LOG   = process.env.NGINX_LOG_PATH || "/var/log/nginx/access.log";
@@ -29,13 +30,36 @@ function parseNginxTime(s) {
   return Date.UTC(+m[3], mo, +m[1], +m[4], +m[5], +m[6]);
 }
 
-// Parse nginx access log and return page-view events within [fromTs, toTs].
-// Only counts GET / (the SPA root, with or without query params) with 2xx status.
-async function readNginxPageViews(fromTs, toTs) {
-  if (!fs.existsSync(NGINX_LOG)) return [];
-  const results = [];
+// Returns log files sorted newest-first: access.log, access.log.1, access.log.2.gz, …
+function nginxLogFiles() {
+  const dir = path.dirname(NGINX_LOG);
+  const base = path.basename(NGINX_LOG);
+  let names;
+  try { names = fs.readdirSync(dir); } catch { return []; }
+  return names
+    .filter(n => n === base || n.startsWith(base + "."))
+    .sort((a, b) => {
+      const num = (n) => n === base ? 0 : parseInt(n.replace(base + ".", "").replace(".gz", "")) || 999;
+      return num(a) - num(b);
+    })
+    .map(n => path.join(dir, n));
+}
+
+// Read one log file (plain or gzip) and push matching page-view records into `out`.
+async function readOneLog(filePath, fromTs, toTs, out) {
   try {
-    const rl = readline.createInterface({ input: fs.createReadStream(NGINX_LOG), crlfDelay: Infinity });
+    // Skip files whose mtime predates the query window entirely (fast path).
+    const stat = fs.statSync(filePath);
+    if (stat.mtimeMs < fromTs) return;
+  } catch { return; }
+
+  try {
+    const fileStream = fs.createReadStream(filePath);
+    const inputStream = filePath.endsWith(".gz")
+      ? fileStream.pipe(zlib.createGunzip())
+      : fileStream;
+    const rl = readline.createInterface({ input: inputStream, crlfDelay: Infinity });
+
     for await (const line of rl) {
       const m = line.match(NGINX_LINE);
       if (!m) continue;
@@ -46,10 +70,21 @@ async function readNginxPageViews(fromTs, toTs) {
       if (status < 200 || status >= 400) continue;
       if (!/^GET \/(\?[^ ]*)? HTTP/.test(request)) continue;
       if (isBot(ua)) continue;
-      results.push({ ts, ip, ua: ua.slice(0, 250), type: "page_view" });
+      out.push({ ts, ip, ua: ua.slice(0, 250), type: "page_view" });
     }
   } catch (e) {
-    console.warn("[stats] nginx log read error:", e?.message || e);
+    console.warn(`[stats] log read error (${path.basename(filePath)}):`, e?.message || e);
+  }
+}
+
+// Parse all nginx access logs (current + rotated) and return page-view events
+// within [fromTs, toTs].
+async function readNginxPageViews(fromTs, toTs) {
+  const files = nginxLogFiles();
+  if (!files.length) return [];
+  const results = [];
+  for (const f of files) {
+    await readOneLog(f, fromTs, toTs, results);
   }
   return results;
 }
