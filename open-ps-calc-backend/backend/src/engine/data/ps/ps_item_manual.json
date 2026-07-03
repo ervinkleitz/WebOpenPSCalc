@@ -149,6 +149,7 @@
   },
   "8001": {
     "type": "IT_CARD",
+    "name": "Cave Viper Card",
     "loc": [
       "EQP_HEAD_LOW",
       "EQP_HEAD_TOP",

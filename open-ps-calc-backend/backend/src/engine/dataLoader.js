@@ -178,7 +178,14 @@ class DataLoader {
         this.__aegisToItem = {};
       }
     }
-    return this.__aegisToItem[aegisName] || null;
+    if (this.__aegisToItem[aegisName]) return this.__aegisToItem[aegisName];
+    if (this._usePsData) {
+      const manual = this._loadPsItemManual();
+      for (const item of Object.values(manual)) {
+        if (item && item.aegis_name === aegisName) return item;
+      }
+    }
+    return null;
   }
 
   // ---------------------------------------------------------------

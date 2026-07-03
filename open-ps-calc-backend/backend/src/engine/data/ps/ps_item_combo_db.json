@@ -26,5 +26,9 @@
   {
     "items": ["Breeze_Card", "Muka_Card"],
     "script": "bonus2 bAddEff,Eff_Bleeding,600;"
+  },
+  {
+    "items": ["Snake_Card", "Cave_Viper_Card"],
+    "script": "bonus2 bAddEff,Eff_Poison,1500; bonus bBaseAtk,20;"
   }
 ]
