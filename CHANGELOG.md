@@ -9,14 +9,18 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
-- **Damage pipeline min–max range display** — each step row in the damage breakdown now shows a
-  `min–max` range below the average value when the damage distribution is non-trivial (min ≠ max).
-  Clarifies that the "value" column is always the running average, not the single-hit result;
-  useful for seeing how variance accumulates through the pipeline.
-- **Informational step styling** — steps that are sub-components rather than running-total
-  accumulations (Status BATK, Weapon ATK, and the crit/normal Branch label) are now visually
-  dimmed and italicised in the pipeline panel (`.step-row--info` CSS modifier), distinguishing
-  them from steps that represent the actual cumulative damage state.
+- **Visual pipeline damage breakdown** — the damage step list is redesigned as a proper pipeline:
+  - Informational sub-components (Status BATK, Weapon ATK, Branch label) are shown as compact
+    chips above the pipeline rather than inline rows.
+  - Each calculation step is a row with a **dot-leader** connecting name to value, making it
+    immediately clear which damage number belongs to which step even when the panel is narrow.
+  - Between steps, a compact connector shows the **operation** applied: `× N.NN (+N%)` for
+    multipliers, `+ N` / `− N` for flat additions/reductions, or `→` for pass-through steps.
+    The connector also shows the step's note (e.g. `size: Medium`, `bMatkRate +15%`). Operation
+    badges are colour-coded: green for boosts, muted for reductions, red for damage penalties.
+  - **Final Damage** row is separated by a border and accented (no dot leaders — the visual
+    distinction is sufficient).
+  - Step values show `min–max` when the damage distribution has a non-trivial range.
 
 ### Fixed
 

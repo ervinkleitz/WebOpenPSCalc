@@ -488,8 +488,6 @@ label {
 
 .pipeline-track {
   display: flex; flex-direction: column;
-  border-left: 2px solid var(--border-soft);
-  margin-left: 0.3rem; padding-left: 0.65rem;
 }
 
 .pipeline-row {
@@ -499,6 +497,7 @@ label {
 .pipeline-row--final {
   border-top: 1px solid var(--border-soft);
   margin-top: 0.15rem; padding-top: 0.35rem;
+  justify-content: space-between;
 }
 .pipeline-row-name { font-size: 0.82rem; color: var(--text); flex-shrink: 0; }
 .pipeline-row-dots {

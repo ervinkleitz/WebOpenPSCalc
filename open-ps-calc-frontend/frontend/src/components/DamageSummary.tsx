@@ -5,6 +5,7 @@ interface Step {
   value?: number;
   min_value?: number;
   max_value?: number;
+  multiplier?: number;
   note?: string;
   formula?: string;
   info?: boolean;

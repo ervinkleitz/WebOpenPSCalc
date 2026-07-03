@@ -172,9 +172,11 @@ motivated several changes beyond a straight 1:1 port:
   only — checkbox disabled for inapplicable targets), Asleep (`SC_SLEEP`: auto-hit + ×2 crit
   rate), Stunned (`SC_STUN`: auto-hit). State is URL-encoded alongside the build so shared links
   include debuff selections.
-- **Damage pipeline display** — each step row shows a `min–max` range below the average when the
-  damage distribution is non-trivial, and sub-component steps (Status BATK, Weapon ATK, Branch
-  label) are visually dimmed/italicised to distinguish them from running-total steps.
+- **Visual pipeline damage breakdown** — the step list is redesigned as a vertical pipeline with a
+  left-rail track. Sub-component steps (Status BATK, Weapon ATK, Branch) are shown as chips above
+  the pipeline. Each step row uses dot leaders to link name to value; connectors between rows show
+  the operation applied (multiplier or flat delta) with colour coding and a brief note. Step values
+  show `min–max` when the damage distribution spans a range. Final Damage is visually separated.
 - **Snake Card + Cave Viper Card combo** — equipping both grants +15% Poison on hit and +20 ATK.
   Cave Viper Card (headgear) also updated: now adds +20% Poison on hit in addition to its existing
   +10% damage to Poison-element targets.
