@@ -35,6 +35,7 @@ instead of release version. Dates are taken from actual git commit history.
 ### Fixed
 
 - **Permanent page view history** — a `consolidate.js` script reads all nginx access logs (including rotated `.gz` files) and writes page view events into `stats.ndjson`, so history is preserved beyond log rotation. Runs automatically on every deploy for fast incremental updates; a daily 2 AM cron keeps it current between deploys. The stats route now reads archived views from NDJSON and live views from nginx, splitting at the consolidation cursor to avoid double-counting.
+- **Calculate events not being saved** — `data-store/` directory might not exist on first deploy, causing `fs.appendFile` to fail silently with ENOENT so every calculate event was dropped. `statsLogger` now creates the directory at module load time.
 - **nginx routing** — replaced the broad `/stats/` prefix location block with exact-match blocks for `/stats/ping` and `/stats/data` so the SPA page at `/stats` is no longer intercepted and proxied to the backend.
 - **Dual-wield damage pipeline uses new style** — the RH and LH step lists in the PS Assassin
   dual-wield breakdown now render with `PipelineView` (chip inputs + connector arrows) instead of

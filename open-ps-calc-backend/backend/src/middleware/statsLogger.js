@@ -6,6 +6,10 @@ const zlib = require("zlib");
 const STATS_FILE = path.join(__dirname, "../../../data-store/stats.ndjson");
 const NGINX_LOG   = process.env.NGINX_LOG_PATH || "/var/log/nginx/access.log";
 
+// Create the data-store directory at startup so appendFile never fails due
+// to a missing parent directory.
+try { fs.mkdirSync(path.dirname(STATS_FILE), { recursive: true }); } catch {}
+
 const BOT_PATTERN = /bot|crawler|spider|scraper|scan|check|monitor|uptime|pingdom|datadog|lighthouse|headless|puppeteer|playwright|selenium|wget|curl|facebookexternalhit|twitterbot|slurp|baiduspider|yandex|bytespider|ahrefsbot|semrushbot|dotbot|petalbot/i;
 const NGINX_LINE  = /^(\S+) \S+ \S+ \[([^\]]+)\] "([^"]+)" (\d+) \S+(?:\s+"[^"]*"\s+"([^"]*)")?/;
 const MONTH_NUM   = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
