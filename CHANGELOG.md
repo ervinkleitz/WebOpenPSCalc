@@ -374,7 +374,6 @@ instead of release version. Dates are taken from actual git commit history.
   - Blast Mine: `lv × (BaseLv+DEX) × (JobLv+INT) / 45` (Wind element)
   - Freezing Trap: `lv × (JobLv+DEX) × (BaseLv+INT) / 70` (Water element)
   - Claymore Trap: `lv × (BaseLv+DEX) × (JobLv+INT) / 70` (Fire element)
-
   Traps bypass DEF. All four show up in the skill picker for Hunter/Sniper and
   produce a full step-by-step damage breakdown. Element vs target and race/size
   card bonuses still apply.
