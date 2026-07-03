@@ -11,7 +11,13 @@ import SavedBuildsModal from "../components/SavedBuildsModal";
 import {
   BuildData, SkillState, CustomTarget, TargetMode, TargetMods,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
+  WildcardSlot,
 } from "../types";
+
+const WILDCARD_BONUS_OPTIONS = [4, 10, 15, 20];
+const WILDCARD_DEFAULT_BONUS: Record<WildcardSlot["type"], number> = {
+  race: 20, size: 15, ele: 20,
+};
 
 const STATS = ["str", "agi", "vit", "int", "dex", "luk"] as const;
 // statusCalculator.js / dataLoader.js's getJobBonusStats reads from the
@@ -139,6 +145,7 @@ const DEFAULT_BUILD: BuildData = {
   consumable_buffs: {},
   active_buffs: {},
   song_state: {},
+  wildcard_slots: {},
 };
 
 // Bonuses from wiki.payonstories.com/Cute_Pet_System. Only PS server has
@@ -366,6 +373,17 @@ export default function BuildEditor() {
   const [targetMode, setTargetMode] = useState<TargetMode>(initialState?.targetMode ?? "monster");
   const [customTarget, setCustomTarget] = useState<CustomTarget>(initialState?.customTarget ?? DEFAULT_CUSTOM_TARGET);
   const [targetMods, setTargetMods] = useState<TargetMods>(initialState?.targetMods ?? DEFAULT_TARGET_MODS);
+
+  // Which equipment slot groups are in wildcard (custom card mix) mode.
+  // Auto-enable for any weapon slot that already has wildcard_slots data (e.g. loaded from URL).
+  const [wildcardMode, setWildcardMode] = useState<Record<string, boolean>>(() => {
+    const slots = initialState?.build?.wildcard_slots ?? {};
+    const init: Record<string, boolean> = {};
+    for (const [k, v] of Object.entries(slots)) {
+      if (Array.isArray(v) && v.length > 0) init[k] = true;
+    }
+    return init;
+  });
 
   const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
   const [passiveSkills, setPassiveSkills] = useState<PassiveSkill[]>([]);
@@ -601,6 +619,19 @@ export default function BuildEditor() {
     });
   }, []);
 
+  const updateWildcardSlot = useCallback((slotKey: string, idx: number, patch: Partial<WildcardSlot>) => {
+    setData((prev) => {
+      const existing = (prev.wildcard_slots?.[slotKey] || [])[idx] ?? { type: "race" as const, bonus: 20 };
+      const next: WildcardSlot = { ...existing, ...patch };
+      if (patch.type && patch.type !== existing.type) {
+        next.bonus = WILDCARD_DEFAULT_BONUS[patch.type];
+      }
+      const slots = [...(prev.wildcard_slots?.[slotKey] || [])];
+      slots[idx] = next;
+      return { ...prev, wildcard_slots: { ...(prev.wildcard_slots || {}), [slotKey]: slots } };
+    });
+  }, []);
+
   const updateConsumable = useCallback((key: keyof ConsumableBuffs, value: number | boolean | undefined) => {
     setData((prev) => {
       const next = { ...(prev.consumable_buffs || {}) } as any;
@@ -660,9 +691,21 @@ export default function BuildEditor() {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
         : customTarget;
+      // Aggregate wildcard slot bonuses and strip real card entries for those slots.
+      const wildcardBonuses: Record<string, number> = {};
+      const equippedOverride = { ...sanitizedBuild.equipped };
+      for (const [slotKey, active] of Object.entries(wildcardMode)) {
+        if (!active) continue;
+        for (let i = 1; i <= 4; i++) delete equippedOverride[`${slotKey}_card${i}`];
+        for (const ws of (data.wildcard_slots?.[slotKey] || [])) {
+          const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : "Ele_All";
+          wildcardBonuses[key] = (wildcardBonuses[key] || 0) + ws.bonus;
+          if (ws.type === "size") wildcardBonuses["_batk"] = (wildcardBonuses["_batk"] || 0) + 5;
+        }
+      }
       const buildWithFlags = fp
-        ? { ...sanitizedBuild, flags: { ...(sanitizedBuild.flags || {}), force_procs: true } }
-        : sanitizedBuild;
+        ? { ...sanitizedBuild, equipped: equippedOverride, flags: { ...(sanitizedBuild.flags || {}), force_procs: true }, wildcard_bonuses: wildcardBonuses }
+        : { ...sanitizedBuild, equipped: equippedOverride, wildcard_bonuses: wildcardBonuses };
       const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target, target_mods: targetMods };
       const skillPayload  = { build: buildWithFlags, skill: { id: skill.id, level: skill.level }, target, target_mods: targetMods };
       const [normalRes, skillRes] = await Promise.all([
@@ -1042,6 +1085,7 @@ export default function BuildEditor() {
                 const equippedId = data.equipped[slot.key] as number | null | undefined;
                 const item = equippedId != null ? itemCache[equippedId] : null;
                 const cardSlotCount = item?.slots ?? 0;
+                const isWeaponSlot = slot.key === "right_hand" || (slot.key === "left_hand" && item?.type === "IT_WEAPON");
                 const isRefineable = item?.refineable ?? false;
                 const isInvalid = invalidSlots.has(slot.key);
                 const cardLoc = slot.key === "left_hand" && item?.type === "IT_WEAPON"
@@ -1103,33 +1147,106 @@ export default function BuildEditor() {
                       />
                     )}
                     {cardSlotCount > 0 && (
-                      <div className="card-slots">
-                        {Array.from({ length: cardSlotCount }, (_, i) => {
-                          const cardKey = `${slot.key}_card${i + 1}`;
-                          const cardId = data.equipped[cardKey] as number | null | undefined;
-                          const card = cardId != null ? itemCache[cardId] : null;
-                          return (
-                            <div key={cardKey} className="card-slot">
-                              {cardId != null ? (
-                                <div className="selected-pill">
-                                  <span>{card ? card.name : `Card #${cardId}`}</span>
-                                  <button onClick={() => updateField(["equipped", cardKey], null)}>×</button>
+                      <>
+                        {isWeaponSlot && (
+                          <div className="card-mode-toggle">
+                            <button
+                              className={!wildcardMode[slot.key] ? "active" : ""}
+                              onClick={() => setWildcardMode((prev) => ({ ...prev, [slot.key]: false }))}
+                            >
+                              Cards
+                            </button>
+                            <button
+                              className={wildcardMode[slot.key] ? "active" : ""}
+                              onClick={() => {
+                                setWildcardMode((prev) => ({ ...prev, [slot.key]: true }));
+                                if (!data.wildcard_slots?.[slot.key]?.length) {
+                                  const defaults = Array.from({ length: cardSlotCount }, () => ({
+                                    type: "race" as const,
+                                    bonus: 20,
+                                  }));
+                                  setData((prev) => ({
+                                    ...prev,
+                                    wildcard_slots: { ...(prev.wildcard_slots || {}), [slot.key]: defaults },
+                                  }));
+                                }
+                              }}
+                            >
+                              Wildcard mix
+                            </button>
+                          </div>
+                        )}
+                        {isWeaponSlot && wildcardMode[slot.key] ? (
+                          <div className="wildcard-slots">
+                            {Array.from({ length: cardSlotCount }, (_, i) => {
+                              const ws = data.wildcard_slots?.[slot.key]?.[i] ?? {
+                                type: "race" as const,
+                                bonus: 20,
+                              };
+                              return (
+                                <div key={i} className="wildcard-slot-row">
+                                  <select
+                                    value={ws.type}
+                                    onChange={(e) =>
+                                      updateWildcardSlot(slot.key, i, {
+                                        type: e.target.value as WildcardSlot["type"],
+                                      })
+                                    }
+                                  >
+                                    <option value="race">Race</option>
+                                    <option value="size">Size</option>
+                                    <option value="ele">Element</option>
+                                  </select>
+                                  {ws.type !== "size" ? (
+                                    <select
+                                      value={ws.bonus}
+                                      onChange={(e) =>
+                                        updateWildcardSlot(slot.key, i, { bonus: Number(e.target.value) })
+                                      }
+                                    >
+                                      {WILDCARD_BONUS_OPTIONS.map((v) => (
+                                        <option key={v} value={v}>
+                                          {v}%
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <span className="wildcard-size-label">15% +5 ATK</span>
+                                  )}
                                 </div>
-                              ) : (
-                                <SearchPicker
-                                  placeholder={`Card slot ${i + 1}…`}
-                                  search={itemSearch("IT_CARD", cardLoc)}
-                                  onSelect={(r) => {
-                                    setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } }));
-                                    updateField(["equipped", cardKey], r.id);
-                                  }}
-                                  fetchTooltip={fetchItemTooltip}
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="card-slots">
+                            {Array.from({ length: cardSlotCount }, (_, i) => {
+                              const cardKey = `${slot.key}_card${i + 1}`;
+                              const cardId = data.equipped[cardKey] as number | null | undefined;
+                              const card = cardId != null ? itemCache[cardId] : null;
+                              return (
+                                <div key={cardKey} className="card-slot">
+                                  {cardId != null ? (
+                                    <div className="selected-pill">
+                                      <span>{card ? card.name : `Card #${cardId}`}</span>
+                                      <button onClick={() => updateField(["equipped", cardKey], null)}>×</button>
+                                    </div>
+                                  ) : (
+                                    <SearchPicker
+                                      placeholder={`Card slot ${i + 1}…`}
+                                      search={itemSearch("IT_CARD", cardLoc)}
+                                      onSelect={(r) => {
+                                        setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } }));
+                                        updateField(["equipped", cardKey], r.id);
+                                      }}
+                                      fetchTooltip={fetchItemTooltip}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 );

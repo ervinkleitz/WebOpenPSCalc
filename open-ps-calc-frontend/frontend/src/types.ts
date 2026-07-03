@@ -7,6 +7,11 @@ export interface BaseStats {
   luk: number;
 }
 
+export interface WildcardSlot {
+  type: "race" | "size" | "ele";
+  bonus: number;
+}
+
 export interface BuildData {
   name: string;
   job_name?: string;
@@ -30,6 +35,7 @@ export interface BuildData {
   consumable_buffs?: ConsumableBuffs;
   selected_pet?: string;
   clan?: string;
+  wildcard_slots?: Record<string, WildcardSlot[]>;
 }
 
 export interface ConsumableBuffs {

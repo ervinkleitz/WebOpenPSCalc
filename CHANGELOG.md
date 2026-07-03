@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Wildcard card mix** — each equipment slot with card sockets now has a "Cards / Wildcard mix"
+  toggle. In wildcard mode the card pickers are replaced by per-slot rows of three dropdowns
+  (bonus type: Race/Size/Element; target; bonus %). The selected bonuses are sent to the engine
+  as `wildcard_bonuses` and merged into the gear-bonus dictionaries (`add_race`, `add_size`,
+  `add_ele`) alongside any real cards, allowing hypothetical mixed-card scenarios without
+  needing the actual item IDs.
 - **Equipment slot browse list** — clicking an empty equipment slot input now shows up to 100
   items equippable by the current job (filtered server-side via `?job=` parameter), ensuring
   PS-exclusive high-ID items such as Setting Dirk appear in the initial dropdown. Typed searches

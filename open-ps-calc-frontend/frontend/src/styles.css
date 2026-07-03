@@ -407,8 +407,55 @@ label {
   margin-bottom: 0.4rem;
 }
 
+.card-mode-toggle {
+  display: flex;
+  gap: 0;
+  margin-top: 0.4rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-mode-toggle button {
+  flex: 1;
+  padding: 0.22rem 0.5rem;
+  font-size: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.card-mode-toggle button:not(:last-child) { border-right: 1px solid var(--border-soft); }
+.card-mode-toggle button.active { background: var(--accent); color: #fff; }
+.card-mode-toggle button:not(.active):hover { background: var(--bg-hover); color: var(--text); }
+
 .card-slots { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.4rem; }
 .card-slot .selected-pill { font-size: 0.85rem; }
+
+.wildcard-slots { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.4rem; }
+.wildcard-slot-row {
+  display: flex;
+  gap: 0.25rem;
+}
+.wildcard-slot-row select {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  padding: 0.18rem 0.3rem;
+  background: var(--bg-input, var(--bg-panel));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+.wildcard-size-label {
+  flex: 1;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  padding-left: 0.2rem;
+  white-space: nowrap;
+}
 
 .search-combo { position: relative; }
 .search-results {

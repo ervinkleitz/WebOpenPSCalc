@@ -128,6 +128,7 @@ function buildFromSaveSchema(data) {
     consumable_buffs: data.consumable_buffs || {},
     clan: data.clan || "",
     selected_pet: data.selected_pet || "",
+    wildcard_bonuses: data.wildcard_bonuses || {},
   });
 }
 

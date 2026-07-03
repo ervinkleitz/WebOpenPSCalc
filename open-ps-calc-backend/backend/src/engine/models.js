@@ -81,6 +81,8 @@ function createPlayerBuild(overrides = {}) {
     current_hp: null,
     current_sp: null,
 
+    wildcard_bonuses: {},
+
     ...overrides,
   };
 }
