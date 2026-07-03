@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-03
+
+### Fixed
+
+- **Dual-wield damage pipeline uses new style** — the RH and LH step lists in the PS Assassin
+  dual-wield breakdown now render with `PipelineView` (chip inputs + connector arrows) instead of
+  the old flat step-list rows.
+- **Wildcard bonuses no longer applied to empty slots** — stale `wildcard_slots` data in the URL
+  could activate wildcard mode for a slot with no item equipped (e.g. `left_hand: null`), causing
+  phantom race/size/element bonuses to be added to the calculation. Auto-activation and
+  `onCalculate` now both guard against empty slots.
+
 ## 2026-07-04
 
 ### Added
