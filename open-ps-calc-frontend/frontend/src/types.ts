@@ -97,6 +97,7 @@ export interface TargetMods {
   lex_aeterna: boolean;
   quagmire: boolean;
   signum_crucis: boolean;
+  provoke: boolean;
   sleep: boolean;
   stun: boolean;
 }

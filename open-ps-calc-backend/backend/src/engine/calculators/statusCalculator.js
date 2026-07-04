@@ -106,6 +106,16 @@ class StatusCalculator {
     }
     if ("SC_CURSE" in playerScs) status.batk = Math.floor(status.batk * 75 / 100);
 
+    // Auto Berserk (SM_AUTOBERSERK): while HP < 25% the caster gains a
+    // self-cast Provoke Lv10, raising base ATK by Provoke's +32% (2 + 3×10).
+    // Presence-only self-buff. Deliberately kept on its own SC key rather than
+    // player_active_scs.SC_PROVOKE so it can never be conflated with a Provoke
+    // debuff cast on the *target* (that lives on the target object, handled in
+    // the calculate route). The matching −55% self-DEF is in the DEFENSE block.
+    if ("SC_AUTOBERSERK" in activeSc) {
+      status.batk += Math.floor(status.batk * 32 / 100);
+    }
+
     // === DEFENSE ===
     status.def_ = build.equip_def;
     status.def2 = status.vit + build.bonus_def2;
@@ -120,6 +130,11 @@ class StatusCalculator {
     }
     if ("SC_PROVOKE" in playerScs) {
       status.def_percent = Math.max(0, status.def_percent - (5 + 5 * Number(playerScs.SC_PROVOKE)));
+    }
+    // Auto Berserk's self Provoke Lv10 DEF side: −55% (5 + 5×10). See the ATK
+    // section above for why this uses SC_AUTOBERSERK and not SC_PROVOKE.
+    if ("SC_AUTOBERSERK" in activeSc) {
+      status.def_percent = Math.max(0, status.def_percent - 55);
     }
     if ("SC_FLING" in playerScs) {
       status.def_percent = Math.max(0, status.def_percent - 5 * Number(playerScs.SC_FLING));

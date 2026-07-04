@@ -211,6 +211,10 @@ const ASPD_POTION_LABELS = [
 const SELF_BUFFS = [
   // Archer / Hunter / Sniper / Bard / Dancer / Clown / Gypsy
   { key: "SC_CONCENTRATION",    label: "Attention Concentrate", max: 10, jobs: [3, 11, 19, 20, 4012, 4020, 4021] },
+  // Swordman line — Auto Berserk (SM_AUTOBERSERK): while HP < 25% you gain a
+  // self Provoke Lv10 (+32% base ATK, −55% self-DEF). Presence-only. Jobs
+  // derived from skill_tree.json: Swordman / Knight / Crusader / LK / Paladin.
+  { key: "SC_AUTOBERSERK",     label: "Auto Berserk (self Provoke 10)", max: 1, jobs: [1, 7, 14, 4008, 4015] },
   // Knight / Lord Knight
   { key: "SC_TWOHANDQUICKEN",  label: "Two-Hand Quicken",      max: 10, jobs: [7, 4008] },
   { key: "SC_ONEHANDQUICKEN",  label: "One-Hand Quicken",      max: 10, jobs: [7, 4008] },
@@ -336,6 +340,7 @@ const DEFAULT_TARGET_MODS: TargetMods = {
   lex_aeterna: false,
   quagmire: false,
   signum_crucis: false,
+  provoke: false,
   sleep: false,
   stun: false,
 };
@@ -1749,6 +1754,12 @@ export default function BuildEditor() {
               <label title={signumApplicable ? "PR_SIGNUM Lv10: hard DEF −35% (5 + 3×lv). Undead / Demon only." : "PR_SIGNUM only applies to Undead and Demon targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>
                 <input type="checkbox" checked={targetMods.signum_crucis} disabled={!signumApplicable} onChange={(e) => setTargetMods((m) => ({ ...m, signum_crucis: e.target.checked }))} />
                 <span>Signum Crucis Lv10 (−35% hard DEF)</span>
+              </label>
+            </div>
+            <div className="field field-checkbox">
+              <label title="SC_PROVOKE Lv10: target DEF −55% (5 + 5×lv). No effect on Boss monsters. Independent of the player's own Auto Berserk self-buff.">
+                <input type="checkbox" checked={targetMods.provoke} onChange={(e) => setTargetMods((m) => ({ ...m, provoke: e.target.checked }))} />
+                <span>Provoke Lv10 (−55% DEF)</span>
               </label>
             </div>
             <div className="field field-checkbox">

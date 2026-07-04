@@ -105,6 +105,14 @@ router.post("/", (req: Request, res: Response) => {
       if (targetModsInput.signum_crucis && (target.race === "Undead" || target.race === "Demon")) {
         target.def_percent = Math.max(0, (target.def_percent ?? 100) - 35);
       }
+      // Provoke Lv10 cast on the target: DEF −55% (5 + 5×lv), matching the
+      // engine's Provoke convention (def_percent scales both hard and soft DEF
+      // in defenseFix). Boss-protocol monsters are immune. This only touches
+      // the target object — it is entirely separate from a player's self-cast
+      // Provoke / Auto Berserk, which lives on the player's own status.
+      if (targetModsInput.provoke && !target.is_boss) {
+        target.def_percent = Math.max(0, (target.def_percent ?? 100) - 55);
+      }
     }
 
     const skill = createSkillInstance({
