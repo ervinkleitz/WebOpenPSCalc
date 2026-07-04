@@ -694,13 +694,27 @@ export default function BuildEditor() {
         ? { mob_id: data.target_mob_id }
         : customTarget;
       // Aggregate wildcard slot bonuses and strip real card entries for those slots.
+      // The rendered wildcard rows track the equipped weapon's live card-slot
+      // count (item.slots, from the async itemCache), but the stored
+      // wildcard_slots array lags behind after a weapon switch -- it can be
+      // shorter (extra rows show unsaved ?? defaults) or longer (stale rows from
+      // the previous weapon). Iterate the weapon's actual slot count with the
+      // same fallback default the UI uses (see the wildcard-slots render) so the
+      // pipeline applies exactly what's on screen, not the drifted stored array.
+      const WILDCARD_DEFAULT: WildcardSlot = { type: "race", bonus: 20 };
       const wildcardBonuses: Record<string, number> = {};
       const equippedOverride = { ...sanitizedBuild.equipped };
       for (const [slotKey, active] of Object.entries(wildcardMode)) {
         if (!active) continue;
-        if (equippedOverride[slotKey] == null) continue; // slot is empty — skip
+        const equippedId = equippedOverride[slotKey];
+        if (equippedId == null) continue; // slot is empty — skip
         for (let i = 1; i <= 4; i++) delete equippedOverride[`${slotKey}_card${i}`];
-        for (const ws of (data.wildcard_slots?.[slotKey] || [])) {
+        const stored = data.wildcard_slots?.[slotKey] || [];
+        // Weapon's real slot count; fall back to stored length if the item's
+        // data hasn't loaded into the cache yet (so nothing is dropped mid-switch).
+        const slotCount = (itemCache[equippedId]?.slots ?? 0) || stored.length;
+        for (let i = 0; i < slotCount; i++) {
+          const ws = stored[i] ?? WILDCARD_DEFAULT;
           const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : "Ele_All";
           wildcardBonuses[key] = (wildcardBonuses[key] || 0) + ws.bonus;
           if (ws.type === "size") wildcardBonuses["_batk"] = (wildcardBonuses["_batk"] || 0) + 5;

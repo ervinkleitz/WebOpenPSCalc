@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-04
+
+### Fixed
+
+- **Wildcard mix dropped after weapon switch** — the wildcard rows follow the equipped weapon's
+  live card-slot count (`item.slots`, loaded asynchronously), but the damage calc aggregated over
+  the stored `wildcard_slots` array, which drifts after switching weapons. Switching to a weapon
+  with more slots (or toggling wildcard before the new weapon's data finished loading) left extra
+  rows showing unsaved default bonuses that never reached the pipeline; switching to fewer slots
+  kept applying stale rows. The aggregation now iterates the weapon's actual slot count using the
+  same fallback default the UI renders, so the pipeline applies exactly what's shown.
+
 ## 2026-07-03
 
 ### Added
