@@ -1088,12 +1088,13 @@ export default function BuildEditor() {
                 const jobBonus = jobBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
                 const equipBonus = equipBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
                 const buffBonus = buffBonusStats[STAT_TO_BONUS_KEY[s]] ?? 0;
+                const manualBonus = (data.bonus_stats?.[s] as number) ?? 0;
                 const base = data.base_stats[s] ?? 1;
                 const nextCost = Math.floor((base - 1) / 10) + 2;
                 return (
                   <div className="ro-stat-card" key={s}>
                     <div className="ro-stat-name">{s.toUpperCase()}</div>
-                    <div className="ro-stat-total">{base + jobBonus + equipBonus + buffBonus}</div>
+                    <div className="ro-stat-total">{base + jobBonus + equipBonus + buffBonus + manualBonus}</div>
                     <div className="ro-stat-detail">
                       <input
                         className="mono"
@@ -1115,11 +1116,35 @@ export default function BuildEditor() {
                       {jobBonus > 0 && <span className="ro-stat-bonus" title={`+${jobBonus} from job level`}>+{jobBonus}</span>}
                       {equipBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--equip" title={`+${equipBonus} from equipment`}>+{equipBonus}</span>}
                       {buffBonus > 0 && <span className="ro-stat-bonus ro-stat-bonus--buff" title={`+${buffBonus} from skills / buffs`}>+{buffBonus}</span>}
+                      {manualBonus !== 0 && <span className="ro-stat-bonus ro-stat-bonus--manual" title={`${manualBonus > 0 ? "+" : ""}${manualBonus} manual`}>{manualBonus > 0 ? "+" : ""}{manualBonus}</span>}
                     </div>
                     <div className="ro-stat-cost">+{nextCost} pt</div>
                   </div>
                 );
               })}
+            </div>
+            <label style={{ marginTop: "0.9rem" }} className="section-label">
+              Manual stat bonuses
+              <InfoTooltip>
+                Flat additions applied on top of your allocated stats — use this
+                to model any stat source the calculator doesn't cover (temporary
+                food buffs, quest rewards, etc.). Folded into the bold total
+                above and the damage calculation. Negative values are allowed.
+              </InfoTooltip>
+            </label>
+            <div className="passive-grid">
+              {STATS.map((s) => (
+                <div className="field" key={s}>
+                  <label>{s.toUpperCase()}</label>
+                  <input
+                    className="mono"
+                    type="number"
+                    value={(data.bonus_stats?.[s] as number) ?? 0}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => updateField(["bonus_stats", s], Math.trunc(Number(e.target.value) || 0))}
+                  />
+                </div>
+              ))}
             </div>
             <label style={{ marginTop: "0.9rem" }} className="section-label">Combat stats</label>
             <div className="sec-stat-grid">

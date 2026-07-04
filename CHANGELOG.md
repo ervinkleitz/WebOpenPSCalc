@@ -9,6 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Manual stat bonuses** — a new section in the Base stats panel with STR/AGI/VIT/INT/DEX/LUK
+  inputs for flat additions on top of allocated stats (for any source the calculator doesn't
+  otherwise model). They fold into each stat's bold total (shown as a dim `+N` chip) and into the
+  damage calculation; negative values are allowed. Backed by the build's existing `bonus_stats`
+  field, which was already applied server-side but had no UI.
 - **Monster stats in the target panel** — selecting a monster now shows a compact stat grid
   (HP, Race, Element + level, Size, DEF, MDEF, ATK range, and STR/AGI/VIT/INT/DEX/LUK) beneath the
   name, plus a "· Boss" tag for boss-protocol monsters. Data comes from the existing mob endpoint.

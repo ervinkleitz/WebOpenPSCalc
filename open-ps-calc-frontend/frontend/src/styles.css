@@ -492,6 +492,7 @@ label {
 .ro-stat-bonus { font-size: 0.75rem; color: var(--good); font-family: var(--mono); white-space: nowrap; }
 .ro-stat-bonus--equip { color: var(--link); }
 .ro-stat-bonus--buff  { color: var(--accent); }
+.ro-stat-bonus--manual { color: var(--text-dim); }
 .ro-stat-cost { font-family: var(--mono); font-size: 0.65rem; color: var(--text-faint); margin-top: 0.2rem; }
 .stat-pts-counter { margin-left: auto; font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 0.45rem; }
 .stat-pts-counter--low  { color: var(--accent); }
