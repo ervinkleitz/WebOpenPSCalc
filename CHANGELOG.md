@@ -9,6 +9,9 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Link preview / embed tags** — the page now has a descriptive title and Open Graph / Twitter
+  card meta tags, so sharing the URL (Discord, Twitter/X, etc.) shows a real title and description
+  instead of a bare link.
 - **Manual stat bonuses** — a new section in the Base stats panel with STR/AGI/VIT/INT/DEX/LUK
   inputs for flat additions on top of allocated stats (for any source the calculator doesn't
   otherwise model). They fold into each stat's bold total (shown as a dim `+N` chip) and into the
