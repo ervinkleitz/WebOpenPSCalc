@@ -908,7 +908,7 @@ export default function BuildEditor() {
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
             <button onClick={() => { setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
-            <a className="topbar-kofi-link" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>☕ Support</a>
+            <a className="topbar-kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>☕ Support</a>
           </div>
 
           {/* Hamburger — hidden on desktop */}
@@ -1760,7 +1760,7 @@ export default function BuildEditor() {
           <a className="kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer">
             🍵 Buy me a milk tea
           </a>
-          <span className="credits-support-text">Donations help keep this app running</span>
+          <span className="credits-support-text">This calc runs on milk tea</span>
         </div>
         <div className="credits-row">
           <span>Thanks to our testers:&nbsp;<span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet</span></span>

@@ -30,10 +30,8 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
           />
           {calcResult && !calculating && !error && (
             <div className="kofi-results-card">
-              <span className="kofi-results-text">Found this useful? Help keep it running.</span>
-              <a className="kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer">
-                🍵 Buy me a milk tea
-              </a>
+              <span className="kofi-results-text">This calc runs on milk tea —</span>
+              <a className="kofi-results-link" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer">buy me one 🍵</a>
             </div>
           )}
         </div>
