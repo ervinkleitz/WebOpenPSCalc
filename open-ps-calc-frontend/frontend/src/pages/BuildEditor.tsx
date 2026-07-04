@@ -874,7 +874,7 @@ export default function BuildEditor() {
     <div className="app-shell">
       <div className="topbar">
         <div className="topbar-left">
-          <span className="brand-mark">⚔</span>
+          <img className="brand-mark" src="/icon.svg" alt="Open PS Calc logo" width="26" height="26" />
           <span className="brand-title">Open PS Calc</span>
           <span className="topbar-info-icon">
             <InfoTooltip>

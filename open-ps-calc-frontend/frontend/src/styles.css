@@ -217,7 +217,7 @@ label {
   z-index: 10;
 }
 .topbar-left { display: flex; align-items: center; gap: 0.6rem; min-width: 0; flex-shrink: 0; }
-.brand-mark { color: var(--accent); font-size: 1.2rem; flex-shrink: 0; }
+.brand-mark { width: 1.6rem; height: 1.6rem; flex-shrink: 0; display: block; }
 .brand-title { font-family: var(--serif); font-size: 1.05rem; white-space: nowrap; }
 .topbar-info-icon { display: flex; align-items: center; }
 .topbar-right { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--text-dim); }
