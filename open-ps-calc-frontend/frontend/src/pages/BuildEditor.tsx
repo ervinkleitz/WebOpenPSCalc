@@ -447,6 +447,7 @@ export default function BuildEditor() {
   const [forceProcs, setForceProcs] = useState(false);
   const [copied, setCopied] = useState(false);
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
   const [resultsOpen, setResultsOpen] = useState(false);
   const resultsPanelRef = useRef<HTMLDivElement>(null);
@@ -842,22 +843,35 @@ export default function BuildEditor() {
         <div className="topbar-left">
           <span className="brand-mark">⚔</span>
           <span className="brand-title">Open PS Calc</span>
-          <InfoTooltip>
-            <strong>Open PS Calc</strong>
-            A pre-renewal Ragnarok Online damage calculator for vanilla
-            and Payon Stories servers — equip gear, pick a skill and
-            target, and see the full step-by-step damage breakdown.
-            <span className="tooltip-row">
-              <span>Based on</span>
-              <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
-            </span>
-            <span className="tooltip-row">
-              <span>This repo</span>
-              <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">WebOpenPSCalc</a>
-            </span>
-          </InfoTooltip>
+          <span className="topbar-info-icon">
+            <InfoTooltip>
+              <strong>Open PS Calc</strong>
+              A pre-renewal Ragnarok Online damage calculator for vanilla
+              and Payon Stories servers — equip gear, pick a skill and
+              target, and see the full step-by-step damage breakdown.
+              <span className="tooltip-row">
+                <span>Based on</span>
+                <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
+              </span>
+              <span className="tooltip-row">
+                <span>This repo</span>
+                <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">WebOpenPSCalc</a>
+              </span>
+            </InfoTooltip>
+          </span>
         </div>
         <div className="topbar-right">
+          {/* Server select — always visible on tablet+, hidden on phones (shown in dropdown instead) */}
+          <select
+            className="topbar-server-select topbar-server-inline"
+            value={data.server}
+            onChange={(e) => updateField(["server"], e.target.value)}
+            aria-label="Server"
+          >
+            <option value="payon_stories">Payon Stories</option>
+            <option value="standard">Standard pre-renewal</option>
+          </select>
+
           <div style={{ position: "relative" }}>
             <button
               className="ghost theme-toggle"
@@ -877,24 +891,39 @@ export default function BuildEditor() {
               <div className="theme-hint">{theme === "dark" ? "Try light mode" : "Try dark mode"}</div>
             )}
           </div>
-          <select
-            className="topbar-server-select"
-            value={data.server}
-            onChange={(e) => updateField(["server"], e.target.value)}
-            aria-label="Server"
+
+          {/* Secondary actions — inline on desktop (>1100px), dropdown otherwise */}
+          <div className={`topbar-secondary${menuOpen ? " topbar-secondary--open" : ""}`}>
+            {/* Server select copy — shown only inside dropdown on phones */}
+            <select
+              className="topbar-server-select topbar-server-dropdown"
+              value={data.server}
+              onChange={(e) => { updateField(["server"], e.target.value); setMenuOpen(false); }}
+              aria-label="Server"
+            >
+              <option value="payon_stories">Payon Stories</option>
+              <option value="standard">Standard pre-renewal</option>
+            </select>
+            <button onClick={() => { setSavedBuildsOpen(true); setMenuOpen(false); }}>Save / Load</button>
+            <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
+            <button onClick={() => { setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
+            <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
+          </div>
+
+          {/* Hamburger — hidden on desktop */}
+          <button
+            className="ghost topbar-hamburger"
+            onClick={() => setMenuOpen(m => !m)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
           >
-            <option value="payon_stories">Payon Stories</option>
-            <option value="standard">Standard pre-renewal</option>
-          </select>
-          <button onClick={onNewBuild}>Start over</button>
-          <button onClick={() => setSavedBuildsOpen(true)}>Save / Load</button>
-          <button onClick={() => setChangelogOpen(true)}>Changelog</button>
-          <button onClick={onCopyLink}>{copied ? "Copied!" : "Copy share link"}</button>
+            {menuOpen ? "✕" : "☰"}
+          </button>
 
           <button className="primary" onClick={() => onCalculate()} disabled={calculating}>
             {calculating ? "Calculating…" : "Calculate damage"}
           </button>
         </div>
+        {menuOpen && <div className="topbar-backdrop" onClick={() => setMenuOpen(false)} />}
       </div>
 
       <div className="page">
@@ -1734,6 +1763,10 @@ export default function BuildEditor() {
         <span>
           Base engine by&nbsp;<span className="credits-names">tochoco.latte</span>
         </span>
+        <span className="credits-sep">·</span>
+        <a className="credits-link" href="https://discord.gg/payonstories" target="_blank" rel="noreferrer">Discord</a>
+        <span className="credits-sep">·</span>
+        <a className="credits-link" href="https://cp.payonstories.com/" target="_blank" rel="noreferrer">PS Website</a>
       </footer>
     </div>
   );

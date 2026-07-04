@@ -24,5 +24,5 @@ node "$DEPLOY_PATH/backend/src/scripts/consolidate.js" \
 # existing consolidate.js line before adding the updated one.
 NODE_BIN="$(which node)"
 CRON_LINE="0 2 * * * $NODE_BIN $DEPLOY_PATH/backend/src/scripts/consolidate.js >> $DEPLOY_PATH/backend/logs/consolidate.log 2>&1"
-(crontab -l 2>/dev/null | grep -v 'consolidate.js'; echo "$CRON_LINE") | crontab -
+(crontab -l 2>/dev/null | grep -v 'consolidate.js' || true; echo "$CRON_LINE") | crontab -
 echo "cron: daily consolidation scheduled via $NODE_BIN"

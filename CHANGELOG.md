@@ -9,6 +9,7 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Payon Stories links** — Discord and PS Website links in the footer.
 - **Wildcard card mix** — weapon slots with card sockets now have a "Cards / Wildcard mix" toggle.
   In wildcard mode the card pickers are replaced by per-slot rows where each card position is set
   to a generic bonus type (Race / Size / Element) and a bonus %. Size is hardcoded to 15% + 5 ATK;
@@ -34,7 +35,8 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
-- **Stats chart hover tooltip** — hovering a day column in the daily activity chart now shows a styled tooltip with the date, exact views count, and exact calcs count. The two bar series are visually more distinct (wider bars, larger gap between them, column highlight on hover).
+- **Responsive topbar** — three-tier layout covers all common device sizes: phones (≤600 px) show only brand mark, theme toggle, hamburger, and Calculate, with server select and all actions in the dropdown; tablets and small desktops (601–1279 px) keep the server select inline and put secondary actions in a side panel dropdown; wide desktop (≥1280 px) shows everything inline. Brand title and info tooltip hidden on phones to prevent overflow.
+- **Stats chart hover tooltip** — hovering a day column shows a styled tooltip with the date, exact views count, and exact calcs count. Bar series are visually more distinct (wider bars, larger gap, column highlight on hover).
 - **Skill search only shows damage skills** — the skill picker in Panel 07 now filters to skills with `attack_type` of `Weapon` or `Magic`, hiding passives (Sword Mastery, Endure, etc.) and non-damaging utility skills.
 
 ### Fixed
@@ -42,6 +44,7 @@ instead of release version. Dates are taken from actual git commit history.
 - **Permanent page view history** — a `consolidate.js` script reads all nginx access logs (including rotated `.gz` files) and writes page view events into `stats.ndjson`, so history is preserved beyond log rotation. Runs automatically on every deploy for fast incremental updates; a daily 2 AM cron keeps it current between deploys. The stats route now reads archived views from NDJSON and live views from nginx, splitting at the consolidation cursor to avoid double-counting.
 - **Calculate events not being saved** — `data-store/` directory might not exist on first deploy, causing `fs.appendFile` to fail silently with ENOENT so every calculate event was dropped. `statsLogger` now creates the directory at module load time.
 - **nginx routing** — replaced the broad `/stats/` prefix location block with exact-match blocks for `/stats/ping` and `/stats/data` so the SPA page at `/stats` is no longer intercepted and proxied to the backend.
+- **Deploy cron setup** — `grep -v` in the crontab update pipeline exits 1 when no non-matching lines exist (crontab only contains the one entry), causing the deploy script to abort under `set -euo pipefail`. Added `|| true` to suppress the false failure.
 - **Dual-wield damage pipeline uses new style** — the RH and LH step lists in the PS Assassin
   dual-wield breakdown now render with `PipelineView` (chip inputs + connector arrows) instead of
   the old flat step-list rows.
