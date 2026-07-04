@@ -908,6 +908,7 @@ export default function BuildEditor() {
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
             <button onClick={() => { setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
+            <a className="topbar-kofi-link" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>☕ Support</a>
           </div>
 
           {/* Hamburger — hidden on desktop */}
@@ -1755,18 +1756,21 @@ export default function BuildEditor() {
       </div>
 
       <footer className="credits-footer">
-        <span>
-          Thanks to our testers:&nbsp;
-          <span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet</span>
-        </span>
-        <span className="credits-sep">·</span>
-        <span>
-          Base engine by&nbsp;<span className="credits-names">tochoco.latte</span>
-        </span>
-        <span className="credits-sep">·</span>
-        <a className="credits-link" href="https://discord.gg/payonstories" target="_blank" rel="noreferrer">Discord</a>
-        <span className="credits-sep">·</span>
-        <a className="credits-link" href="https://cp.payonstories.com/" target="_blank" rel="noreferrer">PS Website</a>
+        <div className="credits-support">
+          <a className="kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer">
+            🍵 Buy me a milk tea
+          </a>
+          <span className="credits-support-text">Donations help keep this app running</span>
+        </div>
+        <div className="credits-row">
+          <span>Thanks to our testers:&nbsp;<span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet</span></span>
+          <span className="credits-sep">·</span>
+          <span>Base engine by&nbsp;<span className="credits-names">tochoco.latte</span></span>
+          <span className="credits-sep">·</span>
+          <a className="credits-link" href="https://discord.gg/payonstories" target="_blank" rel="noreferrer">Discord</a>
+          <span className="credits-sep">·</span>
+          <a className="credits-link" href="https://cp.payonstories.com/" target="_blank" rel="noreferrer">PS Website</a>
+        </div>
       </footer>
     </div>
   );

@@ -10,6 +10,7 @@ instead of release version. Dates are taken from actual git commit history.
 ### Added
 
 - **Payon Stories links** — Discord and PS Website links in the footer.
+- **Ko-fi support button** — donation link in the topbar, below the damage results, and in the footer; proceeds go toward hosting costs.
 - **Wildcard card mix** — weapon slots with card sockets now have a "Cards / Wildcard mix" toggle.
   In wildcard mode the card pickers are replaced by per-slot rows where each card position is set
   to a generic bonus type (Race / Size / Element) and a bonus %. Size is hardcoded to 15% + 5 ATK;
