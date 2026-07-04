@@ -9,6 +9,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Monster stats in the target panel** — selecting a monster now shows a compact stat grid
+  (HP, Race, Element + level, Size, DEF, MDEF, ATK range, and STR/AGI/VIT/INT/DEX/LUK) beneath the
+  name, plus a "· Boss" tag for boss-protocol monsters. Data comes from the existing mob endpoint.
+- **Max all / Reset passives** — the Passive skills panel gets "Max all" and "Reset" buttons that
+  set every listed passive to its max level (or 0) in one click.
+- **Two more Bard songs** — "A Whistle" (+Flee / Perfect Dodge) and "The Apple of Idun" (+Max HP)
+  added to the Bard / Dancer songs list. Both are already modeled in the status calculator, so they
+  show up in the combat-stat readout (they're defensive/utility — they don't change outgoing damage).
 - **Auto Berserk (self buff)** — Swordman-line jobs (Swordman / Knight / Crusader / Lord Knight /
   Paladin) get an "Auto Berserk" toggle under Buffs → Self buffs. It models the self-cast Provoke
   Lv10 the skill grants while HP < 25%: +32% base ATK (2 + 3×lv) and −55% self-DEF (5 + 5×lv).

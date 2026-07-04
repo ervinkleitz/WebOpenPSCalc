@@ -14,6 +14,10 @@ import {
   WildcardSlot,
 } from "../types";
 
+// Element index → display name (Neutral=0 … Undead=9). Matches the engine's
+// element convention and the custom-target element select below.
+const ELEMENT_NAMES = ["Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Dark", "Ghost", "Undead"] as const;
+
 const WILDCARD_BONUS_OPTIONS = [4, 10, 15, 20];
 const WILDCARD_DEFAULT_BONUS: Record<WildcardSlot["type"], number> = {
   race: 20, size: 15, ele: 20,
@@ -274,6 +278,11 @@ const SONG_BUFFS = [
   // directly -- only shows up in DPS when testing an actual skill, not a
   // normal attack, since normal-attack period is ASPD-only.
   { key: "SC_POEMBRAGI", label: "Poem of Bragi", max: 10 },
+  // Defensive/utility Bard songs — statusCalculator.js applies these to the
+  // character status (flee / perfect dodge / Max HP), so they show in the
+  // combat-stat readout even though they don't change outgoing damage.
+  { key: "SC_WHISTLE", label: "A Whistle (Flee)", max: 10 },
+  { key: "SC_APPLEIDUN", label: "The Apple of Idun (Max HP)", max: 10 },
 ] as const;
 
 // Passive skills and buffs that add to flat base stats.
@@ -394,7 +403,12 @@ export default function BuildEditor() {
   const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
   const [passiveSkills, setPassiveSkills] = useState<PassiveSkill[]>([]);
   const [itemCache, setItemCache] = useState<Record<number, EquippedItemInfo>>({});
-  const [mobInfo, setMobInfo] = useState<{ name: string; level: number; race?: string } | null>(null);
+  const [mobInfo, setMobInfo] = useState<{
+    name: string; level: number; race?: string;
+    hp?: number; def_?: number; mdef?: number; atk_min?: number; atk_max?: number;
+    size?: string; element?: number; element_level?: number; is_boss?: boolean;
+    stats?: { str: number; agi: number; vit: number; int: number; dex: number; luk: number };
+  } | null>(null);
   const [jobBonusStats, setJobBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [equipBonusStats, setEquipBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [buffBonusStats, setBuffBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
@@ -1345,6 +1359,27 @@ export default function BuildEditor() {
                 {data.job_id ? "No passive skills for this job." : "Select a job to see passive skills."}
               </p>
             ) : (
+              <>
+              <div className="field-row" style={{ marginBottom: "0.6rem" }}>
+                <button
+                  onClick={() => setData((prev) => {
+                    const next = { ...(prev.mastery_levels || {}) };
+                    for (const ps of passiveSkills) next[ps.mastery_key] = ps.max_level;
+                    return { ...prev, mastery_levels: next };
+                  })}
+                >
+                  Max all
+                </button>
+                <button
+                  onClick={() => setData((prev) => {
+                    const next = { ...(prev.mastery_levels || {}) };
+                    for (const ps of passiveSkills) next[ps.mastery_key] = 0;
+                    return { ...prev, mastery_levels: next };
+                  })}
+                >
+                  Reset
+                </button>
+              </div>
               <div className="passive-grid">
                 {passiveSkills.map((ps) => (
                   <div className="field" key={ps.name}>
@@ -1368,6 +1403,7 @@ export default function BuildEditor() {
                   </div>
                 ))}
               </div>
+              </>
             )}
           </Panel>
 
@@ -1630,13 +1666,40 @@ export default function BuildEditor() {
             {targetMode === "monster" && (
               <>
                 {data.target_mob_id != null ? (
+                  <>
                   <div className="selected-pill">
                     <span>
                       {mobInfo ? mobInfo.name : `Mob #${data.target_mob_id}`}
                       {mobInfo ? ` (Lv.${mobInfo.level})` : ""}
+                      {mobInfo?.is_boss ? " · Boss" : ""}
                     </span>
                     <button onClick={() => updateField(["target_mob_id"], null)}>Change</button>
                   </div>
+                  {mobInfo && (
+                    <div className="sec-stat-grid" style={{ marginTop: "0.6rem" }}>
+                      {([
+                        { label: "HP",      value: mobInfo.hp?.toLocaleString() },
+                        { label: "Race",    value: mobInfo.race },
+                        { label: "Element", value: mobInfo.element != null ? `${ELEMENT_NAMES[mobInfo.element] ?? mobInfo.element} ${mobInfo.element_level ?? 1}` : undefined },
+                        { label: "Size",    value: mobInfo.size },
+                        { label: "DEF",     value: mobInfo.def_ != null ? String(mobInfo.def_) : undefined },
+                        { label: "MDEF",    value: mobInfo.mdef != null ? String(mobInfo.mdef) : undefined },
+                        { label: "ATK",     value: (mobInfo.atk_min != null && mobInfo.atk_max != null) ? `${mobInfo.atk_min}–${mobInfo.atk_max}` : undefined },
+                        { label: "STR",     value: mobInfo.stats ? String(mobInfo.stats.str) : undefined },
+                        { label: "AGI",     value: mobInfo.stats ? String(mobInfo.stats.agi) : undefined },
+                        { label: "VIT",     value: mobInfo.stats ? String(mobInfo.stats.vit) : undefined },
+                        { label: "INT",     value: mobInfo.stats ? String(mobInfo.stats.int) : undefined },
+                        { label: "DEX",     value: mobInfo.stats ? String(mobInfo.stats.dex) : undefined },
+                        { label: "LUK",     value: mobInfo.stats ? String(mobInfo.stats.luk) : undefined },
+                      ] as { label: string; value?: string }[]).map(({ label, value }) => (
+                        <div key={label} className="sec-stat-card">
+                          <div className="sec-stat-label">{label}</div>
+                          <div className="sec-stat-value">{value ?? "—"}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  </>
                 ) : (
                   <SearchPicker placeholder="Search monsters…" search={mobSearch} onSelect={(r) => updateField(["target_mob_id"], r.id)} />
                 )}
@@ -1693,7 +1756,7 @@ export default function BuildEditor() {
                   <div className="field">
                     <label>Element</label>
                     <select className="mono" value={customTarget.element} onChange={(e) => setCustomTarget((t) => ({ ...t, element: Number(e.target.value) }))}>
-                      {["Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Dark", "Ghost", "Undead"].map((name, idx) => (
+                      {ELEMENT_NAMES.map((name, idx) => (
                         <option key={idx} value={idx}>{name}</option>
                       ))}
                     </select>
