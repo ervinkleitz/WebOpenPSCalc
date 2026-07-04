@@ -12,6 +12,8 @@ instead of release version. Dates are taken from actual git commit history.
 - **Link preview / embed tags** — the page now has a descriptive title and Open Graph / Twitter
   card meta tags, so sharing the URL (Discord, Twitter/X, etc.) shows a real title and description
   instead of a bare link.
+- **Favicons & app icons** — added a proper favicon (SVG + 16/32 PNG + .ico fallback), an
+  iOS/Android home-screen icon and web manifest, and a logo image on the link embed.
 - **Manual stat bonuses** — a new section in the Base stats panel with STR/AGI/VIT/INT/DEX/LUK
   inputs for flat additions on top of allocated stats (for any source the calculator doesn't
   otherwise model). They fold into each stat's bold total (shown as a dim `+N` chip) and into the

@@ -1,0 +1,14 @@
+{
+  "name": "Open PS Calc — Payon Stories Damage Calculator",
+  "short_name": "Open PS Calc",
+  "description": "Damage calculator for Payon Stories (pre-renewal Ragnarok Online).",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12141c",
+  "theme_color": "#12141c",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
