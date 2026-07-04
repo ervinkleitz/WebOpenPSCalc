@@ -19,7 +19,7 @@ interface StatsData {
   to_ts: number;
 }
 
-type Preset = "7" | "30" | "0" | "custom";
+type Preset = "1" | "7" | "30" | "0" | "custom";
 
 function BarChart({ days, maxVal }: { days: DayEntry[]; maxVal: number }) {
   const [tooltip, setTooltip] = useState<{ day: DayEntry; x: number; y: number } | null>(null);
@@ -152,13 +152,13 @@ export default function StatsPage() {
       <div className="stats-header">
         <h1 className="stats-title">Visitor Stats</h1>
         <div className="stats-presets">
-          {(["7","30","0","custom"] as Preset[]).map((p) => (
+          {(["1","7","30","0","custom"] as Preset[]).map((p) => (
             <button
               key={p}
               className={`stats-preset-btn${preset === p ? " active" : ""}`}
               onClick={() => setPreset(p)}
             >
-              {p === "7" ? "Last 7 days" : p === "30" ? "Last 30 days" : p === "0" ? "All time" : "Custom"}
+              {p === "1" ? "Last day" : p === "7" ? "Last 7 days" : p === "30" ? "Last 30 days" : p === "0" ? "All time" : "Custom"}
             </button>
           ))}
         </div>
