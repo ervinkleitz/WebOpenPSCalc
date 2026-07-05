@@ -380,11 +380,13 @@ class StatusCalculator {
       }
     }
 
+    // ASPD % bonuses are additive in pre-renewal: fold the flat bonus_aspd_percent
+    // (ASPD potions, bAspdRate gear) into the same rate as the SC quicken bonuses
+    // and apply it once. Applying it as a separate multiplicative step floored
+    // twice and undershot — e.g. +30% quicken and +20% potion gave ×0.70×0.80 =
+    // ×0.56 instead of the correct ×0.50 (~1.6 ASPD low vs in-game / payonrocalc).
+    scAspdRate -= build.bonus_aspd_percent * 10;
     if (scAspdRate !== 1000) amotion = Math.floor(amotion * scAspdRate / 1000);
-
-    if (build.bonus_aspd_percent) {
-      amotion = Math.floor(amotion * (1000 - build.bonus_aspd_percent * 10) / 1000);
-    }
     if (build.is_riding_peco) {
       const cavLv = mastery.KN_CAVALIERMASTERY || 0;
       amotion += 500 - 100 * cavLv;

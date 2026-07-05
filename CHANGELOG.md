@@ -47,6 +47,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **ASPD %-bonus stacking** — ASPD-rate bonuses (Two-Hand/One-Hand/Spear Quicken, Adrenaline, etc.)
+  and the flat ASPD-potion/`bAspdRate` bonus were applied as two separate multiplicative steps
+  (each floored), which undershot the real value — e.g. +30% Quicken and a +20% potion gave
+  ×0.70×0.80 = ×0.56 instead of the correct additive ×0.50. They're now summed into a single rate
+  and applied once, matching pre-renewal behavior (fixes ASPD reading a couple of points low on
+  buffed builds).
+
 - **Quagmire no longer auto-hits** — Quagmire was wrongly grouped with Freeze/Stone/Stun/Sleep in
   `hitChance.js` and forced a 100% hit. It actually only cuts the target's AGI/DEX by 10% per level
   (max 50% at Lv 5), lowering flee — hit is now computed normally. Bosses are immune (move-speed
