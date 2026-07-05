@@ -46,6 +46,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Quagmire no longer auto-hits** — Quagmire was wrongly grouped with Freeze/Stone/Stun/Sleep in
+  `hitChance.js` and forced a 100% hit. It actually only cuts the target's AGI/DEX by 10% per level
+  (max 50% at Lv 5), lowering flee — hit is now computed normally. Bosses are immune (move-speed
+  only) and the effect is halved vs players. The target-debuff toggle is now a **selectable Lv 1–5**
+  (with a max option) instead of a plain checkbox; older shared links with the boolean form map to
+  max.
+
 - **Wildcard mix dropped after weapon switch** — the wildcard rows follow the equipped weapon's
   live card-slot count (`item.slots`, loaded asynchronously), but the damage calc aggregated over
   the stored `wildcard_slots` array, which drifts after switching weapons. Switching to a weapon

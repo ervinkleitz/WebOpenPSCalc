@@ -3,7 +3,10 @@
  */
 function calculateHitChance(status, target, config) {
   const targetScs = target.target_active_scs;
-  if (targetScs.SC_STONE || targetScs.SC_FREEZE || targetScs.SC_STUN || targetScs.SC_SLEEP || targetScs.SC_QUAGMIRE) {
+  // "Can't-move" statuses make the target unable to evade → guaranteed hit.
+  // Quagmire is NOT one of these: it only lowers AGI/DEX (and thus flee),
+  // handled as a flee reduction in the calculate route, not as auto-hit.
+  if (targetScs.SC_STONE || targetScs.SC_FREEZE || targetScs.SC_STUN || targetScs.SC_SLEEP) {
     return [100.0, 0.0];
   }
 

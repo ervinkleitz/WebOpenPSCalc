@@ -99,7 +99,6 @@ router.post("/", (req: Request, res: Response) => {
       // Status debuffs
       if (targetModsInput.sleep)  sc.SC_SLEEP  = true;
       if (targetModsInput.stun)   sc.SC_STUN   = true;
-      if (targetModsInput.quagmire) sc.SC_QUAGMIRE = true;
       target.target_active_scs = sc;
       // Signum Crucis (PS, AL_CRUCIS): reduces the target's HARD DEF by a
       // level-scaled % — 10 + 4×lv, i.e. 50% at Lv10 (ps_skill_db.json). This
@@ -117,6 +116,20 @@ router.post("/", (req: Request, res: Response) => {
       // Provoke / Auto Berserk, which lives on the player's own status.
       if (targetModsInput.provoke && !target.is_boss) {
         target.def_percent = Math.max(0, (target.def_percent ?? 100) - 55);
+      }
+      // Quagmire (PS, WZ_QUAGMIRE): the marshland cuts the target's AGI and DEX
+      // by 10% per level (max 50% at Lv5), which lowers its flee — it does NOT
+      // grant auto-hit. Bosses are immune (only their move speed drops, not
+      // modelled here); the effect is halved vs players (PvP). Accepts a level
+      // 1–5; a legacy boolean `true` from older shared links maps to max (5).
+      const quagLv = targetModsInput.quagmire === true ? 5
+        : Math.max(0, Math.min(5, Number(targetModsInput.quagmire) || 0));
+      if (quagLv > 0 && !target.is_boss) {
+        const pct = target.is_pc ? 5 * quagLv : 10 * quagLv;
+        const agiCut = Math.floor(target.agi * pct / 100);
+        target.agi = Math.max(0, target.agi - agiCut);
+        target.dex = Math.max(0, target.dex - Math.floor(target.dex * pct / 100));
+        target.flee = Math.max(0, target.flee - agiCut); // 1 AGI ≈ 1 Flee (pre-re)
       }
     }
 

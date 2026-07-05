@@ -347,7 +347,7 @@ const DEFAULT_CUSTOM_TARGET: CustomTarget = {
 const DEFAULT_TARGET_MODS: TargetMods = {
   element_status: "",
   lex_aeterna: false,
-  quagmire: false,
+  quagmire: 0,
   signum_crucis: false,
   provoke: false,
   sleep: false,
@@ -450,6 +450,9 @@ export default function BuildEditor() {
     // Monster mode: allow if no mob selected yet (unknown), else check element/race.
     return !data.target_mob_id || mobInfo?.element === 9 || mobInfo?.race === "Demon";
   }, [targetMode, customTarget.element, customTarget.race, data.target_mob_id, mobInfo?.element, mobInfo?.race]);
+
+  // Quagmire level (0–5). Tolerant of the legacy boolean shape from older shared URLs (true → max 5).
+  const quagmireLv = (targetMods.quagmire as unknown) === true ? 5 : (Number(targetMods.quagmire) || 0);
 
   const totalStatPoints = useMemo(
     () => getTotalStatPoints(data.base_level, data.job_id),
@@ -1834,10 +1837,26 @@ export default function BuildEditor() {
 
             <span className="buff-group-label" style={{ display: "block", marginTop: "0.75rem" }}>Debuff skills &amp; statuses</span>
             <div className="field field-checkbox">
-              <label title="WZ_QUAGMIRE: removes flee from target — all physical attacks auto-hit">
-                <input type="checkbox" checked={targetMods.quagmire} onChange={(e) => setTargetMods((m) => ({ ...m, quagmire: e.target.checked }))} />
-                <span>Quagmire (auto-hit)</span>
+              <label title="WZ_QUAGMIRE: cuts the target's AGI/DEX by 10% per level (max 50% at Lv5), lowering its flee. Does NOT guarantee a hit; no effect on bosses; halved vs players.">
+                <input
+                  type="checkbox"
+                  checked={quagmireLv > 0}
+                  onChange={(e) => setTargetMods((m) => ({ ...m, quagmire: e.target.checked ? 5 : 0 }))}
+                />
+                <span>Quagmire (−AGI/DEX → lower flee)</span>
               </label>
+              {quagmireLv > 0 && (
+                <select
+                  className="mono"
+                  style={{ marginLeft: "0.5rem" }}
+                  value={quagmireLv}
+                  onChange={(e) => setTargetMods((m) => ({ ...m, quagmire: Number(e.target.value) }))}
+                >
+                  {[1, 2, 3, 4, 5].map((lv) => (
+                    <option key={lv} value={lv}>Lv{lv}{lv === 5 ? " (max)" : ""}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div className="field field-checkbox">
               <label title={signumApplicable ? "AL_CRUCIS Lv10 (PS): hard DEF −50% (10 + 4×lv). Undead-element or Demon-race only." : "Signum Crucis only affects Undead-element or Demon-race targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>

@@ -95,7 +95,7 @@ export type TargetMode = "monster" | "custom";
 export interface TargetMods {
   element_status: string;
   lex_aeterna: boolean;
-  quagmire: boolean;
+  quagmire: number; // WZ_QUAGMIRE level 0–5 (0 = off). Legacy shared URLs may carry a boolean.
   signum_crucis: boolean;
   provoke: boolean;
   sleep: boolean;
