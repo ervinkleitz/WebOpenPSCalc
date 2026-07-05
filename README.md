@@ -168,10 +168,16 @@ motivated several changes beyond a straight 1:1 port:
   triggers mechanic effects already wired in `defenseFix.js`/`hitChance.js` (Frozen/Stone halve
   hard DEF and grant auto-hit). Lex Aeterna checkbox applies ×2 to all damage branches with a
   visible step in each breakdown. Debuff skill/status checkboxes: Quagmire (flee removed →
-  auto-hit via `SC_QUAGMIRE` in `hitChance.js`), Signum Crucis Lv10 (hard DEF −35%, Undead/Demon
-  only — checkbox disabled for inapplicable targets), Asleep (`SC_SLEEP`: auto-hit + ×2 crit
-  rate), Stunned (`SC_STUN`: auto-hit). State is URL-encoded alongside the build so shared links
-  include debuff selections.
+  auto-hit via `SC_QUAGMIRE` in `hitChance.js`), Signum Crucis Lv10 (hard DEF −50% per PS's
+  `10 + 4×lv`, Undead-element or Demon-race only — checkbox disabled for inapplicable targets),
+  Asleep (`SC_SLEEP`: auto-hit + ×2 crit rate), Stunned (`SC_STUN`: auto-hit). State is
+  URL-encoded alongside the build so shared links include debuff selections.
+- **PS Signum Crucis (AL_CRUCIS)** — corrected to the Payon Stories values: it reduces **hard DEF
+  only** by `10 + 4×lv` (**−50% at Lv10**), not the flat −35%-on-combined-DEF it applied before,
+  and it affects **Undead-element or Demon-race** targets (Undead is an *element*, so Demon
+  monsters of any element now qualify; the previous `race === "Undead"` gate was wrong). Stacks
+  with Provoke. Source: `ps_skill_db.json` (id 32) and
+  [wiki.payonstories.com/Signum_Crucis](https://wiki.payonstories.com/Signum_Crucis).
 - **Visual pipeline damage breakdown** — the step list is redesigned as a vertical pipeline with a
   left-rail track. Sub-component steps (Status BATK, Weapon ATK, Branch) are shown as chips above
   the pipeline. Each step row uses dot leaders to link name to value; connectors between rows show

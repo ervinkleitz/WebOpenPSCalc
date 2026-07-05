@@ -443,12 +443,13 @@ export default function BuildEditor() {
 
   // Signum Crucis only works on Undead and Demon targets.
   const signumApplicable = useMemo(() => {
+    // Signum Crucis affects Undead-ELEMENT (idx 9) or Demon-RACE targets.
     if (targetMode === "custom") {
-      return customTarget.race === "Undead" || customTarget.race === "Demon";
+      return customTarget.element === 9 || customTarget.race === "Demon";
     }
-    // Monster mode: allow if no mob selected yet (unknown), or once loaded check race.
-    return !data.target_mob_id || mobInfo?.race === "Undead" || mobInfo?.race === "Demon";
-  }, [targetMode, customTarget.race, data.target_mob_id, mobInfo?.race]);
+    // Monster mode: allow if no mob selected yet (unknown), else check element/race.
+    return !data.target_mob_id || mobInfo?.element === 9 || mobInfo?.race === "Demon";
+  }, [targetMode, customTarget.element, customTarget.race, data.target_mob_id, mobInfo?.element, mobInfo?.race]);
 
   const totalStatPoints = useMemo(
     () => getTotalStatPoints(data.base_level, data.job_id),
@@ -1839,9 +1840,9 @@ export default function BuildEditor() {
               </label>
             </div>
             <div className="field field-checkbox">
-              <label title={signumApplicable ? "PR_SIGNUM Lv10: hard DEF −35% (5 + 3×lv). Undead / Demon only." : "PR_SIGNUM only applies to Undead and Demon targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>
+              <label title={signumApplicable ? "AL_CRUCIS Lv10 (PS): hard DEF −50% (10 + 4×lv). Undead-element or Demon-race only." : "Signum Crucis only affects Undead-element or Demon-race targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>
                 <input type="checkbox" checked={targetMods.signum_crucis} disabled={!signumApplicable} onChange={(e) => setTargetMods((m) => ({ ...m, signum_crucis: e.target.checked }))} />
-                <span>Signum Crucis Lv10 (−35% hard DEF)</span>
+                <span>Signum Crucis Lv10 (−50% hard DEF)</span>
               </label>
             </div>
             <div className="field field-checkbox">

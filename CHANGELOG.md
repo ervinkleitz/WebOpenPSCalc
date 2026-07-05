@@ -36,6 +36,14 @@ instead of release version. Dates are taken from actual git commit history.
   Kept on a separate status key/object from the player's Auto Berserk, so the two never interfere —
   turning on Auto Berserk only affects the player's ATK, and target Provoke only affects the target.
 
+### Changed
+
+- **Signum Crucis reworked for Payon Stories** — the target debuff now applies the PS values
+  from `ps_skill_db.json`: a **hard-DEF-only** reduction of `10 + 4×lv` (**−50% at Lv10**),
+  replacing the previous flat −35% that also (incorrectly) scaled soft DEF. It now correctly
+  affects **Undead-element or Demon-race** targets (Undead is an element — Demon monsters of any
+  element now qualify), and it stacks with Provoke.
+
 ### Fixed
 
 - **Wildcard mix dropped after weapon switch** — the wildcard rows follow the equipped weapon's

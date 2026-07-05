@@ -101,9 +101,14 @@ router.post("/", (req: Request, res: Response) => {
       if (targetModsInput.stun)   sc.SC_STUN   = true;
       if (targetModsInput.quagmire) sc.SC_QUAGMIRE = true;
       target.target_active_scs = sc;
-      // Skill debuffs: DEF reductions (Signum Crucis only affects Undead / Demon)
-      if (targetModsInput.signum_crucis && (target.race === "Undead" || target.race === "Demon")) {
-        target.def_percent = Math.max(0, (target.def_percent ?? 100) - 35);
+      // Signum Crucis (PS, AL_CRUCIS): reduces the target's HARD DEF by a
+      // level-scaled % — 10 + 4×lv, i.e. 50% at Lv10 (ps_skill_db.json). This
+      // is a hard-DEF cut (not def_percent, which would also scale soft DEF),
+      // and it only affects Undead-element or Demon-race monsters. Stacks with
+      // Provoke. The toggle assumes Lv10 (max), matching the other debuffs.
+      if (targetModsInput.signum_crucis && (target.element === 9 || target.race === "Demon")) {
+        const signumPct = 50; // Lv10: 10 + 4×10
+        target.def_ = Math.max(0, target.def_ - Math.floor(target.def_ * signumPct / 100));
       }
       // Provoke Lv10 cast on the target: DEF −55% (5 + 5×lv), matching the
       // engine's Provoke convention (def_percent scales both hard and soft DEF

@@ -245,6 +245,20 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **PS Signum Crucis (AL_CRUCIS) rework** — the target-debuff toggle was
+  applying a flat −35% via `def_percent` (which wrongly scales both hard *and*
+  soft DEF) and gating on `race === "Undead"`. Corrected to the PS values in
+  `ps_skill_db.json` (id 32): a **hard-DEF-only** reduction of `10 + 4×lv`
+  → **−50% at Lv10**, applied to `target.def_` in `routes/calculate.ts`, and
+  gated on **Undead-element (idx 9) or Demon-race** (Undead is an element, not
+  a race — Demon monsters of any element now qualify). Stacks with Provoke.
+  Confirmed against [wiki.payonstories.com/Signum_Crucis](https://wiki.payonstories.com/Signum_Crucis)
+  and this repo's `ps_skill_db.json`; the two disagree on the level curve (the
+  wiki summary showed a 5-level 14→50 curve, `ps_skill_db.json` lists 10 levels
+  as `10 + 4×lv`), so the in-repo data was treated as canonical — matches the
+  engine's existing (previously dead) `SC_CRUCIS` formula in `targetUtils.js`.
+  UI (`BuildEditor.tsx`): `signumApplicable` now checks element/race, and the
+  label/tooltip read "−50% hard DEF (10 + 4×lv)". Toggle assumes Lv10.
 - **PS Bleeding revamp** — purely data/item-layer changes; no new engine
   modifier code required. Six item script overrides in `ps_item_overrides.json`
   (Breeze Card ATK 5→8 / bleed 5%→2%; Hatii Claw bleed 2%→5%; Hakujin
