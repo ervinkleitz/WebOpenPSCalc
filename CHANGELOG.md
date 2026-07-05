@@ -25,6 +25,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Mobile layout on iPhone** — the content sections (Character, Equipment, Buffs, Target, etc.) had
+  desktop-sized padding on phones, leaving a cramped, off-center column with wasted margins. On small
+  screens the panels now use tighter padding and full width, the monster-stat grid drops to two
+  columns, and a stray-overflow guard keeps the page from shifting sideways.
 - **Modals scroll on iPhone** — the Changelog / Saved builds / Results modals could clip their
   content on small screens and refuse to scroll (a flexbox `min-height` trap, plus `vh` counting
   iOS Safari's address bar). The modal body now scrolls properly and the height tracks the visible

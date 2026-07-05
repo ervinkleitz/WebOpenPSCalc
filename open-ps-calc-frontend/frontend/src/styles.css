@@ -53,6 +53,7 @@ html, body, #root { min-height: 100%; }
 
 body {
   margin: 0;
+  overflow-x: hidden; /* guard: a stray wide child shouldn't shift the whole page left on iPhone */
   background: var(--bg);
   background-image:
     radial-gradient(circle at 15% 0%, rgba(216, 166, 87, 0.05), transparent 45%),
@@ -1048,3 +1049,20 @@ label {
 .stats-loading { color: var(--text-faint); font-size: 0.9rem; }
 .stats-error   { color: #e55; font-size: 0.85rem; }
 .stats-empty   { color: var(--text-faint); font-size: 0.82rem; margin: 0.25rem 0; }
+
+/* ------------------------------------------------------------------ *
+ * iPhone / small-screen content layout.
+ * Placed at the end of the file on purpose: media queries do not add
+ * specificity, so these must come AFTER the base .page/.panel/grid
+ * rules (which live further up) to actually win.
+ * ------------------------------------------------------------------ */
+@media (max-width: 600px) {
+  .page { padding: 0.85rem 0.7rem 1.5rem; }
+  .editor-grid { gap: 0.85rem; }
+  .panel { padding: 1rem; margin-bottom: 0.85rem; }
+  .panel h2 { font-size: 0.95rem; margin-bottom: 0.75rem; }
+  .panel-content { margin-top: 0.75rem; }
+  .panel-highlight { position: static; top: auto; } /* don't stick on a narrow scroll */
+  .ro-stat-grid { gap: 0.5rem; }
+  .sec-stat-grid { grid-template-columns: 1fr 1fr; }
+}
