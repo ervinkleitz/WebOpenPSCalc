@@ -1843,7 +1843,6 @@ export default function BuildEditor() {
                 Quagmire (−AGI/DEX → lower flee)
               </label>
               <select
-                className="mono"
                 value={quagmireLv}
                 onChange={(e) => setTargetMods((m) => ({ ...m, quagmire: Number(e.target.value) }))}
               >
@@ -1864,7 +1863,6 @@ export default function BuildEditor() {
                 Provoke (−DEF)
               </label>
               <select
-                className="mono"
                 value={provokeLv}
                 onChange={(e) => setTargetMods((m) => ({ ...m, provoke: Number(e.target.value) }))}
               >
