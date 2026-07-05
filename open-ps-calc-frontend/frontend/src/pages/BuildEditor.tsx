@@ -1730,25 +1730,13 @@ export default function BuildEditor() {
                         { label: "INT",     value: mobInfo.stats ? String(mobInfo.stats.int) : undefined },
                         { label: "DEX",     value: mobInfo.stats ? String(mobInfo.stats.dex) : undefined },
                         { label: "LUK",     value: mobInfo.stats ? String(mobInfo.stats.luk) : undefined },
-                      ] as { label: string; value?: string }[]).map(({ label, value }) => (
-                        <div key={label} className="sec-stat-card">
+                        { label: "Flee 95%", value: mobDodgeFlee != null ? mobDodgeFlee.toLocaleString() : undefined, title: `FLEE to dodge this monster 95% of the time (mob level + DEX + 75 = ${mobDodgeFlee ?? "?"}). Soft-flee only — Perfect Dodge is separate, and FLEE drops when several mobs attack at once.` },
+                      ] as { label: string; value?: string; title?: string }[]).map(({ label, value, title }) => (
+                        <div key={label} className="sec-stat-card" title={title}>
                           <div className="sec-stat-label">{label}</div>
                           <div className="sec-stat-value">{value ?? "—"}</div>
                         </div>
                       ))}
-                    </div>
-                  )}
-                  {mobDodgeFlee != null && (
-                    <div
-                      className="dodge-note"
-                      title={`Soft-flee only — Perfect Dodge (LUK-based) is separate, and FLEE drops when several monsters attack at once. hit% = 80 + mob HIT (${(mobInfo!.level) + (mobInfo!.stats!.dex)}) − FLEE, floored at 5% → 95% dodge cap.`}
-                    >
-                      FLEE for 95% dodge: <strong>{mobDodgeFlee.toLocaleString()}</strong>
-                      {charStatus?.flee != null && (
-                        charStatus.flee >= mobDodgeFlee
-                          ? <span className="dodge-ok"> — you have {charStatus.flee.toLocaleString()} ✓</span>
-                          : <span className="dodge-under"> — you have {charStatus.flee.toLocaleString()}, need +{(mobDodgeFlee - charStatus.flee).toLocaleString()}</span>
-                      )}
                     </div>
                   )}
                   </>

@@ -14,10 +14,9 @@ instead of release version. Dates are taken from actual git commit history.
   **average time to kill** (HP ÷ estimated DPS, so it folds in ASPD, crit mix and procs — cast +
   after-cast delay for skills). Monster mode only (needs the mob's HP); uses the combined total for
   dual-wield.
-- **"FLEE for 95% dodge" readout** — the monster target panel now shows the FLEE needed to dodge
-  the selected mob 95% of the time (`mob level + DEX + 75`, since incoming hit% floors at 5%),
-  compared against your current FLEE with an over/under indicator. Soft-flee only (Perfect Dodge
-  and the multi-mob FLEE penalty are noted in the tooltip).
+- **"Flee 95%" in the monster stats** — the monster stat grid now includes the FLEE needed to dodge
+  the selected mob 95% of the time (`mob level + DEX + 75`, since incoming hit% floors at 5%).
+  Soft-flee only — Perfect Dodge and the multi-mob FLEE penalty are noted in the tooltip.
 - **Wildcard "Type" cards** — the weapon wildcard mix gains a fourth category, **Type**, for
   monster-family "Bane" cards (Orc / Goblin / Kobold / Golem-Bane, etc. — +30% physical damage to
   that family via `bAddRace2`). It applies as its own card-fix multiplier alongside Race / Size /
