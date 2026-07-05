@@ -516,6 +516,9 @@ label {
    instead overflows past the grid column, visually overlapping whatever
    sits next to or below it. */
 .field-checkbox label span { display: inline; margin: 0; flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
+/* Leveled target debuffs (Quagmire/Provoke) use a select instead of a checkbox;
+   match their label size to the sibling checkbox-debuff rows (0.85rem). */
+.debuff-field label { font-size: 0.85rem; }
 
 .section-label { display: flex; align-items: center; }
 

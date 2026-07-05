@@ -1838,7 +1838,7 @@ export default function BuildEditor() {
             </div>
 
             <span className="buff-group-label" style={{ display: "block", marginTop: "0.75rem" }}>Debuff skills &amp; statuses</span>
-            <div className="field">
+            <div className="field debuff-field">
               <label title="WZ_QUAGMIRE: cuts the target's AGI/DEX by 10% per level (max 50% at Lv5), lowering its flee. Does NOT guarantee a hit; no effect on bosses; halved vs players.">
                 Quagmire (−AGI/DEX → lower flee)
               </label>
@@ -1859,7 +1859,7 @@ export default function BuildEditor() {
                 <span>Signum Crucis Lv10 (−50% hard DEF)</span>
               </label>
             </div>
-            <div className="field">
+            <div className="field debuff-field">
               <label title="SC_PROVOKE: target DEF −(5 + 5×lv)% (−55% at Lv10). No effect on Boss monsters. Independent of the player's own Auto Berserk self-buff.">
                 Provoke (−DEF)
               </label>
