@@ -1,7 +1,7 @@
 /**
  * defenseFix.js — JS port of core/calculators/modifiers/defense_fix.py
  */
-const { scaleFloor, subtractUniform, floorAt, pmfStats } = require("../../pmf");
+const { scaleFloor, scaleFloorNumRange, subtractUniform, floorAt, pmfStats } = require("../../pmf");
 
 const ELE_INT_TO_KEY = [
   "Ele_Neutral", "Ele_Water", "Ele_Earth", "Ele_Fire",
@@ -115,17 +115,18 @@ function calculateDefenseFix(target, build, gearBonuses, pmf, config, result, op
   }
 
   if (isPdef2) {
-    const factorAvg = 2 * (def1 + vdAvg);
-    pmf = scaleFloor(pmf, factorAvg, 100);
+    // damage = dmg * 2*(def1 + vit_def) / 100, and vit_def is random over
+    // [vdMin, vdMax] → the factor ranges [2*(def1+vdMin), 2*(def1+vdMax)] in
+    // steps of 2. Apply the whole range so the output keeps a real min–max.
+    pmf = scaleFloorNumRange(pmf, 2 * (def1 + vdMin), 2 * (def1 + vdMax), 2, 100);
     pmf = floorAt(pmf, 1);
     const [mn, mx, av] = pmfStats(pmf);
-    result.add_step({ name: "Defense Fix", value: av, min_value: mn, max_value: mx, multiplier: factorAvg / 100, note: `MO_INVESTIGATE pdef=2: ${noteDef} + vit_def avg ${vdAvg} (${noteType})`, formula: `dmg * 2 * (def1+vit_def) / 100`, hercules_ref: "battle.c:4759, 1539" });
+    result.add_step({ name: "Defense Fix", value: av, min_value: mn, max_value: mx, multiplier: (2 * (def1 + vdAvg)) / 100, note: `MO_INVESTIGATE pdef=2: ${noteDef} + vit_def [${vdMin},${vdMax}] (${noteType})`, formula: `dmg * 2 * (def1+vit_def) / 100`, hercules_ref: "battle.c:4759, 1539" });
   } else if (isPdef1) {
-    const factorAvg = def1 + vdAvg;
-    pmf = scaleFloor(pmf, factorAvg, 100);
+    pmf = scaleFloorNumRange(pmf, def1 + vdMin, def1 + vdMax, 1, 100);
     pmf = floorAt(pmf, 1);
     const [mn, mx, av] = pmfStats(pmf);
-    result.add_step({ name: "Defense Fix", value: av, min_value: mn, max_value: mx, multiplier: factorAvg / 100, note: `pdef=1 (def_ratio card): ${noteDef} + vit_def avg ${vdAvg} (${noteType})`, formula: `dmg * (def1+vit_def) / 100`, hercules_ref: "battle.c:5686/5694, 1539" });
+    result.add_step({ name: "Defense Fix", value: av, min_value: mn, max_value: mx, multiplier: (def1 + vdAvg) / 100, note: `pdef=1 (def_ratio card): ${noteDef} + vit_def [${vdMin},${vdMax}] (${noteType})`, formula: `dmg * (def1+vit_def) / 100`, hercules_ref: "battle.c:5686/5694, 1539" });
   } else {
     pmf = scaleFloor(pmf, 100 - def1, 100);
     pmf = subtractUniform(pmf, vdMin, vdMax);

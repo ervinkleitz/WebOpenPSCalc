@@ -25,6 +25,25 @@ function scaleFloor(pmf, num, denom) {
   return out;
 }
 
+// Apply a uniform range of scaling numerators to the pmf: for each numerator
+// num in [numLo, numHi] (step `step`, equally likely), result += floor(v*num/denom).
+// Used where the scaling factor itself varies with the target's random soft DEF
+// (MO_INVESTIGATE and def-ratio cards, where damage = pdef*(def1+vit_def)), so the
+// output keeps a real min–max range instead of collapsing to the average factor.
+function scaleFloorNumRange(pmf, numLo, numHi, step, denom) {
+  if (numLo >= numHi) return scaleFloor(pmf, numLo, denom);
+  const count = Math.floor((numHi - numLo) / step) + 1;
+  const w = 1.0 / count;
+  const out = {};
+  for (let num = numLo; num <= numHi; num += step) {
+    for (const [vStr, p] of Object.entries(pmf)) {
+      const key = Math.floor((Number(vStr) * num) / denom);
+      out[key] = (out[key] || 0) + p * w;
+    }
+  }
+  return out;
+}
+
 function addFlat(pmf, flat) {
   if (flat === 0) return pmf;
   const out = {};
@@ -80,6 +99,7 @@ function pmfMean(pmf) {
 module.exports = {
   uniformPmf,
   scaleFloor,
+  scaleFloorNumRange,
   addFlat,
   convolve,
   subtractUniform,

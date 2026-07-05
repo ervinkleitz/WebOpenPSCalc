@@ -9,6 +9,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Investigate / def-ratio damage now keeps its range** — `MO_INVESTIGATE` and def-ratio
+  (`bDefRatioAtk`) cards scale damage by the target's *soft DEF*, which is random over a range on
+  high-VIT targets. The Defense Fix step was folding that into a single average factor, collapsing
+  the damage to one number; it now applies the full soft-DEF variance so the result shows a real
+  min–max (e.g. Investigate vs a VIT 100 target now reads 5805–6870 instead of a flat ~6337).
+  Targets with no soft-DEF variance (low VIT) still resolve to a single value, so normal attacks
+  are unchanged.
 - **Demon Bane matches Payon Stories** — Demon Bane's ATK bonus now uses the PS-reworked values
   ([wiki.payonstories.com/Demon_Bane](https://wiki.payonstories.com/Demon_Bane)): `+5/lv` plus the
   `(1+BaseLv)/20` per-level base term → **+100 ATK at Lv10 / base 99** vs Undead-element or
