@@ -53,6 +53,7 @@ interface CalcResult {
   normal_attack: SingleResult;
   skill: SingleResult | null;
   selected_skill: { id: number; level: number; label: string };
+  target_hp?: number | null; // monster HP (monster-mode only) for hits-to-kill / time-to-kill
 }
 
 interface Props {
@@ -183,7 +184,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   if (calculating) return <p className="spinner-text">Calculating…</p>;
   if (!calcResult) return <p className="hint-text">Set up a build and target, then calculate damage.</p>;
 
-  const { normal_attack, skill: skillResult, selected_skill } = calcResult;
+  const { normal_attack, skill: skillResult, selected_skill, target_hp } = calcResult;
   const hasAutoBonus = !!normal_attack.has_auto_bonuses;
   const hasSkill = skillResult !== null && selected_skill.id !== 0;
   const primary = hasSkill ? skillResult! : normal_attack;
@@ -242,6 +243,21 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
     ? (vanillaDps !== null && isFinite(vanillaDps))
     : result.dps_valid;
 
+  // Hits to kill (min/avg/max) and time to kill vs a monster's HP. Per-hit damage
+  // uses the displayed branch (or the combined dual-wield total); time-to-kill uses
+  // the estimated DPS, which already folds in ASPD / crit mix / procs (and cast +
+  // after-cast delay for skills). Only shown in monster mode, where HP is known.
+  const killMin = showDwCombined ? combinedMin : activeDamage?.min_damage ?? null;
+  const killAvg = showDwCombined ? Math.round(((combinedMin ?? 0) + (combinedMax ?? 0)) / 2) : activeDamage?.avg_damage ?? null;
+  const killMax = showDwCombined ? combinedMax : activeDamage?.max_damage ?? null;
+  const hitsToKill = (dmg: number | null | undefined) =>
+    target_hp != null && dmg != null && dmg > 0 ? Math.ceil(target_hp / dmg) : null;
+  const hitsBest = hitsToKill(killMax);   // fewest hits — best-case (max) rolls
+  const hitsAvg = hitsToKill(killAvg);
+  const hitsWorst = hitsToKill(killMin);  // most hits — worst-case (min) rolls
+  const timeToKill = target_hp != null && displayDpsValid && displayDps != null && displayDps > 0
+    ? target_hp / displayDps : null;
+
   return (
     <div>
       <div className="summary-headline">
@@ -280,6 +296,18 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           <div className="label">DPS (est.)</div>
           <div className="value">{displayDpsValid && displayDps != null ? displayDps.toFixed(1) : "—"}</div>
         </div>
+        {hitsAvg != null && (
+          <div className="metric metric-range" title={`Hits to kill the ${target_hp!.toLocaleString()}-HP target — min (all max-damage rolls) / average / max (all min-damage rolls).`}>
+            <div className="label">Hits to kill</div>
+            <div className="value range">{hitsBest}<span className="unit">min</span> {hitsAvg} {hitsWorst}<span className="unit">max</span></div>
+          </div>
+        )}
+        {timeToKill != null && (
+          <div className="metric" title="Average time to kill = target HP ÷ estimated DPS (folds in ASPD, crit mix and procs; cast + after-cast delay for skills).">
+            <div className="label">Time to kill</div>
+            <div className="value">{timeToKill.toFixed(1)}<span className="unit">s</span></div>
+          </div>
+        )}
         {activeBranch === "katar" && normal_attack.result.katar_proc_chance != null && (
           <div className="metric">
             <div className="label">2nd hit proc</div>

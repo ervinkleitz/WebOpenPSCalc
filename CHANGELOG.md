@@ -9,6 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Hits to kill & time to kill** — the damage summary now shows, against a selected monster, the
+  **hits to kill** (min / avg / max, from the max / avg / min damage rolls vs the mob's HP) and the
+  **average time to kill** (HP ÷ estimated DPS, so it folds in ASPD, crit mix and procs — cast +
+  after-cast delay for skills). Monster mode only (needs the mob's HP); uses the combined total for
+  dual-wield.
 - **"FLEE for 95% dodge" readout** — the monster target panel now shows the FLEE needed to dodge
   the selected mob 95% of the time (`mob level + DEX + 75`, since incoming hit% floors at 5%),
   compared against your current FLEE with an over/under indicator. Soft-flee only (Perfect Dodge

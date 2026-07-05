@@ -764,6 +764,7 @@ export default function BuildEditor() {
         normal_attack: normalRes,
         skill: skillRes,
         selected_skill: { id: skill.id, level: skill.level, label: skill.label },
+        target_hp: targetMode === "monster" ? (mobInfo?.hp ?? null) : null,
       });
     } catch (e: any) {
       setCalcError(e.message);
