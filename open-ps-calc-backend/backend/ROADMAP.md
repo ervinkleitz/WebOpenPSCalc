@@ -245,6 +245,18 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **PS Demon Bane (AL_DEMONBANE) rework** — Payon Stories buffs Demon Bane
+  ([wiki](https://wiki.payonstories.com/Demon_Bane)) from vanilla `+3/lv` to
+  `+5/lv`, keeping the `(BaseLv+1)/20` per-level base scaling, and adds a new
+  `+4/lv` vs non-Undead/Demon targets. Implemented as a `mastery_ctx_overrides.AL_DEMONBANE`
+  entry on the `PAYON_STORIES` profile: `lv × floor(5 + (BaseLv+1)/20)` vs
+  Undead-element(9)/Demon-race (→ **100 at Lv10/base 99**, vs vanilla 80), else
+  `lv × 4`. Verified end-to-end: Monk (Waghnak[4] + 4× Santa Poring vs Corruptor)
+  auto-attack now matches in-game exactly (547 no-Signum / 640 Signum; was 509/603
+  — the constant post-DEF gap of ~21 ATK × the +80% card multiplier). Also fixed
+  the shared vanilla formula in `masteryFix.js` to floor the per-level multiplier
+  like Hercules (`lv × floor(3 + (BaseLv+1)/20)` = 80, was `trunc(lv × (3 + BaseLv/20))`
+  = 79) so the `standard` profile is correct too.
 - **PS Signum Crucis (AL_CRUCIS) rework** — the target-debuff toggle was
   applying a flat −35% via `def_percent` (which wrongly scales both hard *and*
   soft DEF) and gating on `race === "Undead"`. Corrected to the PS values in

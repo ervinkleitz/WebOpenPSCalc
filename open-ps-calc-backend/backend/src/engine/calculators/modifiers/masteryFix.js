@@ -13,7 +13,8 @@ function vanillaSecondaryBonus(skillName, lv, target, build) {
   if (skillName === "AL_DEMONBANE") {
     if (target.is_pc) return null;
     if (target.race === "Undead" || target.race === "Demon" || target.element === 9) {
-      return Math.trunc(lv * (3 + build.base_level / 20));
+      // Hercules floors the per-level multiplier, then ×lv: lv × floor(3 + (BaseLv+1)/20).
+      return lv * Math.floor(3 + (build.base_level + 1) / 20);
     }
     return null;
   }

@@ -47,6 +47,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Demon Bane matches Payon Stories** — Demon Bane's ATK bonus now uses the PS-reworked values
+  ([wiki.payonstories.com/Demon_Bane](https://wiki.payonstories.com/Demon_Bane)): `+5/lv` plus the
+  `(1+BaseLv)/20` per-level base term → **+100 ATK at Lv10 / base 99** vs Undead-element or
+  Demon-race (up from vanilla's +3/lv → 80), and it now also adds **+4/lv vs all other targets**.
+  Fixes normal-attack and skill damage reading low for Acolyte-class builds vs Demon/Undead — e.g.
+  a Monk vs Corruptor now matches in-game exactly (547, was 509). The vanilla formula's rounding
+  was also corrected to match Hercules (floor the per-level multiplier).
+
 - **ASPD %-bonus stacking** — ASPD-rate bonuses (Two-Hand/One-Hand/Spear Quicken, Adrenaline, etc.)
   and the flat ASPD-potion/`bAspdRate` bonus were applied as two separate multiplicative steps
   (each floored), which undershot the real value — e.g. +30% Quicken and a +20% potion gave

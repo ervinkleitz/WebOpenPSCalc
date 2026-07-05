@@ -173,6 +173,12 @@ motivated several changes beyond a straight 1:1 port:
   `10 + 4×lv`, Undead-element or Demon-race only — checkbox disabled for inapplicable targets),
   Asleep (`SC_SLEEP`: auto-hit + ×2 crit rate), Stunned (`SC_STUN`: auto-hit). State is
   URL-encoded alongside the build so shared links include debuff selections.
+- **PS Demon Bane (AL_DEMONBANE)** — buffed to the Payon Stories values
+  ([wiki](https://wiki.payonstories.com/Demon_Bane)): `lv × floor(5 + (BaseLv+1)/20)` vs
+  Undead-element or Demon-race (**100 ATK at Lv10 / base 99**, up from vanilla's `+3/lv` → 80),
+  plus a new `+4/lv` bonus vs all other targets. Gated by the `payon_stories` profile
+  (`mastery_ctx_overrides`); the `standard` profile keeps the vanilla formula. This is a post-DEF,
+  mastery-type ATK addition — it flows through element and card multipliers.
 - **PS Signum Crucis (AL_CRUCIS)** — corrected to the Payon Stories values: it reduces **hard DEF
   only** by `10 + 4×lv` (**−50% at Lv10**), not the flat −35%-on-combined-DEF it applied before,
   and it affects **Undead-element or Demon-race** targets (Undead is an *element*, so Demon

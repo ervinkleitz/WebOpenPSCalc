@@ -101,6 +101,21 @@ const PS_PASSIVE_OVERRIDES = {
   SC_EXPLOSIONSPIRITS: { cri_base: 175, cri_per_lv: 25 },                                      // PS rework: 20%/22.5%/25%/27.5%/30% (was 10%…20%)
 };
 
+// PS Demon Bane rework (wiki.payonstories.com/Demon_Bane): buffed from vanilla
+// +3/lv to +5/lv vs Undead-element / Demon-race (keeping the (1+BaseLv)/20
+// per-level base scaling → 5×lv × floor(...) = 100 ATK at Lv10 / base 99), and
+// adds a NEW +4/lv vs all other (non-Undead/Demon) targets that vanilla lacked.
+const PS_MASTERY_CTX_OVERRIDES = {
+  AL_DEMONBANE: (lv, target, ctx) => {
+    if (target.is_pc) return null;
+    const baseLv = ctx && ctx.base_level != null ? ctx.base_level : 1;
+    if (target.race === "Undead" || target.race === "Demon" || target.element === 9) {
+      return lv * Math.floor(5 + (baseLv + 1) / 20);
+    }
+    return lv * 4;
+  },
+};
+
 const PS_JOB_BONUSES = {
   24: [ // Gunslinger
     [1, "dex"], [2, "luk"], [3, "agi"], [4, "luk"],
@@ -411,6 +426,7 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   sn_sp_bonus: PS_SN_SP_BONUS,
   passive_resists: PS_PASSIVE_RESISTS,
   passive_overrides: PS_PASSIVE_OVERRIDES,
+  mastery_ctx_overrides: PS_MASTERY_CTX_OVERRIDES,
   ps_job_bonuses: PS_JOB_BONUSES,
   weapon_ratios: PS_BF_WEAPON_RATIOS,
   weapon_vanilla_ok: PS_WEAPON_VANILLA_OK,
