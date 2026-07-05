@@ -297,9 +297,19 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           <div className="value">{displayDpsValid && displayDps != null ? displayDps.toFixed(1) : "—"}</div>
         </div>
         {hitsAvg != null && (
-          <div className="metric metric-range" title={`Hits to kill the ${target_hp!.toLocaleString()}-HP target — min (all max-damage rolls) / average / max (all min-damage rolls).`}>
+          <div className="metric metric-range" title={`Hits to kill the ${target_hp!.toLocaleString()}-HP target — from best-case (all max-damage rolls) to worst-case (all min-damage rolls).`}>
             <div className="label">Hits to kill</div>
-            <div className="value range">{hitsBest}<span className="unit">min</span> {hitsAvg} {hitsWorst}<span className="unit">max</span></div>
+            <div className="value range">
+              {hitsBest}<span className="unit">min</span>
+              {" – "}
+              {hitsWorst}<span className="unit">max</span>
+            </div>
+          </div>
+        )}
+        {hitsAvg != null && (
+          <div className="metric" title="Average hits to kill, from the average damage roll.">
+            <div className="label">Avg hits</div>
+            <div className="value">{hitsAvg}</div>
           </div>
         )}
         {timeToKill != null && (
