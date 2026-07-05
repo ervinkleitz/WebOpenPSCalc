@@ -1836,27 +1836,20 @@ export default function BuildEditor() {
             </div>
 
             <span className="buff-group-label" style={{ display: "block", marginTop: "0.75rem" }}>Debuff skills &amp; statuses</span>
-            <div className="field field-checkbox">
+            <div className="field">
               <label title="WZ_QUAGMIRE: cuts the target's AGI/DEX by 10% per level (max 50% at Lv5), lowering its flee. Does NOT guarantee a hit; no effect on bosses; halved vs players.">
-                <input
-                  type="checkbox"
-                  checked={quagmireLv > 0}
-                  onChange={(e) => setTargetMods((m) => ({ ...m, quagmire: e.target.checked ? 5 : 0 }))}
-                />
-                <span>Quagmire (−AGI/DEX → lower flee)</span>
+                Quagmire (−AGI/DEX → lower flee)
               </label>
-              {quagmireLv > 0 && (
-                <select
-                  className="mono"
-                  style={{ marginLeft: "0.5rem" }}
-                  value={quagmireLv}
-                  onChange={(e) => setTargetMods((m) => ({ ...m, quagmire: Number(e.target.value) }))}
-                >
-                  {[1, 2, 3, 4, 5].map((lv) => (
-                    <option key={lv} value={lv}>Lv{lv}{lv === 5 ? " (max)" : ""}</option>
-                  ))}
-                </select>
-              )}
+              <select
+                className="mono"
+                value={quagmireLv}
+                onChange={(e) => setTargetMods((m) => ({ ...m, quagmire: Number(e.target.value) }))}
+              >
+                <option value={0}>Off</option>
+                {[1, 2, 3, 4, 5].map((lv) => (
+                  <option key={lv} value={lv}>Lv {lv}{lv === 5 ? " (max)" : ""}</option>
+                ))}
+              </select>
             </div>
             <div className="field field-checkbox">
               <label title={signumApplicable ? "AL_CRUCIS Lv10 (PS): hard DEF −50% (10 + 4×lv). Undead-element or Demon-race only." : "Signum Crucis only affects Undead-element or Demon-race targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>
