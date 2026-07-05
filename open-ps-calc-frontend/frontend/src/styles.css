@@ -825,6 +825,7 @@ label {
   max-width: 640px;
   width: 100%;
   max-height: min(80vh, 720px);
+  max-height: min(85dvh, 720px); /* dvh tracks iOS' shrinking viewport; vh above is the fallback */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -851,6 +852,8 @@ label {
 .modal-body {
   padding: 1.2rem 1.4rem 1.6rem;
   overflow-y: auto;
+  min-height: 0; /* let the flex child shrink below content height so it actually scrolls (iOS) */
+  -webkit-overflow-scrolling: touch;
 }
 
 .results-modal { max-width: 760px; }

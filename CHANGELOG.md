@@ -25,6 +25,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Modals scroll on iPhone** — the Changelog / Saved builds / Results modals could clip their
+  content on small screens and refuse to scroll (a flexbox `min-height` trap, plus `vh` counting
+  iOS Safari's address bar). The modal body now scrolls properly and the height tracks the visible
+  viewport (`dvh`).
 - **Investigate / def-ratio damage now keeps its range** — `MO_INVESTIGATE` and def-ratio
   (`bDefRatioAtk`) cards scale damage by the target's *soft DEF*, which is random over a range on
   high-VIT targets. The Defense Fix step was folding that into a single average factor, collapsing
