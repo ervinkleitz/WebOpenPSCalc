@@ -8,7 +8,7 @@ export interface BaseStats {
 }
 
 export interface WildcardSlot {
-  type: "race" | "size" | "ele";
+  type: "race" | "size" | "ele" | "family"; // "family" = monster-family/Type card (Orc/Goblin/Kobold/Golem-Bane, bAddRace2)
   bonus: number;
 }
 

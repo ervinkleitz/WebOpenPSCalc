@@ -18,9 +18,9 @@ import {
 // element convention and the custom-target element select below.
 const ELEMENT_NAMES = ["Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Dark", "Ghost", "Undead"] as const;
 
-const WILDCARD_BONUS_OPTIONS = [4, 10, 15, 20];
+const WILDCARD_BONUS_OPTIONS = [4, 10, 15, 20, 30];
 const WILDCARD_DEFAULT_BONUS: Record<WildcardSlot["type"], number> = {
-  race: 20, size: 15, ele: 20,
+  race: 20, size: 15, ele: 20, family: 30,
 };
 
 const STATS = ["str", "agi", "vit", "int", "dex", "luk"] as const;
@@ -740,7 +740,7 @@ export default function BuildEditor() {
         const slotCount = (itemCache[equippedId]?.slots ?? 0) || stored.length;
         for (let i = 0; i < slotCount; i++) {
           const ws = stored[i] ?? WILDCARD_DEFAULT;
-          const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : "Ele_All";
+          const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : ws.type === "family" ? "Type_All" : "Ele_All";
           wildcardBonuses[key] = (wildcardBonuses[key] || 0) + ws.bonus;
           if (ws.type === "size") wildcardBonuses["_batk"] = (wildcardBonuses["_batk"] || 0) + 5;
         }
@@ -1292,6 +1292,7 @@ export default function BuildEditor() {
                                     <option value="race">Race</option>
                                     <option value="size">Size</option>
                                     <option value="ele">Element</option>
+                                    <option value="family">Type</option>
                                   </select>
                                   {ws.type !== "size" ? (
                                     <select

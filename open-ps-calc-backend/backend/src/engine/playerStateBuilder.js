@@ -34,6 +34,10 @@ function resolvePlayerState(build, config, profile = null) {
                                      gb.add_race.RC_NonBoss = (gb.add_race.RC_NonBoss || 0) + n; }
       else if (key === "Size_All") { for (const s of WC_SIZES) gb.add_size[s] = (gb.add_size[s] || 0) + n; }
       else if (key === "Ele_All")  { for (const e of WC_ELES)  gb.add_ele[e]  = (gb.add_ele[e]  || 0) + n; }
+      // Type = monster-family card (Orc/Goblin/Kobold/Golem-Bane, bAddRace2). The
+      // wildcard assumes the slotted card matches the target's family, so it
+      // applies unconditionally like the other _All wildcard bonuses.
+      else if (key === "Type_All") gb.add_type += n;
       else if (key.startsWith("RC_"))   gb.add_race[key] = (gb.add_race[key] || 0) + n;
       else if (key.startsWith("Size_")) gb.add_size[key] = (gb.add_size[key] || 0) + n;
       else if (key.startsWith("Ele_"))  gb.add_ele[key]  = (gb.add_ele[key]  || 0) + n;

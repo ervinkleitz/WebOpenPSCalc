@@ -208,6 +208,7 @@ function createGearBonuses(overrides = {}) {
     add_size: {},
     add_ele: {},
     add_atk_ele: {},
+    add_type: 0, // monster-family (bAddRace2/RC2) % damage — currently only fed by the wildcard "Type" mix
     ignore_def_rate: {},
     ignore_def_ele: {},
     ignore_mdef_rate: {},

@@ -7,6 +7,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-05
 
+### Added
+
+- **Wildcard "Type" cards** — the weapon wildcard mix gains a fourth category, **Type**, for
+  monster-family "Bane" cards (Orc / Goblin / Kobold / Golem-Bane, etc. — +30% physical damage to
+  that family via `bAddRace2`). It applies as its own card-fix multiplier alongside Race / Size /
+  Element and defaults to 30%. Since the mix is a "what card would I slot" simulator, it applies to
+  the selected target (i.e. assumes a matching family card).
+
 ### Fixed
 
 - **Investigate / def-ratio damage now keeps its range** — `MO_INVESTIGATE` and def-ratio

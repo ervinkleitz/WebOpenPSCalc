@@ -31,10 +31,13 @@ function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf,
   const bossBonus = addRace[bossRc] || 0;
   const longBonus = isRanged ? gearBonuses.long_atk_rate : 0;
   const atkEleBonus = gearBonuses.add_atk_ele[atkEleKey] || 0;
+  // Monster-family (bAddRace2 / "Bane" cards) damage — a separate multiplicative
+  // factor from race/ele/size. Currently only fed by the wildcard "Type" mix.
+  const typeBonus = gearBonuses.add_type || 0;
 
   const [, , avIn] = pmfStats(pmf);
 
-  for (const bonus of [raceBonus, eleBonus, sizeBonus, bossBonus, longBonus, atkEleBonus]) {
+  for (const bonus of [raceBonus, eleBonus, sizeBonus, bossBonus, longBonus, atkEleBonus, typeBonus]) {
     if (bonus) pmf = scaleFloor(pmf, 100 + bonus, 100);
   }
 
@@ -52,7 +55,7 @@ function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf,
   const multiplier = avIn ? av / avIn : 1.0;
   result.add_step({
     name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier,
-    note: `Race ${raceRc}+${raceBonus}%  ${target.is_boss ? "Boss" : "NonBoss"}+${bossBonus}%  Ele+${addEle[eleKey] || 0}%  Size+${addSize[sizeKey] || 0}%${isRanged ? `  LongAtk+${longBonus}%` : ""}`,
+    note: `Race ${raceRc}+${raceBonus}%  ${target.is_boss ? "Boss" : "NonBoss"}+${bossBonus}%  Ele+${addEle[eleKey] || 0}%  Size+${addSize[sizeKey] || 0}%${isRanged ? `  LongAtk+${longBonus}%` : ""}${typeBonus ? `  Type+${typeBonus}%` : ""}`,
     formula: `dmg × multiple race/ele/size/boss/long/atk-ele factors`,
     hercules_ref: "battle.c:1183-1198",
   });
