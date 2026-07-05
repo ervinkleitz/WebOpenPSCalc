@@ -97,7 +97,7 @@ export interface TargetMods {
   lex_aeterna: boolean;
   quagmire: number; // WZ_QUAGMIRE level 0–5 (0 = off). Legacy shared URLs may carry a boolean.
   signum_crucis: boolean;
-  provoke: boolean;
+  provoke: number; // SC_PROVOKE level 0–10 (0 = off). Legacy shared URLs may carry a boolean.
   sleep: boolean;
   stun: boolean;
 }

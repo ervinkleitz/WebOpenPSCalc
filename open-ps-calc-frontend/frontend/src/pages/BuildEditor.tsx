@@ -349,7 +349,7 @@ const DEFAULT_TARGET_MODS: TargetMods = {
   lex_aeterna: false,
   quagmire: 0,
   signum_crucis: false,
-  provoke: false,
+  provoke: 0,
   sleep: false,
   stun: false,
 };
@@ -453,6 +453,8 @@ export default function BuildEditor() {
 
   // Quagmire level (0–5). Tolerant of the legacy boolean shape from older shared URLs (true → max 5).
   const quagmireLv = (targetMods.quagmire as unknown) === true ? 5 : (Number(targetMods.quagmire) || 0);
+  // Provoke level (0–10). Legacy boolean from older shared URLs maps true → max 10.
+  const provokeLv = (targetMods.provoke as unknown) === true ? 10 : (Number(targetMods.provoke) || 0);
 
   const totalStatPoints = useMemo(
     () => getTotalStatPoints(data.base_level, data.job_id),
@@ -1857,11 +1859,20 @@ export default function BuildEditor() {
                 <span>Signum Crucis Lv10 (−50% hard DEF)</span>
               </label>
             </div>
-            <div className="field field-checkbox">
-              <label title="SC_PROVOKE Lv10: target DEF −55% (5 + 5×lv). No effect on Boss monsters. Independent of the player's own Auto Berserk self-buff.">
-                <input type="checkbox" checked={targetMods.provoke} onChange={(e) => setTargetMods((m) => ({ ...m, provoke: e.target.checked }))} />
-                <span>Provoke Lv10 (−55% DEF)</span>
+            <div className="field">
+              <label title="SC_PROVOKE: target DEF −(5 + 5×lv)% (−55% at Lv10). No effect on Boss monsters. Independent of the player's own Auto Berserk self-buff.">
+                Provoke (−DEF)
               </label>
+              <select
+                className="mono"
+                value={provokeLv}
+                onChange={(e) => setTargetMods((m) => ({ ...m, provoke: Number(e.target.value) }))}
+              >
+                <option value={0}>Off</option>
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
+                  <option key={lv} value={lv}>Lv {lv}{lv === 10 ? " (max)" : ""}</option>
+                ))}
+              </select>
             </div>
             <div className="field field-checkbox">
               <label title="SC_SLEEP: target cannot evade (auto-hit) and crit rate is doubled">

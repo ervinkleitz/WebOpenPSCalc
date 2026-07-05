@@ -109,13 +109,16 @@ router.post("/", (req: Request, res: Response) => {
         const signumPct = 50; // Lv10: 10 + 4×10
         target.def_ = Math.max(0, target.def_ - Math.floor(target.def_ * signumPct / 100));
       }
-      // Provoke Lv10 cast on the target: DEF −55% (5 + 5×lv), matching the
-      // engine's Provoke convention (def_percent scales both hard and soft DEF
-      // in defenseFix). Boss-protocol monsters are immune. This only touches
-      // the target object — it is entirely separate from a player's self-cast
-      // Provoke / Auto Berserk, which lives on the player's own status.
-      if (targetModsInput.provoke && !target.is_boss) {
-        target.def_percent = Math.max(0, (target.def_percent ?? 100) - 55);
+      // Provoke cast on the target: DEF −(5 + 5×lv)% (−55% at Lv10), matching
+      // the engine's Provoke convention (def_percent scales both hard and soft
+      // DEF in defenseFix). Boss-protocol monsters are immune. Accepts a level
+      // 1–10; a legacy boolean `true` from older shared links maps to max (10).
+      // Only touches the target — separate from a player's self-cast Provoke /
+      // Auto Berserk, which lives on the player's own status.
+      const provokeLv = targetModsInput.provoke === true ? 10
+        : Math.max(0, Math.min(10, Number(targetModsInput.provoke) || 0));
+      if (provokeLv > 0 && !target.is_boss) {
+        target.def_percent = Math.max(0, (target.def_percent ?? 100) - (5 + 5 * provokeLv));
       }
       // Quagmire (PS, WZ_QUAGMIRE): the marshland cuts the target's AGI and DEX
       // by 10% per level (max 50% at Lv5), which lowers its flee — it does NOT

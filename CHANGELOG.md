@@ -31,10 +31,11 @@ instead of release version. Dates are taken from actual git commit history.
 - **Auto Berserk (self buff)** — Swordman-line jobs (Swordman / Knight / Crusader / Lord Knight /
   Paladin) get an "Auto Berserk" toggle under Buffs → Self buffs. It models the self-cast Provoke
   Lv10 the skill grants while HP < 25%: +32% base ATK (2 + 3×lv) and −55% self-DEF (5 + 5×lv).
-- **Provoke (target debuff)** — a "Provoke Lv10 (−55% DEF)" toggle in the target debuff panel,
-  reducing the target's DEF by 55% (scales both hard and soft DEF). No effect on Boss monsters.
-  Kept on a separate status key/object from the player's Auto Berserk, so the two never interfere —
-  turning on Auto Berserk only affects the player's ATK, and target Provoke only affects the target.
+- **Provoke (target debuff)** — a selectable Lv 1–10 Provoke in the target debuff panel, reducing
+  the target's DEF by `5 + 5×lv`% (−55% at Lv 10; scales both hard and soft DEF). No effect on Boss
+  monsters. Kept on a separate status key/object from the player's Auto Berserk, so the two never
+  interfere — turning on Auto Berserk only affects the player's ATK, and target Provoke only
+  affects the target.
 
 ### Changed
 
