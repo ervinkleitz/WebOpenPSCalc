@@ -245,6 +245,37 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **Weapon card wildcard "Type" category (`bAddRace2`)** — the weapon-card
+  wildcard mix gained a fourth category, **Type**, for monster-family "Bane"
+  cards (Orc / Goblin / Kobold / Golem-Bane, +30% physical damage). Added an
+  `add_type` field to `createGearBonuses` (`models.js`), fed by the `Type_All`
+  wildcard key in `playerStateBuilder.js`, and consumed as its own
+  multiplicative `typeBonus` factor in `cardFix.js` (separate from
+  race/ele/size). Applies to the selected target since the mix simulates
+  "what card would I slot". Also fixed the wildcard aggregation dropping the
+  mix on a weapon switch — it now iterates the equipped weapon's live slot
+  count instead of a stale stored `wildcard_slots` copy.
+- **Soft-DEF variance preserved through def-ratio / Investigate** — added
+  `scaleFloorNumRange(pmf, numLo, numHi, step, denom)` to `pmf.js`;
+  `defenseFix.js` now uses it for `MO_INVESTIGATE` (`isPdef2`) and
+  `bDefRatioAtk` cards (`isPdef1`: Ice Pick / Frozen / Thanatos) so damage
+  scaled by a high-VIT target's *random* soft DEF keeps its min–max range
+  instead of collapsing to the average factor (e.g. Investigate vs a VIT 100
+  target now reads ~5805–6870, not a flat ~6337). Low-VIT targets with no
+  soft-DEF variance still resolve to a single value.
+- **ASPD %-bonus stacking corrected** — percentage ASPD-rate bonuses
+  (Two-Hand / One-Hand / Spear Quicken, Adrenaline, potion `bAspdRate`) were
+  applied as two separate floored multiplications, undershooting the real
+  value (+30% Quicken and +20% potion gave ×0.70×0.80 = ×0.56 instead of the
+  additive ×0.50). `bonus_aspd_percent` is now folded into `scAspdRate` and
+  the combined rate is applied once, matching pre-renewal behaviour (fixed
+  ASPD reading a couple of points low on buffed builds — e.g. Two-Hand
+  Quicken not moving ASPD at all on a Knight/Claymore build).
+- **Provoke as a target debuff** — `SC_PROVOKE` (Lv 1–10) added to the target
+  debuff panel, lowering the target's soft DEF so it takes more physical
+  damage. URL-encoded alongside the build and kept independent of the
+  player's own Auto Berserk / Provoke self-buff (turning on one no longer
+  toggles the other).
 - **PS Demon Bane (AL_DEMONBANE) rework** — Payon Stories buffs Demon Bane
   ([wiki](https://wiki.payonstories.com/Demon_Bane)) from vanilla `+3/lv` to
   `+5/lv`, keeping the `(BaseLv+1)/20` per-level base scaling, and adds a new

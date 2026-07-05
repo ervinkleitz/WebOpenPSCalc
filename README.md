@@ -169,7 +169,9 @@ motivated several changes beyond a straight 1:1 port:
   hard DEF and grant auto-hit). Lex Aeterna checkbox applies ×2 to all damage branches with a
   visible step in each breakdown. Debuff skill/status checkboxes: Quagmire (selectable Lv 1–5,
   cuts the target's AGI/DEX by 10%/lv → lower flee; boss-immune, halved vs players — it does *not*
-  auto-hit), Signum Crucis Lv10 (hard DEF −50% per PS's
+  auto-hit), Provoke (selectable Lv 1–10, `SC_PROVOKE` — lowers the target's soft DEF so it takes
+  more physical damage; stacks with Signum Crucis and is independent of the player's own Auto
+  Berserk/Provoke self-buff), Signum Crucis Lv10 (hard DEF −50% per PS's
   `10 + 4×lv`, Undead-element or Demon-race only — checkbox disabled for inapplicable targets),
   Asleep (`SC_SLEEP`: auto-hit + ×2 crit rate), Stunned (`SC_STUN`: auto-hit). State is
   URL-encoded alongside the build so shared links include debuff selections.
@@ -217,6 +219,29 @@ motivated several changes beyond a straight 1:1 port:
   listed in the description but never wired into `PS_PASSIVE_RESISTS`); all three
   shotgun skills (`GS_DUST`, `GS_FULLBUSTER`, `GS_SPREADATTACK`) now also grant the
   resist when a Grenade Launcher is equipped, not just a Shotgun.
+- **Weapon card "wildcard" mix** — each weapon card slot can be set to a
+  *wildcard* category (Race / Size / Element / Type) instead of a specific
+  card, to model "what if I slot the matching card" without picking one.
+  Race / Size / Element resolve against the selected target's actual
+  race/size/element card bonus; **Type** covers monster-family "Bane" cards
+  (Orc / Goblin / Kobold / Golem-Bane — `bAddRace2`, +30% physical damage to
+  that family) applied as its own card-fix factor via a new `add_type` gear
+  bonus. Because the mix is a slotting simulator, wildcards resolve against
+  the current target. The mix survives weapon switches (aggregation iterates
+  the equipped weapon's live slot count, not a stale stored copy).
+- **Kill-time readouts in the damage summary** — alongside the damage range
+  and DPS, the summary shows (in monster mode, where HP is known) **hits to
+  kill** as a best–worst range with a separate **average**, and **time to
+  kill** (target HP ÷ estimated DPS, so it folds in ASPD, crit mix and procs;
+  cast + after-cast delay for skills). The monster-stat grid, shown inline in
+  the Target panel, also lists the **FLEE needed to dodge the target 95%** of
+  the time (`mob level + DEX + 75`, soft-flee only).
+- **Manual overrides & fuller build UI** — a manual +stat panel (raw
+  STR/AGI/VIT/INT/DEX/LUK added on top of the computed totals), one-click
+  "max" toggles for passive skills and Bard/Dancer buffs, and the selected
+  monster's live stats (DEF / MDEF / VIT / element / etc.) shown inline in the
+  Target panel. Mobile layout tuned for small screens (tighter panel padding,
+  full-width sections, scrollable modals on iOS).
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.
