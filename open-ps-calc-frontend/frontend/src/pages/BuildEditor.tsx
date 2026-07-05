@@ -456,6 +456,12 @@ export default function BuildEditor() {
   // Provoke level (0–10). Legacy boolean from older shared URLs maps true → max 10.
   const provokeLv = (targetMods.provoke as unknown) === true ? 10 : (Number(targetMods.provoke) || 0);
 
+  // FLEE needed to dodge the selected monster 95% of the time. Incoming hit% =
+  // 80 + mobHIT − FLEE, floored at 5% (→ 95% is the dodge ceiling), and a mob's
+  // HIT = base level + DEX. So min FLEE = mobHIT + 75. Soft-flee only (Perfect
+  // Dodge is separate; FLEE also drops when several mobs target you at once).
+  const mobDodgeFlee = mobInfo?.stats ? mobInfo.level + mobInfo.stats.dex + 75 : null;
+
   const totalStatPoints = useMemo(
     () => getTotalStatPoints(data.base_level, data.job_id),
     [data.base_level, data.job_id],
@@ -1729,6 +1735,19 @@ export default function BuildEditor() {
                           <div className="sec-stat-value">{value ?? "—"}</div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {mobDodgeFlee != null && (
+                    <div
+                      className="dodge-note"
+                      title={`Soft-flee only — Perfect Dodge (LUK-based) is separate, and FLEE drops when several monsters attack at once. hit% = 80 + mob HIT (${(mobInfo!.level) + (mobInfo!.stats!.dex)}) − FLEE, floored at 5% → 95% dodge cap.`}
+                    >
+                      FLEE for 95% dodge: <strong>{mobDodgeFlee.toLocaleString()}</strong>
+                      {charStatus?.flee != null && (
+                        charStatus.flee >= mobDodgeFlee
+                          ? <span className="dodge-ok"> — you have {charStatus.flee.toLocaleString()} ✓</span>
+                          : <span className="dodge-under"> — you have {charStatus.flee.toLocaleString()}, need +{(mobDodgeFlee - charStatus.flee).toLocaleString()}</span>
+                      )}
                     </div>
                   )}
                   </>

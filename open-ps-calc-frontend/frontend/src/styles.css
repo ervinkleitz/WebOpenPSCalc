@@ -984,6 +984,11 @@ label {
   text-align: right;
 }
 
+.dodge-note { margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-dim); cursor: help; }
+.dodge-note strong { color: var(--text); font-family: var(--mono); }
+.dodge-ok { color: var(--good); }
+.dodge-under { color: var(--crit); }
+
 /* ── Stats page ─────────────────────────────────────────── */
 .stats-login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
 .stats-login { display: flex; flex-direction: column; gap: 0.75rem; width: 280px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; }
