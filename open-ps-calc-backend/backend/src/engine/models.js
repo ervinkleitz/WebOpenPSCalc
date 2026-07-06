@@ -116,6 +116,7 @@ function createTarget(overrides = {}) {
     luk: 0,
     agi: 0,
     is_pc: false,
+    race2: [], // RC2 monster-family memberships (e.g. ["RC2_Orc"]) — used by bAddRace2 "Bane" cards
     targeted_count: 1,
     sub_race: {},
     sub_ele: {},
@@ -208,7 +209,8 @@ function createGearBonuses(overrides = {}) {
     add_size: {},
     add_ele: {},
     add_atk_ele: {},
-    add_type: 0, // monster-family (bAddRace2/RC2) % damage — currently only fed by the wildcard "Type" mix
+    add_type: 0, // monster-family (bAddRace2/RC2) % damage from the wildcard "Type" mix (applies unconditionally)
+    add_race2: {}, // real bAddRace2 "Bane" cards, keyed by RC2 family (e.g. RC2_Orc) — applied only when the target is in that family
     ignore_def_rate: {},
     ignore_def_ele: {},
     ignore_mdef_rate: {},

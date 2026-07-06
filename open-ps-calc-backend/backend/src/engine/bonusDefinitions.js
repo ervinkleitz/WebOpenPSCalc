@@ -136,6 +136,9 @@ const BONUS1 = {
 
 const BONUS2 = {
   bAddRace: def((r, v) => `Increases physical damage against ${race(r)} by ${v}%.`, "add_race", "dict"),
+  // Monster-family "Bane" cards (Orc Lady, Goblin/Kobold Leader, Lava Golem, etc.).
+  // Keyed by RC2 family; applied only when the target mob belongs to that family.
+  bAddRace2: def((rc2, v) => `Increases physical damage against the ${String(rc2).replace(/^RC2_/, "")} monster family by ${v}%.`, "add_race2", "dict"),
   bSubEle: def((e, v) => (v > 0 ? `Reduces damage from ${ele(e)}-element attacks by ${v}%.` : `Increases damage from ${ele(e)}-element attacks by ${Math.abs(v)}%.`), "sub_ele", "dict"),
   bSubRace: def((r, v) => (v > 0 ? `Reduces damage from ${race(r)} by ${v}%.` : `Increases damage from ${race(r)} by ${Math.abs(v)}%.`), "sub_race", "dict"),
   bAddSize: def((s, v) => `Increases physical damage against ${size(s)} monsters by ${v}%.`, "add_size", "dict"),

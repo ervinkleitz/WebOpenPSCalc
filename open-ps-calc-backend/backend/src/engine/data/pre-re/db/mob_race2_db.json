@@ -1,0 +1,12 @@
+{
+  "_source": "rAthena db/pre-re/mob_race2_db.txt @ e9aea14 (pre-renewal Race2ID -> mob IDs)",
+  "_note": "Monster racial groups (RC2). Maps each RC2 family to its member mob IDs. Consumed by cardFix for bAddRace2 'Bane' cards (Orc Lady -> RC2_Orc, Goblin/Kobold Leader -> RC2_Goblin/RC2_Kobold, Lava Golem -> RC2_Golem, etc.). Base pre-re list; Payon-Stories-custom mobs added to a family would need extra entries here.",
+  "groups": {
+    "RC2_Goblin": [1122, 1123, 1124, 1125, 1126, 1258, 1299],
+    "RC2_Kobold": [1133, 1134, 1135, 1282, 1296],
+    "RC2_Orc": [1023, 1152, 1153, 1189, 1213, 1273],
+    "RC2_Golem": [1040, 1278, 1366, 1497, 2024],
+    "RC2_Guardian": [1285, 1286, 1287],
+    "RC2_Ninja": [1315, 1364, 1401, 1560]
+  }
+}

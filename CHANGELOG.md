@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-06
+
+### Fixed
+
+- **Monster-family "Bane" cards now apply** — Orc Lady, Goblin Leader, Kobold Leader, Lava Golem
+  (and other `bAddRace2` cards) were doing nothing, because the calculator had no monster-family
+  data and silently dropped the bonus. The engine now knows each mob's racial group (RC2) and
+  applies these cards' bonus (e.g. +30% physical damage) when the target belongs to that family —
+  and correctly gives nothing against other targets. Verified end-to-end: an Orc Lady card reads
+  +30% vs Orc-family mobs and 0% vs everything else. This is separate from the weapon-card wildcard
+  "Type" mix, which still applies unconditionally as a slotting simulation.
+
 ## 2026-07-05
 
 ### Added

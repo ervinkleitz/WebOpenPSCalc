@@ -245,6 +245,21 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **Monster-family (RC2) "Bane" cards implemented** — real `bAddRace2` cards
+  (Orc Lady, Goblin/Kobold Leader, Lava Golem, plus RC2_Guardian/RC2_Ninja
+  cards) were parsed but silently dropped: there was no `bAddRace2` routing and
+  no mob→family data anywhere in the port (Hercules/rAthena migrated it out of
+  the DB files). Added end-to-end: `bAddRace2` → `add_race2` dict in
+  `bonusDefinitions.js`; `add_race2: {}` in `createGearBonuses` and `race2: []`
+  on targets in `models.js`; a new `db/mob_race2_db.json` (pre-re RC2 groups —
+  Goblin/Kobold/Orc/Golem/Guardian/Ninja, recovered from rAthena's
+  pre-migration `db/pre-re/mob_race2_db.txt`) with a cached reverse map in
+  `dataLoader.getMonster` that attaches `target.race2`; and application in
+  `cardFix.js` as its own multiplier, gated on the target's family. Verified
+  end-to-end (Orc Lady card = +30% vs Orc-family mobs, 0% otherwise). Separate
+  from the wildcard "Type"/`add_type` mix, which still applies unconditionally
+  as a slotting simulation. Payon-Stories-custom mobs added to a family would
+  need extra entries in the data file.
 - **Weapon card wildcard "Type" category (`bAddRace2`)** — the weapon-card
   wildcard mix gained a fourth category, **Type**, for monster-family "Bane"
   cards (Orc / Goblin / Kobold / Golem-Bane, +30% physical damage). Added an

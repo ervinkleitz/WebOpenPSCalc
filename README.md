@@ -228,7 +228,11 @@ motivated several changes beyond a straight 1:1 port:
   that family) applied as its own card-fix factor via a new `add_type` gear
   bonus. Because the mix is a slotting simulator, wildcards resolve against
   the current target. The mix survives weapon switches (aggregation iterates
-  the equipped weapon's live slot count, not a stale stored copy).
+  the equipped weapon's live slot count, not a stale stored copy). Separately,
+  **real monster-family "Bane" cards** (Orc Lady, Goblin/Kobold Leader, Lava
+  Golem — `bAddRace2`) now apply too, gated on the target mob's RC2 family via a
+  recovered `mob_race2_db` (the mapping Hercules/rAthena migrated out of their
+  DB files); the card does nothing against targets outside its family.
 - **Kill-time readouts in the damage summary** — alongside the damage range
   and DPS, the summary shows (in monster mode, where HP is known) **hits to
   kill** as a best–worst range with a separate **average**, and **time to

@@ -240,6 +240,26 @@ class DataLoader {
     }
   }
 
+  // Reverse map: mob ID -> [RC2 family keys] (e.g. 1023 -> ["RC2_Orc"]).
+  // Cached on first use. Feeds bAddRace2 "Bane" cards via target.race2.
+  _mobRace2Map() {
+    if (this.__mobRace2 == null) {
+      const map = {};
+      try {
+        const groups = (this._loadJson("db/mob_race2_db.json").groups) || {};
+        for (const [rc2, ids] of Object.entries(groups)) {
+          for (const id of ids) {
+            (map[id] = map[id] || []).push(rc2);
+          }
+        }
+      } catch {
+        // no race2 data — leave map empty (cards just won't apply)
+      }
+      this.__mobRace2 = map;
+    }
+    return this.__mobRace2;
+  }
+
   getMonster(mobId) {
     const { createTarget } = require("./models");
     const entry = this.getMonsterData(mobId);
@@ -267,6 +287,7 @@ class DataLoader {
       level,
       mdef_: entry.mdef || 0,
       int_: stats.int || 0,
+      race2: this._mobRace2Map()[Number(mobId)] || [],
     });
   }
 
