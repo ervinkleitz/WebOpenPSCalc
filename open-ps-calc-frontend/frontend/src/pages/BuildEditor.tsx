@@ -954,7 +954,7 @@ export default function BuildEditor() {
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
             <button onClick={() => { setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
-            <a className="topbar-kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>☕ Support</a>
+            <a className="topbar-kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>☕ Support me</a>
           </div>
 
           {/* Hamburger — hidden on desktop */}
