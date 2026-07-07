@@ -166,13 +166,15 @@ const BONUS2 = {
 
   bMagicAddRace: def((r, v) => `Increases magic damage against ${race(r)} by ${v}%.`, "magic_add_race", "dict"),
   bMagicAddEle: def((e, v) => `Increases magic damage against ${ele(e)}-element monsters by ${v}%.`, "magic_add_ele", "dict"),
-  bCriticalAddRace: def((r, v) => `CRIT rate +${v} against ${race(r)}.`),
+  bCriticalAddRace: def((r, v) => `CRIT rate +${v} against ${race(r)}.`, "crit_add_race", "dict"),
   bExpAddRace: def((r, v) => `EXP gain +${v}% from ${race(r)}.`),
   bResEff: def((scKey, v) => `Increases resistance to ${sc(scKey)} by ${Math.floor(v / 100)}%.`),
   bAddEff: def((scKey, v) => `${Math.floor(v / 100)}% chance to inflict ${sc(scKey)} on hit.`),
   bAddEffWhenHit: def((scKey, v) => `${Math.floor(v / 100)}% chance to inflict ${sc(scKey)} when hit.`),
   bAddEff2: def((scKey, v) => `${Math.floor(v / 100)}% chance to self-inflict ${sc(scKey)} on hit.`),
-  bAddDamageClass: def((c, v) => `Increases damage against ${cls(c)} by ${v}%.`),
+  // +% physical damage vs a specific monster id (e.g. bonus2 bAddDamageClass,1188,150).
+  // Keyed by mob id; applied in cardFix when the target is that monster.
+  bAddDamageClass: def((c, v) => `Increases physical damage against monster #${c} by ${v}%.`, "add_damage_class", "dict"),
   bSubSize: def((s, v) => `Reduces damage from ${size(s)} monsters by ${v}%.`),
   bSPGainRace: def((r, v) => `Gains ${v} SP per kill of ${race(r)}.`),
   bAddItemHealRate: def((_id, v) => `Increases healing from items by ${v}%.`),

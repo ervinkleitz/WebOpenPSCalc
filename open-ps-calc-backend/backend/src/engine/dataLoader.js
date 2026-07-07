@@ -288,6 +288,7 @@ class DataLoader {
       mdef_: entry.mdef || 0,
       int_: stats.int || 0,
       race2: this._mobRace2Map()[Number(mobId)] || [],
+      mob_id: Number(mobId), // for bAddDamageClass (+% damage vs a specific monster)
     });
   }
 

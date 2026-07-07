@@ -203,6 +203,8 @@ function createGearBonuses(overrides = {}) {
     all_effects: [],
     sc_effects: [],
     add_race: {},
+    crit_add_race: {}, // bCriticalAddRace: +crit points vs a race/boss group (applied in critChance)
+    add_damage_class: {}, // bAddDamageClass: +% physical damage vs a specific monster id (applied in cardFix)
     magic_add_race: {},
     magic_add_ele: {},
     sub_ele: {},

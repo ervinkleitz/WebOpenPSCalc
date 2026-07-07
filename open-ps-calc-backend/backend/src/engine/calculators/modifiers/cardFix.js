@@ -41,10 +41,13 @@ function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf,
   const addRace2 = gearBonuses.add_race2 || {};
   let race2Bonus = 0;
   for (const g of target.race2 || []) race2Bonus += addRace2[g] || 0;
+  // bAddDamageClass: +% physical damage vs one specific monster (by mob id).
+  const addClass = gearBonuses.add_damage_class || {};
+  const classBonus = target.mob_id != null ? (addClass[target.mob_id] || addClass[String(target.mob_id)] || 0) : 0;
 
   const [, , avIn] = pmfStats(pmf);
 
-  for (const bonus of [raceBonus, eleBonus, sizeBonus, bossBonus, longBonus, atkEleBonus, typeBonus, race2Bonus]) {
+  for (const bonus of [raceBonus, eleBonus, sizeBonus, bossBonus, longBonus, atkEleBonus, typeBonus, race2Bonus, classBonus]) {
     if (bonus) pmf = scaleFloor(pmf, 100 + bonus, 100);
   }
 
@@ -62,7 +65,7 @@ function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf,
   const multiplier = avIn ? av / avIn : 1.0;
   result.add_step({
     name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier,
-    note: `Race ${raceRc}+${raceBonus}%  ${target.is_boss ? "Boss" : "NonBoss"}+${bossBonus}%  Ele+${addEle[eleKey] || 0}%  Size+${addSize[sizeKey] || 0}%${isRanged ? `  LongAtk+${longBonus}%` : ""}${typeBonus ? `  Type+${typeBonus}%` : ""}${race2Bonus ? `  Family(${(target.race2 || []).join(",")})+${race2Bonus}%` : ""}`,
+    note: `Race ${raceRc}+${raceBonus}%  ${target.is_boss ? "Boss" : "NonBoss"}+${bossBonus}%  Ele+${addEle[eleKey] || 0}%  Size+${addSize[sizeKey] || 0}%${isRanged ? `  LongAtk+${longBonus}%` : ""}${typeBonus ? `  Type+${typeBonus}%` : ""}${race2Bonus ? `  Family(${(target.race2 || []).join(",")})+${race2Bonus}%` : ""}${classBonus ? `  Mob#${target.mob_id}+${classBonus}%` : ""}`,
     formula: `dmg × multiple race/ele/size/boss/long/atk-ele factors`,
     hercules_ref: "battle.c:1183-1198",
   });

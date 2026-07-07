@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Crit-vs-race cards now work** — `bCriticalAddRace` (+CRIT rate against a specific race, e.g.
+  crit-vs-Demi-Human gear) was defined with no effect. It now raises crit rate against matching
+  targets (verified: 10% → 30% vs Demi-Human with a +20 card, unchanged vs other races).
+- **Monster-specific damage cards now work** — `bAddDamageClass` (+% physical damage vs one specific
+  monster, e.g. cards that boost damage against a particular MVP) had a duplicate, effect-less
+  definition overriding it, so it did nothing. Now applied when the target is that monster.
 - **Gear MATK (`bMatk`) now applies** — flat MATK from gear (MATK staves, magic-boosting cards —
   ~150 items) was silently dropped: `bMatk` was defined with no engine field and never folded into
   the MATK total, so magic damage from MATK gear was undercounted. It now adds to MATK.

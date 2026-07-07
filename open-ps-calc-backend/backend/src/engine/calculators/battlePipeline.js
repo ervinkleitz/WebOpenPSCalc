@@ -966,7 +966,7 @@ class BattlePipeline {
       });
     }
 
-    const [isEligible, critChance] = calculateCritChance(status, weapon, skill, target, this.config, build.server);
+    const [isEligible, critChance] = calculateCritChance(status, weapon, skill, target, this.config, build.server, gearBonuses);
     let [hitChance, perfectDodge] = calculateHitChance(status, target, this.config);
     if (build.target_mob_id != null) perfectDodge = 0.0;
 
