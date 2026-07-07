@@ -1167,11 +1167,12 @@ export default function BuildEditor() {
                 { label: "Max SP",   value: charStatus?.max_sp?.toLocaleString() },
                 { label: "HP Regen", value: charStatus ? `${charStatus.hp_regen} /tick` : undefined },
                 { label: "SP Regen", value: charStatus ? `${charStatus.sp_regen} /tick` : undefined },
-                { label: "ATK",      value: charStatus ? `${charStatus.batk + charStatus.weapon_atk}${charStatus.refine_atk ? `+${charStatus.refine_atk}` : ""}` : undefined },
+                { label: "ATK",      value: charStatus ? `${charStatus.batk + charStatus.weapon_atk + (charStatus.weapon_atk_flat || 0)}${charStatus.refine_atk ? `+${charStatus.refine_atk}` : ""}` : undefined },
                 { label: "MATK",     value: charStatus ? `${charStatus.matk_min}–${charStatus.matk_max}` : undefined },
                 { label: "DEF",      value: charStatus ? `${charStatus.hard_def}+${charStatus.soft_def}` : undefined },
                 { label: "MDEF",     value: charStatus ? `${charStatus.hard_mdef}+${charStatus.soft_mdef}` : undefined },
                 { label: "ASPD",     value: charStatus?.aspd?.toFixed(1) },
+                { label: "HIT",      value: charStatus?.hit?.toLocaleString() },
                 { label: "Flee",     value: charStatus?.flee?.toLocaleString() },
                 { label: "Critical", value: charStatus ? `${(charStatus.cri / 10).toFixed(1)}%` : undefined },
               ] as { label: string; value?: string }[]).map(({ label, value }) => (

@@ -198,7 +198,7 @@ router.post("/status", (req: Request, res: Response) => {
     loader.setProfile(profile);
 
     const config = createBattleConfig();
-    const [, , weapon, status] = resolvePlayerState(build, config, profile);
+    const [gearBonuses, , weapon, status] = resolvePlayerState(build, config, profile);
 
     res.json({
       max_hp:    status.max_hp,
@@ -207,6 +207,9 @@ router.post("/status", (req: Request, res: Response) => {
       sp_regen:  status.sp_regen,
       batk:      status.batk,
       weapon_atk: weapon?.atk ?? 0,
+      // Flat gear weapon-ATK (bAtk, e.g. Bradium Ring) — added to weapon ATK in the
+      // damage pipeline, so it belongs in the ATK readout too.
+      weapon_atk_flat: gearBonuses?.weapon_atk_flat ?? 0,
       // Weapon refine bonus (the "atk2" shown as the right-hand number in the
       // in-game status window, e.g. "420 + 35"). Deterministic part only.
       refine_atk: weapon ? loader.getRefineBonus(weapon.level, weapon.refine) : 0,
@@ -219,6 +222,7 @@ router.post("/status", (req: Request, res: Response) => {
       aspd:      status.aspd,
       cri:       status.cri,
       flee:      status.flee,
+      hit:       status.hit,
     });
   } catch (err: any) {
     console.error(err);
