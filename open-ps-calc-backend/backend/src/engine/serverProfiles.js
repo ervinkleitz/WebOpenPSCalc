@@ -165,6 +165,12 @@ const PS_RATE_BONUSES = {
   SC_GS_MADNESSCANCEL: 30,
 };
 
+// PS multi-hit overrides for skills the vanilla DB lists as single-hit.
+// (hitCount fn — same signature as weapon_ratios.)
+const PS_WEAPON_HIT_COUNTS = {
+  GS_MAGICALBULLET: () => 3,  // Soul Bullet hits 3× (like Triple Action) — wiki.payonstories.com/Soul_Bullet
+};
+
 // Mechanic flag sentinels — checked by individual modifiers across the engine.
 // Source: core/server_profiles.py's _PS_MECHANIC_FLAGS (StatGameDev/Open_PS_Calc,
 // MIT licensed — the reference implementation this whole port tracks against).
@@ -431,6 +437,7 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   mastery_ctx_overrides: PS_MASTERY_CTX_OVERRIDES,
   ps_job_bonuses: PS_JOB_BONUSES,
   weapon_ratios: PS_BF_WEAPON_RATIOS,
+  weapon_hit_counts: PS_WEAPON_HIT_COUNTS,
   weapon_vanilla_ok: PS_WEAPON_VANILLA_OK,
   magic_ratios: PS_BF_MAGIC_RATIOS,
   magic_vanilla_ok: PS_MAGIC_VANILLA_OK,

@@ -9,6 +9,9 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Soul Bullet hits 3×** — Magical Bullet / Soul Bullet was calculated as a single hit, but on
+  Payon Stories it fires **3 times** (like Triple Action), so its damage was undercounted by ~3×.
+  It now applies 3 hits. Per [the wiki](https://wiki.payonstories.com/Soul_Bullet).
 - **Gunslinger Single Action HIT corrected** — Single Action was giving +2 HIT per level, but on
   Payon Stories it grants **+4 HIT per level** (+40 at Lv10) per
   [the wiki](https://wiki.payonstories.com/Single_Action). Fixed, so accuracy — and therefore hit
