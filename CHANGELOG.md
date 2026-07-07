@@ -9,6 +9,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Drake Card now works** — `bNoSizeFix` (Drake Card's "damage ignores size") was parsed but never
+  routed into the damage engine, so equipping it did nothing. It now correctly removes the weapon's
+  size penalty. Verified: a dagger vs a Large monster goes from a 50% size fix to 100%. (Same class
+  of bug as the monster-family "Bane" cards — a real bonus that was silently dropped.)
 - **Gunslinger can use Berserk Potion** — the ASPD-potion picker capped Gunslinger at Awakening
   Potion, but Gunslinger is on Berserk Potion's usable-class list even in vanilla (per
   `item_db_usable`). Gunslinger now offers the full Concentration / Awakening / Berserk range. (Ninja

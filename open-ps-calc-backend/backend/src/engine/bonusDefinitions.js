@@ -132,6 +132,9 @@ const BONUS1 = {
   bBreakWeaponRate: def((v) => `${Math.round(v / 100)}% chance to break the target's weapon per hit.`),
   bUnbreakableWeapon: def(() => "Weapon cannot be broken."),
   bUnbreakableHelm: def(() => "Headgear cannot be broken."),
+  // Drake Card etc.: physical damage ignores the target's size (no size penalty).
+  // Sets a flag on the build that baseDamage.js reads to skip Size Fix.
+  bNoSizeFix: def(() => "Damage is unaffected by the target's size (no size penalty).", "no_sizefix", "assign", { transform: () => true }),
 };
 
 const BONUS2 = {

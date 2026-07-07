@@ -211,6 +211,7 @@ function createGearBonuses(overrides = {}) {
     add_atk_ele: {},
     add_type: 0, // monster-family (bAddRace2/RC2) % damage from the wildcard "Type" mix (applies unconditionally)
     add_race2: {}, // real bAddRace2 "Bane" cards, keyed by RC2 family (e.g. RC2_Orc) — applied only when the target is in that family
+    no_sizefix: false, // bNoSizeFix (Drake Card): physical damage ignores the target's size penalty
     ignore_def_rate: {},
     ignore_def_ele: {},
     ignore_mdef_rate: {},
