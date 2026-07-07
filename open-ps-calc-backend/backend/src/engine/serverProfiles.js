@@ -100,6 +100,7 @@ const PS_PASSIVE_OVERRIDES = {
   SC_TWOHANDQUICKEN: { cri_per_lv: 10 },                                                        // PS Knight rework: +1% CRIT/lv (vanilla: +0.8%/lv; internal ×10 scale)
   SC_EXPLOSIONSPIRITS: { cri_base: 175, cri_per_lv: 25 },                                      // PS rework: 20%/22.5%/25%/27.5%/30% (was 10%…20%)
   GS_DUST:           { str_to_atk_at_max_lv: 1, str_atk_weapon: "Shotgun", max_level: 10 },     // wiki.payonstories.com/Dust: +1 ATK per STR at Lv10 with a Shotgun
+  GS_SINGLEACTION:   { hit_per_lv: 4 },                                                          // wiki.payonstories.com/Single_Action: +4 HIT/lv (+40 at Lv10; vanilla default was +2/lv)
 };
 
 // PS Demon Bane rework (wiki.payonstories.com/Demon_Bane): buffed from vanilla

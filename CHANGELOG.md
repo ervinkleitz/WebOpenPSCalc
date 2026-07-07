@@ -9,6 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Gunslinger Single Action HIT corrected** — Single Action was giving +2 HIT per level, but on
+  Payon Stories it grants **+4 HIT per level** (+40 at Lv10) per
+  [the wiki](https://wiki.payonstories.com/Single_Action). Fixed, so accuracy — and therefore hit
+  chance and effective DPS — is no longer undercounted for gun builds. Its ASPD bonus (+1% per two
+  levels) was already correct. Vanilla is unchanged (+2/lv).
 - **Combat stats now show flat gear ATK, plus a HIT stat** — flat weapon ATK from gear (`bAtk`, e.g.
   PS Bradium Ring's +10) was used in the damage pipeline but left out of the Character panel's ATK
   readout. It's now shown as part of the equipment-ATK bonus, the `+X` in the in-game-style
