@@ -245,6 +245,16 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **Offensive "Misc"-typed skills now selectable** — the skill picker's
+  `damage_only` filter (`routes/data.ts`) kept only `attack_type` `Weapon`/`Magic`,
+  but the skill DB tags every non-weapon/magic skill as `Misc` (buffs, masteries,
+  songs, *and* delayed/indirect damage skills). That hid genuine offensive
+  skills the engine already computes — e.g. Venom Splasher (`AS_SPLASHER`, PS
+  ratio `500 + 50×lv + 30×PoisonReactLv`%) and Acid Terror. The filter now also
+  keeps any skill the active server profile has a `weapon_ratios`/`magic_ratios`
+  entry for, which is the precise "this server can actually calculate it" signal;
+  vanilla (empty ratio tables) is unchanged. Verified end-to-end (Venom Splasher
+  Lv10 → 1000% ratio → real damage).
 - **Monster-family (RC2) "Bane" cards implemented** — real `bAddRace2` cards
   (Orc Lady, Goblin/Kobold Leader, Lava Golem, plus RC2_Guardian/RC2_Ninja
   cards) were parsed but silently dropped: there was no `bAddRace2` routing and
