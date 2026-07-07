@@ -65,7 +65,7 @@ const sc = (v) => STATUS_NAMES[v] ?? v;
  * mode: "add" | "dict" | "dict_keys" | "multi" | "assign"
  */
 function def(description, field = null, mode = "add", extra = {}) {
-  return { description, field, mode, fields: extra.fields ?? null, transform: extra.transform ?? null, keys: extra.keys ?? null };
+  return { description, field, mode, fields: extra.fields ?? null, transform: extra.transform ?? null, keys: extra.keys ?? null, value: extra.value ?? null };
 }
 
 const BONUS1 = {
@@ -132,6 +132,9 @@ const BONUS1 = {
   bBreakWeaponRate: def((v) => `${Math.round(v / 100)}% chance to break the target's weapon per hit.`),
   bUnbreakableWeapon: def(() => "Weapon cannot be broken."),
   bUnbreakableHelm: def(() => "Headgear cannot be broken."),
+  // Ignore 100% of the target's MDEF for a given race/boss group (e.g. High Wizard
+  // Card: bonus bIgnoreMdefRace,RC_NonBoss). Feeds ignore_mdef_rate, keyed by race.
+  bIgnoreMdefRace: def((r) => `Magic damage ignores the MDEF of ${race(r)} targets.`, "ignore_mdef_rate", "dict_const", { value: 100 }),
   // Drake Card etc.: physical damage ignores the target's size (no size penalty).
   // Sets a flag on the build that baseDamage.js reads to skip Size Fix.
   bNoSizeFix: def(() => "Damage is unaffected by the target's size (no size penalty).", "no_sizefix", "assign", { transform: () => true }),

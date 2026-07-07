@@ -9,6 +9,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **High Wizard Card now works (magic MDEF ignore)** — `bIgnoreMdefRace` (High Wizard Card: magic
+  ignores 100% of non-boss MDEF) was parsed but never routed, so the card did nothing. It's now
+  wired into the magic defense step. Verified: against a MDEF-40 non-boss target, magic damage goes
+  from ×60% to ×100%.
 - **Drake Card now works** — `bNoSizeFix` (Drake Card's "damage ignores size") was parsed but never
   routed into the damage engine, so equipping it did nothing. It now correctly removes the weapon's
   size penalty. Verified: a dagger vs a Large monster goes from a 50% size fix to 100%. (Same class

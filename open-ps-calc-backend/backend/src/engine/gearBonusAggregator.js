@@ -59,6 +59,11 @@ function applyEffect(bonuses, eff) {
     } else if (defn.mode === "dict" && defn.field != null && typeof p[0] === "string") {
       const d = bonuses[defn.field];
       d[p[0]] = (d[p[0]] || 0) + 1;
+    } else if (defn.mode === "dict_const" && defn.field != null && typeof p[0] === "string") {
+      // arity-1 bonus whose single param is a dict key, set to a fixed value
+      // (e.g. bIgnoreMdefRace,RC_NonBoss → ignore_mdef_rate.RC_NonBoss += 100).
+      const d = bonuses[defn.field];
+      d[p[0]] = (d[p[0]] || 0) + (defn.value ?? 0);
     } else {
       const v = typeof p[0] === "number" ? p[0] : 0;
       if (defn.mode === "multi" && defn.fields) {
