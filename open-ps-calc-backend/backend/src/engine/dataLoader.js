@@ -385,6 +385,10 @@ class DataLoader {
       "BS_HILTBINDING", "SA_DRAGONOLOGY", "AC_OWL",
       // HIT rate → hit chance → effective DPS
       "AC_VULTURE", "GS_SINGLEACTION", "GS_SNAKEEYE",
+      // PS Gunslinger shotgun passives (mastery at Lv10): Dust grants +1 ATK per STR
+      // with a Shotgun (and 7% Neutral resist); Full Buster / Spread Attack grant the
+      // Neutral resist with a Shotgun/Grenade Launcher. wiki.payonstories.com/Dust.
+      "GS_DUST", "GS_FULLBUSTER", "GS_SPREADATTACK",
       // ASPD → attack period → DPS
       "KN_CAVALIERMASTERY",
       // Proc-based extra hits on normal attacks (battlePipeline.js#calculate)
@@ -413,7 +417,7 @@ class DataLoader {
     // These are active (non-passive) skills, normally excluded by the
     // skill_type check below -- carved out because their level still feeds
     // into a damage formula (see DAMAGE_RELEVANT comment above).
-    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT", "AS_ENCHANTPOISON", "MO_TRIPLEATTACK", "HW_SOULDRAIN"]);
+    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT", "AS_ENCHANTPOISON", "MO_TRIPLEATTACK", "HW_SOULDRAIN", "GS_DUST", "GS_FULLBUSTER", "GS_SPREADATTACK"]);
 
     try {
       const treeData = this._loadJson("tables/skill_tree.json");

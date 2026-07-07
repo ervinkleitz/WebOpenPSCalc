@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Gunslinger shotgun masteries now work** — the shotgun skills (Dust, Full Buster, Spread Attack)
+  weren't shown in the passive-skill panel, so their Lv10 mastery bonuses could never be enabled.
+  They're now selectable, and **Dust's +1 ATK per STR** (with a Shotgun equipped) is applied to ATK,
+  as is the 7% Neutral resistance (Shotgun / Grenade Launcher). Per
+  [wiki.payonstories.com/Dust](https://wiki.payonstories.com/Dust). Verified: a STR-99 Gunslinger
+  with a Shotgun gains +STR ATK at Dust 10, and nothing with a Revolver.
 - **Crit-vs-race cards now work** — `bCriticalAddRace` (+CRIT rate against a specific race, e.g.
   crit-vs-Demi-Human gear) was defined with no effect. It now raises crit rate against matching
   targets (verified: 10% → 30% vs Demi-Human with a +20 card, unchanged vs other races).

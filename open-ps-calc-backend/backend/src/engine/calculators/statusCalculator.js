@@ -97,6 +97,15 @@ class StatusCalculator {
 
     if (mastery.BS_HILTBINDING) status.batk += 4;
 
+    // PS Gunslinger — Dust mastery (GS_DUST Lv 10): +1 ATK per STR point (base or
+    // bonus) while a Shotgun is equipped. wiki.payonstories.com/Dust.
+    const dustSpec = (profile.passive_overrides || {}).GS_DUST;
+    if (dustSpec && dustSpec.str_to_atk_at_max_lv
+        && (mastery.GS_DUST || 0) >= (dustSpec.max_level || 10)
+        && weapon.weapon_type === (dustSpec.str_atk_weapon || "Shotgun")) {
+      status.batk += status.str * dustSpec.str_to_atk_at_max_lv;
+    }
+
     if ("SC_GS_MADNESSCANCEL" in activeSc && !("SC_GS_MADNESSCANCEL" in (profile.rate_bonuses || {}))) {
       status.batk += 100;
     }
