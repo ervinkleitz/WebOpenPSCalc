@@ -78,7 +78,9 @@ class StatusCalculator {
 
     if (support.SC_GLORIA) status.luk += 30;
 
-    if ("SC_GS_ACCURACY" in activeSc) {
+    // Increasing Accuracy (SC_GS_ACCURACY) was removed on Payon Stories (folded into
+    // Single Action); its buff has no effect there.
+    if ("SC_GS_ACCURACY" in activeSc && !profile.mechanic_flags.has("GS_INCREASING_REMOVED")) {
       status.agi += 4;
       status.dex += 4;
     }
@@ -190,7 +192,7 @@ class StatusCalculator {
     status.flee = build.base_level + status.agi + build.bonus_flee;
     status.flee2 = this.config.enable_perfect_flee ? status.luk + 10 + build.bonus_flee2 : 0;
 
-    if ("SC_GS_ACCURACY" in activeSc) status.hit += 20;
+    if ("SC_GS_ACCURACY" in activeSc && !profile.mechanic_flags.has("GS_INCREASING_REMOVED")) status.hit += 20;
 
     if ("SC_GS_ADJUSTMENT" in activeSc) {
       if (!profile.mechanic_flags.has("GS_GS_ADJUSTMENT_SKIP_HIT_PENALTY")) status.hit -= 30;

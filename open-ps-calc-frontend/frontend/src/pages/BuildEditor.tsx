@@ -231,8 +231,9 @@ const SELF_BUFFS = [
   { key: "SC_SHOUT",           label: "Loud Exclamation",      max: 1,  jobs: [10, 4011] },
   // Monk / Champion
   { key: "SC_EXPLOSIONSPIRITS", label: "Fury",                 max: 5,  jobs: [15, 4016] },
-  // Gunslinger — SC_GS_ACCURACY adds AGI+4/DEX+4 in statusCalculator.js
-  { key: "SC_GS_ACCURACY",     label: "Increasing Accuracy",   max: 1,  jobs: [24] },
+  // Gunslinger — SC_GS_ACCURACY adds AGI+4/DEX+4 in statusCalculator.js.
+  // Removed on Payon Stories (folded into Single Action), so hidden there.
+  { key: "SC_GS_ACCURACY",     label: "Increasing Accuracy",   max: 1,  jobs: [24], psRemoved: true },
   // PS renames these two displays ("Barrage" / "Run and Gun") but the
   // underlying constants are the vanilla Gunslinger ones; both are
   // presence-only (level doesn't change the magnitude in statusCalculator.js).
@@ -1488,7 +1489,8 @@ export default function BuildEditor() {
 
           <Panel eyebrow="06" title="Buffs">
             {(() => {
-              const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id));
+              const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id)
+                && !((b as { psRemoved?: boolean }).psRemoved && data.server === "payon_stories"));
               const supportBuffs = (data.support_buffs || {}) as Record<string, unknown>;
               const groundEffectType = (supportBuffs.ground_effect as string) || "";
               // SA_VOLCANO/SA_DELUGE/SA_VIOLENTGALE's vanilla max_level is 5;

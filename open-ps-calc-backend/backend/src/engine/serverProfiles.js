@@ -169,6 +169,7 @@ const PS_RATE_BONUSES = {
 // (hitCount fn — same signature as weapon_ratios.)
 const PS_WEAPON_HIT_COUNTS = {
   GS_MAGICALBULLET: () => 3,  // Soul Bullet hits 3× (like Triple Action) — wiki.payonstories.com/Soul_Bullet
+  GS_DESPERADO: () => 6,      // Desperado: 0–10 hits, 6 on average — wiki.payonstories.com/Desperado (uses the average)
 };
 
 // Mechanic flag sentinels — checked by individual modifiers across the engine.
@@ -181,6 +182,7 @@ const PS_MECHANIC_FLAGS = new Set([
   "AS_KATAR_KATAR_CRIT_DMG_BONUS",
   "GROUND_EFFECT_PS_VALUES",
   "GS_GS_ADJUSTMENT_SKIP_HIT_PENALTY",
+  "GS_INCREASING_REMOVED",   // Increasing Accuracy removed on PS (folded into Single Action)
   "PR_MACEMASTERY_EXPANDED_WEAPON_TYPES",
   "MO_EXTREMITYFIST_PS_SP_REWORK",  // PS rework: SP consumed = floor(MaxSP × 0.2 × SkillLv)
   // wiki.payonstories.com/Grand_Cross: weapon masteries (and Demon Bane's flat
@@ -290,7 +292,10 @@ const PS_BF_WEAPON_RATIOS = {
   GS_SPREADATTACK: (lv) => 200 + 20 * lv,
   GS_GROUNDDRIFT: (lv) => 200 + 60 * lv,
   GS_PIERCINGSHOT: (lv) => 100 + 20 * lv,
-  GS_BULLSEYE: () => 100,
+  // Tranq Shot (formerly Bull's Eye): 100% damage only vs Demi-Human/Brute, and
+  // "a little bit" (unspecified) vs other races — approximated here as 10%.
+  // wiki.payonstories.com/Tranq_Shot. (Its real point is the 140% Sleep chance.)
+  GS_BULLSEYE: (lv, tgt) => (tgt && ["Brute", "Demi-Human"].includes(tgt.race)) ? 100 : 10,
   GS_MAGICALBULLET: (lv, tgt, ctx) => 50 + (ctx ? ctx.dex : 0) + (ctx ? ctx.base_level : 0),
   NJ_KIRIKAGE: (lv, tgt, ctx) => {
     const hiding = !!(ctx && ctx.skill_params.NJ_KIRIKAGE_hiding);

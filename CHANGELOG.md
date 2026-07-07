@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Desperado hits 6× (average)** — Desperado's `100+20×lv` is *per hit* and it sprays 0–10 shots
+  (6 on average); the calc treated it as a single hit, undercounting its damage ~6×. It now applies
+  the 6-hit average. Per [the wiki](https://wiki.payonstories.com/Desperado).
+- **Tranq Shot damage gated to Demi-Human/Brute** — Tranq Shot (formerly Bull's Eye) deals 100%
+  damage only to Demi-Human and Brute monsters on PS (and "a little bit" — approximated as 10% —
+  to others); the calc was doing 100% to every race. Its main purpose is the Sleep chance. Per
+  [the wiki](https://wiki.payonstories.com/Tranq_Shot).
+- **Increasing Accuracy removed on PS** — the skill was folded into Single Action on Payon Stories,
+  so its buff toggle is now hidden on PS and has no effect there. Still available on vanilla.
 - **Soul Bullet hits 3×** — Magical Bullet / Soul Bullet was calculated as a single hit, but on
   Payon Stories it fires **3 times** (like Triple Action), so its damage was undercounted by ~3×.
   It now applies 3 hits. Per [the wiki](https://wiki.payonstories.com/Soul_Bullet).
