@@ -207,6 +207,9 @@ router.post("/status", (req: Request, res: Response) => {
       sp_regen:  status.sp_regen,
       batk:      status.batk,
       weapon_atk: weapon?.atk ?? 0,
+      // Weapon refine bonus (the "atk2" shown as the right-hand number in the
+      // in-game status window, e.g. "420 + 35"). Deterministic part only.
+      refine_atk: weapon ? loader.getRefineBonus(weapon.level, weapon.refine) : 0,
       matk_min:  status.matk_min,
       matk_max:  status.matk_max,
       hard_def:  status.def_,
