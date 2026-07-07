@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Gear MATK (`bMatk`) now applies** — flat MATK from gear (MATK staves, magic-boosting cards —
+  ~150 items) was silently dropped: `bMatk` was defined with no engine field and never folded into
+  the MATK total, so magic damage from MATK gear was undercounted. It now adds to MATK.
+- **Race "ignore DEF" cards now work** — `bIgnoreDefRace` (physical damage ignores a whole race's
+  DEF — 40+ Plant/Dragon/Demi-Human/non-boss "killer" cards) was in the bonus table but wired to
+  nothing, so those cards did nothing. It now ignores 100% of the matching race's hard DEF.
 - **High Wizard Card now works (magic MDEF ignore)** — `bIgnoreMdefRace` (High Wizard Card: magic
   ignores 100% of non-boss MDEF) was parsed but never routed, so the card did nothing. It's now
   wired into the magic defense step. Verified: against a MDEF-40 non-boss target, magic damage goes

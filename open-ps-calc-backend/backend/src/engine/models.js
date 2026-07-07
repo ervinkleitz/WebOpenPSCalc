@@ -177,6 +177,7 @@ function createGearBonuses(overrides = {}) {
     str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0,
     weapon_atk_flat: 0,
     batk: 0,
+    matk: 0, // flat MATK from gear (bMatk) — added to bonus_matk_flat in applyGearBonuses
     hit: 0,
     flee: 0,
     flee2: 0,

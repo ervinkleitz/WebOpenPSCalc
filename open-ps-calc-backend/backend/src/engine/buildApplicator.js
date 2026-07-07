@@ -114,7 +114,7 @@ function applyGearBonuses(build, gearBonuses) {
     bonus_maxhp_rate: build.bonus_maxhp_rate + gb.maxhp_rate,
     bonus_flee2: build.bonus_flee2 + gb.flee2,
     bonus_maxsp_rate: build.bonus_maxsp_rate + gb.maxsp_rate,
-    bonus_matk_flat: build.bonus_matk_flat + (cons.matk_flat || 0),
+    bonus_matk_flat: build.bonus_matk_flat + gb.matk + (cons.matk_flat || 0),
     // Drake Card (bNoSizeFix) or a saved build flag: ignore the size penalty.
     no_sizefix: build.no_sizefix || !!gb.no_sizefix,
   };

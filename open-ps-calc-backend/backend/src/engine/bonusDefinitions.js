@@ -81,7 +81,7 @@ const BONUS1 = {
 
   bAtk: def((v) => (v > 0 ? `Weapon ATK +${v}.` : `Weapon ATK ${v}.`), "weapon_atk_flat"),
   bBaseAtk: def((v) => (v > 0 ? `ATK +${v}.` : `ATK ${v}.`), "batk"),
-  bMatk: def((v) => (v > 0 ? `MATK +${v}.` : `MATK ${v}.`)),
+  bMatk: def((v) => (v > 0 ? `MATK +${v}.` : `MATK ${v}.`), "matk"),
   bHit: def((v) => (v > 0 ? `HIT +${v}.` : `HIT ${v}.`), "hit"),
   bFlee: def((v) => (v > 0 ? `FLEE +${v}.` : `FLEE ${v}.`), "flee"),
   bFlee2: def((v) => (v > 0 ? `Perfect Dodge +${v}.` : `Perfect Dodge ${v}.`), "flee2"),
@@ -119,7 +119,10 @@ const BONUS1 = {
   bAtkEle: def((v) => `Changes weapon element to ${ELEMENT_NAMES[String(v)] ?? String(v)}.`, "script_atk_ele_rh", "assign", { transform: (x) => ELE_STR_TO_INT[x] }),
   bDefEle: def((v) => `Changes armor element to ${ELEMENT_NAMES[String(v)] ?? String(v)}.`, "script_def_ele", "assign", { transform: (x) => ELE_STR_TO_INT[x] }),
 
-  bIgnoreDefRace: def((v) => `Ignores DEF of ${RACE_NAMES[String(v)] ?? String(v)}.`),
+  // Ignore 100% of the target's (hard) DEF for a race/boss group — e.g. race-killer
+  // cards' "bonus bIgnoreDefRace,RC_Plant". Feeds ignore_def_rate, keyed by race,
+  // which calculateDefenseFix already consumes. (Was a no-op: no field/mode.)
+  bIgnoreDefRace: def((v) => `Physical damage ignores the DEF of ${RACE_NAMES[String(v)] ?? String(v)} targets.`, "ignore_def_rate", "dict_const", { value: 100 }),
   bShortWeaponDamageReturn: def((v) => `Reflects ${v}% melee physical damage back to attacker.`),
   bHPrecovRate: def((v) => (v > 0 ? `Natural HP recovery +${v}%.` : `Natural HP recovery ${v}%.`)),
   bSPrecovRate: def((v) => (v > 0 ? `Natural SP recovery +${v}%.` : `Natural SP recovery ${v}%.`)),
