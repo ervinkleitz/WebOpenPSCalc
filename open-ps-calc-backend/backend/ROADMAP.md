@@ -246,6 +246,22 @@ without re-auditing everything from scratch.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
+- **Bonus-routing audit — several damage bonuses were parsed but not applied.**
+  Diffed every `bonus`/`bonus2` type used in `item_db` against what
+  `bonusDefinitions.js` actually routes, and checked table entries that were
+  present but defined with no `field`/`mode` (silent no-ops). Fixed:
+  `bNoSizeFix` (Drake Card — size penalty; new `no_sizefix` gear flag folded
+  into the build), `bIgnoreMdefRace` (High Wizard Card — 100% non-boss MDEF
+  ignore; new `dict_const` aggregator mode + `value` on `def()`),
+  `bIgnoreDefRace` (40+ race "ignore DEF" cards — was a no-op, now
+  `ignore_def_rate` at 100%), `bMatk` (flat gear MATK, ~150 items — was a no-op,
+  now a `matk` gear field folded into `bonus_matk_flat`), `bCriticalAddRace`
+  (+crit vs race — now consumed in `critChance`, `gearBonuses` threaded through),
+  and `bAddDamageClass` (+% vs a specific mob id — had a duplicate effect-less
+  definition overriding it; now routed and applied in `cardFix` via a new
+  `target.mob_id`). Verified no remaining same-object duplicate keys in the
+  bonus tables. Remaining unhandled `damage_type` flags (`IgnoreDefCards`,
+  `NoDamage`, `SplitDamage`) are near-zero impact for single-monster targeting.
 - **Offensive "Misc"-typed skills now selectable** — the skill picker's
   `damage_only` filter (`routes/data.ts`) kept only `attack_type` `Weapon`/`Magic`,
   but the skill DB tags every non-weapon/magic skill as `Misc` (buffs, masteries,
