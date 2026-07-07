@@ -436,6 +436,61 @@ without re-auditing everything from scratch.
   Lex Aeterna exactly doubles the result. No frontend UI yet — backend/API
   only.
 
+## Payon Stories per-class skill audit (against the PS wiki)
+
+The Gunslinger audit (2026-07-07, see the CHANGELOG) cross-checked every PS-reworked
+GS skill against [wiki.payonstories.com](https://wiki.payonstories.com) and turned up
+several real damage bugs. The same pass should be run for the remaining classes.
+Classes are **sequenced by how many PS-custom overrides they carry** (weapon/magic
+ratios, `passive_overrides`, `rate_bonuses`, `weapon_hit_counts`, `mastery_ctx_overrides`,
+mechanic flags, …) — more custom changes ⇒ higher chance of a mismatch. Counts in
+brackets are the number of PS-custom entries found across those tables.
+
+**Bug classes to check for each skill** (every one of these was hit at least once in the GS pass):
+- skill ratio wrong vs the wiki (per-level %, base, or race/size-conditional);
+- hit count wrong or missing — single-hit in the vanilla DB but multi-hit on PS
+  (e.g. Soul Bullet ×3), or a variable-hit spray (e.g. Desperado 1–10 range);
+- passive HIT / ASPD / ATK per level undercounted (e.g. Single Action +4/lv, not +2/lv);
+- stat-conversion or weapon-conditional passive not modelled (e.g. Dust +1 ATK/STR with a Shotgun);
+- buff mechanic wrong — flat BATK where PS uses a % damage bonus (check `rate_bonuses`);
+- an active skill's mastery bonus unreachable because the skill isn't surfaced in the passive
+  panel (`DAMAGE_RELEVANT` / `ACTIVE_SKILL_TYPE_EXCEPTIONS` in `dataLoader.js`);
+- a skill **removed** on PS still offered (e.g. Increasing Accuracy → gate behind a mechanic flag);
+- gear bonuses parsed but dropped (see the bonus-routing audit under "Done this pass").
+
+**Sequence (most PS-custom changes first):**
+
+1. **Gunslinger [16]** — ✅ done. Fixed: Single Action HIT +4/lv, Soul Bullet ×3, Desperado 1–10
+   range, Tranq Shot (Bull's Eye) Demi/Brute gate, Increasing Accuracy removed. Confirmed correct:
+   Rapid Shower, Gatling Fever (+40% via `rate_bonuses`), Barrage/Madness Canceller (+30%), Wounding
+   Shot, Ground Drift, Full Buster, Spread Attack, Triple Action, Chain Action, Snake Eye.
+2. **Mage / Wizard / Sage [14]** — WZ_FROSTNOVA, WZ_VERMILION, WZ_SIGHTRASHER, WZ_FIREPILLAR
+   (+MDEF ignore), WZ_EARTHSPIKE, WZ_HEAVENDRIVE, WZ_AMPLIFYMAGICPOWER, HW_NAPALMVULCAN (+MDEF
+   ignore), MG_FIREBALL, MG_SOULSTRIKE (MDEF ignore + Undead bonus), SA_ADVANCEDBOOK. Verify magic
+   ratios, MDEF-ignore %, and hit counts (Vermilion 4 waves, etc.).
+3. **Thief / Assassin [12]** — AS_SONICBLOW, AS_SPLASHER (Venom Splasher), AS_KATAR (2nd hit + crit
+   dmg), Enchant Poison passive, Envenom weapon element, dual-wield 3-hit + damage bonus, TF_DOUBLE.
+4. **Rogue / Stalker [7]** — RG_BACKSTAP (+Opportunity, bow Double Attack), RG_RAID, Trick Arrow,
+   Quick Step, Yser.
+5. **Swordsman / Knight [6]** — Bowling Bash, Brandish Spear, Spear Stab, Auto Counter, Magnum endow,
+   Sword/Blade Mastery, Two-Hand & Spear Quicken (crit/hit/flee).
+6. **Monk / Champion [6]** — Triple Attack (+Fury crit), Chain Combo, Combo Finish, Iron Hand
+   (Martial Arts), Extremity Fist SP rework, Demon Bane.
+7. **Acolyte / Priest [6]** — Demon Bane, Signum Crucis, Holy Light, Mace Mastery (+expanded
+   weapons), Magnus Exorcismus, Holy Strike (PS-custom skill).
+8. **Crusader / Paladin [5]** — Holy Cross, Shield Boomerang, Shield Charge (+NK ignore flee),
+   Reflect Shield, Spear Quicken, Providence, Grand Cross (masteries apply).
+9. **Ninja [5]** — Huuma, Hyousensou, Kasumikiri, Kirikage, Raigeki Sai, Nen (Ki).
+10. **Alchemist / Creator [3]** — Acid Terror, Axe Mastery, Acid Demonstration.
+11. **Merchant / Whitesmith [3]** — Cart Revolution, Mammonite (Zeny Pincher), Overthrust party.
+12. **Archer / Hunter [3]** — Vulture's Eye, Freezing Trap, trap PS formula (already reworked — verify).
+13. **Bard / Clown [2]** — Musical Lesson, Musical Strike.
+14. **Dancer / Gypsy [2]** — Dancing Lesson, Throw Arrow.
+
+Cross-cutting PS mechanics to keep in view while auditing any class: `PS_BLEEDING_REVAMP`,
+`PS_GRANDCROSS_MASTERY_APPLIES`, `SC_AMPLIFYMAGICPOWER_SCALING`, `PS_CRIT_SHIELD_DISABLED`, and the
+`SC_TWOHANDQUICKEN` / `SC_SPEARQUICKEN` / `SC_EXPLOSIONSPIRITS` reworks.
+
 ## Suggested order for finishing the port
 
 1. ~~Fill in the rest of `skill_ratio.js`'s `BF_WEAPON_RATIOS` table~~ — done, see above.
