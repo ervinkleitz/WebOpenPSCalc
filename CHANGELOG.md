@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Venom Splasher (and other offensive skills) now selectable** — the skill picker's
+  "damage-dealing only" filter keyed off the skill's attack type, but the skill DB labels everything
+  that isn't a plain weapon/magic hit as "Misc" — so genuinely offensive skills like Venom Splasher
+  and Acid Terror were hidden alongside the buffs and masteries. The picker now also keeps any skill
+  the active server profile has a real damage formula for, so on Payon Stories these appear and
+  calculate correctly (Venom Splasher = `500 + 50×lv + 30×Poison-React-lv`%). Vanilla is unchanged.
 - **Monster-family "Bane" cards now apply** — Orc Lady, Goblin Leader, Kobold Leader, Lava Golem
   (and other `bAddRace2` cards) were doing nothing, because the calculator had no monster-family
   data and silently dropped the bonus. The engine now knows each mob's racial group (RC2) and

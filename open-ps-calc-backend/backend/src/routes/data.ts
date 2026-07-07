@@ -67,7 +67,21 @@ router.get("/skills", (req: Request, res: Response) => {
   const profile = getProfile(server);
   let skills = loader.getAllSkills();
   if (req.query.damage_only === "true") {
-    skills = skills.filter((s: any) => s.attack_type === "Weapon" || s.attack_type === "Magic");
+    // The skill DB types everything that isn't a direct weapon/magic hit as
+    // "Misc" (buffs, masteries, songs, ...), so a plain Weapon/Magic filter also
+    // hides genuine offensive skills the engine *does* compute — e.g. Venom
+    // Splasher (AS_SPLASHER), Acid Terror. Those show up as a real damage ratio
+    // in the active server profile, so also keep any skill the profile can
+    // actually calculate (weapon_ratios / magic_ratios). On vanilla (empty
+    // ratio tables) this leaves the picker unchanged.
+    const wr = profile.weapon_ratios || {};
+    const mr = profile.magic_ratios || {};
+    skills = skills.filter((s: any) =>
+      s.attack_type === "Weapon" ||
+      s.attack_type === "Magic" ||
+      Object.prototype.hasOwnProperty.call(wr, s.name) ||
+      Object.prototype.hasOwnProperty.call(mr, s.name)
+    );
   }
   if (req.query.q) {
     const q = String(req.query.q).toLowerCase();
