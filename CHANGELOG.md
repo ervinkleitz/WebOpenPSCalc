@@ -11,7 +11,9 @@ instead of release version. Dates are taken from actual git commit history.
 
 - **Combat stats now show flat gear ATK, plus a HIT stat** — flat weapon ATK from gear (`bAtk`, e.g.
   PS Bradium Ring's +10) was used in the damage pipeline but left out of the Character panel's ATK
-  readout; it's now included. Added a **HIT** stat to the combat readout too — it was missing
+  readout. It's now shown as part of the equipment-ATK bonus, the `+X` in the in-game-style
+  `base+bonus` readout (e.g. a 1-ATK character with Bradium Ring reads `1+10`; refine and gear `bAtk`
+  are summed into that `+`). Added a **HIT** stat to the combat readout too — it was missing
   entirely, so gear HIT bonuses (e.g. Bradium Ring's +5) weren't visible anywhere. (MATK already
   reflects gear MATK after the `bMatk` fix.)
 - **Gunslinger shotgun masteries now work** — the shotgun skills (Dust, Full Buster, Spread Attack)
