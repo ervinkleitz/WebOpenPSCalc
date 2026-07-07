@@ -64,6 +64,7 @@ const BERSERK_NON_TRANS_IDS = new Set([
   5, 10, 18,  // Merchant tree: Merchant, Blacksmith, Alchemist
   1, 7, 14,   // Swordsman tree: Swordman, Knight, Crusader
   6, 12, 17,  // Thief tree: Thief, Assassin, Rogue
+  24,         // Gunslinger — Berserk Potion is usable per vanilla item_db_usable (Ninja is not; Awakening only)
 ]);
 // PS rebalance: these classes are restricted to Concentration Potion
 const CONC_ONLY_IDS = new Set([

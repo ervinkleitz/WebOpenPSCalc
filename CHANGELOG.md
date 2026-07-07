@@ -5,6 +5,15 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-07
+
+### Fixed
+
+- **Gunslinger can use Berserk Potion** — the ASPD-potion picker capped Gunslinger at Awakening
+  Potion, but Gunslinger is on Berserk Potion's usable-class list even in vanilla (per
+  `item_db_usable`). Gunslinger now offers the full Concentration / Awakening / Berserk range. (Ninja
+  is unchanged — it's genuinely Awakening-capped in vanilla.)
+
 ## 2026-07-06
 
 ### Fixed
