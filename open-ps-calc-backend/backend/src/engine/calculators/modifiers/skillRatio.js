@@ -14,7 +14,7 @@
  * specific ratio for skills not yet transcribed.
  */
 const { loader } = require("../../dataLoader");
-const { scaleFloor, addFlat, pmfStats } = require("../../pmf");
+const { scaleFloor, scaleFloorNumRange, addFlat, pmfStats } = require("../../pmf");
 const { STANDARD } = require("../../serverProfiles");
 
 // battle.c:2039 battle_calc_skillratio BF_WEAPON switch (#else not RENEWAL) — verified subset.
@@ -133,13 +133,28 @@ function calculateSkillRatio(skill, pmf, build, result, opts = {}) {
       if (noh && skill.level <= noh.length) hitCountRaw = noh[skill.level - 1];
     }
   }
-  const hitCount = hitCountRaw > 0 ? hitCountRaw : 1;
-  const displayHits = Math.abs(hitCountRaw);
-  const cosmetic = hitCountRaw < 0;
-
   pmf = scaleFloor(pmf, ratio, 100);
   if (flatAdd > 0) pmf = addFlat(pmf, flatAdd);
-  pmf = scaleFloor(pmf, hitCount, 1);
+
+  // hitCountRaw is normally a number (fixed hits). A weapon_hit_counts fn may
+  // instead return a {min,max} range for variable-hit skills (e.g. Desperado's
+  // 1–10 shots) — that spans the damage across the hit spread instead of
+  // collapsing to a single average.
+  let hitLabel;
+  let hitCount; // representative hit count returned to the caller (forge-bonus divisor)
+  if (hitCountRaw && typeof hitCountRaw === "object") {
+    const lo = Math.max(0, hitCountRaw.min | 0);
+    const hi = Math.max(lo, hitCountRaw.max | 0);
+    pmf = scaleFloorNumRange(pmf, lo, hi, 1, 1);
+    hitLabel = `${lo}–${hi} hits`;
+    hitCount = Math.max(1, Math.round((lo + hi) / 2));
+  } else {
+    hitCount = hitCountRaw > 0 ? hitCountRaw : 1;
+    const cosmetic = hitCountRaw < 0;
+    const displayHits = Math.abs(hitCountRaw);
+    pmf = scaleFloor(pmf, hitCount, 1);
+    hitLabel = cosmetic ? `${displayHits} cosmetic hits` : `${hitCount} hits`;
+  }
 
   if (gearBonuses) {
     const skillAtkBonus = gearBonuses.skill_atk[skillName] || 0;
@@ -154,7 +169,7 @@ function calculateSkillRatio(skill, pmf, build, result, opts = {}) {
   result.add_step({
     name: `Skill Ratio (ID ${skill.id} Lv ${skill.level})`, value: av, min_value: mn, max_value: mx, multiplier: ratio / 100,
     note: skillData ? skillData.description || "" : "",
-    formula: cosmetic ? `dmg × ${ratio}% × ${displayHits} cosmetic hits (${ratioSrc})` : `dmg × ${ratio}% × ${hitCount} hits (${ratioSrc})`,
+    formula: `dmg × ${ratio}% × ${hitLabel} (${ratioSrc})`,
     hercules_ref: "battle.c battle_calc_skillratio",
   });
 

@@ -169,7 +169,7 @@ const PS_RATE_BONUSES = {
 // (hitCount fn — same signature as weapon_ratios.)
 const PS_WEAPON_HIT_COUNTS = {
   GS_MAGICALBULLET: () => 3,  // Soul Bullet hits 3× (like Triple Action) — wiki.payonstories.com/Soul_Bullet
-  GS_DESPERADO: () => 6,      // Desperado: 0–10 hits, 6 on average — wiki.payonstories.com/Desperado (uses the average)
+  GS_DESPERADO: () => ({ min: 1, max: 10 }),  // Desperado sprays a variable number of shots (in-game 0–10, ~6 avg) — show the damage as a 1–10-hit range rather than a single average. wiki.payonstories.com/Desperado
 };
 
 // Mechanic flag sentinels — checked by individual modifiers across the engine.
