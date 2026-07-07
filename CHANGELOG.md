@@ -9,6 +9,19 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **ATK readout now shows the refine bonus** — the Character panel's ATK stat showed only
+  `statusATK + weaponATK` and left out the weapon's refine ATK, so a refined weapon read low versus
+  the in-game status window. It now displays the same two-part value as in-game (e.g. `420+35`, where
+  `+35` is a +7 level-3 weapon's refine ATK). Damage was already correct — this was a display-only
+  gap in the stat panel.
+- **Skill damage bonuses (`bSkillAtk`) no longer double-counted** — cards/items that boost a specific
+  skill's damage (e.g. an Acid Terror +30% card, or Yser Card's Backstab/Raid +10%) were applied
+  **twice** in the weapon-skill pipeline — once inside the skill-ratio step and again right after —
+  inflating those skills. They're now applied once. Example: a bow Rogue's Acid Terror dropped from
+  an inflated 3049 to the correct 2333. Skills without a `bSkillAtk` bonus are unaffected.
+- **Acid Terror ignores cards** — `AM_ACIDTERROR` (and other `IgnoreCards` skills) now correctly
+  bypass the Card Fix stage, so card damage modifiers (bAddRace/bAddEle/bAddSize/atk-element and the
+  target's card-based resists) don't apply. Flat-ATK cards (Andre, etc.) still count, as in-game.
 - **Venom Splasher (and other offensive skills) now selectable** — the skill picker's
   "damage-dealing only" filter keyed off the skill's attack type, but the skill DB labels everything
   that isn't a plain weapon/magic hit as "Misc" — so genuinely offensive skills like Venom Splasher

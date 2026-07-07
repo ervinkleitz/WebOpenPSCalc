@@ -164,8 +164,9 @@ without re-auditing everything from scratch.
   via `support_buffs.backstab_opportunity`), Vulture's Eye bow Double Attack
   (`min(TF_DOUBLE_lv, AC_VULTURE_lv)` proc, `RG_BOW_DOUBLE_ATTACK` flag),
   Yser Card functional (`bSkillAtk` for RG_BACKSTAP/RG_RAID, +5 HIT).
-  `_runBranch` now applies `gearBonuses.skill_atk` (bSkillAtk) after the
-  skill ratio step, matching the existing magic/trap branch behaviour.
+  `bSkillAtk` is applied inside `calculateSkillRatio()` for the weapon branch.
+  (An earlier pass also re-applied it in `_runBranch`, double-counting every
+  weapon skill's `bSkillAtk` — that duplicate has since been removed.)
   **Cards always proc toggle implemented** — `gearBonusAggregator.compute()`
   now parses `autobonus` / `autobonus2` scripts from item scripts and stores
   them in `gearBonuses.auto_bonuses`. When `build.flags.force_procs` is set,
@@ -390,7 +391,8 @@ without re-auditing everything from scratch.
   Vulture's Eye enables bow Double Attack (`RG_BOW_DOUBLE_ATTACK` flag;
   proc = `doubleRate × min(TF_DOUBLE_lv, AC_VULTURE_lv)`). Yser Card (ID 8236)
   now functional: `bSkillAtk` for RG_BACKSTAP/RG_RAID (+10% each) and +5 HIT.
-  `_runBranch` now applies `gearBonuses.skill_atk` bonuses after skill ratio.
+  `bSkillAtk` bonuses are applied once, inside `calculateSkillRatio()` (a later
+  fix removed a duplicate re-application in `_runBranch` that double-counted them).
 - Magic pipeline (#1 above moved to "Fully ported").
 - Card slots on equipment — up to 4 per item, read from `item.slots`,
   written to `equipped["<slot>_cardN"]`, already consumed by

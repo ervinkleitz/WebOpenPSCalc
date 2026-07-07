@@ -698,13 +698,10 @@ class BattlePipeline {
       target, weapon, profile, ctx, gear_bonuses: gearBonuses,
     });
 
-    // bSkillAtk — skill-specific damage bonus from cards/items (e.g. Yser Card).
-    const skillAtkBonusWpn = gearBonuses ? (gearBonuses.skill_atk?.[skill.name] || 0) : 0;
-    if (skillAtkBonusWpn) {
-      pmf = scaleFloor(pmf, 100 + skillAtkBonusWpn, 100);
-      const [mnB, mxB, avB] = pmfStats(pmf);
-      result.add_step({ name: "Skill ATK Bonus", value: avB, min_value: mnB, max_value: mxB, multiplier: (100 + skillAtkBonusWpn) / 100, note: `bSkillAtk: ${skill.name} +${skillAtkBonusWpn}%`, formula: `dmg × (100+${skillAtkBonusWpn})/100`, hercules_ref: "pc.c:3513-3527" });
-    }
+    // NOTE: bSkillAtk (skill-specific damage bonus from cards/items, e.g. Yser
+    // Card) is applied inside calculateSkillRatio() above — do NOT re-apply it
+    // here or it double-counts (was inflating every weapon skill with a
+    // bSkillAtk bonus, e.g. Acid Terror +30%, by that percentage twice).
 
     // PS Rogue rework: Backstab Opportunity — ×1.4 when monster is not targeting
     // the Rogue (or player is not facing the Rogue in PvP).
@@ -763,7 +760,16 @@ class BattlePipeline {
     const div = hitCount;
     pmf = calculateForgeBonus(weapon, div, pmf, result);
 
-    pmf = calculateCardFix(build, gearBonuses, effAtkEle, target, isRanged, pmf, result);
+    // NK_IGNORE_CARDS (e.g. Acid Terror): the skill's damage is unaffected by
+    // card damage modifiers (bAddRace/bAddEle/bAddSize/atk-ele and the target's
+    // card-based resists), so skip the Card Fix stage entirely. Flat ATK cards
+    // (Andre etc.) still count — they live in ATK, not here.
+    if (skill.nk_ignore_cards) {
+      const [mn, mx, av] = pmfStats(pmf);
+      result.add_step({ name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier: 1.0, note: "BYPASSED — damage_type includes IgnoreCards", formula: "no change", hercules_ref: "skills.json damage_type / battle.c NK_IGNORE_CARDS" });
+    } else {
+      pmf = calculateCardFix(build, gearBonuses, effAtkEle, target, isRanged, pmf, result);
+    }
 
     pmf = calculateFinalRateBonus(isRanged, pmf, this.config, result);
 
@@ -800,6 +806,7 @@ class BattlePipeline {
     skill.nk_ignore_def = damageType.includes("IgnoreDefense");
     skill.nk_ignore_flee = damageType.includes("IgnoreFlee");
     skill.nk_ignore_ele = damageType.includes("IgnoreElement");
+    skill.nk_ignore_cards = damageType.includes("IgnoreCards");
     skill.ignore_size_fix = skillName === "MO_EXTREMITYFIST";
 
     const amotion = Math.max(100, Math.round(2000 - status.aspd * 10));
