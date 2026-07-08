@@ -7,6 +7,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-07
 
+### Changed
+
+- **Shorter share links** — build-share URLs are now ~40% shorter. Before compressing, the shared
+  state drops every value that equals its default and fields that are re-derived on load (job name,
+  skill max-level, an unused custom target in monster mode, the default server, …), under a new
+  `z2_` link format. Every existing shared link (the older `z1_` and legacy forms) still opens
+  unchanged.
+
 ### Fixed
 
 - **Quagmire's effect is now visible** — Quagmire only lowers the target's flee (→ your hit chance),

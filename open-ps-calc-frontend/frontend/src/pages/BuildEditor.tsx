@@ -356,12 +356,74 @@ const DEFAULT_TARGET_MODS: TargetMods = {
   stun: false,
 };
 
+// Compact URL state (z2_): before compressing, drop every value that equals its
+// default and every field that can be re-derived on load, then re-hydrate against
+// the defaults on decode. Cuts a typical share link by ~40%. Older z1_ links (full
+// JSON) and the legacy base64 form still decode below, so every shared URL keeps working.
+const URL_STATE_DEFAULTS = {
+  build: DEFAULT_BUILD,
+  skill: DEFAULT_SKILL,
+  targetMode: "monster",
+  customTarget: DEFAULT_CUSTOM_TARGET,
+  targetMods: DEFAULT_TARGET_MODS,
+};
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object" && !Array.isArray(v);
+}
+
+// Drop keys whose value deep-equals the default; drop objects that become empty.
+function pruneDefaults(value: any, def: any): any {
+  if (isPlainObject(value)) {
+    const d = isPlainObject(def) ? def : {};
+    const out: Record<string, any> = {};
+    for (const k of Object.keys(value)) {
+      const pv = pruneDefaults(value[k], (d as any)[k]);
+      if (pv !== undefined) out[k] = pv;
+    }
+    return Object.keys(out).length ? out : undefined;
+  }
+  if (Array.isArray(value)) {
+    return JSON.stringify(value) === JSON.stringify(def) ? undefined : value;
+  }
+  return value === def ? undefined : value;
+}
+
+// Inverse of pruneDefaults: fill any missing key from the (freshly cloned) defaults.
+function mergeDefaults(value: any, def: any): any {
+  if (isPlainObject(def)) {
+    const out: Record<string, any> = { ...def };
+    if (isPlainObject(value)) for (const k of Object.keys(value)) out[k] = mergeDefaults(value[k], (def as any)[k]);
+    return out;
+  }
+  return value === undefined ? def : value;
+}
+
 function encodeState(state: UrlEditorState): string {
-  return "z1_" + LZString.compressToEncodedURIComponent(JSON.stringify(state));
+  const compact: any = {
+    build: { ...state.build },
+    skill: { ...state.skill },
+    targetMode: state.targetMode,
+    customTarget: state.customTarget,
+    targetMods: state.targetMods,
+  };
+  delete compact.build.job_name;   // derivable from job_id (jobs list)
+  delete compact.skill.max_level;  // re-synced from the skill DB on load
+  // In monster mode the custom target is unused — reset it so it prunes away.
+  if (compact.targetMode === "monster") compact.customTarget = DEFAULT_CUSTOM_TARGET;
+  const pruned = pruneDefaults(compact, URL_STATE_DEFAULTS) ?? {};
+  return "z2_" + LZString.compressToEncodedURIComponent(JSON.stringify(pruned));
 }
 
 function decodeState(encoded: string): UrlEditorState | null {
   try {
+    if (encoded.startsWith("z2_")) {
+      const json = LZString.decompressFromEncodedURIComponent(encoded.slice(3));
+      if (!json) return null;
+      // Fresh clone of the defaults so the returned state shares no references with them.
+      const defs = JSON.parse(JSON.stringify(URL_STATE_DEFAULTS));
+      return mergeDefaults(JSON.parse(json), defs) as UrlEditorState;
+    }
     if (encoded.startsWith("z1_")) {
       const json = LZString.decompressFromEncodedURIComponent(encoded.slice(3));
       return json ? JSON.parse(json) : null;
