@@ -434,16 +434,36 @@ function decodeState(encoded: string): UrlEditorState | null {
   }
 }
 
+// Working-draft autosave (sessionStorage): keeps in-progress edits across a refresh
+// even though the URL only changes on Save/Copy-link. Per-tab; cleared on tab close.
+const DRAFT_KEY = "opscalc.draft";
+const DEFAULT_URL_STATE: UrlEditorState = {
+  build: DEFAULT_BUILD,
+  skill: DEFAULT_SKILL,
+  targetMode: "monster",
+  customTarget: DEFAULT_CUSTOM_TARGET,
+  targetMods: DEFAULT_TARGET_MODS,
+};
+// Encoding of the untouched default build — the "committed" baseline when there's no ?b param.
+const DEFAULT_ENCODED = encodeState(DEFAULT_URL_STATE);
+
 export default function BuildEditor() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialState = (() => {
-    const encoded = searchParams.get("b");
-    if (encoded) {
-      const s = decodeState(encoded);
-      if (s) return s;
-    }
-    return null;
+    const param = searchParams.get("b");
+    const urlState = param ? decodeState(param) : null;
+    let draft: { state: UrlEditorState; sourceParam: string | null } | null = null;
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (raw) draft = JSON.parse(raw);
+    } catch { /* ignore */ }
+    // A shared link that differs from the draft's source wins (someone sent you a
+    // fresh build — show theirs, not your old draft).
+    if (param && (!draft || draft.sourceParam !== param)) return urlState;
+    // Otherwise restore the working draft (refresh / continue editing).
+    if (draft?.state) return draft.state;
+    return urlState;
   })();
 
   const [data, setData] = useState<BuildData>(initialState?.build ?? DEFAULT_BUILD);
@@ -605,6 +625,26 @@ export default function BuildEditor() {
     setSearchParams({ b }, { replace: true });
     return `${window.location.origin}${window.location.pathname}?${new URLSearchParams({ b })}`;
   }
+
+  // Autosave the working state to sessionStorage (debounced) so a refresh keeps
+  // in-progress edits. Tagged with the current ?b param so a freshly-opened shared
+  // link isn't overridden by an old draft (see initialState resolution above).
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const state: UrlEditorState = { build: data, skill, targetMode, customTarget, targetMods };
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ state, sourceParam: searchParams.get("b") }));
+      } catch { /* storage full / disabled — ignore */ }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [data, skill, targetMode, customTarget, targetMods, searchParams]);
+
+  // Whether the working state differs from what's committed to the URL (the last
+  // Save/Copy-link), or from the untouched default when there's no ?b param.
+  const hasUnsavedChanges = useMemo(() => {
+    const committed = searchParams.get("b") ?? DEFAULT_ENCODED;
+    return encodeState({ build: data, skill, targetMode, customTarget, targetMods }) !== committed;
+  }, [data, skill, targetMode, customTarget, targetMods, searchParams]);
 
   // Resolve names for already-equipped items
   useEffect(() => {
@@ -877,6 +917,8 @@ export default function BuildEditor() {
     setCalcResult(null);
     setCalcError("");
     setResultsOpen(false);
+    try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    setSearchParams({}, { replace: true }); // drop the ?b param so a refresh stays on the new build
   }
 
   function onLoadSavedState(state: UrlEditorState) {
@@ -1042,7 +1084,9 @@ export default function BuildEditor() {
               <option value="payon_stories">Payon Stories</option>
               <option value="standard">Standard pre-renewal</option>
             </select>
-            <button onClick={() => { setSavedBuildsOpen(true); setMenuOpen(false); }}>Save / Load</button>
+            <button onClick={() => { setSavedBuildsOpen(true); setMenuOpen(false); }}>
+              Save / Load{hasUnsavedChanges && <span className="unsaved-dot" title="You have unsaved changes — save or copy the share link to keep them">●</span>}
+            </button>
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
             <button onClick={() => { setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
@@ -1056,6 +1100,7 @@ export default function BuildEditor() {
             aria-label={menuOpen ? "Close menu" : "Open menu"}
           >
             {menuOpen ? "✕" : "☰"}
+            {!menuOpen && hasUnsavedChanges && <span className="unsaved-dot" title="Unsaved changes">●</span>}
           </button>
 
           <button className="primary" onClick={() => onCalculate()} disabled={calculating}>

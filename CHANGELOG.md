@@ -11,8 +11,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 - **The share URL only updates on Save or Copy-link** — the address bar no longer rewrites itself on
   every edit; it's updated only when you save a build or copy the share link, so the URL stays stable
-  while you tweak. (One consequence: unsaved edits aren't in the URL, so a page refresh reverts to
-  the last saved/shared state — save or copy the link first to keep changes.)
+  while you tweak.
+- **Edits survive refresh (auto-draft) + an unsaved-changes dot** — your in-progress build is now
+  autosaved to the browser tab so a refresh keeps unsaved edits, even though the URL doesn't change.
+  A freshly-opened shared link still shows that build (not your old draft). An **unsaved-changes dot**
+  appears on the Save / Load button (and the mobile menu) until you save the build or copy the share
+  link. "Start over" clears the draft. The draft is per-tab and cleared when the tab closes; use Save
+  to keep a build permanently.
 - **"Unofficial fan tool" disclaimer** — the title now marks the app as an unofficial, fan-made tool,
   with a fuller disclaimer in the title's info tooltip and the footer (not affiliated with or
   maintained by the Payon Stories staff; numbers may be inaccurate — verify in-game). Link-embed
