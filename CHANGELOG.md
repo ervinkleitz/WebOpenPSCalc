@@ -9,6 +9,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **"Unofficial fan tool" disclaimer** — the title now marks the app as an unofficial, fan-made tool,
+  with a fuller disclaimer in the title's info tooltip and the footer (not affiliated with or
+  maintained by the Payon Stories staff; numbers may be inaccurate — verify in-game). Link-embed
+  titles/descriptions say the same.
 - **Shorter share links** — build-share URLs are now ~40% shorter. Before compressing, the shared
   state drops every value that equals its default and fields that are re-derived on load (job name,
   skill max-level, an unused custom target in monster mode, the default server, …), under a new

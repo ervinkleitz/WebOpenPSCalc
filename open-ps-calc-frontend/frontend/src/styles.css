@@ -136,6 +136,7 @@ label {
   color: var(--text-faint);
   text-align: center;
 }
+.credits-disclaimer { max-width: 640px; font-size: 0.72rem; color: var(--text-dim); line-height: 1.5; }
 .credits-support { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
 .credits-support-text { color: var(--text-faint); font-size: 0.72rem; }
 .credits-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
@@ -415,6 +416,17 @@ label {
   margin-bottom: 0.4rem;
 }
 .info-tooltip-bubble a { font-family: var(--mono); font-size: 0.78rem; }
+.tooltip-disclaimer {
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius);
+  background: rgba(226, 104, 92, 0.1);
+  border: 1px solid var(--crit);
+  color: var(--crit);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
 .info-tooltip-bubble .tooltip-row {
   display: flex;
   justify-content: space-between;
