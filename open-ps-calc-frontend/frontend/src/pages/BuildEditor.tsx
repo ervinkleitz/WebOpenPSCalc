@@ -464,6 +464,14 @@ export default function BuildEditor() {
   // Dodge is separate; FLEE also drops when several mobs target you at once).
   const mobDodgeFlee = mobInfo?.stats ? mobInfo.level + mobInfo.stats.dex + 75 : null;
 
+  // The mob's own soft FLEE (level + AGI). Quagmire cuts AGI by 10%/lv (boss-immune),
+  // which lowers flee by the same amount — computed live so the Target panel shows the
+  // drop even before recalculating. Matches the backend's Quagmire math.
+  const mobBaseFlee = mobInfo?.stats ? mobInfo.level + mobInfo.stats.agi : null;
+  const mobEffFlee = (mobBaseFlee != null && quagmireLv > 0 && !mobInfo?.is_boss)
+    ? mobBaseFlee - Math.floor((mobInfo!.stats!.agi * 10 * quagmireLv) / 100)
+    : mobBaseFlee;
+
   const totalStatPoints = useMemo(
     () => getTotalStatPoints(data.base_level, data.job_id),
     [data.base_level, data.job_id],
@@ -475,6 +483,11 @@ export default function BuildEditor() {
   );
 
   const [calcResult, setCalcResult] = useState<any>(null);
+  // Quagmire can't raise hit past the 100% cap — flag it as redundant if the last
+  // calc already shows 100% hit, so the Target panel can say so.
+  const quagmireRedundant = quagmireLv > 0
+    && !!calcResult?.normal_attack?.result
+    && calcResult.normal_attack.result.hit_chance >= 100;
   const [calculating, setCalculating] = useState(false);
   const [calcError, setCalcError] = useState("");
   const [forceProcs, setForceProcs] = useState(false);
@@ -1734,6 +1747,7 @@ export default function BuildEditor() {
                         { label: "INT",     value: mobInfo.stats ? String(mobInfo.stats.int) : undefined },
                         { label: "DEX",     value: mobInfo.stats ? String(mobInfo.stats.dex) : undefined },
                         { label: "LUK",     value: mobInfo.stats ? String(mobInfo.stats.luk) : undefined },
+                        { label: "Flee",    value: mobBaseFlee != null ? (mobEffFlee !== mobBaseFlee ? `${mobBaseFlee} → ${mobEffFlee}` : String(mobBaseFlee)) : undefined, title: `The monster's own soft FLEE (level + AGI). ${mobEffFlee !== mobBaseFlee ? `Quagmire Lv${quagmireLv} lowers it from ${mobBaseFlee} to ${mobEffFlee}, raising your hit chance.` : "Lowered by Quagmire (−AGI)."}` },
                         { label: "Flee 95%", value: mobDodgeFlee != null ? mobDodgeFlee.toLocaleString() : undefined, title: `FLEE to dodge this monster 95% of the time (mob level + DEX + 75 = ${mobDodgeFlee ?? "?"}). Soft-flee only — Perfect Dodge is separate, and FLEE drops when several mobs attack at once.` },
                       ] as { label: string; value?: string; title?: string }[]).map(({ label, value, title }) => (
                         <div key={label} className="sec-stat-card" title={title}>
@@ -1864,6 +1878,12 @@ export default function BuildEditor() {
                   <option key={lv} value={lv}>Lv {lv}{lv === 5 ? " (max)" : ""}</option>
                 ))}
               </select>
+              {quagmireRedundant && (
+                <div className="hint-text">
+                  Your hit chance is already at the 100% cap — Quagmire only helps when you're missing
+                  (it lowers flee, not damage).
+                </div>
+              )}
             </div>
             <div className="field field-checkbox">
               <label title={signumApplicable ? "AL_CRUCIS Lv10 (PS): hard DEF −50% (10 + 4×lv). Undead-element or Demon-race only." : "Signum Crucis only affects Undead-element or Demon-race targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>

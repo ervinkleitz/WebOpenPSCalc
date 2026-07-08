@@ -9,6 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Quagmire's effect is now visible** — Quagmire only lowers the target's flee (→ your hit chance),
+  never damage, so it looked like it "did nothing" when your hit was already at the 100% cap. The
+  Target panel now shows the monster's own **Flee** and how Quagmire reduces it (e.g. `116 → 91`),
+  and a note appears under the Quagmire selector when your hit is already 100% (so it has no further
+  effect). The mechanic itself was already correct.
 - **Desperado damage shown as a range** — Desperado's `100+20×lv` is *per hit* and it sprays a
   variable number of shots (in-game 0–10, ~6 average); the calc treated it as a single hit. It now
   shows the damage as a **1–10-hit range** (the damage summary's min = a single shot, max = all 10),
