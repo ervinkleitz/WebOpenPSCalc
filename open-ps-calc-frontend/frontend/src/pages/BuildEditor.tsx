@@ -593,14 +593,18 @@ export default function BuildEditor() {
       .catch(() => {});
   }, [skill.id, data.server]);
 
-  // Keep URL in sync with editor state (debounced 400ms)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const state: UrlEditorState = { build: data, skill, targetMode, customTarget, targetMods };
-      setSearchParams({ b: encodeState(state) }, { replace: true });
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [data, skill, targetMode, customTarget, targetMods]);
+  // The URL only reflects the build on an explicit Save or Copy-share-link (see
+  // writeStateToUrl below) — not on every edit — so the address bar stays stable
+  // while you tweak a build.
+  function writeStateToUrl(buildOverride?: Partial<BuildData>): string {
+    const state: UrlEditorState = {
+      build: buildOverride ? { ...data, ...buildOverride } : data,
+      skill, targetMode, customTarget, targetMods,
+    };
+    const b = encodeState(state);
+    setSearchParams({ b }, { replace: true });
+    return `${window.location.origin}${window.location.pathname}?${new URLSearchParams({ b })}`;
+  }
 
   // Resolve names for already-equipped items
   useEffect(() => {
@@ -887,7 +891,8 @@ export default function BuildEditor() {
   }
 
   function onCopyLink() {
-    navigator.clipboard.writeText(window.location.href).then(() => {
+    const url = writeStateToUrl(); // encode current state, reflect it in the URL, and copy that link
+    navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -1068,7 +1073,7 @@ export default function BuildEditor() {
           currentName={data.name}
           currentState={currentEditorState}
           onLoad={onLoadSavedState}
-          onSave={(name) => setData((prev) => ({ ...prev, name }))}
+          onSave={(name) => { setData((prev) => ({ ...prev, name })); writeStateToUrl({ name }); }}
         />
         {data.server === "payon_stories" && (
           <div className="reworks-banner">

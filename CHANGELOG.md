@@ -9,6 +9,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **The share URL only updates on Save or Copy-link** — the address bar no longer rewrites itself on
+  every edit; it's updated only when you save a build or copy the share link, so the URL stays stable
+  while you tweak. (One consequence: unsaved edits aren't in the URL, so a page refresh reverts to
+  the last saved/shared state — save or copy the link first to keep changes.)
 - **"Unofficial fan tool" disclaimer** — the title now marks the app as an unofficial, fan-made tool,
   with a fuller disclaimer in the title's info tooltip and the footer (not affiliated with or
   maintained by the Payon Stories staff; numbers may be inaccurate — verify in-game). Link-embed
