@@ -459,7 +459,13 @@ export default function BuildEditor() {
     const equipped = initialState?.build?.equipped ?? {};
     const init: Record<string, boolean> = {};
     for (const [k, v] of Object.entries(slots)) {
-      if (Array.isArray(v) && v.length > 0 && equipped[k] != null) init[k] = true;
+      if (!Array.isArray(v) || v.length === 0 || equipped[k] == null) continue;
+      // Don't default to wildcard mode when the slot actually has real cards
+      // selected — the wildcard_slots data is just stale from an earlier toggle.
+      const hasRealCards = Object.keys(equipped).some(
+        (ek) => ek.startsWith(`${k}_card`) && equipped[ek] != null,
+      );
+      if (!hasRealCards) init[k] = true;
     }
     return init;
   });
@@ -1333,7 +1339,17 @@ export default function BuildEditor() {
                           <div className="card-mode-toggle">
                             <button
                               className={!wildcardMode[slot.key] ? "active" : ""}
-                              onClick={() => setWildcardMode((prev) => ({ ...prev, [slot.key]: false }))}
+                              onClick={() => {
+                                setWildcardMode((prev) => ({ ...prev, [slot.key]: false }));
+                                // Drop the slot's wildcard mix so it isn't persisted and
+                                // wrongly re-selected as wildcard mode on the next load.
+                                setData((prev) => {
+                                  if (!prev.wildcard_slots?.[slot.key]) return prev;
+                                  const next = { ...prev.wildcard_slots };
+                                  delete next[slot.key];
+                                  return { ...prev, wildcard_slots: next };
+                                });
+                              }}
                             >
                               Cards
                             </button>

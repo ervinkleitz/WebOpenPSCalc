@@ -17,6 +17,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Weapon cards no longer flip to "Wildcard mix" on reload** — if you'd tried the wildcard mix on a
+  weapon and then switched back to picking real cards, reloading the build wrongly reselected the
+  Wildcard tab (leftover wildcard data was mistaken for wildcard mode). A slot with real cards now
+  loads in card mode, and switching back to "Cards" clears the stale wildcard data.
 - **Quagmire's effect is now visible** — Quagmire only lowers the target's flee (→ your hit chance),
   never damage, so it looked like it "did nothing" when your hit was already at the 100% cap. The
   Target panel now shows the monster's own **Flee** and how Quagmire reduces it (e.g. `116 → 91`),
