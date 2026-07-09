@@ -492,8 +492,14 @@ brackets are the number of PS-custom entries found across those tables.
    to `ps_skill_db.json`), so both are selectable and compute (DEF applies). Only Holy Strike
    (PS_PR_HOLYSTRIKE) remains unsurfaced — a passive melee proc with a mismatched job array
    ([7, 4008] = Knight/LK) that needs its own review.
-5. **Swordsman / Knight [6]** — Bowling Bash, Brandish Spear, Spear Stab, Auto Counter, Magnum endow,
-   Sword/Blade Mastery, Two-Hand & Spear Quicken (crit/hit/flee).
+5. **Swordsman / Knight [6]** — ✅ done (Knight Patch PDF + wiki, with-DEF). Fixed: **Blade Mastery**
+   (SM_TWOHAND, key SM_TWOHANDSWORD) now covers 1H swords — the fallback pointed at a non-existent
+   `KN_TWOHANDMASTERY`, so 1H-sword Knights got no mastery ATK; **Counter Attack** always-crits (its
+   id was hard-coded 8 = SM_ENDURE; real id 61); **Bowling Bash** scales 100+30×lv (was flat 400%,
+   only right at Lv10). Confirmed correct: Counter Attack 200%, Spear Stab 100+40×lv (max 5), Sword
+   Quickening (+1% crit/lv, 1H-sword 1/3 ASPD partial), Brandish Spear distance formula, Spear
+   Mastery [5,7]. Non-damage rework items (Living Sword SP-free casts, Charge Attack timing) are out
+   of a damage calculator's scope.
 6. **Monk / Champion [6]** — Triple Attack (+Fury crit), Chain Combo, Combo Finish, Iron Hand
    (Martial Arts), Extremity Fist SP rework, Demon Bane.
 7. **Acolyte / Priest [6]** — ✅ done. Fixed: AL_HOLYLIGHT (flat 250% MATK + Cookie card +20% on
