@@ -546,7 +546,14 @@ brackets are the number of PS-custom entries found across those tables.
     to caster AND party — PS grants the party the full bonus — added additively to the skill
     multiplier, per the wiki). Cart Termination isn't a PS skill (the wiki's only "Cart" skill is
     Cart Revolution), so its vanilla-fallback ratio is moot.
-12. **Archer / Hunter [3]** — Vulture's Eye, Freezing Trap, trap PS formula (already reworked — verify).
+12. **Archer / Hunter [3]** — ✅ done (Hunter Rework PDF, with-DEF). All correct, no code changes:
+    the PS INT/DEX trap formulas were already implemented and match the PDF's comparison table exactly
+    (Land Mine SkillLv×(JobLv+Dex)×(BaseLv+Int)/45, Blast Mine .../45 with Dex/Int roles swapped,
+    Freezing Trap & Claymore Trap the same pattern /70 → for 99/50 DEX150/INT100: LandMine 4422,
+    BlastMine 4150, FreezingTrap 2842, Claymore 2667). Traps correctly bypass DEF and auto-hit
+    (IgnoreDefense/IgnoreFlee). Card bonuses verified applying via bSkillAtk: Dory (+5% Freezing/
+    Claymore), Wolpertinger (+5% Land/Blast), Setting Dirk (+5% all four traps). Vulture's Eye
+    contributes its +Hit as expected.
 13. **Bard / Clown [2]** — Musical Lesson, Musical Strike.
 14. **Dancer / Gypsy [2]** — Dancing Lesson, Throw Arrow.
 
