@@ -464,10 +464,15 @@ brackets are the number of PS-custom entries found across those tables.
    range, Tranq Shot (Bull's Eye) Demi/Brute gate, Increasing Accuracy removed. Confirmed correct:
    Rapid Shower, Gatling Fever (+40% via `rate_bonuses`), Barrage/Madness Canceller (+30%), Wounding
    Shot, Ground Drift, Full Buster, Spread Attack, Triple Action, Chain Action, Snake Eye.
-2. **Mage / Wizard / Sage [14]** — WZ_FROSTNOVA, WZ_VERMILION, WZ_SIGHTRASHER, WZ_FIREPILLAR
-   (+MDEF ignore), WZ_EARTHSPIKE, WZ_HEAVENDRIVE, WZ_AMPLIFYMAGICPOWER, HW_NAPALMVULCAN (+MDEF
-   ignore), MG_FIREBALL, MG_SOULSTRIKE (MDEF ignore + Undead bonus), SA_ADVANCEDBOOK. Verify magic
-   ratios, MDEF-ignore %, and hit counts (Vermilion 4 waves, etc.).
+2. **Mage / Wizard / Sage [14]** — ✅ done (verified against the Sage Rework and Wizard/High-Wizard
+   PDFs). Fixed: HW_NAPALMVULCAN (flat 100% MATK/hit + Shadow/Dark element + 50% MDEF ignore all
+   levels), MG_SOULSTRIKE (flat 100%/hit base; +5%×lv vs-Undead bonus + 50% MDEF-ignore gated on
+   lv10 both kept; fixed a vs-Undead crash), WZ_METEOR (flat 100%/hit). Confirmed correct:
+   WZ_FROSTNOVA (175+15×lv, +10×FrostDiver, max 5), WZ_VERMILION (200×lv = 2000% @10),
+   WZ_SIGHTRASHER (100+75×lv, max 5), WZ_FIREPILLAR (70+2×FireWall per hit × (2+2×lv) hits, +50%
+   MDEF ignore, max 5), WZ_EARTHSPIKE / WZ_HEAVENDRIVE (140%/level), MG_FIREBALL (70→340%),
+   WZ_AMPLIFYMAGICPOWER (10–50%, max 5), SA_ADVANCEDBOOK (max 5, Atk/ASPD). Not modeled:
+   HW_GRAVITATION (fixed build-independent DoT, 400–1200/sec — nothing to compute).
 3. **Thief / Assassin [12]** — AS_SONICBLOW, AS_SPLASHER (Venom Splasher), AS_KATAR (2nd hit + crit
    dmg), Enchant Poison passive, Envenom weapon element, dual-wield 3-hit + damage bonus, TF_DOUBLE.
 4. **Rogue / Stalker [7]** — RG_BACKSTAP (+Opportunity, bow Double Attack), RG_RAID, Trick Arrow,
@@ -476,8 +481,11 @@ brackets are the number of PS-custom entries found across those tables.
    Sword/Blade Mastery, Two-Hand & Spear Quicken (crit/hit/flee).
 6. **Monk / Champion [6]** — Triple Attack (+Fury crit), Chain Combo, Combo Finish, Iron Hand
    (Martial Arts), Extremity Fist SP rework, Demon Bane.
-7. **Acolyte / Priest [6]** — Demon Bane, Signum Crucis, Holy Light, Mace Mastery (+expanded
-   weapons), Magnus Exorcismus, Holy Strike (PS-custom skill).
+7. **Acolyte / Priest [6]** — ✅ done. Fixed: AL_HOLYLIGHT (flat 250% MATK + Cookie card +20% on
+   PS), PR_TURNUNDEAD (real fixed-damage formula (BaseLv+INT+SkillLv×10)×3×(1+LUK×3/200), Holy,
+   ignores DEF/cards — was wrongly computed as 100% MATK). Confirmed correct: Demon Bane, Signum
+   Crucis, Mace Mastery (+expanded weapons), Magnus Exorcismus. Note: PS_PR_HOLYSTRIKE remains an
+   unwired PS-custom skill (getSkill can't resolve PS-custom IDs), and its job array is [7, 4008].
 8. **Crusader / Paladin [5]** — Holy Cross, Shield Boomerang, Shield Charge (+NK ignore flee),
    Reflect Shield, Spear Quicken, Providence, Grand Cross (masteries apply).
 9. **Ninja [5]** — Huuma, Hyousensou, Kasumikiri, Kirikage, Raigeki Sai, Nen (Ki).
