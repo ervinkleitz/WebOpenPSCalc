@@ -473,8 +473,16 @@ brackets are the number of PS-custom entries found across those tables.
    MDEF ignore, max 5), WZ_EARTHSPIKE / WZ_HEAVENDRIVE (140%/level), MG_FIREBALL (70→340%),
    WZ_AMPLIFYMAGICPOWER (10–50%, max 5), SA_ADVANCEDBOOK (max 5, Atk/ASPD). Not modeled:
    HW_GRAVITATION (fixed build-independent DoT, 400–1200/sec — nothing to compute).
-3. **Thief / Assassin [12]** — AS_SONICBLOW, AS_SPLASHER (Venom Splasher), AS_KATAR (2nd hit + crit
-   dmg), Enchant Poison passive, Envenom weapon element, dual-wield 3-hit + damage bonus, TF_DOUBLE.
+3. **Thief / Assassin [12]** — ✅ done (verified against the Assassin Rework doc). Fixed: Enchant
+   Poison / Venom Dust capped at level 5 (Enchant Poison's passive +2%/lv vs Poison-element monsters
+   was reaching +20% instead of +10%). Confirmed correct: AS_SONICBLOW (500+40×lv = 900% @10) incl.
+   the new crit rules (crit-eligible, Katar ×2 crit chance, crit bypasses DEF, excluded from Katar
+   Mastery's +50% crit dmg — verified vs a DEF-100 target), AS_GRIMTOOTH crit, Katar offhand 2nd hit
+   (21+4×KatarMastery = 61% @10), Envenom weapon element (TF_POISON_USES_WEAPON_ELEMENT), AS_SPLASHER
+   (500+50×lv, max 10), AS_KATAR mastery (+4 ATK/lv, +50% crit dmg @10), Sonic Blow delay
+   2000−(4×agi+2×dex), crit-shield removal (PS_CRIT_SHIELD_DISABLED). Not modeled (situational):
+   Cloak initiative bonus (double-dmg first auto / +10% Sonic Blow when breaking cloak), Venom Dust
+   Mailbreaker debuff (+10% damage taken — could be added as a target mod like Provoke/Quagmire).
 4. **Rogue / Stalker [7]** — RG_BACKSTAP (+Opportunity, bow Double Attack), RG_RAID, Trick Arrow,
    Quick Step, Yser.
 5. **Swordsman / Knight [6]** — Bowling Bash, Brandish Spear, Spear Stab, Auto Counter, Magnum endow,
