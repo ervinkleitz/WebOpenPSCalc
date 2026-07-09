@@ -5685,7 +5685,8 @@
       "aspd_base": {
         "Unarmed": 400,
         "Knife": 550,
-        "Bow": 650
+        "Bow": 650,
+        "MusicalInstrument": 575
       },
       "hp_table": [
         40,
@@ -5995,6 +5996,9 @@
     "20": {
       "name": "Dancer",
       "aspd_base": {
+        "Unarmed": 400,
+        "Knife": 550,
+        "Bow": 650,
         "Whip": 575
       },
       "hp_table": [
@@ -10724,7 +10728,8 @@
       "aspd_base": {
         "Unarmed": 400,
         "Knife": 550,
-        "Bow": 650
+        "Bow": 650,
+        "MusicalInstrument": 575
       },
       "hp_table": [
         40,
@@ -11034,6 +11039,9 @@
     "4021": {
       "name": "Gypsy",
       "aspd_base": {
+        "Unarmed": 400,
+        "Knife": 550,
+        "Bow": 650,
         "Whip": 575
       },
       "hp_table": [
