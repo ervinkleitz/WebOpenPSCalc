@@ -356,14 +356,26 @@ const PS_BF_MAGIC_RATIOS = {
     return (2 + 2 * lv) * (70 + 2 * firewallLv);
   },
   WZ_SIGHTRASHER: (lv) => 100 + 75 * lv,
+  // wiki.payonstories.com/Napalm_Vulcan: "1*MATK per hit", hits = skill level
+  // (10/300/500% at lv1/3/5). The engine was falling through to the vanilla
+  // BF ratio (100+20×lv per hit), doubling the damage. Still ignores 50% MDEF.
+  HW_NAPALMVULCAN: () => 100,
+  // wiki.payonstories.com/Soul_Strike: "1 x MATK" per hit; hits = ceil(lv/2).
+  // The +5%×lv vs-Undead bonus is applied separately (MG_SOULSTRIKE_UNDEAD_BONUS),
+  // so the base must be a flat 100% — the old vanilla 100+5×lv baked the Undead
+  // bonus into every target (and double-counted it vs Undead).
+  MG_SOULSTRIKE: () => 100,
+  // wiki.payonstories.com/Meteor_Storm: "100% MATK per hit" (hits from the skill
+  // DB). The vanilla BF ratio (100+50×lv per hit) was far too high.
+  WZ_METEOR: () => 100,
 };
 
 // core/server_profiles.py's _PS_MAGIC_VANILLA_OK.
 const PS_MAGIC_VANILLA_OK = new Set([
-  "MG_NAPALMBEAT", "MG_SOULSTRIKE", "MG_FIREWALL", "MG_THUNDERSTORM",
+  "MG_NAPALMBEAT", "MG_FIREWALL", "MG_THUNDERSTORM",
   "MG_FROSTDIVER", "MG_COLDBOLT", "MG_FIREBOLT", "MG_LIGHTNINGBOLT",
   "WZ_SIGHTBLASTER", "WZ_WATERBALL", "WZ_STORMGUST", "WZ_JUPITEL",
-  "WZ_METEOR", "AL_RUWACH", "NJ_KOUENKA", "NJ_KAENSIN",
+  "AL_RUWACH", "NJ_KOUENKA", "NJ_KAENSIN",
   "NJ_HYOUSYOURAKU", "NJ_KAMAITACHI", "NJ_HUUJIN",
 ]);
 

@@ -27,6 +27,12 @@ instead of release version. Dates are taken from actual git commit history.
   deals a fixed Holy hit of `(BaseLevel + INT + SkillLevel×10) × 3 × (1 + LUK×3/200)`, ignoring
   DEF and cards, with the Holy element multiplier vs the target still applied. (The instant-kill
   roll itself isn't modeled — the calculator shows the guaranteed damage floor.)
+- **Wizard/Mage multi-hit magic damage corrected** — three skills were over-scaling because the
+  engine applied a `+k×level` bonus to each hit where Payon Stories deals a flat 100% MATK per hit:
+  Napalm Vulcan (was up to 2× too high), Soul Strike (Undead bonus was baked into the base and hit
+  every target), and Meteor Storm (was several times too high). Each now matches the wiki
+  (100% MATK per hit; Soul Strike keeps its +5%×level vs-Undead bonus on top). Also fixed a crash
+  where **Soul Strike against Undead monsters** threw an error instead of calculating.
 - **Skill picker respects the Payon Stories level cap** — skills that PS caps below vanilla (Frost
   Nova, Fire Pillar, Sightrasher, Amplify Magic Power, Spear Stab — all max 5 on PS) were still
   selectable up to their vanilla max (10) in the level selector, even though the engine clamped the

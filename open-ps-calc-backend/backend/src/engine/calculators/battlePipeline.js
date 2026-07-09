@@ -273,7 +273,7 @@ class BattlePipeline {
     if (profile.mechanic_flags.has("MG_SOULSTRIKE_UNDEAD_BONUS") && skillName === "MG_SOULSTRIKE" && target.race === "Undead") {
       const bonus = skill.level * 5;
       const multiplier = 1 + bonus / 100;
-      pmf = pmf.map((p) => [p[0] * multiplier, p[1]]);
+      pmf = scaleFloor(pmf, 100 + bonus, 100);
       const [mn, mx, av] = pmfStats(pmf);
       result.add_step({
         name: "Soul Strike vs Undead", value: av, min_value: mn, max_value: mx, multiplier,
