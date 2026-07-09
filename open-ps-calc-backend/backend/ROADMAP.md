@@ -518,8 +518,14 @@ brackets are the number of PS-custom entries found across those tables.
    Undead damage (rework only changed the *success* formula, not the fail-damage). Minor open item:
    Signum Crucis DEF cut is a flat 50% toggle (the rework levels it −14/−23/−32/−41/−50% at Lv1–5;
    50% = max is correct, but it doesn't scale by level).
-8. **Crusader / Paladin [5]** — Holy Cross, Shield Boomerang, Shield Charge (+NK ignore flee),
-   Reflect Shield, Spear Quicken, Providence, Grand Cross (masteries apply).
+8. **Crusader / Paladin [5]** — ✅ done (Crusader Rework PDF, with-DEF). Confirmed correct: Holy Cross
+   (300+25×lv), Shield Boomerang (100+40×lv), Shield Charge (200+20×lv, NK ignore flee), Reflect
+   Shield (SoftDEF×(1+1.75×HardDEF/100)×lv/10, ignores target DEF, hit roll), Spear Quicken (no crit;
+   +1 HIT/lv, +1 FLEE/lv), Grand Cross (masteries apply; the SP/pushback changes aren't damage),
+   Magnum Break semi-endow (attack-only). **Fixed:** Stone Discus (+5%/refine Shield Boomerang only,
+   was +3% to Boomerang+Charge) and — surfaced by it — a broad **item-script arithmetic bug**
+   (`getrefine()*N` and any arithmetic bonus value was capped at +1; now evaluated properly, fixing
+   every refine-scaling item bonus). Providence's rework is defensive (MDEF, def-penalty) — out of scope.
 9. **Ninja [5]** — Huuma, Hyousensou, Kasumikiri, Kirikage, Raigeki Sai, Nen (Ki).
 10. **Alchemist / Creator [3]** — Acid Terror, Axe Mastery, Acid Demonstration.
 11. **Merchant / Whitesmith [3]** — Cart Revolution, Mammonite (Zeny Pincher), Overthrust party.
