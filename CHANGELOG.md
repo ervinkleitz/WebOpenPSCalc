@@ -7,6 +7,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-09
 
+### Added
+
+- **"Performing" toggle for Bard/Dancer** — a new target-panel checkbox. While a song or dance is
+  active, Payon Stories grants Musical Strike and Throw Arrow a flat **+100 ratio points** (Lv1
+  300%, Lv5 400%). Ticking it adds that bonus to those two skills only; other skills are unaffected.
+
 ### Fixed
 
 - **Arrow Vulcan now scales with level** — the Clown/Gypsy skill had no damage ratio defined, so it

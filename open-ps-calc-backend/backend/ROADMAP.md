@@ -559,14 +559,16 @@ brackets are the number of PS-custom entries found across those tables.
     `200 + 100×lv` → Lv1 300% … Lv10 1200% (matches vanilla and the PS in-game description; PS did
     not rework it — added to weapon_vanilla_ok). Musical Strike already correct via PS override
     (175+25×lv → Lv1 200%, Lv5 300%). Musical Lesson passive gives +5 ATK/lv as configured. The
-    wiki's "+100% while performing" Musical Strike bonus is a conditional song-state buff, not
-    modeled (no performing-state toggle in the calc).
+    wiki's "+100% while performing" Musical Strike bonus is now modeled via a **Performing**
+    target-panel toggle (skill_params.PS_PERFORMING_active → +100 ratio points on Musical Strike /
+    Throw Arrow only). Arrow element for these arrow-consuming skills already flows through the
+    equipped arrow's `bonus bAtkEle` script (verified: Fire→Earth 1.5, Holy→Shadow 1.25, etc.).
 14. **Dancer / Gypsy [2]** — ✅ done (PS wiki, with-DEF). All correct, no code changes: **Throw
     Arrow** (DC_THROWARROW) already carries the PS override `175+25×lv` → Lv1 200%, Lv5 300%
     (the Dancer mirror of Musical Strike, verified live). **Arrow Vulcan** (shared with Gypsy) was
     fixed in item 13 and verified here too (Lv10 1200%). Dancing Lesson passive gives +5 ATK/lv
-    and +10% crit at Lv10 as configured. Same unmodeled "+100% while performing" conditional as
-    Musical Strike.
+    and +10% crit at Lv10 as configured. The "+100% while performing" bonus applies here too via
+    the same Performing toggle (item 13).
 
 Cross-cutting PS mechanics to keep in view while auditing any class: `PS_BLEEDING_REVAMP`,
 `PS_GRANDCROSS_MASTERY_APPLIES`, `SC_AMPLIFYMAGICPOWER_SCALING`, `PS_CRIT_SHIELD_DISABLED`, and the

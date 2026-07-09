@@ -160,6 +160,12 @@ router.post("/", (req: Request, res: Response) => {
       level: skillInput ? Math.max(1, Number(skillInput.level) || 1) : 1,
     });
 
+    // Performing (Bard/Dancer): while a song/dance is active, Musical Strike and
+    // Throw Arrow gain +100 ratio points (their profile ratio fns read this).
+    if (targetModsInput?.performing) {
+      effBuild.skill_params = { ...(effBuild.skill_params || {}), PS_PERFORMING_active: true };
+    }
+
     const pipeline = new BattlePipeline(config);
     const battleResult = pipeline.calculate(status, weapon, skill, target, effBuild, gearBonuses);
 
