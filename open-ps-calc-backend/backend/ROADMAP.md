@@ -509,8 +509,11 @@ brackets are the number of PS-custom entries found across those tables.
    Non-damage items (Absorb Spirits / Spirits Recovery SP, combo-ready buffs, Steel Body
    overcrowding, Ki skills, card sphere-refunds, Fist-weapon drop rates) are out of scope.
 7. **Acolyte / Priest [6]** — ✅ done. Fixed: AL_HOLYLIGHT (flat 250% MATK + Cookie card +20% on
-   PS), PR_TURNUNDEAD (real fixed-damage formula (BaseLv+INT+SkillLv×10)×3×(1+LUK×3/200), Holy,
-   ignores DEF/cards — was wrongly computed as 100% MATK). Re-audited against the Acolyte/Priest
+   PS, **plus the LUK% chance to deal +60% damage** — modeled as a pmf mixture so avg/range fold in
+   the proc), PR_TURNUNDEAD (real fixed-damage formula (BaseLv+INT+SkillLv×10)×3×(1+LUK×3/200), Holy,
+   ignores DEF/cards — was wrongly computed as 100% MATK; **now also displays the instant-kill
+   success chance** [20×SkillLv + 3×LUK + INT + BaseLv + (1−HP/MaxHP)×200]/10 %, halved if base INT
+   < 40, and folds it into Casts/Time to kill). Re-audited against the Acolyte/Priest
    rework PDF: fixed **Holy Strike** (PS_PR_HOLYSTRIKE — corrected its job from Knight [7,4008] to
    Priest [8,4009] and surfaced it via the PS-custom loader; 101+STR+BaseLevel% ATK Holy proc) and
    **Magnus Exorcismus** (full damage now also vs Ghost element + Undead race, not just Undead

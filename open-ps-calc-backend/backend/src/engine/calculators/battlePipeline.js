@@ -301,6 +301,29 @@ class BattlePipeline {
     const magicEleName = ELE_TO_KEY_MAGIC[effAtkEle] || "Ele_Neutral";
     pmf = calculateCardFixMagic(target, magicEleName, pmf, result, gearBonuses);
 
+    // PS Holy Light: LUK% chance to deal an additional +60% damage (×1.6). Modeled
+    // as a probability mixture so the damage range and average both fold in the
+    // proc (min = a non-proc roll, max = a boosted roll, avg = base × (1 + 0.6·p)).
+    if (profile.mechanic_flags.has("AL_HOLYLIGHT_LUK_PROC") && skillName === "AL_HOLYLIGHT") {
+      const p = Math.max(0, Math.min(1, status.luk / 100));
+      if (p > 0) {
+        const boosted = scaleFloor(pmf, 160, 100);
+        const mixed = {};
+        // Skip a branch with zero weight so it doesn't leave zero-probability keys
+        // that would pollute the min/max (e.g. at LUK ≥ 100 the proc is guaranteed).
+        if (1 - p > 0) for (const [dmg, prob] of Object.entries(pmf)) mixed[dmg] = (mixed[dmg] || 0) + prob * (1 - p);
+        for (const [dmg, prob] of Object.entries(boosted)) mixed[dmg] = (mixed[dmg] || 0) + prob * p;
+        pmf = mixed;
+        const [mn, mx, av] = pmfStats(pmf);
+        result.add_step({
+          name: "Holy Light LUK Proc", value: av, min_value: mn, max_value: mx, multiplier: 1 + 0.6 * p,
+          note: `PS: ${Math.round(p * 100)}% chance (LUK ${status.luk}) to deal +60% damage`,
+          formula: `${Math.round(100 * (1 - p))}% × 1.0  +  ${Math.round(100 * p)}% × 1.6`,
+          hercules_ref: "PSRO Priest/Acolyte rework — Holy Light",
+        });
+      }
+    }
+
     pmf = floorAt(pmf, 1);
 
     const [mn, mx, av] = pmfStats(pmf);
