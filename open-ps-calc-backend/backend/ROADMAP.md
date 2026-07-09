@@ -498,9 +498,14 @@ brackets are the number of PS-custom entries found across those tables.
    (Martial Arts), Extremity Fist SP rework, Demon Bane.
 7. **Acolyte / Priest [6]** — ✅ done. Fixed: AL_HOLYLIGHT (flat 250% MATK + Cookie card +20% on
    PS), PR_TURNUNDEAD (real fixed-damage formula (BaseLv+INT+SkillLv×10)×3×(1+LUK×3/200), Holy,
-   ignores DEF/cards — was wrongly computed as 100% MATK). Confirmed correct: Demon Bane, Signum
-   Crucis, Mace Mastery (+expanded weapons), Magnus Exorcismus. Note: PS_PR_HOLYSTRIKE remains an
-   unwired PS-custom skill (getSkill can't resolve PS-custom IDs), and its job array is [7, 4008].
+   ignores DEF/cards — was wrongly computed as 100% MATK). Re-audited against the Acolyte/Priest
+   rework PDF: fixed **Holy Strike** (PS_PR_HOLYSTRIKE — corrected its job from Knight [7,4008] to
+   Priest [8,4009] and surfaced it via the PS-custom loader; 101+STR+BaseLevel% ATK Holy proc) and
+   **Magnus Exorcismus** (full damage now also vs Ghost element + Undead race, not just Undead
+   element + Demon race). Confirmed correct: Demon Bane, Mace Mastery (+expanded weapons), Turn
+   Undead damage (rework only changed the *success* formula, not the fail-damage). Minor open item:
+   Signum Crucis DEF cut is a flat 50% toggle (the rework levels it −14/−23/−32/−41/−50% at Lv1–5;
+   50% = max is correct, but it doesn't scale by level).
 8. **Crusader / Paladin [5]** — Holy Cross, Shield Boomerang, Shield Charge (+NK ignore flee),
    Reflect Shield, Spear Quicken, Providence, Grand Cross (masteries apply).
 9. **Ninja [5]** — Huuma, Hyousensou, Kasumikiri, Kirikage, Raigeki Sai, Nen (Ki).
