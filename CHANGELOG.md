@@ -18,6 +18,11 @@ instead of release version. Dates are taken from actual git commit history.
   second entry with a bad weapon type (`W_SHOTGUN`) and no equip slot was shadowing the correct
   one, so a Gunslinger equipping it lost all ASPD. Removed the duplicate; the shotgun now equips
   and attacks at normal speed.
+- **Soul Strike's MDEF ignore now requires level 10, and Volcano grants its ATK bonus** — per the
+  Sage Rework, Soul Strike's 50% MDEF ignore only applies once level 10 is learned, so the
+  calculator now grants it only when Soul Strike is set to level 10 (lower levels no longer get it).
+  Separately, the Volcano land-spell buff was applying its +MATK% and Fire-damage% but not its flat
+  **+10/20/30 ATK** (Lv1/2/3) — that now feeds physical damage for anyone standing in Volcano.
 - **Holy Light damage corrected to the current Payon Stories value** — the calculator used an older
   base-level-scaling formula (~200% MATK at base 99); PS now deals a flat **250% MATK**. Also fixed
   the **Cookie card**, which boosts Holy Light by **20%** on PS (the calculator had the vanilla

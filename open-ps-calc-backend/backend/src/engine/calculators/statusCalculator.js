@@ -18,6 +18,7 @@ const DUAL_WIELD_JOBS = new Set([12, 4013]);
 const DELUGE_EFF = [5, 9, 12, 14, 15];
 const PS_VG_FLEE = [3, 8, 15];
 const PS_VOL_MATK_PCT = [2, 4, 6];
+const PS_VOL_ATK = [10, 20, 30];
 
 class StatusCalculator {
   constructor(config) {
@@ -114,6 +115,13 @@ class StatusCalculator {
     if ("SC_GS_GATLINGFEVER" in activeSc && !("SC_GS_GATLINGFEVER" in (profile.rate_bonuses || {}))) {
       const lv = activeSc.SC_GS_GATLINGFEVER;
       status.batk += 20 + 10 * lv;
+    }
+    // Volcano persistence buff (PS): +10/20/30 flat ATK at Lv1/2/3 — a general
+    // ATK bonus, separate from Volcano's +MATK% (MATK section) and +Fire-damage%
+    // (AttrFix). Sage Rework doc / wiki.payonstories.com/Volcano.
+    if (profile.mechanic_flags.has("GROUND_EFFECT_PS_VALUES") && support.ground_effect === "SC_VOLCANO") {
+      const volLv = Number(support.ground_effect_lv || 1);
+      status.batk += PS_VOL_ATK[Math.min(volLv, PS_VOL_ATK.length) - 1];
     }
     if ("SC_CURSE" in playerScs) status.batk = Math.floor(status.batk * 75 / 100);
 

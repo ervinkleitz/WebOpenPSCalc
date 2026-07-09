@@ -244,7 +244,11 @@ class BattlePipeline {
     const mdefIgnorePct =
       (profile.mechanic_flags.has("WZ_FIREPILLAR_MDEF_IGNORE") && skillName === "WZ_FIREPILLAR") ? 50
       : (profile.mechanic_flags.has("HW_NAPALMVULCAN_MDEF_IGNORE") && skillName === "HW_NAPALMVULCAN") ? 50
-      : (profile.mechanic_flags.has("MG_SOULSTRIKE_MDEF_IGNORE") && skillName === "MG_SOULSTRIKE") ? 50
+      // Sage Rework doc: Soul Strike's 50% MDEF ignore requires having LEARNED
+      // level 10 of the skill. The calculator's skill level is the cast level, so
+      // gate on level 10 (a lv10-learned caster's normal cast); lower selected
+      // levels don't get it.
+      : (profile.mechanic_flags.has("MG_SOULSTRIKE_MDEF_IGNORE") && skillName === "MG_SOULSTRIKE" && skill.level === 10) ? 50
       : 0;
     if (!skill.nk_ignore_def) {
       pmf = calculateMagicDefenseFix(target, gearBonuses || {}, pmf, result, mdefIgnorePct);
