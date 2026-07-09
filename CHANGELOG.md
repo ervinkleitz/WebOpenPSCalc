@@ -22,6 +22,11 @@ instead of release version. Dates are taken from actual git commit history.
   base-level-scaling formula (~200% MATK at base 99); PS now deals a flat **250% MATK**. Also fixed
   the **Cookie card**, which boosts Holy Light by **20%** on PS (the calculator had the vanilla
   10%). Vanilla server profile is unchanged (125% MATK, +10% Cookie).
+- **Turn Undead now uses its real damage formula** — it was being treated as a generic 100%-MATK
+  magic skill. Turn Undead's damage doesn't scale with MATK at all; on a failed instant-kill it
+  deals a fixed Holy hit of `(BaseLevel + INT + SkillLevel×10) × 3 × (1 + LUK×3/200)`, ignoring
+  DEF and cards, with the Holy element multiplier vs the target still applied. (The instant-kill
+  roll itself isn't modeled — the calculator shows the guaranteed damage floor.)
 - **Skill picker respects the Payon Stories level cap** — skills that PS caps below vanilla (Frost
   Nova, Fire Pillar, Sightrasher, Amplify Magic Power, Spear Stab — all max 5 on PS) were still
   selectable up to their vanilla max (10) in the level selector, even though the engine clamped the

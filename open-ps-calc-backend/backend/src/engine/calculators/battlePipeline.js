@@ -409,6 +409,52 @@ class BattlePipeline {
   }
 
   /**
+   * PR_TURNUNDEAD — exorcism skill. Its damage is NOT MATK-scaled: on a failed
+   * instant-kill roll it deals a fixed Holy hit
+   *   damage = (BaseLevel + INT + SkillLevel*10) * 3 * (1 + LUK*3/200)
+   * (wiki.payonstories.com/Turn_Undead "Damage Done if Failed" — the standard
+   * pre-renewal formula; PS did not change it). Ignores DEF and cards
+   * (skills.json damage_type [IgnoreCards, IgnoreDefense]); the Holy AttrFix vs
+   * the target's element still applies, exactly like Grand Cross. Only usable on
+   * Undead-property monsters; the instant-kill roll itself is not modeled, so
+   * this is the guaranteed damage floor. Without this branch the generic magic
+   * path would (wrongly) treat it as a 100%-MATK skill.
+   */
+  _runTurnUndeadBranch(status, weapon, skill, target, build, opts = {}) {
+    const result = createDamageResult();
+
+    const core = build.base_level + status.int_ + skill.level * 10;
+    const base = core * 3;
+    const dmg = Math.max(1, Math.floor(base * (1 + (status.luk * 3) / 200)));
+
+    let pmf = { [dmg]: 1.0 };
+    result.add_step({
+      name: `Turn Undead Base (Lv ${skill.level})`, value: dmg, min_value: dmg, max_value: dmg,
+      note: `Base Lv ${build.base_level}, INT ${status.int_}, LUK ${status.luk} — MATK/ATK not used`,
+      formula: "(BaseLv + INT + SkillLv*10) * 3 * (1 + LUK*3/200)",
+      hercules_ref: "wiki.payonstories.com/Turn_Undead (fail damage)",
+    });
+
+    // DEF and cards ignored (damage_type); Holy element vs target still applies.
+    pmf = calculateAttrFix(weapon, target, pmf, result, build, 6 /* Ele_Holy — fixed */);
+
+    {
+      const [mn, mx, av] = pmfStats(pmf);
+      result.add_step({ name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier: 1.0, note: "BYPASSED — damage_type includes IgnoreCards", formula: "no change", hercules_ref: "skills.json damage_type" });
+    }
+
+    pmf = floorAt(pmf, 1);
+    const [mn, mx, av] = pmfStats(pmf);
+    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Turn Undead branch (fail damage; instant-kill roll not modeled)", formula: "", hercules_ref: "" });
+
+    result.min_damage = mn;
+    result.max_damage = mx;
+    result.avg_damage = av;
+    result.pmf = pmf;
+    return result;
+  }
+
+  /**
    * CR_REFLECTSHIELD — PS rework formula:
    *   damage = floor(SoftDEF × (1 + 1.75 × HardDEF / 100) × SkillLvl / 10)
    * Ignores target DEF. Requires hit roll. Enhanced by cards and armor attributes.
@@ -896,6 +942,18 @@ class BattlePipeline {
         attacks,
         period_ms: gcPeriod,
         dps_valid: true,
+      });
+    }
+
+    if (skillName === "PR_TURNUNDEAD") {
+      const tuResult = this._runTurnUndeadBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
+      let castMs = 0, delayMs = 0;
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      const tuPeriod = Math.max(castMs + delayMs, 100);
+      const attacks = [createAttackDefinition(tuResult.avg_damage, 0.0, tuPeriod, 1.0)];
+      return createBattleResult({
+        normal: tuResult, crit: null, crit_chance: 0.0, hit_chance: 100.0,
+        dps: calculateDps(attacks), attacks, period_ms: tuPeriod, dps_valid: true,
       });
     }
 
