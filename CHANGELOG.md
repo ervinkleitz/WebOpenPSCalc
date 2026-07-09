@@ -9,6 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Killing Stroke now uses its real damage formula** — the Ninja skill was being treated as a
+  generic 100%-ATK weapon skill. Its damage doesn't scale with weapon ATK; it sacrifices the
+  caster's HP for a fixed hit of `STR×40 + HP×(8%×SkillLevel)` (Neutral, always hits, DEF and cards
+  still apply). It now computes that, using current HP when set (otherwise full HP). The Mirror
+  Image damage bonus isn't modeled.
 - **Bakuenryu (Exploding Dragon) now scales with level** — the Ninja spell had no damage ratio
   defined, so it fell back to a flat 100%×3 hits (300% at every level). It now deals the correct
   **300%/450%/600%/750%/900% MATK** for Lv1–5.

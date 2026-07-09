@@ -842,6 +842,46 @@ class BattlePipeline {
     return result;
   }
 
+  /**
+   * NJ_ISSEN (Killing Stroke) — sacrifices the caster's HP for a fixed hit that
+   * does NOT scale with weapon ATK:
+   *   damage = STR*40 + HP*(8% * SkillLv)
+   * (wiki.payonstories.com/Killing_Stroke). Always Neutral element; auto-hit
+   * (damage_type IgnoreFlee); DEF and cards still apply. HP is the current HP
+   * being sacrificed — use current_hp when set, otherwise max HP (full health).
+   * The Mirror Image (+10-30%) damage bonus is not modeled.
+   */
+  _runKillingStrokeBranch(status, weapon, skill, target, build, opts = {}) {
+    const { gear_bonuses: gearBonuses } = opts;
+    const result = createDamageResult();
+
+    const hp = build.current_hp != null ? build.current_hp : status.max_hp;
+    const base = Math.max(1, status.str * 40 + Math.floor((hp * 8 * skill.level) / 100));
+
+    let pmf = { [base]: 1.0 };
+    result.add_step({
+      name: `Killing Stroke Base (Lv ${skill.level})`, value: base, min_value: base, max_value: base,
+      note: `STR ${status.str}, HP ${hp} — weapon ATK not used`,
+      formula: "STR*40 + HP*(8% * SkillLv)",
+      hercules_ref: "wiki.payonstories.com/Killing_Stroke",
+    });
+
+    // Neutral element; DEF and cards apply; flee ignored (auto-hit).
+    pmf = calculateDefenseFix(target, build, gearBonuses, pmf, this.config, result, { is_crit: false, skill });
+    pmf = calculateAttrFix(weapon, target, pmf, result, build, 0 /* always Neutral */);
+    pmf = calculateCardFix(build, gearBonuses, 0, target, false, pmf, result);
+
+    pmf = floorAt(pmf, 1);
+    const [mn, mx, av] = pmfStats(pmf);
+    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Killing Stroke branch (HP sacrifice; Mirror Image bonus not modeled)", formula: "", hercules_ref: "" });
+
+    result.min_damage = mn;
+    result.max_damage = mx;
+    result.avg_damage = av;
+    result.pmf = pmf;
+    return result;
+  }
+
   calculate(status, weapon, skill, target, build, gearBonuses) {
     const skillData = loader.getSkill(skill.id);
     const attackType = skillData ? skillData.attack_type || "Weapon" : "Weapon";
@@ -966,6 +1006,18 @@ class BattlePipeline {
       return createBattleResult({
         normal: tuResult, crit: null, crit_chance: 0.0, hit_chance: 100.0,
         dps: calculateDps(attacks), attacks, period_ms: tuPeriod, dps_valid: true,
+      });
+    }
+
+    if (skillName === "NJ_ISSEN") {
+      const ksResult = this._runKillingStrokeBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
+      let castMs = 0, delayMs = 0;
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      const ksPeriod = Math.max(castMs + delayMs, 100);
+      const attacks = [createAttackDefinition(ksResult.avg_damage, 0.0, ksPeriod, 1.0)];
+      return createBattleResult({
+        normal: ksResult, crit: null, crit_chance: 0.0, hit_chance: 100.0,
+        dps: calculateDps(attacks), attacks, period_ms: ksPeriod, dps_valid: true,
       });
     }
 
