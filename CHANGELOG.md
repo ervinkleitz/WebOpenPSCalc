@@ -9,6 +9,9 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Bakuenryu (Exploding Dragon) now scales with level** — the Ninja spell had no damage ratio
+  defined, so it fell back to a flat 100%×3 hits (300% at every level). It now deals the correct
+  **300%/450%/600%/750%/900% MATK** for Lv1–5.
 - **Refine-scaling item bonuses now apply the full amount** — item scripts that compute a bonus as
   an expression (e.g. `getrefine()*5` for "+5% per refine") were being silently capped at **+1**,
   because the parser only understood plain integers and fell back to a boolean evaluator for

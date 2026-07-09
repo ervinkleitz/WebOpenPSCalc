@@ -80,6 +80,10 @@ const BF_MAGIC_RATIOS = {
   NJ_KAMAITACHI:     (lv) => 100 + 30 * lv,
   NJ_KAENSIN:        (lv) => 100 + 10 * lv,
   NJ_HITOKIRI:       (lv) => 150 + 50 * lv,
+  // Bakuenryu (Exploding Dragon): a single hit split into 3, total 150+150×lv%
+  // MATK (300%→900% for Lv1→5). skills.json marks it 3 hits, so this is the
+  // per-hit ratio (50+50×lv). Without this it fell through to a flat 100%×3.
+  NJ_BAKUENRYU:      (lv) => 50 + 50 * lv,
 };
 
 const ELE_STR_TO_INT = {
