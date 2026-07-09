@@ -353,10 +353,20 @@ class DataLoader {
   // ---------------------------------------------------------------
   // Skills
   // ---------------------------------------------------------------
+  // Apply the active profile's per-skill level cap to max_level so the UI's
+  // level selector matches the engine clamp (e.g. WZ_FROSTNOVA max 5 on PS, 10
+  // in vanilla). Without this the picker offers levels the engine silently caps.
+  _applySkillCap(skill) {
+    if (!skill) return skill;
+    const caps = this._profile && this._profile.skill_level_cap_overrides;
+    const cap = caps ? caps[skill.name] : null;
+    return cap != null && skill.max_level > cap ? { ...skill, max_level: cap } : skill;
+  }
+
   getSkill(skillId) {
     try {
       const data = this._loadJson("db/skills.json");
-      return (data.skills || {})[String(skillId)] || null;
+      return this._applySkillCap((data.skills || {})[String(skillId)] || null);
     } catch {
       return null;
     }
@@ -365,7 +375,7 @@ class DataLoader {
   getAllSkills() {
     try {
       const data = this._loadJson("db/skills.json");
-      return Object.values(data.skills || {});
+      return Object.values(data.skills || {}).map((s) => this._applySkillCap(s));
     } catch {
       return [];
     }

@@ -7,6 +7,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-08
 
+### Fixed
+
+- **Skill picker respects the Payon Stories level cap** — skills that PS caps below vanilla (Frost
+  Nova, Fire Pillar, Sightrasher, Amplify Magic Power, Spear Stab — all max 5 on PS) were still
+  selectable up to their vanilla max (10) in the level selector, even though the engine clamped the
+  effective level during the calc. The picker now shows the PS-capped max level.
+
 ### Added
 
 - **Ring of Peace** (Payon Stories custom accessory) — MaxHP +100, MaxSP +10, HP & SP recovery
