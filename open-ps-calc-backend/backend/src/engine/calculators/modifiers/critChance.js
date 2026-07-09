@@ -9,7 +9,7 @@ const RACE_TO_RC = {
   Demon: "RC_Demon", "Demi-Human": "RC_DemiHuman", Angel: "RC_Angel", Dragon: "RC_Dragon",
 };
 
-const KN_AUTOCOUNTER = 8;
+const KN_AUTOCOUNTER = 61;
 const SN_SHARPSHOOTING = 280;
 const MA_SHARPSHOOTING = 357;
 const NJ_KIRIKAGE = 543;
@@ -49,8 +49,8 @@ function calculateCritChance(status, weapon, skill, target, config, server = "st
   if ("SC_SLEEP" in target.target_active_scs) cri <<= 1;
 
   if (skill.id === KN_AUTOCOUNTER) {
-    if (config.auto_counter_type) return [true, 100.0];
-    cri <<= 1;
+    // Counter Attack (Auto Counter) never misses and always lands a critical.
+    return [true, 100.0];
   } else if (skill.id === SN_SHARPSHOOTING || skill.id === MA_SHARPSHOOTING) {
     cri += 200;
   } else if (skill.id === NJ_KIRIKAGE) {

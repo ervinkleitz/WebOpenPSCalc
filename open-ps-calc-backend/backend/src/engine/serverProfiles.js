@@ -250,7 +250,9 @@ const NJ_KIRIKAGE_HIDE_OFF = [100, 190, 280, 360, 450];
 // db/skills.json) — see ROADMAP.md. Data kept here so the ratios are ready once
 // that lookup gap is fixed.
 const PS_BF_WEAPON_RATIOS = {
-  KN_BOWLINGBASH: () => 400,
+  // wiki.payonstories.com/Bowling_Bash: 100 + 30×lv (130% @1 → 400% @10). The
+  // engine previously hard-coded a flat 400%, correct only at max level.
+  KN_BOWLINGBASH: (lv) => 100 + 30 * lv,
   KN_BRANDISHSPEAR: (lv, tgt, ctx) => {
     const dist = ctx ? (ctx.skill_params.KN_BRANDISHSPEAR_dist ?? 4) : 4;
     const mult = { 1: 11 / 6, 2: 1.75, 3: 1.5, 4: 1.0 }[dist] ?? 1.0;
@@ -441,9 +443,11 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   mastery_per_level: { KN_SPEARMASTERY: [5, 7] },
   // PS Monk rework: Martial Arts (MO_IRONHAND) also covers Mace weapons.
   // If a character has Martial Arts but not Priest Mace Mastery, use MO_IRONHAND for Mace.
-  // PS Knight rework: Blade Mastery (KN_TWOHANDMASTERY) covers 1H Sword too.
-  // SM_SWORD is still used when a Knight doesn't have KN_TWOHANDMASTERY (e.g. Swordman).
-  mastery_prefer_fallback: { PR_MACEMASTERY: "MO_IRONHAND", SM_SWORD: "KN_TWOHANDMASTERY" },
+  // PS Knight rework: Two-Hand Sword Mastery was renamed to Blade Mastery and now
+  // covers One-Hand Swords too. That mastery is SM_TWOHAND, stored under the mastery
+  // key SM_TWOHANDSWORD — so a 1H-sword swing prefers it over the (removed) Sword
+  // Mastery. SM_SWORD is still used when a Knight lacks Blade Mastery (e.g. Swordman).
+  mastery_prefer_fallback: { PR_MACEMASTERY: "MO_IRONHAND", SM_SWORD: "SM_TWOHANDSWORD" },
   skill_level_cap_overrides: {
     KN_SPEARSTAB: 5,
     WZ_FROSTNOVA: 5,

@@ -9,6 +9,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Knight fixes (Blade Mastery, Counter Attack, Bowling Bash)** — three bugs found while auditing
+  the Knight patch:
+  - **Blade Mastery on one-handed swords** — the rework merges Sword Mastery into Blade Mastery,
+    which now boosts 1H swords too, but the calculator pointed the 1H-sword lookup at a non-existent
+    skill, so a Knight using a one-handed sword got **no mastery ATK**. It now correctly applies
+    Blade Mastery's +4 ATK/level.
+  - **Counter Attack always crits** — Auto Counter always lands a critical in-game, but the
+    calculator was showing it at the normal crit rate (a skill-id mismatch pointed the logic at
+    Endure). It now correctly treats Counter Attack as a guaranteed critical.
+  - **Bowling Bash damage scales with level** — it was hard-coded to a flat 400% (correct only at
+    level 10); it now scales **100 + 30×level** (130% at Lv1 → 400% at Lv10), matching the wiki.
 - **Holy Strike fixed to a Priest skill and made selectable** — this Battle Priest skill (a Holy-
   property melee proc dealing `[100 + STR + (1 + BaseLevel)]% ATK`) was tagged with the wrong job
   (Knight/Lord Knight) and couldn't be computed. Corrected its class to Priest/High Priest and
