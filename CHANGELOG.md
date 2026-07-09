@@ -5,6 +5,15 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-09
+
+### Fixed
+
+- **Arrow Vulcan now scales with level** — the Clown/Gypsy skill had no damage ratio defined, so it
+  fell back to a flat **100% at every level**. It now deals the correct **300%/400%/…/1200% ATK**
+  for Lv1–10 (`200 + 100×SkillLevel`), matching the in-game skill description. Musical Strike was
+  already correct (200%→300% for Lv1–5, the Payon Stories values).
+
 ## 2026-07-08
 
 ### Fixed

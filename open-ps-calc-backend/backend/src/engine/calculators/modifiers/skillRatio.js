@@ -46,6 +46,7 @@ const BF_WEAPON_RATIOS = {
   MO_BALKYOUNG: () => 300,
   BA_MUSICALSTRIKE: (lv) => 125 + 25 * lv,
   DC_THROWARROW: (lv) => 125 + 25 * lv,
+  CG_ARROWVULCAN: (lv) => 200 + 100 * lv,   // battle.c: skillratio += 100 + 100*lv (base 100) → Lv1 300%..Lv10 1200%
   AM_DEMONSTRATION: (lv) => 100 + 20 * lv,
   // Added from core/calculators/modifiers/skill_ratio.py's _BF_WEAPON_RATIOS
   // (StatGameDev/Open_PS_Calc, MIT) — fills the table out to its full 52 entries.

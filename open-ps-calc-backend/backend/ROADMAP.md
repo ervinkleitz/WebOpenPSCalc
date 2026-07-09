@@ -554,7 +554,13 @@ brackets are the number of PS-custom entries found across those tables.
     (IgnoreDefense/IgnoreFlee). Card bonuses verified applying via bSkillAtk: Dory (+5% Freezing/
     Claymore), Wolpertinger (+5% Land/Blast), Setting Dirk (+5% all four traps). Vulture's Eye
     contributes its +Hit as expected.
-13. **Bard / Clown [2]** — Musical Lesson, Musical Strike.
+13. **Bard / Clown [2]** — ✅ done (PS wiki + in-game skill DB, with-DEF). Fixed **Arrow Vulcan**
+    (CG_ARROWVULCAN): it had no ratio in any table and fell back to a flat 100% at every level; now
+    `200 + 100×lv` → Lv1 300% … Lv10 1200% (matches vanilla and the PS in-game description; PS did
+    not rework it — added to weapon_vanilla_ok). Musical Strike already correct via PS override
+    (175+25×lv → Lv1 200%, Lv5 300%). Musical Lesson passive gives +5 ATK/lv as configured. The
+    wiki's "+100% while performing" Musical Strike bonus is a conditional song-state buff, not
+    modeled (no performing-state toggle in the calc).
 14. **Dancer / Gypsy [2]** — Dancing Lesson, Throw Arrow.
 
 Cross-cutting PS mechanics to keep in view while auditing any class: `PS_BLEEDING_REVAMP`,
