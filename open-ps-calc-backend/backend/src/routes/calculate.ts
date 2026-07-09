@@ -14,14 +14,14 @@ const { computeFalconDamage } = require("../engine/calculators/falconCalc");
 
 const router = Router();
 
-function scaleDamageResult(r: any): any {
+function scaleDamageResult(r: any, mult: number, stepName: string, note: string, ref: string): any {
   if (!r) return r;
-  const newMin = Math.floor(r.min_damage * 2);
-  const newMax = Math.floor(r.max_damage * 2);
-  const newAvg = Math.floor(r.avg_damage * 2);
+  const newMin = Math.floor(r.min_damage * mult);
+  const newMax = Math.floor(r.max_damage * mult);
+  const newAvg = Math.floor(r.avg_damage * mult);
   const newPmf: Record<string, number> = {};
   for (const [k, p] of Object.entries(r.pmf as Record<string, number> || {})) {
-    const newKey = String(Math.floor(Number(k) * 2));
+    const newKey = String(Math.floor(Number(k) * mult));
     newPmf[newKey] = (newPmf[newKey] || 0) + (p as number);
   }
   r.min_damage = newMin;
@@ -30,37 +30,44 @@ function scaleDamageResult(r: any): any {
   r.pmf = newPmf;
   if (Array.isArray(r.steps)) {
     r.steps.push({
-      name: "Lex Aeterna",
+      name: stepName,
       value: newAvg,
       min_value: newMin,
       max_value: newMax,
-      multiplier: 2.0,
-      note: "×2 damage (SC_LEXAETERNA)",
-      formula: "damage × 2",
-      hercules_ref: "battle.c: battle_calc_damage (SC_LEXAETERNA)",
+      multiplier: mult,
+      note,
+      formula: `damage × ${mult}`,
+      hercules_ref: ref,
     });
   }
   return r;
 }
 
-function applyLexAeterna(br: any): void {
-  br.normal          = scaleDamageResult(br.normal);
-  br.crit            = scaleDamageResult(br.crit);
-  br.magic           = scaleDamageResult(br.magic);
-  br.katar_second    = scaleDamageResult(br.katar_second);
-  br.katar_second_crit = scaleDamageResult(br.katar_second_crit);
-  br.double_hit      = scaleDamageResult(br.double_hit);
-  br.double_hit_crit = scaleDamageResult(br.double_hit_crit);
-  br.second_hit      = scaleDamageResult(br.second_hit);
-  br.second_hit_crit = scaleDamageResult(br.second_hit_crit);
-  br.lh_normal       = scaleDamageResult(br.lh_normal);
-  br.lh_crit         = scaleDamageResult(br.lh_crit);
-  br.dw_lh_normal    = scaleDamageResult(br.dw_lh_normal);
-  br.dw_lh_crit      = scaleDamageResult(br.dw_lh_crit);
+// Post-calc multiplicative damage-taken debuffs on the target (Lex Aeterna ×2,
+// Venom Dust +10%). Applied to every damage branch and the DPS so they stack
+// multiplicatively with each other.
+function applyResultMult(br: any, mult: number, stepName: string, note: string, ref: string): void {
+  const branches = [
+    "normal", "crit", "magic", "katar_second", "katar_second_crit",
+    "double_hit", "double_hit_crit", "second_hit", "second_hit_crit",
+    "lh_normal", "lh_crit", "dw_lh_normal", "dw_lh_crit",
+  ];
+  for (const b of branches) br[b] = scaleDamageResult(br[b], mult, stepName, note, ref);
   for (const key of Object.keys(br.proc_branches || {})) {
-    br.proc_branches[key] = scaleDamageResult(br.proc_branches[key]);
+    br.proc_branches[key] = scaleDamageResult(br.proc_branches[key], mult, stepName, note, ref);
   }
-  br.dps = br.dps * 2;
+  br.dps = br.dps * mult;
+}
+
+function applyLexAeterna(br: any): void {
+  applyResultMult(br, 2.0, "Lex Aeterna", "×2 damage (SC_LEXAETERNA)", "battle.c: battle_calc_damage (SC_LEXAETERNA)");
+}
+
+// Venom Dust (PS Assassin rework): a target standing on Venom Dust takes +10%
+// physical and magical damage for 5s (the "Mailbreaker" debuff). Works on
+// MVP/boss-flagged monsters. wiki.payonstories.com / Assassin Rework doc.
+function applyVenomDust(br: any): void {
+  applyResultMult(br, 1.1, "Venom Dust", "+10% physical & magical damage taken (Venom Dust / Mailbreaker debuff)", "PS-AssassinRework");
 }
 
 router.post("/", (req: Request, res: Response) => {
@@ -144,6 +151,9 @@ router.post("/", (req: Request, res: Response) => {
     const pipeline = new BattlePipeline(config);
     const battleResult = pipeline.calculate(status, weapon, skill, target, effBuild, gearBonuses);
 
+    if (targetModsInput?.venom_dust) {
+      applyVenomDust(battleResult);
+    }
     if (targetModsInput?.lex_aeterna) {
       applyLexAeterna(battleResult);
     }

@@ -59,6 +59,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Venom Dust target toggle** — the Assassin's Venom Dust applies a "Mailbreaker" debuff that makes
+  a target standing on it take **+10% physical and magical damage** for 5 seconds. Enable it in the
+  target-modifiers panel to add the bonus to all damage branches. Unlike Provoke and Quagmire, it
+  works on **MVP/boss** monsters, and it stacks multiplicatively with Lex Aeterna.
 - **Ring of Peace** (Payon Stories custom accessory) — MaxHP +100, MaxSP +10, HP & SP recovery
   rates +5%. Level 40, all jobs. A survivability accessory; no effect on outgoing damage. From
   [the wiki](https://wiki.payonstories.com/Ring_of_Peace).

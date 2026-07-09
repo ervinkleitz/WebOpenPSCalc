@@ -349,6 +349,7 @@ const DEFAULT_CUSTOM_TARGET: CustomTarget = {
 const DEFAULT_TARGET_MODS: TargetMods = {
   element_status: "",
   lex_aeterna: false,
+  venom_dust: false,
   quagmire: 0,
   signum_crucis: false,
   provoke: 0,
@@ -1993,6 +1994,13 @@ export default function BuildEditor() {
               <label title="SC_LEXAETERNA: next hit deals ×2 damage. Applied to all damage branches.">
                 <input type="checkbox" checked={targetMods.lex_aeterna} onChange={(e) => setTargetMods((m) => ({ ...m, lex_aeterna: e.target.checked }))} />
                 <span>Lex Aeterna (×2 damage)</span>
+              </label>
+            </div>
+
+            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
+              <label title="Venom Dust (Assassin rework): a target standing on the dust takes +10% physical & magical damage for 5s (the Mailbreaker debuff). Works on MVP/boss monsters.">
+                <input type="checkbox" checked={targetMods.venom_dust} onChange={(e) => setTargetMods((m) => ({ ...m, venom_dust: e.target.checked }))} />
+                <span>Venom Dust (+10% damage taken)</span>
               </label>
             </div>
 

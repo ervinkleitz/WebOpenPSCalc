@@ -95,6 +95,7 @@ export type TargetMode = "monster" | "custom";
 export interface TargetMods {
   element_status: string;
   lex_aeterna: boolean;
+  venom_dust: boolean; // Venom Dust (Assassin): target on it takes +10% phys & magic damage. Works on bosses.
   quagmire: number; // WZ_QUAGMIRE level 0–5 (0 = off). Legacy shared URLs may carry a boolean.
   signum_crucis: boolean;
   provoke: number; // SC_PROVOKE level 0–10 (0 = off). Legacy shared URLs may carry a boolean.
