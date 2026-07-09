@@ -332,8 +332,9 @@ const PS_BF_MAGIC_RATIOS = {
   NJ_HYOUSENSOU: () => 85,
   NJ_RAIGEKISAI: (lv) => 150 + 60 * lv,
   AL_HOLYLIGHT: (lv, tgt, ctx) => 101 + (ctx ? ctx.base_level : 125),
-  // wiki.payonstories.com/Frost_Nova: PS rework — base MATK% is 190+15×lv
-  // (175+15×lv formula; lv1=190, lv5=250), +10% per Frost Diver level.
+  // wiki.payonstories.com/Frost_Nova: PS rework — base MATK% = 175 + 15×lv
+  // (i.e. 190 at lv1 → 250 at lv5, matching the wiki's 190/205/220/235/250 table;
+  // equivalently 190 + 15×(lv−1) — NOT 190 + 15×lv), plus +10% per Frost Diver level.
   // Frost Diver level read from mastery_levels via the passive-skill entry in
   // dataLoader.js#getPassiveSkillsForJob.
   WZ_FROSTNOVA: (lv, tgt, ctx) => {
