@@ -480,9 +480,9 @@ brackets are the number of PS-custom entries found across those tables.
    Mastery's +50% crit dmg — verified vs a DEF-100 target), AS_GRIMTOOTH crit, Katar offhand 2nd hit
    (21+4×KatarMastery = 61% @10), Envenom weapon element (TF_POISON_USES_WEAPON_ELEMENT), AS_SPLASHER
    (500+50×lv, max 10), AS_KATAR mastery (+4 ATK/lv, +50% crit dmg @10), Sonic Blow delay
-   2000−(4×agi+2×dex), crit-shield removal (PS_CRIT_SHIELD_DISABLED). Not modeled (situational):
-   Cloak initiative bonus (double-dmg first auto / +10% Sonic Blow when breaking cloak), Venom Dust
-   Mailbreaker debuff (+10% damage taken — could be added as a target mod like Provoke/Quagmire).
+   2000−(4×agi+2×dex), crit-shield removal (PS_CRIT_SHIELD_DISABLED). Added: Venom Dust Mailbreaker
+   debuff as a target toggle (+10% phys & magic damage taken, works on MVP/boss). Not modeled
+   (situational): Cloak initiative bonus (double-dmg first auto / +10% Sonic Blow when breaking cloak).
 4. **Rogue / Stalker [7]** — RG_BACKSTAP (+Opportunity, bow Double Attack), RG_RAID, Trick Arrow,
    Quick Step, Yser.
 5. **Swordsman / Knight [6]** — Bowling Bash, Brandish Spear, Spear Stab, Auto Counter, Magnum endow,
