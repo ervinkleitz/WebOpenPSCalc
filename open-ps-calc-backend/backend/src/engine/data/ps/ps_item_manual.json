@@ -95,6 +95,9 @@
   "4289": {
     "script": "bonus2 bSPGainRace,RC_Plant,5; bonus2 bAddRace,RC_Plant,4;"
   },
+  "4293": {
+    "script": "bonus bLuk,2; bonus2 bSkillAtk,AL_HOLYLIGHT,20;"
+  },
   "4299": {
     "script": "bonus bDef,1; bonus3 bAutoSpellWhenHit,CR_AUTOGUARD,4,30;"
   },

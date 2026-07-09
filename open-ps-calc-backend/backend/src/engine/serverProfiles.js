@@ -331,7 +331,10 @@ const PS_BF_MAGIC_RATIOS = {
   WZ_HEAVENDRIVE: () => 140,
   NJ_HYOUSENSOU: () => 85,
   NJ_RAIGEKISAI: (lv) => 150 + 60 * lv,
-  AL_HOLYLIGHT: (lv, tgt, ctx) => 101 + (ctx ? ctx.base_level : 125),
+  // wiki.payonstories.com/Holy_Light: PS rework — flat 250% MATK (vanilla is
+  // 125%). An older wiki revision scaled it with base level (100% + (1+BaseLevel)%);
+  // it has since been changed to a flat 250%.
+  AL_HOLYLIGHT: () => 250,
   // wiki.payonstories.com/Frost_Nova: PS rework — base MATK% = 175 + 15×lv
   // (i.e. 190 at lv1 → 250 at lv5, matching the wiki's 190/205/220/235/250 table;
   // equivalently 190 + 15×(lv−1) — NOT 190 + 15×lv), plus +10% per Frost Diver level.

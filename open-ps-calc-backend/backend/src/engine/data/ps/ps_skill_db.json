@@ -5010,7 +5010,7 @@
     "sp_cost": "12 SP",
     "cast_time": "1.5 Seconds",
     "cast_delay": "Global Cooldown",
-    "description": "Summons holy light to counter evil. The skill does [100% + (1 + Base Level)]% MATK.",
+    "description": "Summons holy light to counter evil. The skill inflicts damage equal to 250% of the caster's MATK (Holy property). The Cookie card increases the damage of this skill by 20%.",
     "requirements": [
       "Finish quest"
     ],

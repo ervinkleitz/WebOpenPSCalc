@@ -18,6 +18,10 @@ instead of release version. Dates are taken from actual git commit history.
   second entry with a bad weapon type (`W_SHOTGUN`) and no equip slot was shadowing the correct
   one, so a Gunslinger equipping it lost all ASPD. Removed the duplicate; the shotgun now equips
   and attacks at normal speed.
+- **Holy Light damage corrected to the current Payon Stories value** — the calculator used an older
+  base-level-scaling formula (~200% MATK at base 99); PS now deals a flat **250% MATK**. Also fixed
+  the **Cookie card**, which boosts Holy Light by **20%** on PS (the calculator had the vanilla
+  10%). Vanilla server profile is unchanged (125% MATK, +10% Cookie).
 - **Skill picker respects the Payon Stories level cap** — skills that PS caps below vanilla (Frost
   Nova, Fire Pillar, Sightrasher, Amplify Magic Power, Spear Stab — all max 5 on PS) were still
   selectable up to their vanilla max (10) in the level selector, even though the engine clamped the
