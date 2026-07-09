@@ -500,8 +500,14 @@ brackets are the number of PS-custom entries found across those tables.
    Quickening (+1% crit/lv, 1H-sword 1/3 ASPD partial), Brandish Spear distance formula, Spear
    Mastery [5,7]. Non-damage rework items (Living Sword SP-free casts, Charge Attack timing) are out
    of a damage calculator's scope.
-6. **Monk / Champion [6]** — Triple Attack (+Fury crit), Chain Combo, Combo Finish, Iron Hand
-   (Martial Arts), Extremity Fist SP rework, Demon Bane.
+6. **Monk / Champion [6]** — ✅ done (Monk Rework PDF, with-DEF). All damage-relevant items already
+   correct, no code changes: Triple Attack (100+40×lv, max 5; crits under Critical Explosion via the
+   `taCritProc` path / MO_TRIPLEATTACK_PS_BONUS), Chain Combo (200+60×lv = 260→500%), Combo Finish
+   (255+90×lv = 345→705%), Martial Arts/Iron Hand (MO_IRONHAND +5 ATK/lv +2 FLEE/lv, covers Fist and
+   Mace via the PR_MACEMASTERY→MO_IRONHAND fallback), Asura Strike SP rework (consumes 20%×lv×MaxSP;
+   ATK×(8+SP/10)+flat), Critical Explosion/Fury (17.5+2.5×lv crit = 20→30% @Lv5), Demon Bane.
+   Non-damage items (Absorb Spirits / Spirits Recovery SP, combo-ready buffs, Steel Body
+   overcrowding, Ki skills, card sphere-refunds, Fist-weapon drop rates) are out of scope.
 7. **Acolyte / Priest [6]** — ✅ done. Fixed: AL_HOLYLIGHT (flat 250% MATK + Cookie card +20% on
    PS), PR_TURNUNDEAD (real fixed-damage formula (BaseLv+INT+SkillLv×10)×3×(1+LUK×3/200), Holy,
    ignores DEF/cards — was wrongly computed as 100% MATK). Re-audited against the Acolyte/Priest
