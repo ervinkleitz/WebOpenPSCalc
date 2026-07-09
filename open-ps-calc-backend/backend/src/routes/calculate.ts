@@ -105,9 +105,16 @@ router.post("/", (req: Request, res: Response) => {
     // Apply target debuffs from target_mods
     if (targetModsInput) {
       const sc: Record<string, boolean> = { ...(target.target_active_scs || {}) };
-      // Element status: override element and apply associated SC effects
+      // Element status: Frozen/Stone override element + apply an SC; Poison is the
+      // real ailment (DEF cut, no element change).
       if (targetModsInput.element_status === "Poison") {
-        target.element = 5;
+        // Poison ailment: cuts the target's DEF by 50% on Payon Stories (25%
+        // vanilla). def_percent scales both hard and soft DEF, matching the
+        // engine's SC_POISON model in targetUtils.applyMobScs. Unlike Frozen/Stone
+        // it does NOT change the element or grant auto-hit; the HP-drain damage-
+        // over-time is a separate effect, not part of the attacker's per-hit damage.
+        const poisonDefCut = build.server === "payon_stories" ? 50 : 25;
+        target.def_percent = Math.max(0, (target.def_percent ?? 100) - poisonDefCut);
       } else if (targetModsInput.element_status === "Frozen") {
         target.element = 1;
         sc.SC_FREEZE = true;

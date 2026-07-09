@@ -1973,20 +1973,21 @@ export default function BuildEditor() {
               Target debuffs
               <InfoTooltip>
                 Debuffs applied to the target before the damage calculation.
-                Element status overrides the target&apos;s element and may trigger mechanic effects
-                (Frozen/Stone Curse halve hard DEF and grant auto-hit).
+                Element status applies an ailment: Poison cuts the target&apos;s DEF by 50% (no
+                element change); Frozen and Stone Curse override the element (Water/Earth),
+                halve hard DEF, and grant auto-hit.
                 Lex Aeterna doubles all damage results.
                 Skill debuffs and statuses apply their game mechanics to the target.
               </InfoTooltip>
             </div>
 
             <div className="field">
-              <label title="Override target element; Frozen and Stone Curse also halve hard DEF and grant auto-hit">
+              <label title="Poison: −50% DEF ailment (no element change). Frozen/Stone Curse: override element to Water/Earth, halve hard DEF, and grant auto-hit.">
                 Element status
               </label>
               <select value={targetMods.element_status} onChange={(e) => setTargetMods((m) => ({ ...m, element_status: e.target.value }))}>
                 <option value="">None</option>
-                <option value="Poison">Poisoned (→ Poison element)</option>
+                <option value="Poison">Poisoned (−50% DEF)</option>
                 <option value="Frozen">Frozen (→ Water, −50% hard DEF, auto-hit)</option>
                 <option value="Stone">Stone Curse (→ Earth, −50% hard DEF, auto-hit)</option>
               </select>

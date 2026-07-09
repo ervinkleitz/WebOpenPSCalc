@@ -22,6 +22,13 @@ instead of release version. Dates are taken from actual git commit history.
   reflect the instant-kill probability (with the fail-damage chip as a fallback), instead of only
   counting the failure damage.
 
+### Changed
+
+- **Target "Poisoned" status now models the Poison ailment** instead of overriding the target's
+  element. It cuts the target's DEF by **50%** on Payon Stories (25% vanilla) — affecting both hard
+  and soft DEF — and no longer changes the element or grants auto-hit. (The HP-drain damage-over-time
+  is a separate effect and isn't part of the per-hit damage calc.)
+
 ### Fixed
 
 - **Arrow Vulcan now scales with level** — the Clown/Gypsy skill had no damage ratio defined, so it
