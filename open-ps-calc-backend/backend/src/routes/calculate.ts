@@ -108,13 +108,13 @@ router.post("/", (req: Request, res: Response) => {
       // Element status: Frozen/Stone override element + apply an SC; Poison is the
       // real ailment (DEF cut, no element change).
       if (targetModsInput.element_status === "Poison") {
-        // Poison ailment: cuts the target's DEF by 50% on Payon Stories (25%
-        // vanilla). def_percent scales both hard and soft DEF, matching the
-        // engine's SC_POISON model in targetUtils.applyMobScs. Unlike Frozen/Stone
-        // it does NOT change the element or grant auto-hit; the HP-drain damage-
-        // over-time is a separate effect, not part of the attacker's per-hit damage.
-        const poisonDefCut = build.server === "payon_stories" ? 50 : 25;
-        target.def_percent = Math.max(0, (target.def_percent ?? 100) - poisonDefCut);
+        // Poison ailment: reduces the VIT-based soft DEF by 50% on Payon Stories
+        // (25% vanilla) — the wiki: "Defence gained from VIT is reduced by 50%".
+        // Soft DEF derives from the target's VIT (defenseFix: def2 = target.vit),
+        // so scale VIT; hard DEF, element, and auto-hit are untouched. The HP-drain
+        // damage-over-time is surfaced separately (see poison_dot below).
+        const poisonVitCut = build.server === "payon_stories" ? 50 : 25;
+        target.vit = Math.max(0, Math.floor(target.vit * (100 - poisonVitCut) / 100));
       } else if (targetModsInput.element_status === "Frozen") {
         target.element = 1;
         sc.SC_FREEZE = true;

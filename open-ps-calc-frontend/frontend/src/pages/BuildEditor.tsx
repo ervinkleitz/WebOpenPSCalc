@@ -895,6 +895,12 @@ export default function BuildEditor() {
         skill: skillRes,
         selected_skill: { id: skill.id, level: skill.level, label: skill.label },
         target_hp: targetMode === "monster" ? (mobInfo?.hp ?? null) : null,
+        // Poison ailment DoT: the target loses 2%/s of its Max HP on Payon Stories
+        // (1%/s vanilla). Surfaced so time-to-kill folds it in. Monster mode only
+        // (Max HP known); the DEF cut itself is applied server-side.
+        poison_dot_per_sec: targetMode === "monster" && targetMods.element_status === "Poison" && mobInfo?.hp
+          ? Math.floor(mobInfo.hp * (data.server === "payon_stories" ? 2 : 1) / 100)
+          : null,
       });
     } catch (e: any) {
       setCalcError(e.message);

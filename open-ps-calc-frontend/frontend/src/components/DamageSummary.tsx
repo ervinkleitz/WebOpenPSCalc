@@ -55,6 +55,7 @@ interface CalcResult {
   skill: SingleResult | null;
   selected_skill: { id: number; level: number; label: string };
   target_hp?: number | null; // monster HP (monster-mode only) for hits-to-kill / time-to-kill
+  poison_dot_per_sec?: number | null; // Poison ailment damage-over-time (per second), folded into time-to-kill
 }
 
 interface Props {
@@ -185,7 +186,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   if (calculating) return <p className="spinner-text">Calculating…</p>;
   if (!calcResult) return <p className="hint-text">Set up a build and target, then calculate damage.</p>;
 
-  const { normal_attack, skill: skillResult, selected_skill, target_hp } = calcResult;
+  const { normal_attack, skill: skillResult, selected_skill, target_hp, poison_dot_per_sec } = calcResult;
   const hasAutoBonus = !!normal_attack.has_auto_bonuses;
   const hasSkill = skillResult !== null && selected_skill.id !== 0;
   const primary = hasSkill ? skillResult! : normal_attack;
@@ -279,10 +280,14 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const hitsBest = isInstaKill ? null : hitsToKill(killMax);   // fewest hits — best-case (max) rolls
   const hitsAvg = isInstaKill ? tuCastsRounded : hitsToKill(killAvg);
   const hitsWorst = isInstaKill ? null : hitsToKill(killMin);  // most hits — worst-case (min) rolls
+  // Poison ailment damage-over-time (per second), added to the attack DPS so the
+  // target dies sooner. Constant since it's a fraction of Max HP, so it folds in
+  // as a flat +DPS term. Only present in monster mode with the Poison status on.
+  const poisonDot = poison_dot_per_sec != null && poison_dot_per_sec > 0 ? poison_dot_per_sec : 0;
+  const killDps = (displayDpsValid && displayDps != null ? displayDps : 0) + poisonDot;
   const timeToKill = isInstaKill
     ? (tuCasts != null && periodS > 0 ? tuCasts * periodS : null)
-    : (target_hp != null && displayDpsValid && displayDps != null && displayDps > 0
-        ? target_hp / displayDps : null);
+    : (target_hp != null && killDps > 0 ? target_hp / killDps : null);
   // For an instant-kill skill, "DPS" as chip-damage throughput is misleading next
   // to the kill metrics (they'd imply far less than the target's HP). Show the
   // effective throughput (HP ÷ expected time) so the panel stays self-consistent;
@@ -334,6 +339,12 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           <div className="label">DPS (est.)</div>
           <div className="value">{displayDpsValid && effectiveDps != null ? effectiveDps.toFixed(1) : "—"}</div>
         </div>
+        {poisonDot > 0 && (
+          <div className="metric" title="Poison ailment damage-over-time: the target loses 2% of its Max HP each second (Payon Stories; 1%/s vanilla). This is added to your DPS in the Time to kill below.">
+            <div className="label">Poison DoT</div>
+            <div className="value">{poisonDot.toLocaleString()}<span className="unit">/s</span></div>
+          </div>
+        )}
         {!isInstaKill && hitsAvg != null && (
           <div className="metric metric-range" title={`Hits to kill the ${target_hp!.toLocaleString()}-HP target — from best-case (all max-damage rolls) to worst-case (all min-damage rolls).`}>
             <div className="label">Hits to kill</div>
@@ -355,7 +366,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         {timeToKill != null && (
           <div className="metric" title={isInstaKill
             ? "Expected time to kill = expected casts (from the success chance) × cast + after-cast delay."
-            : "Average time to kill = target HP ÷ estimated DPS (folds in ASPD, crit mix and procs; cast + after-cast delay for skills)."}>
+            : `Average time to kill = target HP ÷ estimated DPS (folds in ASPD, crit mix and procs; cast + after-cast delay for skills)${poisonDot > 0 ? ", plus the Poison DoT" : ""}.`}>
             <div className="label">Time to kill</div>
             <div className="value">{timeToKill.toFixed(1)}<span className="unit">s</span></div>
           </div>

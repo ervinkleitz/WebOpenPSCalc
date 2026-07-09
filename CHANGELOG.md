@@ -24,10 +24,8 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
-- **Target "Poisoned" status now models the Poison ailment** instead of overriding the target's
-  element. It cuts the target's DEF by **50%** on Payon Stories (25% vanilla) — affecting both hard
-  and soft DEF — and no longer changes the element or grants auto-hit. (The HP-drain damage-over-time
-  is a separate effect and isn't part of the per-hit damage calc.)
+- **Target "Poisoned" option now applies the Poison ailment** instead of overriding the target's
+  element to Poison.
 
 ### Fixed
 
