@@ -540,7 +540,12 @@ brackets are the number of PS-custom entries found across those tables.
     size penalty, DEF applies, ignores %-cards but +ATK cards apply — matches the PS wiki's simplified
     ATK% table, not the classic VIT-based Acid Bomb formula). Summons (Bio Cannibalize, Sphere Mine)
     are out of a damage calculator's scope.
-11. **Merchant / Whitesmith [3]** — Cart Revolution, Mammonite (Zeny Pincher), Overthrust party.
+11. **Merchant / Whitesmith [3]** — ✅ done (PS wiki, with-DEF). All correct, no code changes:
+    Mammonite (100+50×lv = 150→600%; Zeny Pincher toggle → 40% damage / no zeny cost, matches),
+    Cart Revolution (250% of normal attack, weapon element), Over Thrust / Power-Thrust (+5%/lv ATK
+    to caster AND party — PS grants the party the full bonus — added additively to the skill
+    multiplier, per the wiki). Cart Termination isn't a PS skill (the wiki's only "Cart" skill is
+    Cart Revolution), so its vanilla-fallback ratio is moot.
 12. **Archer / Hunter [3]** — Vulture's Eye, Freezing Trap, trap PS formula (already reworked — verify).
 13. **Bard / Clown [2]** — Musical Lesson, Musical Strike.
 14. **Dancer / Gypsy [2]** — Dancing Lesson, Throw Arrow.
