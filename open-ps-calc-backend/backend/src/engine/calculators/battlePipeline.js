@@ -801,8 +801,9 @@ class BattlePipeline {
 
     // PS rework: Enchant Poison passive — +2%/lv vs Poison element targets.
     const ELE_POISON = 5;
+    // PS caps Enchant Poison at level 5, so the passive bonus tops out at +10%.
     const enchantPoisonLv = profile.mechanic_flags.has("AS_ENCHANTPOISON_PASSIVE_BONUS")
-      ? (gearBonuses.effective_mastery?.AS_ENCHANTPOISON || 0) : 0;
+      ? Math.min(gearBonuses.effective_mastery?.AS_ENCHANTPOISON || 0, 5) : 0;
     if (enchantPoisonLv > 0 && target.element === ELE_POISON) {
       const bonusPct = 2 * enchantPoisonLv;
       pmf = scaleFloor(pmf, 100 + bonusPct, 100);

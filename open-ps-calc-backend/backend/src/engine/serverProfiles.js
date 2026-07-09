@@ -447,6 +447,11 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
     WZ_FIREPILLAR: 5,
     WZ_SIGHTRASHER: 5,
     WZ_AMPLIFYMAGICPOWER: 5,
+    // Assassin rework: PS reduced these to max level 5 (wiki "levels = 5 (Fixed)").
+    // Enchant Poison's cap matters for damage — its passive +2%/lv vs Poison-element
+    // monsters would otherwise reach +20% at lv10 instead of the intended +10%.
+    AS_ENCHANTPOISON: 5,
+    AS_VENOMDUST: 5,
   },
   // HW_NAPALMVULCAN uses Shadow (Dark) element on PS instead of Ghost
   skill_elements: { HW_NAPALMVULCAN: 7 },

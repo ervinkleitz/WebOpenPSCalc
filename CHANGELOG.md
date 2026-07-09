@@ -18,6 +18,14 @@ instead of release version. Dates are taken from actual git commit history.
   second entry with a bad weapon type (`W_SHOTGUN`) and no equip slot was shadowing the correct
   one, so a Gunslinger equipping it lost all ASPD. Removed the duplicate; the shotgun now equips
   and attacks at normal speed.
+- **Enchant Poison capped at level 5 (Payon Stories)** — the Assassin rework reduces Enchant Poison
+  to max level 5, but the calculator allowed level 10, letting its passive damage bonus vs
+  Poison-element monsters reach +20% instead of the intended **+10%**. The skill now caps at 5 (and
+  the passive clamps to +10% even on older saved builds). Venom Dust was likewise capped at 5
+  (duration only — no damage effect). Sonic Blow (900%), Grimtooth, the Katar offhand hit (61%),
+  Envenom's weapon element, and the new Sonic Blow / Grimtooth critical-hit rules (double crit
+  chance via Katar, bypass DEF, excluded from Katar Mastery's +50% crit damage) were all verified
+  correct against the Assassin Rework document.
 - **Fire Pillar now ignores 50% of MDEF instead of all of it** — Fire Pillar was piercing 100% of
   the target's Magic Defense (vanilla behavior), because its "ignore defense" flag caused the whole
   MDEF step to be skipped. Payon Stories lowered it to **50%**, so it now applies a 50% ignore like
