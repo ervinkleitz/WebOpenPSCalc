@@ -15192,9 +15192,13 @@
       "Finish quest"
     ],
     "constant": "PS_PR_HOLYSTRIKE",
+    "attack_type": "Weapon",
+    "element": ["Ele_Holy"],
+    "damage_type": [],
+    "number_of_hits": [1],
     "job": [
-      7,
-      4008
+      8,
+      4009
     ]
   },
   "2623": {

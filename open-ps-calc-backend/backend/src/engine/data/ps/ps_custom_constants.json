@@ -7,7 +7,7 @@
   "2619": {"constant": "PS_BS_RESOURCEROUNDUP", "job": [18, 4019]},
   "2620": {"constant": "PS_SN_SOULRESTORE", "job": [23]},
   "2621": {"constant": "PS_SN_SOULHARVEST", "job": [23]},
-  "2622": {"constant": "PS_PR_HOLYSTRIKE", "job": [7, 4008]},
+  "2622": {"constant": "PS_PR_HOLYSTRIKE", "job": [8, 4009]},
   "2623": {"constant": "PS_CORRUPTINGDRAIN", "job": []},
   "2624": {"constant": "PS_TRIAGE", "job": []},
   "2625": {"constant": "PS_NPC_FIREWALK", "job": []},

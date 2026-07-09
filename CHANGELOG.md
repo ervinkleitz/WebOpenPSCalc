@@ -9,6 +9,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Holy Strike fixed to a Priest skill and made selectable** — this Battle Priest skill (a Holy-
+  property melee proc dealing `[100 + STR + (1 + BaseLevel)]% ATK`) was tagged with the wrong job
+  (Knight/Lord Knight) and couldn't be computed. Corrected its class to Priest/High Priest and
+  surfaced it in the damage-skill picker so its per-hit damage can be checked.
+- **Magnus Exorcismus hits more targets for full damage** — per the Acolyte/Priest rework, it now
+  deals 100% MATK per hit to **Ghost-element and Undead-race** monsters as well as Undead-element
+  and Demon-race (previously only Undead element + Demon race got full damage; others got 50%).
 - **Bard/Clown ASPD collapsed when a Musical Instrument was equipped** — the job ASPD table was
   missing the `MusicalInstrument` weapon type for Bard and Clown, so equipping an instrument fell
   through to the very-slow default and dragged ASPD down to ~130. Added the instrument base (575,

@@ -347,7 +347,10 @@ const PS_BF_MAGIC_RATIOS = {
   // wiki.payonstories.com/Lord_of_Vermillion: 4 waves, each wave deals
   // 20%×lv×wave# MATK. Total = 20×lv×(1+2+3+4) = 200×lv (2000% at lv10).
   WZ_VERMILION: (lv) => 200 * lv,
-  PR_MAGNUS: (lv, tgt) => (tgt && (tgt.element === 9 || tgt.race === "Demon")) ? 100 : 50,
+  // Priest/Acolyte rework: Magnus Exorcismus deals full damage (100% MATK/hit) to
+  // Undead(9)/Ghost(8) element and Undead/Demon race; 50% otherwise. (Previously
+  // only Undead element + Demon race were treated as valid.)
+  PR_MAGNUS: (lv, tgt) => (tgt && (tgt.element === 9 || tgt.element === 8 || tgt.race === "Undead" || tgt.race === "Demon")) ? 100 : 50,
   // wiki.payonstories.com/Fire_Pillar: each hit's MATK% scales with the
   // caster's own Fire Wall rank (+2% MATK per hit per Fire Wall level) --
   // same pattern as Frost Nova/Frost Diver above.
