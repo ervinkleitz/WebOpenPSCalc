@@ -18,6 +18,12 @@ instead of release version. Dates are taken from actual git commit history.
   second entry with a bad weapon type (`W_SHOTGUN`) and no equip slot was shadowing the correct
   one, so a Gunslinger equipping it lost all ASPD. Removed the duplicate; the shotgun now equips
   and attacks at normal speed.
+- **Fire Pillar now ignores 50% of MDEF instead of all of it** — Fire Pillar was piercing 100% of
+  the target's Magic Defense (vanilla behavior), because its "ignore defense" flag caused the whole
+  MDEF step to be skipped. Payon Stories lowered it to **50%**, so it now applies a 50% ignore like
+  its rework specifies. Its level cap (5) and hit count (2 + 2×level) were already correct.
+  Relatedly, the 50% MDEF ignore on Fire Pillar, Napalm Vulcan and Soul Strike (Lv10) now reduces
+  **both hard and soft MDEF** (it was only reducing hard MDEF before), matching the rework docs.
 - **Soul Strike's MDEF ignore now requires level 10, and Volcano grants its ATK bonus** — per the
   Sage Rework, Soul Strike's 50% MDEF ignore only applies once level 10 is learned, so the
   calculator now grants it only when Soul Strike is set to level 10 (lower levels no longer get it).

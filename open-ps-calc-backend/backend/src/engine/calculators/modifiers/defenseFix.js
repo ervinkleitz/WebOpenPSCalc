@@ -155,17 +155,22 @@ function calculateMagicDefenseFix(target, gearBonuses, pmf, result, mdefIgnorePc
     mdef = Math.max(0, mdef - Math.floor(mdef * ignorePct / 100));
     noteIgnore = ` (-${ignorePct}% ignored → ${mdef})`;
   }
+  // PS skill MDEF-ignore (Fire Pillar / Napalm Vulcan / Soul Strike Lv10) ignores
+  // 50% of BOTH the hard (%) and soft (flat) Magic Defense — see the Sage Rework
+  // and Wizard/High-Wizard rework docs ("both the hard and soft defense").
+  let effMdef2 = mdef2;
   if (mdefIgnorePct > 0) {
     mdef = Math.max(0, mdef - Math.floor(mdef * mdefIgnorePct / 100));
-    noteIgnore += ` (-${mdefIgnorePct}% hard MDEF ignored → ${mdef})`;
+    effMdef2 = Math.max(0, mdef2 - Math.floor(mdef2 * mdefIgnorePct / 100));
+    noteIgnore += ` (-${mdefIgnorePct}% hard+soft MDEF ignored → hard ${mdef}, soft ${effMdef2})`;
   }
 
   pmf = scaleFloor(pmf, 100 - mdef, 100);
-  pmf = subtractUniform(pmf, mdef2, mdef2);
+  pmf = subtractUniform(pmf, effMdef2, effMdef2);
   pmf = floorAt(pmf, 1);
 
   const [mn, mx, av] = pmfStats(pmf);
-  result.add_step({ name: "Magic Defense Fix", value: av, min_value: mn, max_value: mx, multiplier: 1.0, note: `MDEF ${target.mdef_}${noteIgnore} → ×${100 - mdef}% - mdef2 ${mdef2}`, formula: "max(1, dmg*(100-mdef)//100 - mdef2)", hercules_ref: "battle.c:1585" });
+  result.add_step({ name: "Magic Defense Fix", value: av, min_value: mn, max_value: mx, multiplier: 1.0, note: `MDEF ${target.mdef_}${noteIgnore} → ×${100 - mdef}% - mdef2 ${effMdef2}`, formula: "max(1, dmg*(100-mdef)//100 - mdef2)", hercules_ref: "battle.c:1585" });
   return pmf;
 }
 

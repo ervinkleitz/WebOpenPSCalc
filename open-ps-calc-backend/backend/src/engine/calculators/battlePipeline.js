@@ -250,7 +250,10 @@ class BattlePipeline {
       // levels don't get it.
       : (profile.mechanic_flags.has("MG_SOULSTRIKE_MDEF_IGNORE") && skillName === "MG_SOULSTRIKE" && skill.level === 10) ? 50
       : 0;
-    if (!skill.nk_ignore_def) {
+    // A PS partial MDEF ignore (e.g. Fire Pillar 50%) takes precedence over a
+    // vanilla full NK_IGNORE_DEF bypass: vanilla Fire Pillar pierces all MDEF, but
+    // PS lowered it to 50%, so run the partial-ignore path instead of bypassing.
+    if (mdefIgnorePct > 0 || !skill.nk_ignore_def) {
       pmf = calculateMagicDefenseFix(target, gearBonuses || {}, pmf, result, mdefIgnorePct);
     } else {
       const [mn, mx, av] = pmfStats(pmf);
