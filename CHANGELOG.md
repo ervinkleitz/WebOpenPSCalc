@@ -5,6 +5,14 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-08
+
+### Added
+
+- **Ring of Peace** (Payon Stories custom accessory) — MaxHP +100, MaxSP +10, HP & SP recovery
+  rates +5%. Level 40, all jobs. A survivability accessory; no effect on outgoing damage. From
+  [the wiki](https://wiki.payonstories.com/Ring_of_Peace).
+
 ## 2026-07-07
 
 ### Changed

@@ -1737,5 +1737,16 @@
     "equip_level": 40,
     "refineable": false,
     "script": "bonus2 bSubEle,Ele_Water,3;"
+  },
+  "91136": {
+    "type": "IT_ARMOR",
+    "loc": ["EQP_ACC"],
+    "def": 0,
+    "slots": 0,
+    "aegis_name": "Ring_of_Peace",
+    "job": [],
+    "equip_level": 40,
+    "refineable": false,
+    "script": "bonus bMaxHP,100; bonus bMaxSP,10; bonus bHPrecovRate,5; bonus bSPrecovRate,5;"
   }
 }
