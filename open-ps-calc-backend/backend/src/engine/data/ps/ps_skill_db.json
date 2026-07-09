@@ -15272,6 +15272,10 @@
       "Vulture's Eye 10"
     ],
     "constant": "PS_RG_TRICKARROW",
+    "attack_type": "Weapon",
+    "element": ["Ele_Weapon"],
+    "damage_type": [],
+    "number_of_hits": [-2],
     "job": [
       17,
       4018
@@ -15319,6 +15323,10 @@
     "range": "7 Cells",
     "description": "Quickly dash up to two cells behind the target. Deals 10% damage on target if it's an enemy. Monster attacking someone else won't switch to you when Quickstepping For 4 second, the next Backstab will have Opportunity if it wouldn't normally",
     "constant": "PS_RG_QUICKSTEP",
+    "attack_type": "Weapon",
+    "element": ["Ele_Weapon"],
+    "damage_type": [],
+    "number_of_hits": [1],
     "job": [
       17,
       4018

@@ -366,19 +366,30 @@ class DataLoader {
   getSkill(skillId) {
     try {
       const data = this._loadJson("db/skills.json");
-      return this._applySkillCap((data.skills || {})[String(skillId)] || null);
+      const vanilla = (data.skills || {})[String(skillId)];
+      if (vanilla) return this._applySkillCap(vanilla);
     } catch {
-      return null;
+      /* fall through to PS-custom */
     }
+    if (this._usePsData) {
+      const custom = this._psCustomBattleSkills()[skillId];
+      if (custom) return custom;
+    }
+    return null;
   }
 
   getAllSkills() {
+    let skills = [];
     try {
       const data = this._loadJson("db/skills.json");
-      return Object.values(data.skills || {}).map((s) => this._applySkillCap(s));
+      skills = Object.values(data.skills || {}).map((s) => this._applySkillCap(s));
     } catch {
-      return [];
+      skills = [];
     }
+    if (this._usePsData) {
+      skills = skills.concat(Object.values(this._psCustomBattleSkills()));
+    }
+    return skills;
   }
 
   getPassiveSkillsForJob(jobId) {
@@ -695,6 +706,34 @@ class DataLoader {
       result.push({ ...record, job: jobById[record.id ?? -1] || [] });
     }
     return result;
+  }
+
+  // PS-custom ACTIVE damage skills (e.g. Trick Arrow, Quick Step) as battle-ready
+  // skill objects keyed by id. Only entries that carry battle fields (attack_type)
+  // in ps_skill_db.json qualify — passive/proc customs (Holy Strike) are skipped.
+  // `name` is set to the constant so weapon_ratios / magic_ratios resolve, mirroring
+  // how vanilla skills key their ratio lookups.
+  _psCustomBattleSkills() {
+    if (this.__psCustomBattle == null) {
+      const byId = {};
+      for (const rec of this.getPsCustomSkills()) {
+        if (!rec.attack_type) continue;
+        byId[rec.id] = {
+          id: rec.id,
+          name: rec.constant,
+          description: rec.name || rec.constant,
+          max_level: rec.max_level || 1,
+          attack_type: rec.attack_type,
+          element: rec.element || ["Ele_Weapon"],
+          damage_type: rec.damage_type || [],
+          number_of_hits: rec.number_of_hits || [1],
+          range: [1],
+          skill_type: ["Enemy"],
+        };
+      }
+      this.__psCustomBattle = byId;
+    }
+    return this.__psCustomBattle;
   }
 
   // ---------------------------------------------------------------

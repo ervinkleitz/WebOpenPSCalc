@@ -59,6 +59,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Trick Arrow and Quick Step are now selectable** — these Rogue PS-custom skills had damage ratios
+  defined but couldn't be picked or calculated, because the skill lookup only read the vanilla skill
+  database. The calculator now resolves PS-custom active skills, so both appear in the damage-skill
+  picker and compute correctly: **Trick Arrow** (200% ATK over 2 hits, at bow range) and **Quick
+  Step** (10% ATK). This groundwork will let other PS-custom skills be surfaced the same way.
 - **Breaking Cloak (opener) toggle** — the Assassin's Cloak initiative bonus: breaking Cloak (Lv3+)
   with an **auto-attack** makes that opening hit deal **×2 damage**, or with **Sonic Blow** deals
   **+10%**. Enable it in the target-modifiers panel. Because it's a one-time opener, it scales the
