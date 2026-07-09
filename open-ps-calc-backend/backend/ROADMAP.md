@@ -534,7 +534,12 @@ brackets are the number of PS-custom entries found across those tables.
    HP-sacrifice formula (STR×40 + HP×8%×lv, Neutral, auto-hit, DEF+cards apply) via a dedicated
    `_runKillingStrokeBranch`; was computing a flat 100% ATK. (Mirror Image +10–30% bonus not
    modeled.) Nen/Ki are buffs (out of scope).
-10. **Alchemist / Creator [3]** — Acid Terror, Axe Mastery, Acid Demonstration.
+10. **Alchemist / Creator [3]** — ✅ done (PS wiki, with-DEF). All correct, no code changes: Acid
+    Terror (100+80×lv = 180→500%, ranged physical, auto-hit/IgnoreFlee, DEF applies), Axe Mastery
+    (+5 ATK/lv, ASPD buff at Lv10), Acid Demonstration (200+40×lv = 240→400%, weapon-ATK-based with
+    size penalty, DEF applies, ignores %-cards but +ATK cards apply — matches the PS wiki's simplified
+    ATK% table, not the classic VIT-based Acid Bomb formula). Summons (Bio Cannibalize, Sphere Mine)
+    are out of a damage calculator's scope.
 11. **Merchant / Whitesmith [3]** — Cart Revolution, Mammonite (Zeny Pincher), Overthrust party.
 12. **Archer / Hunter [3]** — Vulture's Eye, Freezing Trap, trap PS formula (already reworked — verify).
 13. **Bard / Clown [2]** — Musical Lesson, Musical Strike.
