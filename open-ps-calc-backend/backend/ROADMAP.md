@@ -526,7 +526,13 @@ brackets are the number of PS-custom entries found across those tables.
    was +3% to Boomerang+Charge) and — surfaced by it — a broad **item-script arithmetic bug**
    (`getrefine()*N` and any arithmetic bonus value was capped at +1; now evaluated properly, fixing
    every refine-scaling item bonus). Providence's rework is defensive (MDEF, def-penalty) — out of scope.
-9. **Ninja [5]** — Huuma, Hyousensou, Kasumikiri, Kirikage, Raigeki Sai, Nen (Ki).
+9. **Ninja [5]** — ✅ done (PS wiki, with-DEF). Confirmed correct: Huuma (200+150×lv = 350→950%),
+   Hyousensou (85% MATK/hit × 3–12 hits), Kasumikiri (375% @Lv10 base, ×1.4 while Hiding = 525%),
+   Kirikage (Hiding 100/200/400/600/800; Not-Hiding 100/190/280/360/450 − 10×distance; +Crit via
+   Shadow's Within), Raigeki Sai (150+60×lv = 210→450%). **Fixed:** Bakuenryu (300→900% = 150+150×lv;
+   was a flat 300% from the DB fallback). **Gap:** NJ_ISSEN (Killing Stroke) computes a flat 100% ATK
+   instead of its fixed HP-sacrifice formula (STR×40 + HP×8%×lv, +Mirror Image bonus) — needs a
+   special fixed-damage branch like Turn Undead. Nen/Ki are buffs (out of scope).
 10. **Alchemist / Creator [3]** — Acid Terror, Axe Mastery, Acid Demonstration.
 11. **Merchant / Whitesmith [3]** — Cart Revolution, Mammonite (Zeny Pincher), Overthrust party.
 12. **Archer / Hunter [3]** — Vulture's Eye, Freezing Trap, trap PS formula (already reworked — verify).
