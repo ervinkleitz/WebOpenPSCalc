@@ -1584,7 +1584,7 @@
     "aegis_name": "Stone_Discus",
     "job": [14, 4015],
     "refineable": true,
-    "script": "bonus2 bSkillAtk,\"CR_SHIELDBOOMERANG\",getrefine()*3; bonus2 bSkillAtk,\"CR_SHIELDCHARGE\",getrefine()*3;"
+    "script": "bonus2 bSkillAtk,\"CR_SHIELDBOOMERANG\",getrefine()*5;"
   },
   "91047": {
     "type": "IT_ARMOR",

@@ -319,6 +319,49 @@ function preprocessScript(script, ctx = null) {
 const BONUS_RE = /\bbonus(2|3|4)?\s+(b\w+)(?:[,\s](.+?))?(?=;|$)/gm;
 const SKILL_RE = /\bskill\s+(\w+)\s*,\s*(\d+)/gm;
 
+// Evaluate a pure-arithmetic expression (integers with + - * / and parens) with
+// normal precedence. Returns null if the string isn't pure arithmetic. Item
+// scripts are trusted data, and after getrefine()/readparam() substitution a
+// bonus value is often an expression like "10*5" or "3+2" that plain parseInt
+// (and the boolean-only safeEvalInt) can't handle.
+function evalArithmetic(s) {
+  if (!/^[\d\s+\-*/().]+$/.test(s)) return null;
+  const toks = s.match(/\d+|[+\-*/()]/g);
+  if (!toks || !toks.length) return null;
+  let i = 0;
+  const peek = () => toks[i];
+  const next = () => toks[i++];
+  function factor() {
+    const t = next();
+    if (t === "(") { const v = expr(); if (next() !== ")") throw new Error("paren"); return v; }
+    if (/^\d+$/.test(t)) return parseInt(t, 10);
+    throw new Error("factor");
+  }
+  function term() {
+    let v = factor();
+    while (peek() === "*" || peek() === "/") {
+      const op = next(); const r = factor();
+      v = op === "*" ? v * r : (r === 0 ? 0 : Math.trunc(v / r));
+    }
+    return v;
+  }
+  function expr() {
+    let v = term();
+    while (peek() === "+" || peek() === "-") {
+      const op = next(); const r = term();
+      v = op === "+" ? v + r : v - r;
+    }
+    return v;
+  }
+  try {
+    const v = expr();
+    if (i !== toks.length) return null;
+    return Math.trunc(v);
+  } catch {
+    return null;
+  }
+}
+
 function coerce(s) {
   s = s.trim();
   // Hercules item scripts commonly quote string params (skill/status
@@ -329,6 +372,8 @@ function coerce(s) {
     s = s.slice(1, -1).trim();
   }
   if (/^-?\d+$/.test(s)) return parseInt(s, 10);
+  const arith = evalArithmetic(s);
+  if (arith !== null) return arith;
   const val = safeEvalInt(s, {});
   if (val !== null) return val;
   return s;

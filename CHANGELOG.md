@@ -9,6 +9,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Refine-scaling item bonuses now apply the full amount** — item scripts that compute a bonus as
+  an expression (e.g. `getrefine()*5` for "+5% per refine") were being silently capped at **+1**,
+  because the parser only understood plain integers and fell back to a boolean evaluator for
+  anything with arithmetic. Such bonuses now evaluate correctly, so every "+N% per refine"-style
+  item (and any bonus using arithmetic) applies its real value.
+- **Stone Discus corrected to the Crusader rework** — it was granting +3% per refine to **both**
+  Shield Boomerang and Shield Charge; the rework makes it **+5% per refine to Shield Boomerang
+  only**. (Combined with the fix above, it now actually scales with refine.)
 - **Knight fixes (Blade Mastery, Counter Attack, Bowling Bash)** — three bugs found while auditing
   the Knight patch:
   - **Blade Mastery on one-handed swords** — the rework merges Sword Mastery into Blade Mastery,
