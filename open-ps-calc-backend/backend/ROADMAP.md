@@ -487,11 +487,11 @@ brackets are the number of PS-custom entries found across those tables.
    RG_BACKSTAP (200+30×lv; +40% Opportunity via the `backstab_opportunity` toggle; DEF applies;
    auto-hit / IgnoreFlee), RG_RAID (600% @lv5; DEF applies), Yser Card (+10% Raid & Backstab, +5
    HIT), Vulture's Eye enabling bow Double Attack (proc = min(TF_DOUBLE, AC_VULTURE)). **Blocked:**
-   Trick Arrow (PS_RG_TRICKARROW, 200% / 2 hits) and Quick Step (PS_RG_QUICKSTEP, 10%) — ratios are
-   defined in `weapon_ratios`, but `getSkill()` only reads vanilla `skills.json`, so these PS-custom
-   skills (in `ps_skill_db.json` / `ps_custom_constants.json`, and lacking battle fields like
-   `attack_type`/`number_of_hits`/`element`) can't be picked or computed. Same getSkill data-source
-   gap as Holy Strike (PS_PR_HOLYSTRIKE). Needs a PS-custom-skill loader + synthesized battle fields.
+   Trick Arrow (PS_RG_TRICKARROW, 200% / 2 hits) and Quick Step (PS_RG_QUICKSTEP, 10%) are now
+   resolvable — `getSkill`/`getAllSkills` fall back to `_psCustomBattleSkills()` (battle fields added
+   to `ps_skill_db.json`), so both are selectable and compute (DEF applies). Only Holy Strike
+   (PS_PR_HOLYSTRIKE) remains unsurfaced — a passive melee proc with a mismatched job array
+   ([7, 4008] = Knight/LK) that needs its own review.
 5. **Swordsman / Knight [6]** — Bowling Bash, Brandish Spear, Spear Stab, Auto Counter, Magnum endow,
    Sword/Blade Mastery, Two-Hand & Spear Quicken (crit/hit/flee).
 6. **Monk / Champion [6]** — Triple Attack (+Fury crit), Chain Combo, Combo Finish, Iron Hand
