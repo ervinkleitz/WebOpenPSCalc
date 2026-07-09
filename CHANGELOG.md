@@ -14,6 +14,10 @@ instead of release version. Dates are taken from actual git commit history.
   through to the very-slow default and dragged ASPD down to ~130. Added the instrument base (575,
   mirroring the Dancer/Gypsy Whip). Also backfilled the Unarmed/Knife/Bow bases for Dancer and
   Gypsy, which had the same gap for non-Whip weapons.
+- **Rolling Stone (Payon Stories custom shotgun) had a broken duplicate definition** — a stray
+  second entry with a bad weapon type (`W_SHOTGUN`) and no equip slot was shadowing the correct
+  one, so a Gunslinger equipping it lost all ASPD. Removed the duplicate; the shotgun now equips
+  and attacks at normal speed.
 - **Skill picker respects the Payon Stories level cap** — skills that PS caps below vanilla (Frost
   Nova, Fire Pillar, Sightrasher, Amplify Magic Power, Spear Stab — all max 5 on PS) were still
   selectable up to their vanilla max (10) in the level selector, even though the engine clamped the

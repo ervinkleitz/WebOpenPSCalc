@@ -1715,18 +1715,6 @@
     "refineable": false,
     "script": ""
   },
-  "91134": {
-    "type": "IT_WEAPON",
-    "weapon_type": "W_SHOTGUN",
-    "atk": 150,
-    "slots": 2,
-    "weapon_level": 2,
-    "aegis_name": "Rolling_Stone__",
-    "job": [24],
-    "equip_level": 20,
-    "refineable": true,
-    "script": ""
-  },
   "91135": {
     "type": "IT_ARMOR",
     "loc": ["EQP_HEAD_LOW"],
