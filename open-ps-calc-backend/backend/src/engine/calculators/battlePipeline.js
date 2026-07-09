@@ -456,7 +456,29 @@ class BattlePipeline {
 
     pmf = floorAt(pmf, 1);
     const [mn, mx, av] = pmfStats(pmf);
-    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Turn Undead branch (fail damage; instant-kill roll not modeled)", formula: "", hercules_ref: "" });
+    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Turn Undead branch (this is the FAIL damage; on success the target is instantly killed)", formula: "", hercules_ref: "" });
+
+    // PS instant-kill success chance (PSRO Priest/Acolyte Rework):
+    //   p% = [20×SkillLv + 3×LUK + INT + BaseLv + (1 − HP/MaxHP)×200] / 10
+    // The rework doc writes the divisor as "/1000%"; the pre-rework 1×LUK form of
+    // this same expression reproduces the doc's worked example (48.9%) exactly,
+    // confirming p% = numerator/10. Success is HALVED if BASE INT < 40, and the
+    // rework removes the old upper cap (a probability is still clamped to 0–100).
+    // Target assumed at full HP (HP term = 0) unless it carries current/max HP.
+    const hpFrac = (target.max_hp && target.hp != null)
+      ? Math.max(0, Math.min(1, target.hp / target.max_hp)) : 1.0;
+    let successPct = (20 * skill.level + 3 * status.luk + status.int_ + build.base_level + (1 - hpFrac) * 200) / 10;
+    const baseIntLow = build.base_int < 40;
+    if (baseIntLow) successPct /= 2;
+    successPct = Math.max(0, Math.min(100, successPct));
+    result.success_chance = successPct;
+    result.add_step({
+      name: "Instant-Kill Success Chance", value: successPct, min_value: successPct, max_value: successPct, multiplier: 1.0,
+      note: `${successPct.toFixed(1)}% — LUK ${status.luk}, INT ${status.int_}, BaseLv ${build.base_level}, SkillLv ${skill.level}` +
+        (baseIntLow ? `; base INT ${build.base_int} < 40 → halved` : "") + "; target at full HP",
+      formula: "[20×SkillLv + 3×LUK + INT + BaseLv + (1−HP/MaxHP)×200] / 10 %",
+      hercules_ref: "PSRO Priest/Acolyte Rework — Turn Undead", info: true,
+    });
 
     result.min_damage = mn;
     result.max_damage = mx;
@@ -1005,6 +1027,7 @@ class BattlePipeline {
       const attacks = [createAttackDefinition(tuResult.avg_damage, 0.0, tuPeriod, 1.0)];
       return createBattleResult({
         normal: tuResult, crit: null, crit_chance: 0.0, hit_chance: 100.0,
+        success_chance: tuResult.success_chance,
         dps: calculateDps(attacks), attacks, period_ms: tuPeriod, dps_valid: true,
       });
     }

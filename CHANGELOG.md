@@ -12,6 +12,11 @@ instead of release version. Dates are taken from actual git commit history.
 - **"Performing" toggle for Bard/Dancer** — a new target-panel checkbox. While a song or dance is
   active, Payon Stories grants Musical Strike and Throw Arrow a flat **+100 ratio points** (Lv1
   300%, Lv5 400%). Ticking it adds that bonus to those two skills only; other skills are unaffected.
+- **Turn Undead now shows its instant-kill success chance** and folds it into the kill metrics.
+  The chance uses the Payon Stories rework formula `[20×SkillLv + 3×LUK + INT + BaseLv +
+  (1−HP/MaxHP)×200] ÷ 10 %` (halved if base INT < 40). "Casts to kill" and "Time to kill" now
+  reflect the instant-kill probability (with the fail-damage chip as a fallback), instead of only
+  counting the failure damage.
 
 ### Fixed
 

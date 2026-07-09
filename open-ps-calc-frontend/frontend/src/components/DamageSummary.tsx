@@ -40,6 +40,7 @@ interface SingleResult {
     dps_valid: boolean;
     dps: number;
     period_ms?: number;
+    success_chance?: number | null; // Turn Undead: instant-kill success chance (%)
     dw_rh_factor?: number | null;
     dw_lh_factor?: number | null;
     dw_lh_normal?: DamageBranch | null;
@@ -252,11 +253,42 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const killMax = showDwCombined ? combinedMax : activeDamage?.max_damage ?? null;
   const hitsToKill = (dmg: number | null | undefined) =>
     target_hp != null && dmg != null && dmg > 0 ? Math.ceil(target_hp / dmg) : null;
-  const hitsBest = hitsToKill(killMax);   // fewest hits — best-case (max) rolls
-  const hitsAvg = hitsToKill(killAvg);
-  const hitsWorst = hitsToKill(killMin);  // most hits — worst-case (min) rolls
-  const timeToKill = target_hp != null && displayDpsValid && displayDps != null && displayDps > 0
-    ? target_hp / displayDps : null;
+
+  // Turn Undead is an instant-kill skill: each cast has `success_chance` to kill
+  // outright, and on failure deals `killAvg` chip damage. Expected casts to kill
+  // = E[min(Geom(p), nChip)] = (1 − (1−p)^nChip) / p, where nChip = casts to kill
+  // by chip damage alone (handles the p→0 limit, where it degrades to nChip). Time
+  // to kill = expected casts × cast period. This is what folds the success chance
+  // into the hits/duration metrics.
+  const successChance = result.success_chance ?? null;
+  const isInstaKill = successChance != null;
+  let tuCasts: number | null = null;
+  if (isInstaKill && target_hp != null) {
+    const p = Math.max(0, Math.min(1, (successChance as number) / 100));
+    const nChip = killAvg != null && killAvg > 0 ? Math.ceil(target_hp / killAvg) : Infinity;
+    if (p > 0) {
+      const survive = Math.pow(1 - p, isFinite(nChip) ? nChip : 1e9);
+      tuCasts = (1 - survive) / p;
+    } else if (isFinite(nChip)) {
+      tuCasts = nChip;
+    }
+  }
+  const tuCastsRounded = tuCasts != null ? Math.max(1, Math.round(tuCasts)) : null;
+  const periodS = (result.period_ms ?? 0) / 1000;
+
+  const hitsBest = isInstaKill ? null : hitsToKill(killMax);   // fewest hits — best-case (max) rolls
+  const hitsAvg = isInstaKill ? tuCastsRounded : hitsToKill(killAvg);
+  const hitsWorst = isInstaKill ? null : hitsToKill(killMin);  // most hits — worst-case (min) rolls
+  const timeToKill = isInstaKill
+    ? (tuCasts != null && periodS > 0 ? tuCasts * periodS : null)
+    : (target_hp != null && displayDpsValid && displayDps != null && displayDps > 0
+        ? target_hp / displayDps : null);
+  // For an instant-kill skill, "DPS" as chip-damage throughput is misleading next
+  // to the kill metrics (they'd imply far less than the target's HP). Show the
+  // effective throughput (HP ÷ expected time) so the panel stays self-consistent;
+  // fall back to the raw DPS when the target's HP is unknown (custom target).
+  const effectiveDps = isInstaKill && target_hp != null && timeToKill != null && timeToKill > 0
+    ? target_hp / timeToKill : displayDps;
 
   return (
     <div>
@@ -269,6 +301,12 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           <div className="label">Crit chance</div>
           <div className="value crit">{result.crit_chance.toFixed(1)}<span className="unit">%</span></div>
         </div>
+        {isInstaKill && (
+          <div className="metric" title="Turn Undead instant-kill chance per cast: [20×SkillLv + 3×LUK + INT + BaseLv + (1−HP/MaxHP)×200] ÷ 10 %, halved if base INT < 40. On a failed roll the skill deals the shown (fail) damage instead.">
+            <div className="label">Success chance</div>
+            <div className="value good">{(successChance as number).toFixed(1)}<span className="unit">%</span></div>
+          </div>
+        )}
         <div className="metric">
           <div className="label">ASPD</div>
           <div className="value">{status.aspd.toFixed(1)}</div>
@@ -294,9 +332,9 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         ) : null}
         <div className="metric">
           <div className="label">DPS (est.)</div>
-          <div className="value">{displayDpsValid && displayDps != null ? displayDps.toFixed(1) : "—"}</div>
+          <div className="value">{displayDpsValid && effectiveDps != null ? effectiveDps.toFixed(1) : "—"}</div>
         </div>
-        {hitsAvg != null && (
+        {!isInstaKill && hitsAvg != null && (
           <div className="metric metric-range" title={`Hits to kill the ${target_hp!.toLocaleString()}-HP target — from best-case (all max-damage rolls) to worst-case (all min-damage rolls).`}>
             <div className="label">Hits to kill</div>
             <div className="value range">
@@ -307,13 +345,17 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           </div>
         )}
         {hitsAvg != null && (
-          <div className="metric" title="Average hits to kill, from the average damage roll.">
-            <div className="label">Avg hits</div>
+          <div className="metric" title={isInstaKill
+            ? `Expected casts to kill the ${target_hp!.toLocaleString()}-HP target, folding in the instant-kill success chance (and chip damage on failed rolls).`
+            : "Average hits to kill, from the average damage roll."}>
+            <div className="label">{isInstaKill ? "Casts to kill" : "Avg hits"}</div>
             <div className="value">{hitsAvg}</div>
           </div>
         )}
         {timeToKill != null && (
-          <div className="metric" title="Average time to kill = target HP ÷ estimated DPS (folds in ASPD, crit mix and procs; cast + after-cast delay for skills).">
+          <div className="metric" title={isInstaKill
+            ? "Expected time to kill = expected casts (from the success chance) × cast + after-cast delay."
+            : "Average time to kill = target HP ÷ estimated DPS (folds in ASPD, crit mix and procs; cast + after-cast delay for skills)."}>
             <div className="label">Time to kill</div>
             <div className="value">{timeToKill.toFixed(1)}<span className="unit">s</span></div>
           </div>
