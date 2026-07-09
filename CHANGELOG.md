@@ -59,6 +59,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Breaking Cloak (opener) toggle** — the Assassin's Cloak initiative bonus: breaking Cloak (Lv3+)
+  with an **auto-attack** makes that opening hit deal **×2 damage**, or with **Sonic Blow** deals
+  **+10%**. Enable it in the target-modifiers panel. Because it's a one-time opener, it scales the
+  shown per-hit damage but not sustained DPS; skills other than auto-attack and Sonic Blow are
+  unaffected.
 - **Venom Dust target toggle** — the Assassin's Venom Dust applies a "Mailbreaker" debuff that makes
   a target standing on it take **+10% physical and magical damage** for 5 seconds. Enable it in the
   target-modifiers panel to add the bonus to all damage branches. Unlike Provoke and Quagmire, it

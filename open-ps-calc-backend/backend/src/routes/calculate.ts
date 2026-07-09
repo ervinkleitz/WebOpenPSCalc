@@ -43,10 +43,11 @@ function scaleDamageResult(r: any, mult: number, stepName: string, note: string,
   return r;
 }
 
-// Post-calc multiplicative damage-taken debuffs on the target (Lex Aeterna ×2,
-// Venom Dust +10%). Applied to every damage branch and the DPS so they stack
-// multiplicatively with each other.
-function applyResultMult(br: any, mult: number, stepName: string, note: string, ref: string): void {
+// Post-calc multiplicative damage bonuses (Lex Aeterna ×2, Venom Dust +10%).
+// Applied to every damage branch. `scaleDps` also scales the DPS — true for
+// per-hit debuffs (they affect every swing), false for one-time openers like the
+// Cloak initiative bonus, which only boost the first hit, not sustained DPS.
+function applyResultMult(br: any, mult: number, stepName: string, note: string, ref: string, scaleDps = true): void {
   const branches = [
     "normal", "crit", "magic", "katar_second", "katar_second_crit",
     "double_hit", "double_hit_crit", "second_hit", "second_hit_crit",
@@ -56,7 +57,7 @@ function applyResultMult(br: any, mult: number, stepName: string, note: string, 
   for (const key of Object.keys(br.proc_branches || {})) {
     br.proc_branches[key] = scaleDamageResult(br.proc_branches[key], mult, stepName, note, ref);
   }
-  br.dps = br.dps * mult;
+  if (scaleDps) br.dps = br.dps * mult;
 }
 
 function applyLexAeterna(br: any): void {
@@ -68,6 +69,17 @@ function applyLexAeterna(br: any): void {
 // MVP/boss-flagged monsters. wiki.payonstories.com / Assassin Rework doc.
 function applyVenomDust(br: any): void {
   applyResultMult(br, 1.1, "Venom Dust", "+10% physical & magical damage taken (Venom Dust / Mailbreaker debuff)", "PS-AssassinRework");
+}
+
+// Cloak initiative bonus (PS Assassin rework, requires Cloak Lv3+): breaking Cloak
+// with an auto-attack makes that first auto-attack deal ×2 damage; breaking it with
+// Sonic Blow makes that cast deal +10%. One-time opener → per-hit only, no DPS scale.
+function applyBreakingCloak(br: any, isAutoAttack: boolean, isSonicBlow: boolean): void {
+  if (isAutoAttack) {
+    applyResultMult(br, 2.0, "Breaking Cloak", "Opening auto-attack out of Cloak (Lv3+) deals ×2 damage", "PS-AssassinRework", false);
+  } else if (isSonicBlow) {
+    applyResultMult(br, 1.1, "Breaking Cloak", "Sonic Blow out of Cloak (Lv3+) deals +10% damage", "PS-AssassinRework", false);
+  }
 }
 
 router.post("/", (req: Request, res: Response) => {
@@ -151,6 +163,10 @@ router.post("/", (req: Request, res: Response) => {
     const pipeline = new BattlePipeline(config);
     const battleResult = pipeline.calculate(status, weapon, skill, target, effBuild, gearBonuses);
 
+    if (targetModsInput?.breaking_cloak) {
+      const sName = skill.id === 0 ? "" : (loader.getSkill(skill.id)?.name || "");
+      applyBreakingCloak(battleResult, skill.id === 0, sName === "AS_SONICBLOW");
+    }
     if (targetModsInput?.venom_dust) {
       applyVenomDust(battleResult);
     }

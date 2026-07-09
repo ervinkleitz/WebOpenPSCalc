@@ -350,6 +350,7 @@ const DEFAULT_TARGET_MODS: TargetMods = {
   element_status: "",
   lex_aeterna: false,
   venom_dust: false,
+  breaking_cloak: false,
   quagmire: 0,
   signum_crucis: false,
   provoke: 0,
@@ -2001,6 +2002,13 @@ export default function BuildEditor() {
               <label title="Venom Dust (Assassin rework): a target standing on the dust takes +10% physical & magical damage for 5s (the Mailbreaker debuff). Works on MVP/boss monsters.">
                 <input type="checkbox" checked={targetMods.venom_dust} onChange={(e) => setTargetMods((m) => ({ ...m, venom_dust: e.target.checked }))} />
                 <span>Venom Dust (+10% damage taken)</span>
+              </label>
+            </div>
+
+            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
+              <label title="Cloak initiative (Assassin rework, requires Cloak Lv3+): breaking Cloak with an auto-attack makes that opening hit deal ×2 damage; breaking it with Sonic Blow adds +10%. Applies to the shown per-hit damage only (a one-time opener), not sustained DPS.">
+                <input type="checkbox" checked={targetMods.breaking_cloak} onChange={(e) => setTargetMods((m) => ({ ...m, breaking_cloak: e.target.checked }))} />
+                <span>Breaking Cloak (opener: auto ×2 / Sonic Blow +10%)</span>
               </label>
             </div>
 
