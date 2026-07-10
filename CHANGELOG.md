@@ -42,6 +42,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Improve Concentration no longer boosts card-combo stats** — Attention Concentrate's AGI/DEX %
+  correctly excludes direct card bonuses (and buffs), but *card combos* (e.g. the Munak/Bongun/Yao
+  Jun +1-all-stats set, or the Thief +4 AGI card set) were leaking their AGI/DEX into the multiplied
+  base. Card-combo stats are now excluded like any other card bonus; equipment-set combos (e.g.
+  Dragon Vest + Manteau) stay factored in, matching the wiki (base stats, job bonus, Owl's Eye, and
+  armor are included; cards and buffs are not).
 - **Arrow Vulcan now scales with level** — the Clown/Gypsy skill had no damage ratio defined, so it
   fell back to a flat **100% at every level**. It now deals the correct **300%/400%/…/1200% ATK**
   for Lv1–10 (`200 + 100×SkillLevel`), matching the in-game skill description. Musical Strike was

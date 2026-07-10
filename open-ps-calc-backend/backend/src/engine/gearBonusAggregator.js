@@ -278,6 +278,12 @@ function applyComboBonuses(bonuses, equipped, profile = null, scriptCtx = null) 
   const active = loader.getActiveCombos(equippedAegis, profile);
   for (const combo of active) {
     const effects = parseScript(combo.script, scriptCtx);
+    // A combo whose pieces are ALL cards is itself a card bonus: also apply its
+    // effects to from_cards so Improve Concentration (which excludes card AGI/DEX)
+    // doesn't boost it. Equipment-set combos are gear bonuses — the wiki keeps
+    // armor factored into Concentration, so those stay out of from_cards.
+    const isCardCombo = combo.items.length > 0
+      && combo.items.every((name) => (loader.getItemByAegis(name) || {}).type === "IT_CARD");
     for (const eff of effects) {
       if (eff.bonus_type === "skill") {
         const skName = String(eff.params[0]);
@@ -285,6 +291,7 @@ function applyComboBonuses(bonuses, equipped, profile = null, scriptCtx = null) 
         bonuses.skill_grants[skName] = Math.max(bonuses.skill_grants[skName] || 0, skLv);
       } else {
         applyEffect(bonuses, eff);
+        if (isCardCombo && bonuses.from_cards) applyEffect(bonuses.from_cards, eff);
       }
     }
 
