@@ -1200,7 +1200,12 @@ class BattlePipeline {
         dps_valid: false,
       });
     }
-    if (skillData && (skillData.skill_form === "Misc" || (skillData.damage_type || []).includes("Misc"))) {
+    // BF_MISC catch-all. Any Misc skill we actually support is dispatched by name above
+    // (Reflect Shield) or as a trap; anything reaching here is unported. Guard on attackType
+    // too — vanilla-loaded Misc skills (e.g. Acid Demonstration) carry attack_type "Misc" but
+    // have no skill_form and a non-"Misc" damage_type, so they'd otherwise fall through to the
+    // physical branch and fabricate a garbage weapon hit.
+    if (attackType === "Misc" || (skillData && (skillData.skill_form === "Misc" || (skillData.damage_type || []).includes("Misc")))) {
       return createBattleResult({
         normal: createDamageResult({
           steps: [{
