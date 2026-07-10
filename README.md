@@ -26,9 +26,11 @@ motivated several changes beyond a straight 1:1 port:
 
 - **No accounts, no server-side storage.** The original saves builds to
   local `saves/*.json` files. This port has no database and no login.
-  Build state is encoded into the URL's `?b=` query param (lz-string
-  compressed; old uncompressed URLs are still decoded transparently), so
-  sharing a build is just sharing its link. A **Save / Load** panel also
+  Build state is encoded into the URL's `?b=` query param (defaults pruned,
+  keys renamed to short append-only codes, then lz-string compressed — the
+  `z3_` format, ~50% shorter than the previous `z2_`; older `z2_`/`z1_`/
+  uncompressed links still decode transparently), so sharing a build is just
+  sharing its link. A **Save / Load** panel also
   stores named build snapshots in the browser's `localStorage` (up to a
   small cap), purely client-side.
 - **TypeScript.** Backend entry points/routes and the entire frontend are

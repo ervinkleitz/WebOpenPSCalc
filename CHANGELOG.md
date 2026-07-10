@@ -7,6 +7,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-09
 
+### Changed
+
+- **Shorter share URLs** — build links now rename their state keys to short append-only codes
+  before compressing (the `z3_` format), cutting a typical `?b=` param roughly in half. Existing
+  links (`z2_`/`z1_`/older uncompressed) still open exactly as before.
+
 ### Added
 
 - **"Performing" toggle for Bard/Dancer** — a new target-panel checkbox. While a song or dance is

@@ -403,6 +403,55 @@ function mergeDefaults(value: any, def: any): any {
   return value === undefined ? def : value;
 }
 
+// ── Compact URL key codes (the z3_ format) ───────────────────────────────────
+// Each state key is renamed to a short code (its base36 INDEX in the lists below)
+// before compression, since the long JSON keys are the bulk of the payload and
+// LZString can't dedupe keys that each appear once. This list is APPEND-ONLY: a
+// code is a position, so old z3_ links must keep decoding — only add keys at the
+// end, never reorder or remove. Keys not listed pass through unchanged (dynamic
+// SC / skill / pet names, etc., which are never bare base36 codes, so decoding is
+// unambiguous). The card-slot order is likewise frozen.
+const Z3_CARD_SLOTS = [
+  "right_hand", "left_hand", "head_top", "head_mid", "head_low",
+  "armor", "garment", "shoes", "accessory_left", "accessory_right",
+];
+const Z3_KEYS: string[] = [
+  "build", "skill", "targetMode", "customTarget", "targetMods",
+  "name", "job_id", "base_level", "job_level", "base_stats", "bonus_stats",
+  "equipped", "refine", "target_mob_id", "server", "weapon_element", "active_buffs",
+  "mastery_levels", "flags", "manual_adj", "support_buffs", "player_active_scs",
+  "song_state", "consumable_buffs", "selected_pet", "clan", "wildcard_slots",
+  "str", "agi", "vit", "int", "dex", "luk",
+  "right_hand", "left_hand", "head_top", "head_mid", "head_low", "armor",
+  "garment", "shoes", "accessory_left", "accessory_right", "ammo",
+  "id", "level", "label",
+  "def_", "mdef_", "size", "race", "element", "element_level", "is_boss", "int_",
+  "element_status", "element_change", "lex_aeterna", "venom_dust", "breaking_cloak",
+  "performing", "quagmire", "signum_crucis", "provoke", "sleep", "stun",
+  "aspd_potion", "atk_item", "matk_item",
+  "type", "bonus",
+  // Card slots (frozen order): <slot>_card1..4
+  ...Z3_CARD_SLOTS.flatMap((s) => [1, 2, 3, 4].map((i) => `${s}_card${i}`)),
+];
+const Z3_ENC: Record<string, string> = {};
+const Z3_DEC: Record<string, string> = {};
+Z3_KEYS.forEach((k, i) => {
+  if (k in Z3_ENC) return; // first occurrence wins (a key appearing twice keeps its earliest code)
+  const c = i.toString(36);
+  Z3_ENC[k] = c;
+  Z3_DEC[c] = k;
+});
+
+function renameKeys(v: any, map: Record<string, string>): any {
+  if (Array.isArray(v)) return v.map((x) => renameKeys(x, map));
+  if (isPlainObject(v)) {
+    const out: Record<string, any> = {};
+    for (const k of Object.keys(v)) out[map[k] ?? k] = renameKeys((v as any)[k], map);
+    return out;
+  }
+  return v;
+}
+
 function encodeState(state: UrlEditorState): string {
   const compact: any = {
     build: { ...state.build },
@@ -416,11 +465,17 @@ function encodeState(state: UrlEditorState): string {
   // In monster mode the custom target is unused — reset it so it prunes away.
   if (compact.targetMode === "monster") compact.customTarget = DEFAULT_CUSTOM_TARGET;
   const pruned = pruneDefaults(compact, URL_STATE_DEFAULTS) ?? {};
-  return "z2_" + LZString.compressToEncodedURIComponent(JSON.stringify(pruned));
+  return "z3_" + LZString.compressToEncodedURIComponent(JSON.stringify(renameKeys(pruned, Z3_ENC)));
 }
 
 function decodeState(encoded: string): UrlEditorState | null {
   try {
+    if (encoded.startsWith("z3_")) {
+      const json = LZString.decompressFromEncodedURIComponent(encoded.slice(3));
+      if (!json) return null;
+      const defs = JSON.parse(JSON.stringify(URL_STATE_DEFAULTS));
+      return mergeDefaults(renameKeys(JSON.parse(json), Z3_DEC), defs) as UrlEditorState;
+    }
     if (encoded.startsWith("z2_")) {
       const json = LZString.decompressFromEncodedURIComponent(encoded.slice(3));
       if (!json) return null;
@@ -646,7 +701,11 @@ export default function BuildEditor() {
   // Whether the working state differs from what's committed to the URL (the last
   // Save/Copy-link), or from the untouched default when there's no ?b param.
   const hasUnsavedChanges = useMemo(() => {
-    const committed = searchParams.get("b") ?? DEFAULT_ENCODED;
+    // Normalise the committed param through decode→encode so an older-format link
+    // (z2_/legacy) compares equal to the current (z3_) re-encode when nothing changed.
+    const raw = searchParams.get("b");
+    const decoded = raw ? decodeState(raw) : null;
+    const committed = decoded ? encodeState(decoded) : DEFAULT_ENCODED;
     return encodeState({ build: data, skill, targetMode, customTarget, targetMods }) !== committed;
   }, [data, skill, targetMode, customTarget, targetMods, searchParams]);
 
