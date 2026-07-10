@@ -84,13 +84,15 @@ without re-auditing everything from scratch.
   slider via `DAMAGE_RELEVANT` / `ACTIVE_SKILL_TYPE_EXCEPTIONS`. Level caps
   added: `WZ_FROSTNOVA:5`, `WZ_FIREPILLAR:5`, `WZ_SIGHTRASHER:5`,
   `WZ_AMPLIFYMAGICPOWER:5`.
-  **Still missing**: upstream has ~9 more `mechanic_flags` with no consumer
+  **Still missing**: upstream has ~7 more `mechanic_flags` with no consumer
   anywhere in this JS port yet (`SC_CLOAKING_BONUS`,
-  `BA_MUSICALSTRIKE_PERFORMING_BONUS`, `DC_THROWARROW_PERFORMING_BONUS`,
   `GS_BLOCK_ENDOW`, `MO_EXTREMITYFIST_NK_NORMAL_DEF`,
   `PR_TURNUNDEAD_PS_BONUS`, `PS_HOLYSTRIKE_PROC`,
   `SC_GS_ADJUSTMENT_LR_REDUCE`, `NJ_ISSEN_MIRROR_BONUS`) — these need new
-  modifier code, not just data. (`MG_SOULSTRIKE_MDEF_IGNORE`,
+  modifier code, not just data. (The Musical Strike / Throw Arrow "performing"
+  +100% bonus is now implemented via `skill_params.PS_PERFORMING_active` and a
+  target-panel toggle, so its two upstream flags are dropped from this list.)
+  (`MG_SOULSTRIKE_MDEF_IGNORE`,
   `WZ_FIREPILLAR_MDEF_IGNORE`, `HW_NAPALMVULCAN_MDEF_IGNORE`, and
   `RG_BACKSTAP_OPPORTUNITY` were previously listed here but are now
   implemented — see battle pipeline and "Done this pass" below.)
@@ -440,7 +442,9 @@ without re-auditing everything from scratch.
 
 The Gunslinger audit (2026-07-07, see the CHANGELOG) cross-checked every PS-reworked
 GS skill against [wiki.payonstories.com](https://wiki.payonstories.com) and turned up
-several real damage bugs. The same pass should be run for the remaining classes.
+several real damage bugs. **This pass has now been completed for all 14 class groups
+below** (each verified with a DEF-bearing target, against the class's PS rework PDF where
+one exists, else the wiki) — every item is marked ✅ done.
 Classes are **sequenced by how many PS-custom overrides they carry** (weapon/magic
 ratios, `passive_overrides`, `rate_bonuses`, `weapon_hit_counts`, `mastery_ctx_overrides`,
 mechanic flags, …) — more custom changes ⇒ higher chance of a mismatch. Counts in

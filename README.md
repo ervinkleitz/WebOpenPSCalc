@@ -164,9 +164,13 @@ motivated several changes beyond a straight 1:1 port:
   vanilla, max lv 5, exposed in the buffs panel); Sightrasher max lv 5; Soul Drain
   passive +1% MaxHP per level (slider in the passives panel).
 - **Target debuff system** — Panel 08 (Target) now has a "Target debuffs" section. Element status
-  overrides the target's element (Poisoned → Poison, Frozen → Water, Stone Curse → Earth) and
-  triggers mechanic effects already wired in `defenseFix.js`/`hitChance.js` (Frozen/Stone halve
-  hard DEF and grant auto-hit). Lex Aeterna checkbox applies ×2 to all damage branches with a
+  applies an ailment: **Poisoned** cuts the target's VIT-based soft DEF by 50% on PS (25% vanilla)
+  and, in monster mode, surfaces its **2%/s Max-HP damage-over-time** as a "Poison DoT" metric folded
+  into time-to-kill; **Frozen** (→ Water) and **Stone Curse** (→ Earth) override the element and, via
+  `defenseFix.js`/`hitChance.js`, halve hard DEF and grant auto-hit. A separate **Elemental Change
+  (Sage)** dropdown (`SA_ELEMENTWATER`/`GROUND`/`FIRE`/`WIND`) overrides the target's defensive
+  element to Water/Earth/Fire/Wind at level 1 (no effect on MVP/boss, per the PS Sage rework).
+  Lex Aeterna checkbox applies ×2 to all damage branches with a
   visible step in each breakdown. Debuff skill/status checkboxes: Quagmire (selectable Lv 1–5,
   cuts the target's AGI/DEX by 10%/lv → lower flee; boss-immune, halved vs players — it does *not*
   auto-hit), Provoke (selectable Lv 1–10, `SC_PROVOKE` — lowers the target's soft DEF so it takes
@@ -211,6 +215,18 @@ motivated several changes beyond a straight 1:1 port:
   `PS_BF_MAGIC_RATIOS` and confirmed correct. Earth Spike and Heavens Drive at 140% per hit
   confirmed correct. Advanced Book flat ATK +10–30 (lv 1–5) confirmed correct.
   Volcano / Deluge / Violent Gale persistence buffs at max level 3 confirmed correct.
+- **PS Priest / Acolyte rework** — changes from `PSRO Priest Acolyte Rework.pdf` are modelled:
+  **Holy Light** deals 250% MATK (Holy) with the Cookie card's +20% *and* a **LUK% chance to deal
+  +60% damage** (modelled as a probability mixture, so the average and damage range fold in the
+  proc; LUK >= 100 makes it guaranteed). **Turn Undead** now surfaces its **instant-kill success
+  chance** — `[20*SkillLv + 3*LUK + INT + BaseLv + (1-HP/MaxHP)*200] / 10 %`, halved if base INT
+  < 40 — and folds it into the "Casts to kill" / "Time to kill" readouts (with the fixed fail-damage
+  as the chip fallback), on top of the existing fail-damage formula. Holy Strike and Magnus
+  Exorcismus have their valid-target lists widened (Ghost element, Undead/Demon race).
+- **PS Bard / Dancer** — **Arrow Vulcan** (`CG_ARROWVULCAN`) had no ratio in any table and fell back
+  to a flat 100% at every level; it now scales `200 + 100*lv` (Lv1 300% ... Lv10 1200%), matching the
+  in-game description. A **Performing** target-panel toggle grants Musical Strike and Throw Arrow a
+  flat **+100 ratio points** (Lv1 300%, Lv5 400%) to model the "while a song/dance is active" bonus.
 - **PS Gunslinger rework** — damage-relevant changes from the Gunslinger Balancing
   Patch are modelled: Triple Action 420% total (100+40×lv at max level 1, was 450%);
   Ground Drift 200+60×lv% (max 800%, was 100+50×lv%); Soul Bullet (50+DEX+BaseLvl)%;
