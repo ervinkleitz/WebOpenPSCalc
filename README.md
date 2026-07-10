@@ -222,7 +222,10 @@ motivated several changes beyond a straight 1:1 port:
   chance** — `[20*SkillLv + 3*LUK + INT + BaseLv + (1-HP/MaxHP)*200] / 10 %`, halved if base INT
   < 40 — and folds it into the "Casts to kill" / "Time to kill" readouts (with the fixed fail-damage
   as the chip fallback), on top of the existing fail-damage formula. Holy Strike and Magnus
-  Exorcismus have their valid-target lists widened (Ghost element, Undead/Demon race).
+  Exorcismus have their valid-target lists widened (Ghost element, Undead/Demon race). **Offensive
+  Heal** (the "heal bomb") is modelled: against Undead-property targets, `AL_HEAL` deals 50% of its
+  heal value (`floor((BaseLv+INT)/8) × (4+8×SkillLv)`) as Holy damage (element-modified, DEF/MDEF/card-
+  ignoring), with a **Purifying Ring + Rosary** toggle that raises it to 100%.
 - **PS Bard / Dancer** — **Arrow Vulcan** (`CG_ARROWVULCAN`) had no ratio in any table and fell back
   to a flat 100% at every level; it now scales `200 + 100*lv` (Lv1 300% ... Lv10 1200%), matching the
   in-game description. A **Performing** target-panel toggle grants Musical Strike and Throw Arrow a

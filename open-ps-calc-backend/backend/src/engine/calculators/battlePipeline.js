@@ -511,6 +511,55 @@ class BattlePipeline {
   }
 
   /**
+   * AL_HEAL — offensive Heal ("heal bomb"). Heal is NOT MATK-scaled; its HP value
+   * is  floor((BaseLevel + INT) / 8) × (4 + 8 × SkillLevel)  (wiki.payonstories.com/
+   * Heal). Cast on an Undead-property target it deals Holy damage equal to HALF the
+   * heal amount, modified by the target's (undead) element level — i.e. the Holy
+   * AttrFix vs the target. The Purifying Ring + Rosary combo raises the fraction
+   * from 50% to 100% (PSRO Priest/Acolyte rework), toggled via
+   * skill_params.PS_HEAL_BOMB_FULL. Ignores DEF/MDEF and cards, like Turn Undead.
+   * Non-Undead targets take no damage (Heal restores their HP instead).
+   */
+  _runHealBranch(status, weapon, skill, target, build, opts = {}) {
+    const result = createDamageResult();
+
+    const healAmount = Math.floor((build.base_level + status.int_) / 8) * (4 + 8 * skill.level);
+    result.add_step({
+      name: `Heal Amount (Lv ${skill.level})`, value: healAmount, min_value: healAmount, max_value: healAmount,
+      note: `floor((BaseLv ${build.base_level} + INT ${status.int_}) / 8) × (4 + 8 × ${skill.level})`,
+      formula: "heal HP = floor((BaseLv + INT)/8) × (4 + 8×SkillLv)", hercules_ref: "skill_calc_heal", info: true,
+    });
+
+    const full = !!(build.skill_params && build.skill_params.PS_HEAL_BOMB_FULL);
+    const bombPct = full ? 100 : 50;
+    const isUndead = target.element === 9; // Undead property
+    const baseDmg = isUndead ? Math.max(1, Math.floor(healAmount * bombPct / 100)) : 0;
+
+    let pmf = { [baseDmg]: 1.0 };
+    result.add_step({
+      name: "Heal Bomb", value: baseDmg, min_value: baseDmg, max_value: baseDmg, multiplier: bombPct / 100,
+      note: isUndead
+        ? `${bombPct}% of the heal as Holy damage vs Undead${full ? " (Purifying Ring + Rosary)" : ""}`
+        : "target is not Undead-property — Heal restores HP, deals no damage",
+      formula: `heal × ${bombPct}%`, hercules_ref: "wiki.payonstories.com/Heal",
+    });
+
+    if (isUndead) {
+      // Holy element vs the target's (undead) element level; DEF/MDEF and cards ignored.
+      pmf = calculateAttrFix(weapon, target, pmf, result, build, 6 /* Ele_Holy */);
+      pmf = floorAt(pmf, 1);
+    }
+
+    const [mn, mx, av] = pmfStats(pmf);
+    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Heal branch (offensive Heal vs Undead)", formula: "", hercules_ref: "" });
+    result.min_damage = mn;
+    result.max_damage = mx;
+    result.avg_damage = av;
+    result.pmf = pmf;
+    return result;
+  }
+
+  /**
    * CR_REFLECTSHIELD — PS rework formula:
    *   damage = floor(SoftDEF × (1 + 1.75 × HardDEF / 100) × SkillLvl / 10)
    * Ignores target DEF. Requires hit roll. Enhanced by cards and armor attributes.
@@ -1052,6 +1101,18 @@ class BattlePipeline {
         normal: tuResult, crit: null, crit_chance: 0.0, hit_chance: 100.0,
         success_chance: tuResult.success_chance,
         dps: calculateDps(attacks), attacks, period_ms: tuPeriod, dps_valid: true,
+      });
+    }
+
+    if (skillName === "AL_HEAL") {
+      const healResult = this._runHealBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
+      let castMs = 0, delayMs = 0;
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      const healPeriod = Math.max(castMs + delayMs, 100);
+      const attacks = [createAttackDefinition(healResult.avg_damage, 0.0, healPeriod, 1.0)];
+      return createBattleResult({
+        normal: healResult, crit: null, crit_chance: 0.0, hit_chance: 100.0,
+        dps: calculateDps(attacks), attacks, period_ms: healPeriod, dps_valid: healResult.avg_damage > 0,
       });
     }
 

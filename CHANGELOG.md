@@ -16,6 +16,11 @@ instead of release version. Dates are taken from actual git commit history.
   (×1.6). This is now modeled as a probability mixture, so the average damage folds in the proc
   (base × (1 + 0.6 × LUK%)) and the damage range spans a non-proc roll up to a boosted roll. LUK ≥ 100
   makes the bonus guaranteed.
+- **Offensive Heal ("heal bomb")** — selecting **Heal** (`AL_HEAL`) now computes its damage against
+  Undead-property targets instead of treating it as a generic 100% MATK spell. Damage = **50% of the
+  heal value** (`floor((BaseLv + INT) / 8) × (4 + 8 × SkillLv)`) as Holy, modified by the target's
+  undead element level; it ignores DEF/MDEF and cards. A new **"Purifying Ring + Rosary"** target
+  toggle raises the bomb to **100%**. Non-Undead targets take no damage (Heal restores their HP).
 - **Elemental Change (Sage) in the target panel** — a new dropdown that overrides the target's
   defensive element to Water, Earth, Fire, or Wind at level 1 (the Sage `SA_ELEMENT*` skills — e.g.
   Water 1). It has no effect on MVP/boss monsters, matching the game. Useful for seeing how much more

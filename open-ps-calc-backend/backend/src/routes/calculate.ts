@@ -186,6 +186,11 @@ router.post("/", (req: Request, res: Response) => {
     if (targetModsInput?.performing) {
       effBuild.skill_params = { ...(effBuild.skill_params || {}), PS_PERFORMING_active: true };
     }
+    // Purifying Ring + Rosary combo: offensive Heal deals 100% of its heal value as
+    // damage to Undead (up from 50%). Read by the AL_HEAL branch.
+    if (targetModsInput?.purifying_ring) {
+      effBuild.skill_params = { ...(effBuild.skill_params || {}), PS_HEAL_BOMB_FULL: true };
+    }
 
     const pipeline = new BattlePipeline(config);
     const battleResult = pipeline.calculate(status, weapon, skill, target, effBuild, gearBonuses);
