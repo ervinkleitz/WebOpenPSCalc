@@ -122,6 +122,13 @@ router.post("/", (req: Request, res: Response) => {
         target.element = 2;
         sc.SC_STONE = true;
       }
+      // Elemental Change (Sage: SA_ELEMENTWATER/GROUND/FIRE/WIND) — overrides the
+      // target's defensive element to Water/Earth/Fire/Wind (element level is left
+      // unchanged). Per the PS Sage rework it does NOT work on MVP/boss monsters.
+      // Applied after element_status so an explicit element change wins.
+      const ELEMENT_CHANGE_INT: Record<string, number> = { Water: 1, Earth: 2, Fire: 3, Wind: 4 };
+      const ecEle = ELEMENT_CHANGE_INT[targetModsInput.element_change as string];
+      if (ecEle != null && !target.is_boss) target.element = ecEle;
       // Status debuffs
       if (targetModsInput.sleep)  sc.SC_SLEEP  = true;
       if (targetModsInput.stun)   sc.SC_STUN   = true;
