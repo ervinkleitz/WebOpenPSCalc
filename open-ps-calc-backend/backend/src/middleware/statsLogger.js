@@ -10,13 +10,20 @@ const NGINX_LOG   = process.env.NGINX_LOG_PATH || "/var/log/nginx/access.log";
 // to a missing parent directory.
 try { fs.mkdirSync(path.dirname(STATS_FILE), { recursive: true }); } catch {}
 
-const BOT_PATTERN = /bot|crawler|spider|scraper|scan|check|monitor|uptime|pingdom|datadog|lighthouse|headless|puppeteer|playwright|selenium|wget|curl|facebookexternalhit|twitterbot|slurp|baiduspider|yandex|bytespider|ahrefsbot|semrushbot|dotbot|petalbot/i;
+const BOT_PATTERN = /bot|crawler|crawl|spider|scraper|scrapy|scan|check|monitor|uptime|pingdom|datadog|lighthouse|headless|phantom|puppeteer|playwright|selenium|wget|curl|python-requests|urllib|go-http-client|okhttp|java\/|libwww|perl\/|axios|node-fetch|httpx|aiohttp|apache-httpclient|httpclient|winhttp|guzzle|postmanruntime|insomnia|restsharp|masscan|zgrab|censys|shodan|nmap|nikto|sqlmap|nuclei|expanse|internet-measurement|netsystemsresearch|paloalto|facebookexternalhit|meta-externalagent|twitterbot|slackbot|embedly|feedfetcher|feedly|slurp|baiduspider|yandex|bytespider|ahrefs|semrush|dotbot|petalbot|mj12|dataforseo|serpstat|mediapartners|google-inspection|bingpreview|validator|nagios|zabbix|statuscake|newrelic|site24x7|hetrixtools|gtmetrix|webpagetest|archive\.org|ia_archiver|netcraft/i;
 const NGINX_LINE  = /^(\S+) \S+ \S+ \[([^\]]+)\] "([^"]+)" (\d+) \S+(?:\s+"[^"]*"\s+"([^"]*)")?/;
 const MONTH_NUM   = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
 
 const geoCache = new Map();
 
-function isBot(ua = "") { return BOT_PATTERN.test(ua); }
+// Treat a missing, placeholder, or implausibly short User-Agent as a bot too —
+// real browsers always send a long UA string; empty/"-"/tiny UAs are scripts,
+// scanners, or crawlers that don't announce themselves.
+function isBot(ua = "") {
+  const s = String(ua).trim();
+  if (!s || s === "-" || s.length < 15) return true;
+  return BOT_PATTERN.test(s);
+}
 
 function isLocalIp(ip) {
   return !ip || ip === "::1" || ip.startsWith("127.") || ip.startsWith("::ffff:127.") || ip.startsWith("192.168.") || ip.startsWith("10.");
@@ -162,4 +169,16 @@ function logCalculate(req, jobId, skillId) {
   });
 }
 
-module.exports = { isBot, getIp, logPageView, logCalculate, readNginxPageViews, batchResolveGeo, geoCache };
+// Records a click on a donation link (Ko-fi). `target` labels which placement was
+// clicked (e.g. "results", "topbar", "footer") for funnel analysis.
+function logDonateClick(req, target) {
+  const ua = req.headers["user-agent"] || "";
+  if (isBot(ua)) return;
+  const ip = getIp(req);
+  const label = typeof target === "string" ? target.slice(0, 40) : "unknown";
+  resolveGeo(ip).then((geo) => {
+    appendEvent({ ts: Date.now(), type: "donate_click", ip, ...geo, target: label });
+  });
+}
+
+module.exports = { isBot, getIp, logPageView, logCalculate, logDonateClick, readNginxPageViews, batchResolveGeo, geoCache };

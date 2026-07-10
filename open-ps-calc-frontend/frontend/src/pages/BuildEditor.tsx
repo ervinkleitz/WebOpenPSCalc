@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import LZString from "lz-string";
-import { api } from "../api/client";
+import { api, statsApi } from "../api/client";
 import SearchPicker from "../components/SearchPicker";
 import Panel from "../components/Panel";
 import InfoTooltip from "../components/InfoTooltip";
@@ -1099,7 +1099,7 @@ export default function BuildEditor() {
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
             <button onClick={() => { setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
-            <a className="topbar-kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)}>☕ Support me</a>
+            <a className="topbar-kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => { statsApi.trackDonateClick("topbar"); setMenuOpen(false); }}>☕ Support me</a>
           </div>
 
           {/* Hamburger — hidden on desktop */}
@@ -2092,7 +2092,7 @@ export default function BuildEditor() {
           Numbers may be inaccurate; verify anything important in-game.
         </div>
         <div className="credits-support">
-          <a className="kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer">
+          <a className="kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => statsApi.trackDonateClick("footer")}>
             🍵 Buy me a milk tea
           </a>
           <span className="credits-support-text">This calc runs on milk tea</span>

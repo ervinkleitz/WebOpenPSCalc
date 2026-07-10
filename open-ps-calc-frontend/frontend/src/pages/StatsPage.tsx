@@ -7,10 +7,13 @@ interface DayEntry { date: string; views: number; calcs: number; }
 interface JobEntry  { job_id: number; name: string; count: number; }
 interface SkillEntry{ skill_id: number; name: string; count: number; }
 interface CountryEntry { country: string; count: number; }
+interface DonateTarget { target: string; count: number; }
 interface StatsData {
   total_views: number;
   total_calcs: number;
   unique_ips: number;
+  total_donate_clicks: number;
+  donate_targets: DonateTarget[];
   by_day: DayEntry[];
   top_jobs: JobEntry[];
   top_skills: SkillEntry[];
@@ -73,13 +76,47 @@ function BarChart({ days, maxVal }: { days: DayEntry[]; maxVal: number }) {
   );
 }
 
+function Funnel({ views, calcs, donates, targets }: { views: number; calcs: number; donates: number; targets: DonateTarget[] }) {
+  const pct = (n: number, d: number) => (d > 0 ? (n / d) * 100 : 0);
+  const max = Math.max(views, 1);
+  const stages = [
+    { label: "Page views", val: views, sub: "" },
+    { label: "Calculations", val: calcs, sub: `${pct(calcs, views).toFixed(1)}% of views` },
+    { label: "Donation clicks", val: donates, sub: `${pct(donates, calcs).toFixed(2)}% of calcs · ${pct(donates, views).toFixed(2)}% of views` },
+  ];
+  return (
+    <div className="stats-funnel">
+      {stages.map((s) => (
+        <div className="stats-funnel-row" key={s.label}>
+          <div className="stats-funnel-head">
+            <span className="stats-funnel-label">{s.label}</span>
+            <span className="stats-funnel-val">{s.val.toLocaleString()}</span>
+          </div>
+          <div className="stats-funnel-track">
+            <div className="stats-funnel-fill" style={{ width: `${Math.max((s.val / max) * 100, s.val > 0 ? 1.5 : 0)}%` }} />
+          </div>
+          {s.sub && <div className="stats-funnel-sub">{s.sub}</div>}
+        </div>
+      ))}
+      {targets.length > 0 && (
+        <div className="stats-funnel-targets">
+          <span className="stats-funnel-targets-label">Clicks by placement:</span>
+          {targets.map((t) => (
+            <span key={t.target} className="stats-funnel-target">{t.target} · {t.count}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StatsPage() {
   const [password, setPassword]   = useState(() => sessionStorage.getItem(SESSION_KEY) || "");
   const [input, setInput]         = useState("");
   const [authed, setAuthed]       = useState(() => !!sessionStorage.getItem(SESSION_KEY));
   const [authErr, setAuthErr]     = useState("");
 
-  const [preset, setPreset]       = useState<Preset>("7");
+  const [preset, setPreset]       = useState<Preset>("1");
   const [fromDate, setFromDate]   = useState("");
   const [toDate, setToDate]       = useState("");
 
@@ -192,6 +229,20 @@ export default function StatsPage() {
               <div className="stats-metric-val">{(data.total_calcs ?? 0).toLocaleString()}</div>
               <div className="stats-metric-label">Calculations</div>
             </div>
+            <div className="stats-metric">
+              <div className="stats-metric-val">{(data.total_donate_clicks ?? 0).toLocaleString()}</div>
+              <div className="stats-metric-label">Donation clicks</div>
+            </div>
+          </div>
+
+          <div className="stats-section">
+            <h2 className="stats-section-title">Conversion funnel</h2>
+            <Funnel
+              views={data.total_views ?? 0}
+              calcs={data.total_calcs ?? 0}
+              donates={data.total_donate_clicks ?? 0}
+              targets={data.donate_targets ?? []}
+            />
           </div>
 
           <div className="stats-section">

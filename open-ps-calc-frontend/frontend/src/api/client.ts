@@ -66,6 +66,13 @@ export const api = {
 export const statsApi = {
   recordPageView: () =>
     fetch("/stats/ping", { method: "POST" }).catch(() => {}),
+  trackDonateClick: (target: string) =>
+    fetch("/stats/donate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target }),
+      keepalive: true,
+    }).catch(() => {}),
   getData: (password: string, params: Record<string, string>) =>
     statsRequest("/data", password, params),
 };

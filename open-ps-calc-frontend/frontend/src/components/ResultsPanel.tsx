@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import DamageSummary from "./DamageSummary";
+import { statsApi } from "../api/client";
 
 interface Props {
   open: boolean;
@@ -31,7 +32,7 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
           {calcResult && !calculating && !error && (
             <div className="kofi-results-card">
               <span className="kofi-results-text">This calc runs on milk tea —</span>
-              <a className="kofi-results-link" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer">buy me one 🍵</a>
+              <a className="kofi-results-link" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => statsApi.trackDonateClick("results")}>buy me one 🍵</a>
             </div>
           )}
         </div>

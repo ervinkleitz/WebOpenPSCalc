@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import fs from "fs";
 import path from "path";
-const { logPageView, readNginxPageViews, batchResolveGeo, geoCache } = require("../middleware/statsLogger");
+const { logPageView, logDonateClick, readNginxPageViews, batchResolveGeo, geoCache } = require("../middleware/statsLogger");
 const { loader } = require("../engine/dataLoader");
 
 const router = Router();
@@ -42,6 +42,12 @@ function readNdjsonEvents(fromTs: number, toTs: number): any[] {
 
 router.post("/ping", (req: Request, res: Response) => {
   logPageView(req);
+  res.json({ ok: true });
+});
+
+// Records a click on a donation (Ko-fi) link. `target` labels the placement.
+router.post("/donate", (req: Request, res: Response) => {
+  logDonateClick(req, (req.body && req.body.target) || "unknown");
   res.json({ ok: true });
 });
 
@@ -90,6 +96,7 @@ router.get("/data", async (req: Request, res: Response) => {
     : [];
 
   const calcEvents = ndjsonEvents.filter((e: any) => e.type === "calculate");
+  const donateEvents = ndjsonEvents.filter((e: any) => e.type === "donate_click");
 
   const allEvents = [...archivedViews, ...recentViews, ...calcEvents];
 
@@ -160,10 +167,22 @@ router.get("/data", async (req: Request, res: Response) => {
     .slice(0, 25)
     .map(([country, count]) => ({ country, count }));
 
+  // Donation-link clicks (Ko-fi), for the visits → calcs → donations funnel.
+  const donateTargetCounts: Record<string, number> = {};
+  for (const e of donateEvents) {
+    const t = (e.target as string) || "unknown";
+    donateTargetCounts[t] = (donateTargetCounts[t] || 0) + 1;
+  }
+  const donateTargets = Object.entries(donateTargetCounts)
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .map(([target, count]) => ({ target, count }));
+
   res.json({
     total_views:  totalViews,
     total_calcs:  totalCalcs,
     unique_ips:   uniqueIps.size,
+    total_donate_clicks: donateEvents.length,
+    donate_targets: donateTargets,
     by_day:       filledDays,
     top_jobs:     topJobs,
     top_skills:   topSkills,
