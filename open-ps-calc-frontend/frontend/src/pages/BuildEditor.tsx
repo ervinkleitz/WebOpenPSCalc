@@ -1701,6 +1701,11 @@ export default function BuildEditor() {
             {(() => {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id)
                 && !((b as { psRemoved?: boolean }).psRemoved && data.server === "payon_stories"));
+              // Conditional self-buff toggles that live in targetMods (not active_buffs):
+              // Performing for Bard/Dancer/Clown/Gypsy, Breaking Cloak for Assassin(X).
+              const isBardDancer = [19, 20, 4020, 4021].includes(data.job_id);
+              const isAssassin = [12, 4013].includes(data.job_id);
+              const hasSelfSection = selfBuffs.length > 0 || isBardDancer || isAssassin;
               const supportBuffs = (data.support_buffs || {}) as Record<string, unknown>;
               const groundEffectType = (supportBuffs.ground_effect as string) || "";
               // SA_VOLCANO/SA_DELUGE/SA_VIOLENTGALE's vanilla max_level is 5;
@@ -1713,7 +1718,7 @@ export default function BuildEditor() {
               const endowValue = supportBuffs.SC_ASPERSIO ? "SC_ASPERSIO" : (supportBuffs.weapon_endow_sc as string) || "";
               return (
                 <>
-                  {selfBuffs.length === 0 ? (
+                  {!hasSelfSection ? (
                     <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
                       {data.job_id ? "No self-cast buffs modeled for this job yet." : "Select a job to see its self buffs."}
                     </p>
@@ -1736,6 +1741,22 @@ export default function BuildEditor() {
                             </div>
                           );
                         })}
+                        {isBardDancer && (
+                          <div className="field field-checkbox" key="__performing">
+                            <label title="Performing (Bard/Dancer): while a song or dance is active, Musical Strike and Throw Arrow gain a flat +100 ratio points (Lv1 300%, Lv5 400%). Only affects those two skills.">
+                              <input type="checkbox" checked={!!targetMods.performing} onChange={(e) => setTargetMods((m) => ({ ...m, performing: e.target.checked }))} />
+                              <span>Performing (Musical Strike / Throw Arrow +100%)</span>
+                            </label>
+                          </div>
+                        )}
+                        {isAssassin && (
+                          <div className="field field-checkbox" key="__breaking_cloak">
+                            <label title="Breaking Cloak (Assassin, requires Cloak Lv3+): breaking Cloak with an auto-attack makes that opening hit deal ×2 damage; breaking it with Sonic Blow adds +10%. Applies to the shown per-hit damage only (a one-time opener), not sustained DPS.">
+                              <input type="checkbox" checked={!!targetMods.breaking_cloak} onChange={(e) => setTargetMods((m) => ({ ...m, breaking_cloak: e.target.checked }))} />
+                              <span>Breaking Cloak (opener: auto ×2 / Sonic Blow +10%)</span>
+                            </label>
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
@@ -2035,8 +2056,8 @@ export default function BuildEditor() {
               Target debuffs
               <InfoTooltip>
                 Debuffs applied to the target before the damage calculation.
-                Element status applies an ailment: Poison cuts the target&apos;s DEF by 50% (no
-                element change); Frozen and Stone Curse override the element (Water/Earth),
+                Element status applies an ailment: Poison cuts the target&apos;s soft (VIT) DEF by
+                50% (no element change); Frozen and Stone Curse override the element (Water/Earth),
                 halve hard DEF, and grant auto-hit.
                 Elemental Change (Sage) overrides the target&apos;s defensive element to
                 Water/Earth/Fire/Wind at level 1 (no effect on MVP/boss).
@@ -2046,12 +2067,12 @@ export default function BuildEditor() {
             </div>
 
             <div className="field">
-              <label title="Poison: −50% DEF ailment (no element change). Frozen/Stone Curse: override element to Water/Earth, halve hard DEF, and grant auto-hit.">
+              <label title="Poison: −50% soft (VIT) DEF ailment (no element change). Frozen/Stone Curse: override element to Water/Earth, halve hard DEF, and grant auto-hit.">
                 Element status
               </label>
               <select value={targetMods.element_status} onChange={(e) => setTargetMods((m) => ({ ...m, element_status: e.target.value }))}>
                 <option value="">None</option>
-                <option value="Poison">Poisoned (−50% DEF)</option>
+                <option value="Poison">Poisoned (−50% soft DEF)</option>
                 <option value="Frozen">Frozen (→ Water, −50% hard DEF, auto-hit)</option>
                 <option value="Stone">Stone Curse (→ Earth, −50% hard DEF, auto-hit)</option>
               </select>
@@ -2081,20 +2102,6 @@ export default function BuildEditor() {
               <label title="Venom Dust (Assassin rework): a target standing on the dust takes +10% physical & magical damage for 5s (the Mailbreaker debuff). Works on MVP/boss monsters.">
                 <input type="checkbox" checked={targetMods.venom_dust} onChange={(e) => setTargetMods((m) => ({ ...m, venom_dust: e.target.checked }))} />
                 <span>Venom Dust (+10% damage taken)</span>
-              </label>
-            </div>
-
-            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
-              <label title="Cloak initiative (Assassin rework, requires Cloak Lv3+): breaking Cloak with an auto-attack makes that opening hit deal ×2 damage; breaking it with Sonic Blow adds +10%. Applies to the shown per-hit damage only (a one-time opener), not sustained DPS.">
-                <input type="checkbox" checked={targetMods.breaking_cloak} onChange={(e) => setTargetMods((m) => ({ ...m, breaking_cloak: e.target.checked }))} />
-                <span>Breaking Cloak (opener: auto ×2 / Sonic Blow +10%)</span>
-              </label>
-            </div>
-
-            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
-              <label title="Performing (Bard/Dancer): while a song or dance is active, Musical Strike and Throw Arrow gain a flat +100 ratio points (Lv1 300%, Lv5 400%). Only affects those two skills.">
-                <input type="checkbox" checked={targetMods.performing} onChange={(e) => setTargetMods((m) => ({ ...m, performing: e.target.checked }))} />
-                <span>Performing (Musical Strike / Throw Arrow +100%)</span>
               </label>
             </div>
 
