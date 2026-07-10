@@ -220,6 +220,8 @@ function createGearBonuses(overrides = {}) {
     ignore_def_ele: {},
     ignore_mdef_rate: {},
     skill_atk: {},
+    skill_heal: {},          // bSkillHeal — per-skill heal % (e.g. AL_HEAL from Sacred Saints Robe)
+    heal_bomb_full: 0,       // Purifying Ring + Rosary combo — offensive Heal deals 100% (not 50%) to Undead
     double_rate: 0,
     holy_strike_bonus_chance: 0,
     near_atk_def_rate: 0,

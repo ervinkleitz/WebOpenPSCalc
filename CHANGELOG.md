@@ -19,10 +19,11 @@ instead of release version. Dates are taken from actual git commit history.
 - **Offensive Heal ("heal bomb")** — selecting **Heal** (`AL_HEAL`) now computes its damage against
   Undead-property targets instead of treating it as a generic 100% MATK spell. Damage = **50% of the
   heal value** (`floor((BaseLv + INT) / 8) × (4 + 8 × SkillLv)`) as Holy, modified by the target's
-  undead element level; it ignores DEF/MDEF and cards. **Heal-effectiveness gear** (`bHealPower` —
-  Sacred Saints Robe, Gyokuto, heal robes, etc., which PS priests stack) now boosts the heal value
-  and therefore the bomb. The **Purifying Ring + Rosary** combo raises the bomb to **100%**.
-  Non-Undead targets take no damage (Heal restores their HP).
+  undead element level; it ignores DEF/MDEF and cards. **Heal-effectiveness gear** that PS priests
+  stack now boosts the heal value and therefore the bomb — both general `bHealPower` and Heal-specific
+  `bSkillHeal` (e.g. Sacred Saints Robe, Gyokuto, heal robes), which were previously parsed and
+  dropped. The new **Purifying Ring** accessory, combined with a **Rosary**, raises the bomb to
+  **100%**. Non-Undead targets take no damage (Heal restores their HP).
 - **Elemental Change (Sage) in the target panel** — a new dropdown that overrides the target's
   defensive element to Water, Earth, Fire, or Wind at level 1 (the Sage `SA_ELEMENT*` skills — e.g.
   Water 1). It has no effect on MVP/boss monsters, matching the game. Useful for seeing how much more

@@ -524,10 +524,12 @@ class BattlePipeline {
     const { gear_bonuses: gearBonuses } = opts;
     const result = createDamageResult();
 
-    // Base heal, then heal-effectiveness gear (bHealPower — e.g. Sacred Saints Robe,
-    // Gyokuto, etc.), which PS priests stack and which scales the offensive Heal too.
+    // Base heal, then heal-effectiveness gear — general bHealPower plus Heal-specific
+    // bSkillHeal(AL_HEAL) (e.g. Sacred Saints Robe, Gyokuto, heal robes), which PS
+    // priests stack and which scales the offensive Heal too.
     const baseHeal = Math.floor((build.base_level + status.int_) / 8) * (4 + 8 * skill.level);
-    const healPower = (gearBonuses && gearBonuses.heal_power) || 0;
+    const healPower = ((gearBonuses && gearBonuses.heal_power) || 0)
+      + ((gearBonuses && gearBonuses.skill_heal && gearBonuses.skill_heal.AL_HEAL) || 0);
     const healAmount = healPower > 0 ? Math.floor(baseHeal * (100 + healPower) / 100) : baseHeal;
     result.add_step({
       name: `Heal Amount (Lv ${skill.level})`, value: healAmount, min_value: healAmount, max_value: healAmount,
@@ -536,7 +538,7 @@ class BattlePipeline {
       formula: "heal HP = floor((BaseLv + INT)/8) × (4 + 8×SkillLv) × (1 + bHealPower%)", hercules_ref: "skill_calc_heal", info: true,
     });
 
-    const full = !!(build.skill_params && build.skill_params.PS_HEAL_BOMB_FULL);
+    const full = !!(gearBonuses && gearBonuses.heal_bomb_full); // Purifying Ring + Rosary combo
     const bombPct = full ? 100 : 50;
     const isUndead = target.element === 9; // Undead property
     const baseDmg = isUndead ? Math.max(1, Math.floor(healAmount * bombPct / 100)) : 0;

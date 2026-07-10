@@ -225,7 +225,8 @@ motivated several changes beyond a straight 1:1 port:
   Exorcismus have their valid-target lists widened (Ghost element, Undead/Demon race). **Offensive
   Heal** (the "heal bomb") is modelled: against Undead-property targets, `AL_HEAL` deals 50% of its
   heal value (`floor((BaseLv+INT)/8) × (4+8×SkillLv)`) as Holy damage (element-modified, DEF/MDEF/card-
-  ignoring), with a **Purifying Ring + Rosary** toggle that raises it to 100%.
+  ignoring), boosted by heal-effectiveness gear (`bHealPower` / `bSkillHeal` — Sacred Saints Robe,
+  Gyokuto, heal robes), and raised to 100% by the **Purifying Ring** accessory + **Rosary** combo.
 - **PS Bard / Dancer** — **Arrow Vulcan** (`CG_ARROWVULCAN`) had no ratio in any table and fell back
   to a flat 100% at every level; it now scales `200 + 100*lv` (Lv1 300% ... Lv10 1200%), matching the
   in-game description. A **Performing** target-panel toggle grants Musical Strike and Throw Arrow a

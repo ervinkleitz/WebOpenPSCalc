@@ -99,7 +99,6 @@ export interface TargetMods {
   venom_dust: boolean; // Venom Dust (Assassin): target on it takes +10% phys & magic damage. Works on bosses.
   breaking_cloak: boolean; // Cloak initiative (Assassin, Cloak Lv3+): opening auto-attack ×2, or Sonic Blow +10%.
   performing: boolean; // Performing (Bard/Dancer): while a song/dance is active, Musical Strike & Throw Arrow gain +100 ratio points.
-  purifying_ring: boolean; // Purifying Ring + Rosary combo: offensive Heal deals 100% of its heal as damage to Undead (up from 50%).
   quagmire: number; // WZ_QUAGMIRE level 0–5 (0 = off). Legacy shared URLs may carry a boolean.
   signum_crucis: boolean;
   provoke: number; // SC_PROVOKE level 0–10 (0 = off). Legacy shared URLs may carry a boolean.

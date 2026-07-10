@@ -4,6 +4,14 @@
     "script": "bonus bHolyStrikeChance,5;"
   },
   {
+    "items": ["Purifying_Ring", "Rosary"],
+    "script": "bonus bHealBombFull,1;"
+  },
+  {
+    "items": ["Purifying_Ring", "Rosary_"],
+    "script": "bonus bHealBombFull,1;"
+  },
+  {
     "items": ["Necrofantasy_Muffler", "Necrofantasy_Shoes"],
     "script": "bonus2 bAddEle,Ele_Ghost,20; bonus2 bAddEle,Ele_Undead,20;"
   },

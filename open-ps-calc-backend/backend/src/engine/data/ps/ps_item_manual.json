@@ -1,4 +1,17 @@
 {
+  "81011": {
+    "type": "IT_ARMOR",
+    "loc": [
+      "EQP_ACC"
+    ],
+    "slots": 0,
+    "aegis_name": "Purifying_Ring",
+    "name": "Purifying Ring",
+    "job": [],
+    "equip_level": 20,
+    "refineable": false,
+    "script": "bonus2 bCastrate,\"PR_MAGNUS\",-5;"
+  },
   "1327": {
     "type": "IT_WEAPON",
     "loc": [

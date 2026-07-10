@@ -353,7 +353,6 @@ const DEFAULT_TARGET_MODS: TargetMods = {
   venom_dust: false,
   breaking_cloak: false,
   performing: false,
-  purifying_ring: false,
   quagmire: 0,
   signum_crucis: false,
   provoke: 0,
@@ -2037,13 +2036,6 @@ export default function BuildEditor() {
               <label title="Performing (Bard/Dancer): while a song or dance is active, Musical Strike and Throw Arrow gain a flat +100 ratio points (Lv1 300%, Lv5 400%). Only affects those two skills.">
                 <input type="checkbox" checked={targetMods.performing} onChange={(e) => setTargetMods((m) => ({ ...m, performing: e.target.checked }))} />
                 <span>Performing (Musical Strike / Throw Arrow +100%)</span>
-              </label>
-            </div>
-
-            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
-              <label title="Purifying Ring + Rosary combo (Priest): offensive Heal deals 100% of its heal value as damage to Undead-property targets, up from the default 50%. Only affects the Heal skill vs Undead.">
-                <input type="checkbox" checked={targetMods.purifying_ring} onChange={(e) => setTargetMods((m) => ({ ...m, purifying_ring: e.target.checked }))} />
-                <span>Purifying Ring + Rosary (Heal bomb ×2)</span>
               </label>
             </div>
 
