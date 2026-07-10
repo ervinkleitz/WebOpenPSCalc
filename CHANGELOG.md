@@ -42,6 +42,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Grand Cross now deals its full 3-hit damage** — the skill places a 0.9s cross that ticks every
+  0.3s, so a single target takes **3 hits** (a fixed count, not stay-time-dependent), but the calc
+  was only computing one tick. The breakdown now shows the per-hit value and the **×3 total**, folded
+  into DPS. (The per-cell reduction when multiple monsters stack on one cell isn't modeled — this is
+  the single-target case.)
 - **Improve Concentration no longer boosts card-combo stats** — Attention Concentrate's AGI/DEX %
   correctly excludes direct card bonuses (and buffs), but *card combos* (e.g. the Munak/Bongun/Yao
   Jun +1-all-stats set, or the Thief +4 AGI card set) were leaking their AGI/DEX into the multiplied

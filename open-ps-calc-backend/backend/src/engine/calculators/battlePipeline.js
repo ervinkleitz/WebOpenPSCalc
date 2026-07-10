@@ -432,8 +432,25 @@ class BattlePipeline {
 
     pmf = floorAt(pmf, 1);
 
+    // Grand Cross places a cross-shaped ground unit that lasts 0.9s (skill_data1)
+    // and ticks every 0.3s (unit.interval), so a single target takes 0.9/0.3 = 3
+    // hits — a fixed count that does NOT depend on how long it stays
+    // (wiki.payonstories.com/Grand_Cross: "hits 3 times"). The per-cell reduction
+    // when multiple monsters stack on one cell (−1 hit each per extra monster,
+    // min 1) isn't modeled here — this is the single-target case.
+    {
+      const [mn0, mx0, av0] = pmfStats(pmf);
+      result.add_step({ name: "Per-Hit Damage", value: av0, min_value: mn0, max_value: mx0, note: "one of 3 ticks", formula: "", hercules_ref: "", info: true });
+    }
+    const GC_HITS = 3;
+    pmf = scaleFloor(pmf, GC_HITS, 1);
+
     const [mn, mx, av] = pmfStats(pmf);
-    result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: "Grand Cross branch", formula: "", hercules_ref: "" });
+    result.add_step({
+      name: `Grand Cross Total (×${GC_HITS} hits)`, value: av, min_value: mn, max_value: mx, multiplier: GC_HITS,
+      note: "0.9s duration ÷ 0.3s interval = 3 ticks on a single target",
+      formula: `per-hit × ${GC_HITS}`, hercules_ref: "wiki.payonstories.com/Grand_Cross",
+    });
 
     result.min_damage = mn;
     result.max_damage = mx;
