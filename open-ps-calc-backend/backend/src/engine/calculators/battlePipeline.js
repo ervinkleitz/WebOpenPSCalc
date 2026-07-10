@@ -364,8 +364,14 @@ class BattlePipeline {
     const { profile = STANDARD, gear_bonuses: gearBonuses } = opts;
     const result = createDamageResult();
 
-    // ATK component: standard BATK + weapon-roll chain, minus size fix (this
-    // is a self-centered AoE burst, not a weapon swing scaled to target size).
+    // Grand Cross = a physical (ATK) part and a magic (MATK) part, each ×(100+40×lv)%,
+    // reduced by physical DEF and MDEF respectively, then summed and put through the
+    // fixed Holy element. Weapon masteries + the refine bonus (atk2) apply to the ATK
+    // part post-DEF, like a normal weapon hit; cards' % bonuses are ignored (IgnoreCards).
+    // (The size fix is skipped — this is a self-centered AoE burst, not a scaled swing.)
+    const ratio = 100 + 40 * skill.level;
+
+    // ── Physical (ATK) part: base ATK ×ratio → hard/soft DEF → refine + mastery flats ──
     let atkPmf = calculateBaseDamage(status, weapon, build, target, { ...skill, ignore_size_fix: true }, result, {
       gear_bonuses: gearBonuses, is_crit: false, is_ranged: false,
     });
@@ -374,42 +380,10 @@ class BattlePipeline {
       const [mn, mx, av] = pmfStats(atkPmf);
       result.add_step({ name: "bAtkRate", value: av, min_value: mn, max_value: mx, multiplier: (100 + gearBonuses.atk_rate) / 100, note: `bAtkRate +${gearBonuses.atk_rate}%`, formula: `dmg*(100+${gearBonuses.atk_rate})//100`, hercules_ref: "battle.c:5330" });
     }
-
-    // MATK component
-    const matkLo = Math.max(1, status.matk_min);
-    const matkHi = Math.max(matkLo, status.matk_max);
-    let matkPmf = uniformPmf(matkLo, matkHi);
-    if (gearBonuses && gearBonuses.matk_rate) {
-      matkPmf = scaleFloor(matkPmf, 100 + gearBonuses.matk_rate, 100);
-    }
-    const [mmn, mmx, mav] = pmfStats(matkPmf);
-    result.add_step({
-      name: "Base MATK", value: mav, min_value: mmn, max_value: mmx,
-      note: `INT=${status.int_}  MATK ${matkLo}-${matkHi}`,
-      formula: "int+(int/7)^2 to int+(int/5)^2", hercules_ref: "status.c status_calc_matk",
-    });
-
-    let pmf = convolve(atkPmf, matkPmf);
-    const [cmn, cmx, cav] = pmfStats(pmf);
-    result.add_step({
-      name: "ATK + MATK", value: cav, min_value: cmn, max_value: cmx,
-      note: "Grand Cross bases damage on combined ATK and MATK",
-      formula: "ATK + MATK", hercules_ref: "community-verified (no battle.c excerpt found)",
-    });
-
-    const ratio = 100 + 40 * skill.level;
-    pmf = scaleFloor(pmf, ratio, 100);
-    const [rmn, rmx, rav] = pmfStats(pmf);
-    result.add_step({
-      name: `Skill Ratio (Lv ${skill.level})`, value: rav, min_value: rmn, max_value: rmx,
-      multiplier: ratio / 100, note: `Grand Cross Lv${skill.level}: ${ratio}%`,
-      formula: "(ATK+MATK) * (100 + 40*lv) / 100", hercules_ref: "community-verified (no battle.c excerpt found)",
-    });
-
-    pmf = calculateDefenseFix(target, build, gearBonuses, pmf, this.config, result, { is_crit: false, skill });
-
-    // PS: weapon masteries + Demon Bane's flat bonus apply here (wiki.payonstories.com/Grand_Cross).
-    // Vanilla: masteryFix.js's MASTERY_EXEMPT_SKILLS bypasses this for CR_GRANDCROSS.
+    atkPmf = scaleFloor(atkPmf, ratio, 100);
+    { const [mn, mx, av] = pmfStats(atkPmf); result.add_step({ name: `ATK × Ratio (Lv ${skill.level})`, value: av, min_value: mn, max_value: mx, multiplier: ratio / 100, note: `ATK part × ${ratio}%`, formula: "ATK × (100+40×lv)/100", hercules_ref: "community-verified" }); }
+    atkPmf = calculateDefenseFix(target, build, gearBonuses, atkPmf, this.config, result, { is_crit: false, skill });
+    atkPmf = calculateRefineFix(weapon, skill, atkPmf, result);
     const ctx = createCalcContext({
       skill_levels: gearBonuses.effective_mastery,
       skill_params: build.skill_params,
@@ -421,10 +395,26 @@ class BattlePipeline {
       int_: status.int_,
       weapon_type: weapon ? weapon.weapon_type : "",
     });
-    pmf = calculateMasteryFix(weapon, build, target, pmf, result, skill, { profile, ctx });
+    // PS: weapon masteries + Demon Bane's flat bonus apply to the ATK part
+    // (wiki.payonstories.com/Grand_Cross). Vanilla bypasses via MASTERY_EXEMPT_SKILLS.
+    atkPmf = calculateMasteryFix(weapon, build, target, atkPmf, result, skill, { profile, ctx });
 
+    // ── Magic (MATK) part: MATK ×ratio → MDEF ──
+    const matkLo = Math.max(1, status.matk_min);
+    const matkHi = Math.max(matkLo, status.matk_max);
+    let matkPmf = uniformPmf(matkLo, matkHi);
+    if (gearBonuses && gearBonuses.matk_rate) {
+      matkPmf = scaleFloor(matkPmf, 100 + gearBonuses.matk_rate, 100);
+    }
+    { const [mn, mx, av] = pmfStats(matkPmf); result.add_step({ name: "Base MATK", value: av, min_value: mn, max_value: mx, note: `INT=${status.int_}  MATK ${matkLo}-${matkHi}`, formula: "int+(int/7)^2 to int+(int/5)^2", hercules_ref: "status.c status_calc_matk" }); }
+    matkPmf = scaleFloor(matkPmf, ratio, 100);
+    { const [mn, mx, av] = pmfStats(matkPmf); result.add_step({ name: `MATK × Ratio (Lv ${skill.level})`, value: av, min_value: mn, max_value: mx, multiplier: ratio / 100, note: `MATK part × ${ratio}%`, formula: "MATK × (100+40×lv)/100", hercules_ref: "community-verified" }); }
+    matkPmf = calculateMagicDefenseFix(target, gearBonuses || {}, matkPmf, result);
+
+    // ── Combine physical + magic, then the fixed Holy element on the whole ──
+    let pmf = convolve(atkPmf, matkPmf);
+    { const [mn, mx, av] = pmfStats(pmf); result.add_step({ name: "ATK part + MATK part", value: av, min_value: mn, max_value: mx, note: "physical (through DEF) + magic (through MDEF) summed", formula: "ATK_part + MATK_part", hercules_ref: "" }); }
     pmf = calculateAttrFix(weapon, target, pmf, result, build, 6 /* Ele_Holy — fixed element, ignores weapon */);
-
     {
       const [mn, mx, av] = pmfStats(pmf);
       result.add_step({ name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier: 1.0, note: "BYPASSED — damage_type includes IgnoreCards", formula: "no change", hercules_ref: "skills.json damage_type" });

@@ -42,6 +42,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Grand Cross damage — two corrections.** (1) The weapon **refine ATK** (`atk2`, e.g. +35 for a +7
+  Lv3 weapon) was omitted from the Grand Cross branch; it now applies to the ATK part like a normal
+  hit. (2) The **MATK portion was being reduced by physical DEF** — it now goes through **MDEF**, with
+  the ATK portion through DEF (the standard physical+magic split; the code already noted both should
+  apply). Per-hit damage rises accordingly.
 - **Grand Cross now deals its full 3-hit damage** — the skill places a 0.9s cross that ticks every
   0.3s, so a single target takes **3 hits** (a fixed count, not stay-time-dependent), but the calc
   was only computing one tick. The breakdown now shows the per-hit value and the **×3 total**, folded
