@@ -138,12 +138,15 @@ router.post("/", (req: Request, res: Response) => {
       if (targetModsInput.stun)   sc.SC_STUN   = true;
       target.target_active_scs = sc;
       // Signum Crucis (PS, AL_CRUCIS): reduces the target's HARD DEF by a
-      // level-scaled % — 10 + 4×lv, i.e. 50% at Lv10 (ps_skill_db.json). This
-      // is a hard-DEF cut (not def_percent, which would also scale soft DEF),
-      // and it only affects Undead-element or Demon-race monsters. Stacks with
-      // Provoke. The toggle assumes Lv10 (max), matching the other debuffs.
+      // level-scaled %. The PS Priest/Acolyte rework capped it at level 5 with the
+      // table −14/−23/−32/−41/−50% for Lv1–5, i.e. 5 + 9×lv (−50% at Lv5, the max).
+      // Hard-DEF cut only (not def_percent, which would also scale soft DEF); affects
+      // Undead-element or Demon-race monsters only. Stacks with Provoke. The toggle
+      // assumes Lv5 (max), so the reduction is −50% — the same value the pre-rework
+      // Lv10 formula produced, so the checkbox outcome is unchanged.
       if (targetModsInput.signum_crucis && (target.element === 9 || target.race === "Demon")) {
-        const signumPct = 50; // Lv10: 10 + 4×10
+        const signumLv = 5;                    // rework cap = max
+        const signumPct = 5 + 9 * signumLv;    // −50% at Lv5
         target.def_ = Math.max(0, target.def_ - Math.floor(target.def_ * signumPct / 100));
       }
       // Provoke cast on the target: DEF −(5 + 5×lv)% (−55% at Lv10), matching
