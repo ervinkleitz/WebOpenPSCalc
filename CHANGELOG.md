@@ -42,11 +42,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
-- **Grand Cross damage — two corrections.** (1) The weapon **refine ATK** (`atk2`, e.g. +35 for a +7
-  Lv3 weapon) was omitted from the Grand Cross branch; it now applies to the ATK part like a normal
-  hit. (2) The **MATK portion was being reduced by physical DEF** — it now goes through **MDEF**, with
-  the ATK portion through DEF (the standard physical+magic split; the code already noted both should
-  apply). Per-hit damage rises accordingly.
+- **Grand Cross damage rewritten to match Hercules.** Verified against the PR-Hercules pre-renewal
+  source (`battle_calc_magic_attack`, `CR_GRANDCROSS`): it's a full physical weapon hit (ATK → size
+  fix → hard/soft DEF → **refine** → **weapon masteries**) plus a magic hit (MATK → **MDEF**), summed,
+  put through the fixed Holy element, and **then** multiplied by the (100 + 40×lv)% ratio — the ratio
+  is applied **last**. The old branch (a) omitted the refine ATK, (b) reduced the MATK part by
+  physical DEF instead of MDEF, and (c) applied the ratio *before* DEF, leaving masteries/refine
+  un-amplified. That last point matters most against Undead/Demon targets, where Demon Bane's flat
+  bonus is now correctly multiplied by the ratio.
 - **Grand Cross now deals its full 3-hit damage** — the skill places a 0.9s cross that ticks every
   0.3s, so a single target takes **3 hits** (a fixed count, not stay-time-dependent), but the calc
   was only computing one tick. The breakdown now shows the per-hit value and the **×3 total**, folded

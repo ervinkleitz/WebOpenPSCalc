@@ -364,15 +364,16 @@ class BattlePipeline {
     const { profile = STANDARD, gear_bonuses: gearBonuses } = opts;
     const result = createDamageResult();
 
-    // Grand Cross = a physical (ATK) part and a magic (MATK) part, each ×(100+40×lv)%,
-    // reduced by physical DEF and MDEF respectively, then summed and put through the
-    // fixed Holy element. Weapon masteries + the refine bonus (atk2) apply to the ATK
-    // part post-DEF, like a normal weapon hit; cards' % bonuses are ignored (IgnoreCards).
-    // (The size fix is skipped — this is a self-centered AoE burst, not a scaled swing.)
+    // Grand Cross (PR-Hercules battle_calc_magic_attack, CR_GRANDCROSS branch): a full
+    // physical weapon hit `wd` (ATK → size fix → hard/soft DEF → refine atk2 → weapon
+    // masteries) plus a magic hit `ad` (MATK → MDEF), summed, put through the fixed Holy
+    // element, and THEN multiplied by the skill ratio (100 + 40×lv)% — the ratio is
+    // applied LAST, so masteries/refine are amplified by it while DEF/MDEF are subtracted
+    // before it. Cards' % bonuses are ignored (IgnoreCards).
     const ratio = 100 + 40 * skill.level;
 
-    // ── Physical (ATK) part: base ATK ×ratio → hard/soft DEF → refine + mastery flats ──
-    let atkPmf = calculateBaseDamage(status, weapon, build, target, { ...skill, ignore_size_fix: true }, result, {
+    // ── Physical part `wd`: full weapon hit at 100% ratio (size fix, DEF, refine, mastery) ──
+    let atkPmf = calculateBaseDamage(status, weapon, build, target, skill, result, {
       gear_bonuses: gearBonuses, is_crit: false, is_ranged: false,
     });
     if (gearBonuses && gearBonuses.atk_rate) {
@@ -380,8 +381,6 @@ class BattlePipeline {
       const [mn, mx, av] = pmfStats(atkPmf);
       result.add_step({ name: "bAtkRate", value: av, min_value: mn, max_value: mx, multiplier: (100 + gearBonuses.atk_rate) / 100, note: `bAtkRate +${gearBonuses.atk_rate}%`, formula: `dmg*(100+${gearBonuses.atk_rate})//100`, hercules_ref: "battle.c:5330" });
     }
-    atkPmf = scaleFloor(atkPmf, ratio, 100);
-    { const [mn, mx, av] = pmfStats(atkPmf); result.add_step({ name: `ATK × Ratio (Lv ${skill.level})`, value: av, min_value: mn, max_value: mx, multiplier: ratio / 100, note: `ATK part × ${ratio}%`, formula: "ATK × (100+40×lv)/100", hercules_ref: "community-verified" }); }
     atkPmf = calculateDefenseFix(target, build, gearBonuses, atkPmf, this.config, result, { is_crit: false, skill });
     atkPmf = calculateRefineFix(weapon, skill, atkPmf, result);
     const ctx = createCalcContext({
@@ -395,11 +394,11 @@ class BattlePipeline {
       int_: status.int_,
       weapon_type: weapon ? weapon.weapon_type : "",
     });
-    // PS: weapon masteries + Demon Bane's flat bonus apply to the ATK part
+    // PS: weapon masteries + Demon Bane's flat bonus apply to the physical part
     // (wiki.payonstories.com/Grand_Cross). Vanilla bypasses via MASTERY_EXEMPT_SKILLS.
     atkPmf = calculateMasteryFix(weapon, build, target, atkPmf, result, skill, { profile, ctx });
 
-    // ── Magic (MATK) part: MATK ×ratio → MDEF ──
+    // ── Magic part `ad`: MATK → MDEF ──
     const matkLo = Math.max(1, status.matk_min);
     const matkHi = Math.max(matkLo, status.matk_max);
     let matkPmf = uniformPmf(matkLo, matkHi);
@@ -407,14 +406,14 @@ class BattlePipeline {
       matkPmf = scaleFloor(matkPmf, 100 + gearBonuses.matk_rate, 100);
     }
     { const [mn, mx, av] = pmfStats(matkPmf); result.add_step({ name: "Base MATK", value: av, min_value: mn, max_value: mx, note: `INT=${status.int_}  MATK ${matkLo}-${matkHi}`, formula: "int+(int/7)^2 to int+(int/5)^2", hercules_ref: "status.c status_calc_matk" }); }
-    matkPmf = scaleFloor(matkPmf, ratio, 100);
-    { const [mn, mx, av] = pmfStats(matkPmf); result.add_step({ name: `MATK × Ratio (Lv ${skill.level})`, value: av, min_value: mn, max_value: mx, multiplier: ratio / 100, note: `MATK part × ${ratio}%`, formula: "MATK × (100+40×lv)/100", hercules_ref: "community-verified" }); }
     matkPmf = calculateMagicDefenseFix(target, gearBonuses || {}, matkPmf, result);
 
-    // ── Combine physical + magic, then the fixed Holy element on the whole ──
+    // ── Sum (wd + ad) → Holy element → × ratio (applied LAST, per Hercules) ──
     let pmf = convolve(atkPmf, matkPmf);
-    { const [mn, mx, av] = pmfStats(pmf); result.add_step({ name: "ATK part + MATK part", value: av, min_value: mn, max_value: mx, note: "physical (through DEF) + magic (through MDEF) summed", formula: "ATK_part + MATK_part", hercules_ref: "" }); }
+    { const [mn, mx, av] = pmfStats(pmf); result.add_step({ name: "ATK part + MATK part", value: av, min_value: mn, max_value: mx, note: "physical (through DEF) + magic (through MDEF) summed", formula: "wd + ad", hercules_ref: "battle.c:3798" }); }
     pmf = calculateAttrFix(weapon, target, pmf, result, build, 6 /* Ele_Holy — fixed element, ignores weapon */);
+    pmf = scaleFloor(pmf, ratio, 100);
+    { const [mn, mx, av] = pmfStats(pmf); result.add_step({ name: `Grand Cross Ratio (Lv ${skill.level})`, value: av, min_value: mn, max_value: mx, multiplier: ratio / 100, note: `(physical + magic) × ${ratio}% — applied last`, formula: "(wd+ad) × (100 + 40×lv)/100", hercules_ref: "battle.c:3800" }); }
     {
       const [mn, mx, av] = pmfStats(pmf);
       result.add_step({ name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier: 1.0, note: "BYPASSED — damage_type includes IgnoreCards", formula: "no change", hercules_ref: "skills.json damage_type" });
