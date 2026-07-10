@@ -26,11 +26,6 @@ instead of release version. Dates are taken from actual git commit history.
   reflect the instant-kill probability (with the fail-damage chip as a fallback), instead of only
   counting the failure damage.
 
-### Changed
-
-- **Target "Poisoned" option now applies the Poison ailment** instead of overriding the target's
-  element to Poison.
-
 ### Fixed
 
 - **Arrow Vulcan now scales with level** — the Clown/Gypsy skill had no damage ratio defined, so it
