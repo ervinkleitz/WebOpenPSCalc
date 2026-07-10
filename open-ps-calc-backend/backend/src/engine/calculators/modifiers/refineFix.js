@@ -5,11 +5,15 @@
 const { loader } = require("../../dataLoader");
 const { addFlat, pmfStats } = require("../../pmf");
 
-const REFINE_SKIP_SKILLS = new Set([263, 264]); // MO_INVESTIGATE, MO_EXTREMITYFIST
+// Hercules excludes the post-DEF refine atk2 for these two skills (battle.c:5372).
+// Keyed by name — NOT id — because the numeric ids drifted (263/264 are actually
+// MO_TRIPLEATTACK/MO_BODYRELOCATION here; Investigate/Asura are 266/271), which
+// previously suppressed refine on the wrong skills. masteryFix/defenseFix also key by name.
+const REFINE_SKIP_SKILLS = new Set(["MO_INVESTIGATE", "MO_EXTREMITYFIST"]);
 
 function calculateRefineFix(weapon, skill, pmf, result) {
-  if (REFINE_SKIP_SKILLS.has(skill.id)) {
-    result.add_step({ name: "Refine Bonus", value: 0, note: "Suppressed for MO_INVESTIGATE/MO_EXTREMITYFIST", formula: "0", hercules_ref: "battle.c:5797-5799" });
+  if (REFINE_SKIP_SKILLS.has(skill.name)) {
+    result.add_step({ name: "Refine Bonus", value: 0, note: "Suppressed for MO_INVESTIGATE/MO_EXTREMITYFIST", formula: "0", hercules_ref: "battle.c:5372" });
     return pmf;
   }
 

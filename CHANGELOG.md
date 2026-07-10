@@ -5,6 +5,20 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-10
+
+### Fixed
+
+- **Refine ATK was suppressed on the wrong skills.** Hercules excludes the post-DEF refine bonus
+  (`atk2`) for **Occult Impaction** (Investigate) and **Asura Strike** only, but the suppression list
+  used stale skill ids that actually pointed at **Triple Attack** and **Body Relocation**. As a result
+  Investigate and Asura were *over*-reporting by a refined weapon's flat refine ATK, while **Triple
+  Attack** was *under*-reporting (it was losing its refine bonus). Now keyed by skill name, so all
+  three are correct. (Found while auditing every skill in Grand Cross's special-handling group against
+  the PR-Hercules source; Asura's `8 + SP/10` ratio and Killing Stroke's `STR×40 + HP×8%×Lv` were
+  each confirmed correct against the Payon Stories wiki — those match PS's reworked formulas, not
+  vanilla.)
+
 ## 2026-07-09
 
 ### Changed
