@@ -1980,7 +1980,7 @@ export default function BuildEditor() {
                 element change); Frozen and Stone Curse override the element (Water/Earth),
                 halve hard DEF, and grant auto-hit.
                 Elemental Change (Sage) overrides the target&apos;s defensive element to
-                Water/Earth/Fire/Wind (no effect on MVP/boss).
+                Water/Earth/Fire/Wind at level 1 (no effect on MVP/boss).
                 Lex Aeterna doubles all damage results.
                 Skill debuffs and statuses apply their game mechanics to the target.
               </InfoTooltip>
@@ -1999,7 +1999,7 @@ export default function BuildEditor() {
             </div>
 
             <div className="field">
-              <label title="Elemental Change (Sage): overrides the target's defensive element to Water/Earth/Fire/Wind. Element level is unchanged. Does not work on MVP/boss monsters.">
+              <label title="Elemental Change (Sage): overrides the target's defensive element to Water/Earth/Fire/Wind at level 1 (e.g. Water 1). Does not work on MVP/boss monsters.">
                 Elemental Change (Sage)
               </label>
               <select value={targetMods.element_change} onChange={(e) => setTargetMods((m) => ({ ...m, element_change: e.target.value }))}>

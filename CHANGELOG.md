@@ -17,9 +17,9 @@ instead of release version. Dates are taken from actual git commit history.
   (base × (1 + 0.6 × LUK%)) and the damage range spans a non-proc roll up to a boosted roll. LUK ≥ 100
   makes the bonus guaranteed.
 - **Elemental Change (Sage) in the target panel** — a new dropdown that overrides the target's
-  defensive element to Water, Earth, Fire, or Wind (the Sage `SA_ELEMENT*` skills). Element level
-  is left unchanged, and it has no effect on MVP/boss monsters, matching the game. Useful for seeing
-  how much more (or less) your element deals after changing a monster's property.
+  defensive element to Water, Earth, Fire, or Wind at level 1 (the Sage `SA_ELEMENT*` skills — e.g.
+  Water 1). It has no effect on MVP/boss monsters, matching the game. Useful for seeing how much more
+  (or less) your element deals after changing a monster's property.
 - **Turn Undead now shows its instant-kill success chance** and folds it into the kill metrics.
   The chance uses the Payon Stories rework formula `[20×SkillLv + 3×LUK + INT + BaseLv +
   (1−HP/MaxHP)×200] ÷ 10 %` (halved if base INT < 40). "Casts to kill" and "Time to kill" now
