@@ -440,16 +440,20 @@ class BattlePipeline {
     // min 1) isn't modeled here — this is the single-target case.
     {
       const [mn0, mx0, av0] = pmfStats(pmf);
-      result.add_step({ name: "Per-Hit Damage", value: av0, min_value: mn0, max_value: mx0, note: "one of 3 ticks", formula: "", hercules_ref: "", info: true });
+      result.add_step({ name: "Per-Hit Damage", value: av0, min_value: mn0, max_value: mx0, note: `one of 3 ticks (${mn0}–${mx0})`, formula: "", hercules_ref: "", info: true });
     }
+    // Each tick rolls its ATK+MATK independently, so the 3-hit total is the SUM of
+    // 3 independent rolls (convolution) — a realistic distribution centred on 3× the
+    // mean, NOT the [3×min, 3×max] extreme a flat ×3 would give (all hits min/max at
+    // once is astronomically unlikely).
     const GC_HITS = 3;
-    pmf = scaleFloor(pmf, GC_HITS, 1);
+    pmf = convolve(convolve(pmf, pmf), pmf);
 
     const [mn, mx, av] = pmfStats(pmf);
     result.add_step({
-      name: `Grand Cross Total (×${GC_HITS} hits)`, value: av, min_value: mn, max_value: mx, multiplier: GC_HITS,
-      note: "0.9s duration ÷ 0.3s interval = 3 ticks on a single target",
-      formula: `per-hit × ${GC_HITS}`, hercules_ref: "wiki.payonstories.com/Grand_Cross",
+      name: `Grand Cross Total (${GC_HITS} hits)`, value: av, min_value: mn, max_value: mx, multiplier: GC_HITS,
+      note: "0.9s ÷ 0.3s interval = 3 independent ticks on a single target (summed)",
+      formula: "sum of 3 independent hit rolls", hercules_ref: "wiki.payonstories.com/Grand_Cross",
     });
 
     result.min_damage = mn;
