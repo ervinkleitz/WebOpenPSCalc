@@ -421,17 +421,6 @@ label {
   margin-bottom: 0.4rem;
 }
 .info-tooltip-bubble a { font-family: var(--mono); font-size: 0.78rem; }
-.tooltip-disclaimer {
-  display: block;
-  margin-top: 0.5rem;
-  padding: 0.4rem 0.55rem;
-  border-radius: var(--radius);
-  background: rgba(226, 104, 92, 0.1);
-  border: 1px solid var(--crit);
-  color: var(--crit);
-  font-size: 0.72rem;
-  line-height: 1.4;
-}
 .info-tooltip-bubble .tooltip-row {
   display: flex;
   justify-content: space-between;

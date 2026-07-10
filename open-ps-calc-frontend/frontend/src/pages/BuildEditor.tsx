@@ -1034,10 +1034,6 @@ export default function BuildEditor() {
               A pre-renewal Ragnarok Online damage calculator for vanilla
               and Payon Stories servers — equip gear, pick a skill and
               target, and see the full step-by-step damage breakdown.
-              <span className="tooltip-disclaimer">
-                ⚠ Fan-made — not affiliated with or maintained by the Payon Stories
-                staff. Numbers may be inaccurate; always verify anything important in-game.
-              </span>
               <span className="tooltip-row">
                 <span>Based on</span>
                 <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
@@ -2088,7 +2084,7 @@ export default function BuildEditor() {
 
       <footer className="credits-footer">
         <div className="credits-disclaimer">
-          Fan-made, unofficial tool — not affiliated with or maintained by the Payon Stories staff.
+          Not affiliated with or maintained by the Payon Stories staff.
           Numbers may be inaccurate; verify anything important in-game.
         </div>
         <div className="credits-support">
