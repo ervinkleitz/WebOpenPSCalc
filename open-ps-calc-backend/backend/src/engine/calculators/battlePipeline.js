@@ -521,13 +521,19 @@ class BattlePipeline {
    * Non-Undead targets take no damage (Heal restores their HP instead).
    */
   _runHealBranch(status, weapon, skill, target, build, opts = {}) {
+    const { gear_bonuses: gearBonuses } = opts;
     const result = createDamageResult();
 
-    const healAmount = Math.floor((build.base_level + status.int_) / 8) * (4 + 8 * skill.level);
+    // Base heal, then heal-effectiveness gear (bHealPower — e.g. Sacred Saints Robe,
+    // Gyokuto, etc.), which PS priests stack and which scales the offensive Heal too.
+    const baseHeal = Math.floor((build.base_level + status.int_) / 8) * (4 + 8 * skill.level);
+    const healPower = (gearBonuses && gearBonuses.heal_power) || 0;
+    const healAmount = healPower > 0 ? Math.floor(baseHeal * (100 + healPower) / 100) : baseHeal;
     result.add_step({
       name: `Heal Amount (Lv ${skill.level})`, value: healAmount, min_value: healAmount, max_value: healAmount,
-      note: `floor((BaseLv ${build.base_level} + INT ${status.int_}) / 8) × (4 + 8 × ${skill.level})`,
-      formula: "heal HP = floor((BaseLv + INT)/8) × (4 + 8×SkillLv)", hercules_ref: "skill_calc_heal", info: true,
+      note: `floor((BaseLv ${build.base_level} + INT ${status.int_}) / 8) × (4 + 8 × ${skill.level})` +
+        (healPower > 0 ? ` × ${(100 + healPower)}% heal power` : ""),
+      formula: "heal HP = floor((BaseLv + INT)/8) × (4 + 8×SkillLv) × (1 + bHealPower%)", hercules_ref: "skill_calc_heal", info: true,
     });
 
     const full = !!(build.skill_params && build.skill_params.PS_HEAL_BOMB_FULL);

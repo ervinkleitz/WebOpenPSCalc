@@ -192,6 +192,7 @@ function createGearBonuses(overrides = {}) {
     maxhp_rate: 0,
     maxsp_rate: 0,
     matk_rate: 0,
+    heal_power: 0, // bHealPower — % boost to Heal (and offensive Heal / heal bomb)
     sp_recov_rate: 0,
     hp_recov_rate: 0,
     res_eff: {},
