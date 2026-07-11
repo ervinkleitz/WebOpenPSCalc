@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import DamageSummary from "./DamageSummary";
+import CompareView, { summaryMetrics, type ComparePin } from "./CompareView";
 import { statsApi } from "../api/client";
 
 interface Props {
@@ -10,11 +11,17 @@ interface Props {
   error: string;
   forceProcs: boolean;
   onToggleForceProcs: () => void;
+  pins: ComparePin[];
+  onPin: () => void;
+  onRemovePin: (id: string) => void;
+  onLoadPin: (pin: ComparePin) => void;
+  onClearPins: () => void;
 }
 
 const ResultsPanel = forwardRef<HTMLDivElement, Props>(
-  ({ open, onClose, calcResult, calculating, error, forceProcs, onToggleForceProcs }, ref) => {
+  ({ open, onClose, calcResult, calculating, error, forceProcs, onToggleForceProcs, pins, onPin, onRemovePin, onLoadPin, onClearPins }, ref) => {
     if (!open) return null;
+    const live = summaryMetrics(calcResult);
     return (
       <div ref={ref} className="results-panel">
         <div className="results-panel-header">
@@ -22,6 +29,14 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
           <button onClick={onClose} aria-label="Close">×</button>
         </div>
         <div className="results-panel-body">
+          {(live || pins.length > 0) && (
+            <CompareView live={live} pins={pins} canPin={!!live} onPin={onPin} onRemove={onRemovePin} onLoad={onLoadPin} onClear={onClearPins} />
+          )}
+          {live && (
+            <div className="results-flow-divider">
+              <span>{pins.length > 0 ? "Current build" : "Full breakdown"}</span>
+            </div>
+          )}
           <DamageSummary
             calcResult={calcResult}
             calculating={calculating}

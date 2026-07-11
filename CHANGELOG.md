@@ -7,6 +7,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-11
 
+### Added
+
+- **Build-vs-build comparison.** The results panel has a new **Compare builds** section: click
+  **Pin** to save the current build as a column, then tweak your gear, cards, stats or skill and pin
+  again. Each pinned build is compared side by side with your current one across **DPS, damage per
+  hit, hits to kill, time to kill, crit chance and ASPD** — the best value in each row is highlighted,
+  the top-DPS build is flagged, and pinned columns show a ▲/▼ delta versus the current build.
+  **Load** restores a pinned build into the editor (and recomputes it) and **Clear all** resets the
+  comparison.
+
 ### Changed
 
 - **Grand Cross breakdown labelled as "waves".** The damage panel now shows **Per-Wave Damage**

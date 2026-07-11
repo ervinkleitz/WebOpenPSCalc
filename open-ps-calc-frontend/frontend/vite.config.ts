@@ -8,6 +8,11 @@ import path from "path";
 const repoRoot = path.resolve(__dirname, "../..");
 const changelogPath = path.join(repoRoot, "CHANGELOG.md");
 
+// Dev-server proxy target for the backend. Defaults to :4000; override with
+// BACKEND_URL (e.g. BACKEND_URL=http://localhost:4100) when :4000 is taken by
+// another project.
+const backendTarget = process.env.BACKEND_URL || "http://localhost:4000";
+
 export default defineConfig({
   plugins: [
     react(),
@@ -32,15 +37,15 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:4000",
+        target: backendTarget,
         changeOrigin: true,
       },
       "/stats/data": {
-        target: "http://localhost:4000",
+        target: backendTarget,
         changeOrigin: true,
       },
       "/stats/ping": {
-        target: "http://localhost:4000",
+        target: backendTarget,
         changeOrigin: true,
       },
     },
