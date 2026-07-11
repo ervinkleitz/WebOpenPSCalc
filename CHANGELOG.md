@@ -7,6 +7,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-10
 
+### Added
+
+- **"Riding Peco Peco" toggle for Knight/Crusader-line jobs.** The engine already modeled the
+  mounted attack-speed penalty and its removal by Cavalier Mastery, but there was no way to turn
+  riding on, so Cavalier Mastery appeared to do nothing. The Buffs panel now shows a Riding toggle
+  for Knight/Lord Knight/Crusader/Paladin. While mounted, ASPD takes the riding penalty (reduced one
+  rank per Cavalier Mastery level, gone at Lv5) and Spear Mastery uses its higher mounted ATK value.
+
 ### Fixed
 
 - **Proc cards (e.g. Bonechewer) no longer double-count.** An `autobonus` script is a *proc* — its

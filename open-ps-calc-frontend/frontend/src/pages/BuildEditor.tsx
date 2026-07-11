@@ -1705,7 +1705,9 @@ export default function BuildEditor() {
               // Performing for Bard/Dancer/Clown/Gypsy, Breaking Cloak for Assassin(X).
               const isBardDancer = [19, 20, 4020, 4021].includes(data.job_id);
               const isAssassin = [12, 4013].includes(data.job_id);
-              const hasSelfSection = selfBuffs.length > 0 || isBardDancer || isAssassin;
+              // Knight / Crusader / Lord Knight / Paladin can ride a Peco Peco.
+              const isKnightLine = [7, 14, 4008, 4015].includes(data.job_id);
+              const hasSelfSection = selfBuffs.length > 0 || isBardDancer || isAssassin || isKnightLine;
               const supportBuffs = (data.support_buffs || {}) as Record<string, unknown>;
               const groundEffectType = (supportBuffs.ground_effect as string) || "";
               // SA_VOLCANO/SA_DELUGE/SA_VIOLENTGALE's vanilla max_level is 5;
@@ -1754,6 +1756,14 @@ export default function BuildEditor() {
                             <label title="Breaking Cloak (Assassin, requires Cloak Lv3+): breaking Cloak with an auto-attack makes that opening hit deal ×2 damage; breaking it with Sonic Blow adds +10%. Applies to the shown per-hit damage only (a one-time opener), not sustained DPS.">
                               <input type="checkbox" checked={!!targetMods.breaking_cloak} onChange={(e) => setTargetMods((m) => ({ ...m, breaking_cloak: e.target.checked }))} />
                               <span>Breaking Cloak (opener: auto ×2 / Sonic Blow +10%)</span>
+                            </label>
+                          </div>
+                        )}
+                        {isKnightLine && (
+                          <div className="field field-checkbox" key="__riding_peco">
+                            <label title="Riding a Peco Peco (Knight/Crusader line): mounting adds an attack-speed penalty, reduced by one rank's worth per level of Cavalier Mastery and fully removed at Cavalier Mastery 5. Also raises Spear Mastery ATK per level (higher while mounted).">
+                              <input type="checkbox" checked={!!data.flags?.is_riding_peco} onChange={(e) => setData((prev) => ({ ...prev, flags: { ...(prev.flags || {}), is_riding_peco: e.target.checked } }))} />
+                              <span>Riding Peco Peco</span>
                             </label>
                           </div>
                         )}
