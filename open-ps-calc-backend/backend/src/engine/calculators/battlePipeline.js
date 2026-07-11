@@ -42,7 +42,7 @@ const { calculateActiveStatusBonus } = require("./modifiers/activeStatusBonus");
 const { calculateMasteryFix } = require("./modifiers/masteryFix");
 const { calculateDefenseFix, calculateMagicDefenseFix } = require("./modifiers/defenseFix");
 const { calculateCardFix, calculateCardFixMagic } = require("./modifiers/cardFix");
-const { calculateSkillRatio } = require("./modifiers/skillRatio");
+const { calculateSkillRatio, BF_WEAPON_RATIOS } = require("./modifiers/skillRatio");
 const { calculateSkillTiming } = require("./skillTiming");
 const { calculateDps } = require("./dpsCalculator");
 const { effectiveIsRanged, resolveWeapon } = require("../buildManager");
@@ -1201,11 +1201,17 @@ class BattlePipeline {
       });
     }
     // BF_MISC catch-all. Any Misc skill we actually support is dispatched by name above
-    // (Reflect Shield) or as a trap; anything reaching here is unported. Guard on attackType
-    // too — vanilla-loaded Misc skills (e.g. Acid Demonstration) carry attack_type "Misc" but
-    // have no skill_form and a non-"Misc" damage_type, so they'd otherwise fall through to the
-    // physical branch and fabricate a garbage weapon hit.
-    if (attackType === "Misc" || (skillData && (skillData.skill_form === "Misc" || (skillData.damage_type || []).includes("Misc")))) {
+    // (Reflect Shield) or as a trap; anything else reaching here is unported. Vanilla-loaded
+    // Misc skills (e.g. Acid Demonstration) carry attack_type "Misc" but no skill_form and a
+    // non-"Misc" damage_type, so they'd otherwise fall through to the physical branch and
+    // fabricate a garbage weapon hit — hence the attackType check.
+    // BUT: many PS damage skills are BF_MISC in vanilla yet PS treats them as ordinary
+    // ATK-ratio hits (Acid Terror/Demonstration, Venom Splasher, Ground Drift, Counter Attack,
+    // Bull's Eye, Magical Bullet …). Those have a real weapon/magic ratio and MUST flow to the
+    // physical branch. So only fire this catch-all when NO ratio is defined for the skill.
+    const hasRatio = !!((profile.weapon_ratios || {})[skillName] || (profile.magic_ratios || {})[skillName] || BF_WEAPON_RATIOS[skillName]);
+    const looksMisc = attackType === "Misc" || (skillData && (skillData.skill_form === "Misc" || (skillData.damage_type || []).includes("Misc")));
+    if (looksMisc && !hasRatio) {
       return createBattleResult({
         normal: createDamageResult({
           steps: [{
