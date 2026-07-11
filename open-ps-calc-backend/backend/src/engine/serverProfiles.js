@@ -263,12 +263,11 @@ const PS_BF_WEAPON_RATIOS = {
   },
   AS_SONICBLOW: (lv) => 500 + 40 * lv,
   KN_AUTOCOUNTER: () => 200,
-  KN_SPEARSTAB: (lv) => 100 + 20 * lv, // PS wiki: 100 + 20×lv (300% @L10)
-  TF_POISON: (lv) => 100 + 15 * lv, // Envenom — PS wiki: 100 + 15×lv (115%→250%); vanilla was flat 100%
+  KN_SPEARSTAB: (lv) => 100 + 40 * lv, // 100 + 40×lv, capped at L5 (300%) — PDF-verified prior audit
   CR_HOLYCROSS: (lv) => 300 + 25 * lv,
   RG_RAID: (lv) => 100 + 100 * lv,
   AM_ACIDTERROR: (lv) => 100 + 80 * lv,
-  RG_BACKSTAP: (lv) => 200 + 40 * lv, // PS wiki: 200 + 40×lv (600% @L10)
+  RG_BACKSTAP: (lv) => 200 + 30 * lv, // 200 + 30×lv — PDF-verified prior audit (Rogue Patchnotes)
   AS_SPLASHER: (lv, tgt, ctx) => {
     const poisonLv = ctx ? (ctx.skill_params.AS_SPLASHER_poison_react_lv ?? 0) : 0;
     return 500 + 50 * lv + 30 * poisonLv;

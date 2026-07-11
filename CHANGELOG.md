@@ -9,15 +9,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
-- **Full skill-formula sweep vs the Payon Stories wiki — five damage corrections.** A wiki-first
-  audit of every exposed PS damage skill turned up five confirmed formula bugs:
+- **Two magic-skill ratio corrections.** A sweep of exposed skills not covered by the earlier
+  per-class audit turned up two Wizard/Ninja magic-ratio bugs:
   - **Jupitel Thunder** dealt roughly **11× too much** — the per-hit ratio was `100 + 100×lv` *and*
     then multiplied by the 3–12 hit count (≈13200% at Lv10). It's a flat **100% MATK per hit**;
     Lv10 is now 1200% total, not 13200%.
-  - **Flaming Petals (Kouenka)** used `100 + 30×lv` per hit; it's a flat **90% MATK per hit**.
-  - **Envenom** was stuck at a flat 100% ATK; PS scales it **`100 + 15×lv`** (115%→250%).
-  - **Spear Stab** was `100 + 40×lv` (500% @Lv10); the PS value is **`100 + 20×lv`** (300%).
-  - **Back Stab** was `200 + 30×lv` (500% @Lv10); the PS value is **`200 + 40×lv`** (600%).
+  - **Flaming Petals (Kouenka)** used `100 + 30×lv` per hit; it's a flat **90% MATK per hit** (its
+    hit count already scales with level).
 - **Some Misc-type skills briefly returned 0 damage.** A dispatch guard added earlier the same day
   was too broad and routed BF_MISC skills that PS treats as normal ATK-ratio hits (Acid Terror,
   Demonstration, Venom Splasher, Ground Drift, Counter Attack, Bull's Eye, Magical Bullet) to
