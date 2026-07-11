@@ -25,6 +25,9 @@ instead of release version. Dates are taken from actual git commit history.
     Lv10 is now 1200% total, not 13200%.
   - **Flaming Petals (Kouenka)** used `100 + 30×lv` per hit; it's a flat **90% MATK per hit** (its
     hit count already scales with level).
+  - **Storm Gust** used the renewal-style `100×(lv+2)` as a single lumped hit (1200% @Lv10). It's now
+    modeled the way it actually works — **`100 + 40×lv`% MATK per hit** (140%→500%) across its **10
+    hits** vs a target that stays in the field, so Lv10 totals 5000% instead of 1200%.
 - **Some Misc-type skills briefly returned 0 damage.** A dispatch guard added earlier the same day
   was too broad and routed BF_MISC skills that PS treats as normal ATK-ratio hits (Acid Terror,
   Demonstration, Venom Splasher, Ground Drift, Counter Attack, Bull's Eye, Magical Bullet) to
