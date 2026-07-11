@@ -246,6 +246,33 @@ without re-auditing everything from scratch.
   damage breakdown — still not full parity (no combat-controls panel, no
   build-vs-build comparison).
 
+## Planned front-end features (product)
+
+These come from a "what would help a player simulate their character" review. The engine
+already returns everything both need — they're largely frontend work.
+
+### 1. Build-vs-build comparison  (in progress — on a feature branch)
+
+The single most-used interaction for a damage calc: *"is A or B better?"* (card swaps, refine
+levels, stat splits, gear choices). Pin the current build+result as a snapshot, then tweak the
+editor and see the delta live. UI: a compare table whose columns are each pinned build plus the
+current (live) result, and whose rows are the decision metrics — **DPS, average damage per hit,
+time-to-kill** — with deltas colour-coded (green = better). Each pin can be reloaded into the
+editor or removed. The original Python app had this (see "no build-vs-build comparison" under Not
+yet started). Implementation: a `pins[]` array in `BuildEditor` holding `{label, metrics,
+buildState}`; a `CompareView` component renders the table. Snapshot the full (shareable) build
+state so pins survive edits and can be restored. Metrics come straight off `calcResult` —
+`result.dps` (already effective), `result.normal.avg_damage`, and `target_hp / dps` for TTK.
+
+### 2. "What to upgrade next" marginal-gain panel
+
+For the current build+target, re-run the calc with **one thing changed** and rank the DPS gain of:
++1 refine on each equipped piece, the best card for each open slot, and +1 to each primary stat.
+Shows the player the highest-leverage next purchase. Implementation: enumerate candidate
+single-edits, call the existing `/calculate` endpoint for each, diff the DPS, sort. Debounce/cache
+so it doesn't flood the backend (or add a batch endpoint). Natural follow-ons: a card recommender
+and a stat optimiser (given N free points, maximise DPS/TTK).
+
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 
 - **Bonus-routing audit — several damage bonuses were parsed but not applied.**
