@@ -95,7 +95,17 @@ function connectorInfo(step: Step, prev: Step): { label: string; cls: string } {
 
 function PipelineView({ steps }: { steps: Step[] }) {
   const chips = steps.filter(s => s.info);
-  const nodes = steps.filter(s => !s.info);
+  const visible = steps.filter(s => !s.info);
+  // Hide pure no-op passthrough rows — multiplier ≈ 1 AND value unchanged from the
+  // previous step (e.g. a bypassed "Card Fix" on Grand Cross) — so a real multiplier
+  // connector isn't left visually sitting under a row that did nothing. Always keep
+  // the base row and the final total.
+  const nodes = visible.filter((s, i) => {
+    if (i === 0 || s.name === "Final Damage") return true;
+    const m = s.multiplier ?? 1.0;
+    const unchanged = Math.round(s.value ?? 0) === Math.round(visible[i - 1].value ?? 0);
+    return !(Math.abs(m - 1) < 0.001 && unchanged);
+  });
   return (
     <div className="pipeline-view">
       {chips.length > 0 && (
@@ -119,6 +129,9 @@ function PipelineView({ steps }: { steps: Step[] }) {
                 <div className={`pipeline-conn ${conn.cls}`}>
                   <span className="pipeline-conn-arrow">↓</span>
                   <span className="pipeline-conn-badge">{conn.label}</span>
+                  {(conn.cls === "conn-boost" || conn.cls === "conn-reduce") && !isFinal && (
+                    <span className="pipeline-conn-dest">→ {step.name}</span>
+                  )}
                   {step.note && <span className="pipeline-conn-note">{step.note}</span>}
                 </div>
               )}

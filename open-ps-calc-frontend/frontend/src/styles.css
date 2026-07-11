@@ -734,6 +734,9 @@ label {
 .conn-add .pipeline-conn-badge { color: var(--good); }
 .conn-sub .pipeline-conn-badge { color: var(--crit); }
 .conn-pass .pipeline-conn-badge { color: var(--text-faint); }
+.pipeline-conn-dest {
+  font-size: 0.68rem; color: var(--text-dim); white-space: nowrap; flex-shrink: 0;
+}
 .pipeline-conn-note {
   font-size: 0.65rem; color: var(--text-faint);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;

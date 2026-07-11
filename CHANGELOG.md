@@ -12,6 +12,10 @@ instead of release version. Dates are taken from actual git commit history.
 - **Grand Cross breakdown labelled as "waves".** The damage panel now shows **Per-Wave Damage**
   and **Grand Cross Total (3 waves)** instead of "hits", matching how the skill's three cross
   ticks are described. Wording only — the damage is unchanged.
+- **Clearer damage breakdown.** Steps that don't change anything (e.g. a bypassed "Card Fix" on
+  Grand Cross, which ignores cards) are hidden, and every ×-multiplier now names the step it feeds
+  into (e.g. "× 3 → Grand Cross Total (3 waves)"). This removes the confusion where the 3-wave ×3
+  appeared to belong to the row above it.
 
 ## 2026-07-10
 
