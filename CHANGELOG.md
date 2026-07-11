@@ -21,6 +21,8 @@ instead of release version. Dates are taken from actual git commit history.
   the top-DPS build is flagged, and pinned columns show a ▲/▼ delta versus the current build.
   **Load** restores a pinned build into the editor (and recomputes it) and **Clear all** resets the
   comparison.
+- **Talisman of Holy Protection** added to the item database — the accessory (All Stats +1, Holy
+  Damage −7%) was missing, so it can now be equipped in a build.
 
 ### Changed
 

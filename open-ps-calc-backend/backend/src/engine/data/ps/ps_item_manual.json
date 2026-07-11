@@ -12,6 +12,19 @@
     "refineable": false,
     "script": "bonus2 bCastrate,\"PR_MAGNUS\",-5;"
   },
+  "8324": {
+    "type": "IT_ARMOR",
+    "loc": [
+      "EQP_ACC"
+    ],
+    "slots": 0,
+    "aegis_name": "Talisman_of_Holy_Protection",
+    "name": "Talisman of Holy Protection",
+    "job": [],
+    "equip_level": 60,
+    "refineable": false,
+    "script": "bonus bAllStats,1; bonus2 bSubEle,Ele_Holy,7;"
+  },
   "1327": {
     "type": "IT_WEAPON",
     "loc": [
