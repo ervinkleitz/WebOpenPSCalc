@@ -7,6 +7,20 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-10
 
+### Fixed
+
+- **Proc cards (e.g. Bonechewer) no longer double-count.** An `autobonus` script is a *proc* — its
+  bonus should only apply when it triggers (or via the "Cards always proc" toggle). The parser was
+  also reading the `bonus` lines *inside* the autobonus block as always-on gear bonuses, so
+  Bonechewer's `+5 Crit / +50% Crit damage` applied once just from equipping it, and again when
+  "always proc" was enabled. The inner effects are now excluded from the base parse and only apply
+  through the proc path.
+- **Triple Attack (Monk) — level cap and crit.** It was selectable up to level 10 even though the PS
+  rework caps it at **5** (140/180/220/260/300%); the picker and passive list now cap it at 5. It
+  also couldn't crit when selected as an active skill — the "can crit while Critical Explosion / Fury
+  is active" rule was only wired into the auto-attack proc path, not the active-skill path. Selecting
+  Triple Attack with Fury up now crits correctly (and still can't crit without Fury).
+
 ### Changed
 
 - **Skill picker now shows only real Payon Stories skills.** The damage-skill search was listing

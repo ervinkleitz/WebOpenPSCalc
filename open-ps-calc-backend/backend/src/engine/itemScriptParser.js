@@ -255,6 +255,19 @@ const READPARAM_MAP = { bStr: "str_", bAgi: "agi", bVit: "vit", bInt: "int_", bD
 function preprocessScript(script, ctx = null) {
   if (ctx == null) ctx = createItemScriptContext();
 
+  // `autobonus`/`autobonus2`/`autobonus3` are deferred PROC effects: their inner
+  // `bonus ...` statements only apply when the proc fires. Strip the whole
+  // statement (including its quoted inner script) so BONUS_RE / SC_START_RE don't
+  // harvest the inner effects as always-on base bonuses. Without this, e.g.
+  // Bonechewer Card (`autobonus "{ bonus bCritical,5; bonus bCritAtkRate,50; }",…`)
+  // applied its crit bonus once just from being equipped, and again via the
+  // "always proc" toggle. gearBonusAggregator handles autobonus separately on the
+  // raw script and re-parses only the inner `{…}` content (which has no `autobonus`
+  // keyword), so this strip does not affect the proc/force-proc path.
+  if (script.includes("autobonus")) {
+    script = script.replace(/\bautobonus[23]?\s*"(?:[^"\\]|\\.)*"[^;]*;/g, " ");
+  }
+
   const hasGetrefine = script.includes("getrefine");
   const hasGetskilllv = script.includes("getskilllv");
   const hasReadparam = script.includes("readparam");

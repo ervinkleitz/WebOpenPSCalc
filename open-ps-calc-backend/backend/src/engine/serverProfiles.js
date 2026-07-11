@@ -456,6 +456,8 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   mastery_prefer_fallback: { PR_MACEMASTERY: "MO_IRONHAND", SM_SWORD: "SM_TWOHANDSWORD" },
   skill_level_cap_overrides: {
     KN_SPEARSTAB: 5,
+    MO_TRIPLEATTACK: 5, // PS Monk rework: 5 levels (140/180/220/260/300%), not 10
+
     WZ_FROSTNOVA: 5,
     WZ_FIREPILLAR: 5,
     WZ_SIGHTRASHER: 5,

@@ -1240,7 +1240,11 @@ class BattlePipeline {
       });
     }
 
-    const [isEligible, critChance] = calculateCritChance(status, weapon, skill, target, this.config, build.server, gearBonuses);
+    // PS: Triple Attack (as an active skill) can crit while Critical Explosion/Fury is active.
+    const taFury = skillName === "MO_TRIPLEATTACK"
+      && profile.mechanic_flags.has("MO_TRIPLEATTACK_PS_BONUS")
+      && "SC_EXPLOSIONSPIRITS" in (build.active_status_levels || {});
+    const [isEligible, critChance] = calculateCritChance(status, weapon, skill, target, this.config, build.server, gearBonuses, taFury);
     let [hitChance, perfectDodge] = calculateHitChance(status, target, this.config);
     if (build.target_mob_id != null) perfectDodge = 0.0;
 

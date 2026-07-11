@@ -17,16 +17,20 @@ const NJ_KIRIKAGE = 543;
 const VANILLA_CRIT_ELIGIBLE = new Set(["KN_AUTOCOUNTER", "SN_SHARPSHOOTING", "MA_SHARPSHOOTING", "NJ_KIRIKAGE"]);
 const PS_CRIT_ELIGIBLE = new Set(["AS_SONICBLOW", "AS_GRIMTOOTH", "GS_TRACKING", "PS_PR_HOLYSTRIKE"]);
 
-function isCritEligible(skillId, skillName, server = "standard") {
+function isCritEligible(skillId, skillName, server = "standard", furyActive = false) {
   if (skillId === 0) return true;
   if (getProfile(server) !== STANDARD) {
+    // PS Monk rework: Triple Attack can crit while Critical Explosion / Fury
+    // (SC_EXPLOSIONSPIRITS) is active. The auto-attack proc path handles its own
+    // crit; this covers Triple Attack selected as an active skill.
+    if (furyActive && skillName === "MO_TRIPLEATTACK") return true;
     return VANILLA_CRIT_ELIGIBLE.has(skillName) || PS_CRIT_ELIGIBLE.has(skillName);
   }
   return VANILLA_CRIT_ELIGIBLE.has(skillName);
 }
 
-function calculateCritChance(status, weapon, skill, target, config, server = "standard", gearBonuses = null) {
-  if (!isCritEligible(skill.id, skill.name, server)) return [false, 0.0];
+function calculateCritChance(status, weapon, skill, target, config, server = "standard", gearBonuses = null, furyActive = false) {
+  if (!isCritEligible(skill.id, skill.name, server, furyActive)) return [false, 0.0];
 
   let cri = status.cri;
 
