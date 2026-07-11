@@ -8,6 +8,7 @@ import InfoTooltip from "../components/InfoTooltip";
 import ChangelogModal from "../components/ChangelogModal";
 import ResultsPanel from "../components/ResultsPanel";
 import SavedBuildsModal from "../components/SavedBuildsModal";
+import CompareView, { summaryMetrics, type ComparePin } from "../components/CompareView";
 import {
   BuildData, SkillState, CustomTarget, TargetMode, TargetMods,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
@@ -630,6 +631,32 @@ export default function BuildEditor() {
   );
 
   const [calcResult, setCalcResult] = useState<any>(null);
+
+  // Build-vs-build comparison: pinned snapshots of computed builds.
+  const [pins, setPins] = useState<ComparePin[]>([]);
+  const pinSeq = useRef(0);
+  const liveMetrics = summaryMetrics(calcResult);
+  const handlePin = useCallback(() => {
+    if (!calcResult) return;
+    const m = summaryMetrics(calcResult);
+    if (!m) return;
+    setPins((prev) => {
+      const name = data.name?.trim() || `Build ${prev.length + 1}`;
+      const snapshot = JSON.parse(JSON.stringify({ data, skill, targetMode, customTarget, targetMods }));
+      return [...prev, { id: `pin-${pinSeq.current++}`, name, metrics: m, snapshot }];
+    });
+  }, [calcResult, data, skill, targetMode, customTarget, targetMods]);
+  const handleRemovePin = useCallback((id: string) => setPins((prev) => prev.filter((p) => p.id !== id)), []);
+  const handleLoadPin = useCallback((pin: ComparePin) => {
+    const s = pin.snapshot as { data: BuildData; skill: SkillState; targetMode: TargetMode; customTarget: CustomTarget; targetMods: TargetMods };
+    setData(s.data);
+    setSkill(s.skill);
+    setTargetMode(s.targetMode);
+    setCustomTarget(s.customTarget);
+    setTargetMods(s.targetMods);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   // Quagmire can't raise hit past the 100% cap — flag it as redundant if the last
   // calc already shows 100% hit, so the Target panel can say so.
   const quagmireRedundant = quagmireLv > 0
@@ -1226,6 +1253,17 @@ export default function BuildEditor() {
           forceProcs={forceProcs}
           onToggleForceProcs={handleToggleForceProcs}
         />
+
+        {(pins.length > 0 || liveMetrics) && (
+          <CompareView
+            live={liveMetrics}
+            pins={pins}
+            canPin={!!liveMetrics}
+            onPin={handlePin}
+            onRemove={handleRemovePin}
+            onLoad={handleLoadPin}
+          />
+        )}
 
         <div className="editor-grid">
         <div>

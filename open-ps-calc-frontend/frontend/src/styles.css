@@ -1086,3 +1086,52 @@ label {
   .ro-stat-grid { gap: 0.5rem; }
   .sec-stat-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Build-vs-build comparison ─────────────────────────────────────── */
+.compare-view {
+  margin: 1rem 0 1.5rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 1rem 1.1rem 1.2rem;
+}
+.compare-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+.compare-head h3 { margin: 0; font-size: 0.95rem; color: var(--accent); letter-spacing: 0.02em; }
+.cmp-pin-btn {
+  font-size: 0.78rem; padding: 0.32rem 0.7rem;
+  background: var(--accent-soft); color: var(--accent);
+  border: 1px solid var(--accent-dim); border-radius: 5px; cursor: pointer;
+}
+.cmp-pin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.compare-empty { color: var(--text-dim); font-size: 0.82rem; line-height: 1.5; margin: 0.3rem 0 0; }
+
+.compare-table-wrap { overflow-x: auto; }
+.compare-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+.compare-table th, .compare-table td {
+  border: 1px solid var(--border-soft); padding: 0.4rem 0.6rem; text-align: right; vertical-align: top;
+}
+.cmp-metric-col { width: 8.5rem; }
+.cmp-metric-label { text-align: left; color: var(--text-dim); white-space: nowrap; }
+.cmp-live-col { background: var(--accent-soft); }
+.cmp-best .cmp-val { color: var(--good); font-weight: 600; }
+.cmp-val { font-family: var(--mono); color: var(--text); white-space: nowrap; }
+
+.cmp-col-head { display: flex; flex-direction: column; gap: 0.15rem; align-items: flex-end; min-width: 6.5rem; }
+.cmp-col-head--live .cmp-col-name { color: var(--accent); }
+.cmp-col-name { font-weight: 600; color: var(--text); max-width: 10rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmp-col-sub { font-size: 0.68rem; color: var(--text-faint); }
+.cmp-col-actions { display: flex; gap: 0.3rem; margin-top: 0.2rem; }
+.cmp-btn-mini {
+  font-size: 0.68rem; padding: 0.1rem 0.4rem; cursor: pointer;
+  background: var(--bg-panel-raised); color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: 4px;
+}
+.cmp-btn-mini:disabled { opacity: 0.4; cursor: not-allowed; }
+.cmp-btn-x { color: var(--crit); }
+
+.cmp-delta { display: block; font-size: 0.66rem; color: var(--text-faint); margin-top: 0.1rem; white-space: nowrap; }
+.cmp-delta--up { color: var(--good); }
+.cmp-delta--down { color: var(--crit); }
