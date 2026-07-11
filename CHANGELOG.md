@@ -7,6 +7,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-10
 
+### Changed
+
+- **Skill picker now shows only real Payon Stories skills.** The damage-skill search was listing
+  ~340 entries that don't exist on a pre-renewal server — Renewal 3rd-job skills, mercenary,
+  homunculus, elemental-summon, and monster (`NPC_`) skills — plus pure support skills (Dispell,
+  Soul Change, Benedictio, …) that deal no damage. The picker is filtered down to the ~100 actual
+  PS player damage skills. Support skills that carry a "no damage" flag are also guarded at compute
+  time, so they can no longer report a phantom MATK number.
+
 ### Fixed
 
 - **Two magic-skill ratio corrections.** A sweep of exposed skills not covered by the earlier

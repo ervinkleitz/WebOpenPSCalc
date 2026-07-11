@@ -1146,6 +1146,22 @@ class BattlePipeline {
       });
     }
 
+    // NoDamage guard: buffs/debuffs (Dispell, Soul Change, Benedictio, …) are typed
+    // attack_type "Magic" but carry the NoDamage flag, so without this they'd fall into
+    // the magic branch and fabricate a phantom MATK hit. The one NoDamage skill we *do*
+    // compute — offensive Heal (AL_HEAL) — is dispatched by name above, so it never reaches
+    // here. Kept out of the picker too (routes/data.ts), but guard at compute time as well.
+    if (skillData && (skillData.damage_type || []).includes("NoDamage")) {
+      return createBattleResult({
+        normal: createDamageResult({ steps: [{
+          name: "No damage", value: 0, min_value: 0, max_value: 0, multiplier: 1,
+          note: `${skillName || "This skill"} is a support skill (NoDamage) — it deals no damage.`,
+          formula: "", hercules_ref: "",
+        }] }),
+        dps_valid: false,
+      });
+    }
+
     if (attackType === "Magic") {
       const magicResult = this._runMagicBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
 

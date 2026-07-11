@@ -581,6 +581,43 @@ Cross-cutting PS mechanics to keep in view while auditing any class: `PS_BLEEDIN
 `PS_GRANDCROSS_MASTERY_APPLIES`, `SC_AMPLIFYMAGICPOWER_SCALING`, `PS_CRIT_SHIELD_DISABLED`, and the
 `SC_TWOHANDQUICKEN` / `SC_SPEARQUICKEN` / `SC_EXPLOSIONSPIRITS` reworks.
 
+### Transcendent / niche combat skills still unmodeled (deferred — 2026-07-10 sweep)
+
+These surfaced in the 2026-07-10 full exposed-skill sweep. They currently fall through to a **flat
+100% ratio** (no entry in any ratio table) or need a dedicated branch, and were **not** part of the
+per-class audit above (that pass targeted PS-*reworked* 2nd-class skills). No PS wiki pages exist for
+them, so the formulas below are **vanilla pre-re** (PR-Hercules `battle.c`) and should be confirmed
+against in-game PS behavior before implementing. The user confirmed these classes *are* usable on PS.
+
+Simple ratios (add to `PS_BF_WEAPON_RATIOS` / `BF_WEAPON_RATIOS`; the value is the full % incl. the
+100 base):
+
+- **CH_TIGERFIST** (Tiger Knuckle Fist): `40 + 100×lv`. battle.c:2073 (`100×lv − 60`).
+- **CH_CHAINCRUSH** (Chain Crush Combo): `400 + 100×lv`. battle.c:2076 (`300 + 100×lv`).
+- **CH_PALMSTRIKE** (Raging Palm Strike): `200 + 100×lv`. battle.c:2079 (`100 + 100×lv`).
+- **LK_HEADCRUSH** (Head Crush): `100 + 40×lv`. battle.c:2082.
+- **LK_JOINTBEAT** (Joint Beat): `50 + 10×lv` base, **×2** with the Break-Neck ailment. battle.c:2085.
+- **SN_SHARPSHOOTING** (Sharp Shooting): `200 + 50×lv`; also **auto-critical** (`cri += 200`) and a
+  splash skill. battle.c:2094.
+
+Special mechanics (need a dedicated branch, not a plain ratio):
+
+- **PA_PRESSURE** (Gloria Domini): **fixed** damage `500 + 300×lv`, ignores ATK/DEF/element entirely
+  (BF_MISC). battle.c:3951.
+- **PA_SACRIFICE** (Martyr's Reckoning): **%-of-caster-max-HP** per hit, self-damaging — not an ATK
+  ratio. battle.c:2115 / 3948.
+- **PA_SHIELDCHAIN** (Shield Chain): shield-weight base + `100 + 30×lv`% ratio; needs shield
+  weight/refine inputs. battle.c:2118.
+- **LK_SPIRALPIERCE** (Spiral Pierce): weapon-weight × target-size, fixed **5 hits** (pre-re; the
+  renewal `50×lv` ratio is `#ifdef RENEWAL` only). battle.c:4834 / 5050.
+- **HW_MAGICCRASHER** (Stave Crasher): weapon hit whose base substitutes **MATK** for weapon ATK,
+  100% ratio, single hit, pierces MDEF. battle.c:3610 (`flag&4` / `flag.imdef=2`).
+- **KN_CHARGEATK** (Charge Attack): distance-tiered **100 / 200 / 300%** (+100% per 3 cells, cap
+  300%); needs a distance input. battle.c:2200.
+
+Also drop **HT_POWER** from the picker — it's not a real PS player skill (internal Hercules ID,
+`−50 + 8×STR`), not a damage skill to model.
+
 ## Suggested order for finishing the port
 
 1. ~~Fill in the rest of `skill_ratio.js`'s `BF_WEAPON_RATIOS` table~~ — done, see above.

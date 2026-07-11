@@ -4,6 +4,23 @@ import { getProfile } from "../engine/serverProfiles";
 
 const router = Router();
 
+// Skill-name prefixes that never correspond to a Payon Stories (pre-renewal) player
+// skill — Renewal 3rd jobs, mercenaries, homunculi, elemental summons, and monster
+// (NPC_) skills. They're present in the vanilla skill DB but are pure noise in the
+// damage-skill picker. Kept classes: all 1st/2nd/transcendent + the expanded pre-re
+// jobs (Ninja NJ, Gunslinger GS, Taekwon TK, Star Gladiator SG, Soul Linker SL).
+const NON_PS_SKILL_PREFIXES = new Set([
+  // Renewal 3rd jobs
+  "RK", "WL", "AB", "GC", "RA", "NC", "LG", "SO", "GN", "SR",
+  "SC", "RL", "KO", "OB", "SJ", "SP", "SU", "WM",
+  // Mercenaries
+  "MER", "MA", "ML", "MS",
+  // Homunculi
+  "MH", "HVAN", "HFLI", "HLIF", "HAMI", "HD",
+  // Elemental summons + shared/monster
+  "EL", "ALL", "GD", "NPC",
+]);
+
 function applyServerProfile(req: Request) {
   const server = (req.query.server as string) || "payon_stories";
   loader.setProfile(getProfile(server));
@@ -72,16 +89,27 @@ router.get("/skills", (req: Request, res: Response) => {
     // hides genuine offensive skills the engine *does* compute — e.g. Venom
     // Splasher (AS_SPLASHER), Acid Terror. Those show up as a real damage ratio
     // in the active server profile, so also keep any skill the profile can
-    // actually calculate (weapon_ratios / magic_ratios). On vanilla (empty
-    // ratio tables) this leaves the picker unchanged.
+    // actually calculate (weapon_ratios / magic_ratios).
     const wr = profile.weapon_ratios || {};
     const mr = profile.magic_ratios || {};
-    skills = skills.filter((s: any) =>
-      s.attack_type === "Weapon" ||
-      s.attack_type === "Magic" ||
-      Object.prototype.hasOwnProperty.call(wr, s.name) ||
-      Object.prototype.hasOwnProperty.call(mr, s.name)
-    );
+    skills = skills.filter((s: any) => {
+      const name = s.name || "";
+      // This is a pre-renewal calculator. Drop skills whose class prefix belongs to
+      // a Renewal 3rd job, a mercenary/homunculus, an elemental summon, or a monster
+      // (NPC_) — none exist as player skills on Payon Stories, they're just DB noise.
+      if (NON_PS_SKILL_PREFIXES.has(name.split("_")[0])) return false;
+      // HT_POWER is an internal Hercules id, not a real player skill.
+      if (name === "HT_POWER") return false;
+      // Pure support skills carry the NoDamage flag. Hide them from a *damage* picker.
+      // The one NoDamage skill we compute — offensive Heal — is the documented exception.
+      if ((s.damage_type || []).includes("NoDamage") && name !== "AL_HEAL") return false;
+      return (
+        s.attack_type === "Weapon" ||
+        s.attack_type === "Magic" ||
+        Object.prototype.hasOwnProperty.call(wr, name) ||
+        Object.prototype.hasOwnProperty.call(mr, name)
+      );
+    });
   }
   if (req.query.q) {
     const q = String(req.query.q).toLowerCase();
