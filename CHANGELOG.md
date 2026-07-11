@@ -19,6 +19,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **"PS class reworks implemented" banner brought up to date.** It now lists the Acolyte/Priest,
+  Bard/Dancer, Alchemist, Merchant and Ninja reworks (and Grand Cross under Crusader, plus the Monk
+  additions) that had shipped but weren't listed, and corrects the Frost Nova wording to
+  `175+15×lv` (i.e. 190% at Lv 1), max Lv 5.
 - **Grand Cross breakdown labelled as "waves".** The damage panel now shows **Per-Wave Damage**
   and **Grand Cross Total (3 waves)** instead of "hits", matching how the skill's three cross
   ticks are described. Wording only — the damage is unchanged.
