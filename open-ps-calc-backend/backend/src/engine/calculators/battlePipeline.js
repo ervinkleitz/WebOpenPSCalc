@@ -68,14 +68,14 @@ const BF_MAGIC_RATIOS = {
   WZ_HEAVENDRIVE:    (lv) => 50 + 50 * lv,
   WZ_FROSTDIVER:     (lv) => 200 + 10 * lv,
   WZ_STORMGUST:      (lv) => 100 * (lv + 2),
-  WZ_JUPITEL:        (lv) => 100 + 100 * lv,
+  WZ_JUPITEL:        () => 100, // 100% MATK per hit (hits 3→12 via number_of_hits); the old 100+100×lv double-counted level scaling, giving ~13200% at L10
   WZ_METEOR:         (lv) => 100 + 50 * lv,
   WZ_WATERBALL:      (lv) => 100 + 30 * lv,
   WZ_SIGHTRASHER:    (lv) => 100 + 20 * lv,
   WZ_FIREWALL:       (lv) => 100 + 10 * lv,
   HW_NAPALMVULCAN:   (lv) => 100 + 20 * lv,
   // Ninja
-  NJ_KOUENKA:        (lv) => 100 + 30 * lv,
+  NJ_KOUENKA:        () => 90, // Flaming Petals — 90% MATK per hit (hits = skill level); old 100+30×lv was wrong
   NJ_HYOUSENSOU:     () => 100,
   NJ_KAMAITACHI:     (lv) => 100 + 30 * lv,
   NJ_KAENSIN:        (lv) => 100 + 10 * lv,
