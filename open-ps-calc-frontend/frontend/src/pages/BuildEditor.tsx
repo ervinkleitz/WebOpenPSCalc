@@ -8,6 +8,7 @@ import InfoTooltip from "../components/InfoTooltip";
 import ChangelogModal from "../components/ChangelogModal";
 import ResultsPanel from "../components/ResultsPanel";
 import SavedBuildsModal from "../components/SavedBuildsModal";
+import ImportJaludevModal from "../components/ImportJaludevModal";
 import { summaryMetrics, type ComparePin } from "../components/CompareView";
 import {
   BuildData, SkillState, CustomTarget, TargetMode, TargetMods,
@@ -675,6 +676,17 @@ export default function BuildEditor() {
   const [changelogOpen, setChangelogOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const handleImported = useCallback((imported: any) => {
+    setData((prev) => ({ ...DEFAULT_BUILD, ...imported, server: prev.server }));
+    setSkill(DEFAULT_SKILL);
+    setTargetMode("monster");
+    setCustomTarget(DEFAULT_CUSTOM_TARGET);
+    setTargetMods(DEFAULT_TARGET_MODS);
+    setCalcResult(null);
+    setResultsOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
   const [resultsOpen, setResultsOpen] = useState(false);
   const resultsPanelRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
@@ -1185,6 +1197,7 @@ export default function BuildEditor() {
             <button onClick={() => { setSavedBuildsOpen(true); setMenuOpen(false); }}>
               Save / Load{hasUnsavedChanges && <span className="unsaved-dot" title="You have unsaved changes — save or copy the share link to keep them">●</span>}
             </button>
+            <button onClick={() => { setImportOpen(true); setMenuOpen(false); }}>Import</button>
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
             <button onClick={() => { setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
@@ -1217,6 +1230,12 @@ export default function BuildEditor() {
           currentState={currentEditorState}
           onLoad={onLoadSavedState}
           onSave={(name) => { setData((prev) => ({ ...prev, name })); writeStateToUrl({ name }); }}
+        />
+        <ImportJaludevModal
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+          server={data.server}
+          onImported={(build) => handleImported(build)}
         />
         {data.server === "payon_stories" && (
           <div className="reworks-banner">

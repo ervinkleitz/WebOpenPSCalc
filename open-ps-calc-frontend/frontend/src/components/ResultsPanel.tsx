@@ -33,8 +33,8 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
             <CompareView live={live} pins={pins} canPin={!!live} onPin={onPin} onRemove={onRemovePin} onLoad={onLoadPin} onClear={onClearPins} />
           )}
           {live && (
-            <div className="results-flow-divider">
-              <span>{pins.length > 0 ? "Current build" : "Full breakdown"}</span>
+            <div className="results-section-head">
+              <span className="results-section-title">Current build — full breakdown</span>
             </div>
           )}
           <DamageSummary

@@ -1,8 +1,22 @@
 import { Router, Request, Response } from "express";
 import { loader } from "../engine/dataLoader";
 import { getProfile } from "../engine/serverProfiles";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { importJaludev } = require("../engine/jaludevImport");
 
 const router = Router();
+
+// Import a build from the jaludev "payonrocalc" calculator (paste its share URL).
+router.post("/import/jaludev", (req: Request, res: Response) => {
+  applyServerProfile(req);
+  try {
+    const url = (req.body && req.body.url) || "";
+    if (!url) return res.status(400).json({ error: "url is required" });
+    res.json(importJaludev(String(url)));
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || "Failed to import build" });
+  }
+});
 
 // Skill-name prefixes that never correspond to a Payon Stories (pre-renewal) player
 // skill — Renewal 3rd jobs, mercenaries, homunculi, elemental summons, and monster

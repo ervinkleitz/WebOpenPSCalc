@@ -61,6 +61,10 @@ export const api = {
     }>,
   calculate: (payload: unknown) =>
     request("/calculate", { method: "POST", body: payload }) as Promise<any>,
+  importJaludev: (url: string, server: string) =>
+    request(`/data/import/jaludev?server=${encodeURIComponent(server)}`, { method: "POST", body: { url } }) as Promise<{
+      build: any; unmapped: string[]; jobName: string;
+    }>,
 };
 
 export const statsApi = {

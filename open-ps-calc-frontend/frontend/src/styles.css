@@ -223,6 +223,7 @@ label {
 .brand-title { font-family: var(--serif); font-size: 1.05rem; white-space: nowrap; }
 .topbar-info-icon { display: flex; align-items: center; }
 .topbar-right { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--text-dim); }
+.topbar-right button, .topbar-secondary button, .topbar-secondary .topbar-kofi-btn { white-space: nowrap; }
 .topbar-server-select { width: auto; font-size: 0.85rem; padding: 0.5rem 0.6rem; }
 
 /* Unsaved-changes indicator dot (Save/Load button + mobile hamburger). */
@@ -233,6 +234,8 @@ label {
 /* ─── Desktop ≥1280px: all items inline ─── */
 @media (min-width: 1280px) {
   .topbar-secondary { display: contents; }
+  /* Inline secondary actions are a little more compact so the full set fits the row. */
+  .topbar-secondary > button { padding: 0.5rem 0.72rem; }
   .topbar-server-dropdown { display: none; }  /* only the inline copy is shown */
   .topbar-hamburger { display: none; }
 }
@@ -1093,10 +1096,11 @@ label {
   background: var(--bg-panel-raised);
   border: 1px solid var(--border-soft);
   border-radius: 8px;
+  box-shadow: inset 3px 0 0 var(--accent); /* accent left edge marks it as a distinct module */
   padding: 0.9rem 1rem 1rem;
 }
 .compare-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
-.compare-head h3 { margin: 0; font-size: 1rem; color: var(--text); display: flex; align-items: center; gap: 0.35rem; }
+.compare-head h3 { margin: 0; font-size: 1rem; color: var(--text); display: flex; align-items: center; gap: 0.4rem; }
 .compare-count {
   font-size: 0.68rem; color: var(--accent);
   background: var(--accent-soft); border: 1px solid var(--accent-dim);
@@ -1181,13 +1185,16 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 .cmp-delta--up { color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
 .cmp-delta--down { color: var(--crit); background: color-mix(in srgb, var(--crit) 12%, transparent); }
 
-/* Transition from the compare table into the current build's detailed breakdown */
-.results-flow-divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.15rem 0 0.9rem; }
-.results-flow-divider::before, .results-flow-divider::after {
-  content: ""; flex: 1; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-soft) 30%, var(--border-soft) 70%, transparent);
+/* Section header separating the compare table from the current build's breakdown */
+.results-section-head { display: flex; align-items: center; gap: 0.7rem; margin: 1.4rem 0 0.95rem; }
+.results-section-head::after { content: ""; flex: 1; height: 1px; background: var(--border-soft); }
+.results-section-title {
+  font-family: var(--serif); font-size: 1rem; font-weight: 600; color: var(--accent); white-space: nowrap;
 }
-.results-flow-divider span {
-  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--text-faint); white-space: nowrap;
+
+/* jaludev import — unmapped items list */
+.import-unmapped {
+  margin: 0.3rem 0 0; padding-left: 1.1rem; max-height: 9rem; overflow-y: auto;
+  font-size: 0.78rem; color: var(--text-dim); line-height: 1.55;
 }
+.import-unmapped li { margin: 0.12rem 0; }

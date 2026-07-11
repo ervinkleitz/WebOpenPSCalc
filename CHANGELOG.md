@@ -9,6 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Import builds from the jaludev calculator.** A new **Import** action (top-bar menu) takes a share
+  URL from `payonrocalc.jaludev.com` and loads it here — job, level, stats, refines and gear/cards,
+  the equipment matched by name to this server's item database. Anything the jaludev calculator names
+  differently or doesn't have is listed so you can set it manually. Note that the jaludev calculator
+  is no longer kept up to date, so your damage here may differ from what it showed.
 - **Build-vs-build comparison.** The results panel has a new **Compare builds** section: click
   **Pin** to save the current build as a column, then tweak your gear, cards, stats or skill and pin
   again. Each pinned build is compared side by side with your current one across **DPS, damage per
