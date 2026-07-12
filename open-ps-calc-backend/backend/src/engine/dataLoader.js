@@ -432,6 +432,11 @@ class DataLoader {
       "MG_FROSTDIVER", "MG_FIREWALL",
       // PS High Wizard rework: Soul Drain grants +1% MaxHP per level passively.
       "HW_SOULDRAIN",
+      // Crusader Faith: +5% Holy resistance and +200 MaxHP per level. Both feed
+      // Grand Cross's self-damage recoil — the Holy resist reduces the damage-based
+      // Part 1 (up to −50% at Lv10), the MaxHP raises the fixed 20%-MaxHP Part 2.
+      // The PS wiki confirms it "will also reduce the recoil damage from Grand Cross."
+      "CR_TRUST",
     ]);
     // Some skill DB names differ from the key masteryFix.js looks up.
     const MASTERY_KEY_OVERRIDE = { "SM_TWOHAND": "SM_TWOHANDSWORD" };

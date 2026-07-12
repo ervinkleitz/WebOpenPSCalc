@@ -5,6 +5,27 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-12
+
+### Added
+
+- **Grand Cross self-damage (recoil).** The damage panel now shows the damage Grand Cross deals back
+  to the caster on every cast, in two parts. **Part 1** is the Holy, Demi-Human hit recomputed against
+  *your own* DEF and MDEF, then reduced by your Holy resistance (Faith, Talisman of Holy Protection,
+  Angeling-carded armour) and Demi-Human resistance (Thara Frog) — and halved, since players take half
+  the recoil. **Part 2** is the fixed casting cost of 20% of your current HP, which ignores all
+  reductions. The readout shows the total HP lost per cast and whether you survive. Holy-element
+  (Angeling) armour negates Part 1 entirely; the 20% HP cost always applies.
+- **Faith (Crusader) is now selectable** under Passive skills. Its Holy resistance (up to −50% at
+  Lv 10) and +MaxHP now factor into the Grand Cross recoil.
+
+### Fixed
+
+- **Demi-Human resistance now applies defensively.** Cards such as **Thara Frog**
+  (`bSubRace,RC_DemiPlayer`) were stored under a race key nothing checked, so their 30% reduction
+  wasn't being applied to incoming Demi-Human damage — or the Grand Cross recoil. Composite race
+  resistances now fan out to their constituent races, so the reduction lands correctly.
+
 ## 2026-07-11
 
 ### Added

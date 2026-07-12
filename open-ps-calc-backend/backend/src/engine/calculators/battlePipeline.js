@@ -45,7 +45,7 @@ const { calculateCardFix, calculateCardFixMagic } = require("./modifiers/cardFix
 const { calculateSkillRatio, BF_WEAPON_RATIOS } = require("./modifiers/skillRatio");
 const { calculateSkillTiming } = require("./skillTiming");
 const { calculateDps } = require("./dpsCalculator");
-const { effectiveIsRanged, resolveWeapon } = require("../buildManager");
+const { effectiveIsRanged, resolveWeapon, playerBuildToTarget } = require("../buildManager");
 const { resolveArmorElement } = require("../buildApplicator");
 
 // battle.c:3173-3410 BF_MAGIC skillratio switch (#else RENEWAL) — per-hit ratios.
@@ -449,7 +449,127 @@ class BattlePipeline {
     result.max_damage = mx;
     result.avg_damage = av;
     result.pmf = pmf;
+
+    // Grand Cross recoils on the caster: the cross also occupies the caster's own
+    // cell, so the caster takes the same skill as a hit against THEMSELVES
+    // (PR-Hercules skill.c: the src==bl self-hit). This is surfaced as a separate
+    // self-damage readout, not folded into outgoing damage.
+    result.self_damage = this._computeGrandCrossSelfDamage(status, weapon, skill, build, gearBonuses, ratio, profile);
     return result;
+  }
+
+  /**
+   * Grand Cross self-damage ("blowback"). The caster stands inside the cross, so
+   * each of the 3 waves also lands on the caster as a hit against themselves
+   * (PR-Hercules skill.c: CR_GRANDCROSS includes the caster's cell; the src==bl
+   * path). Two parts (wiki.payonstories.com/Grand_Cross → "Vs. Caster"):
+   *
+   *   Part 1 (damage-based): the full GC hit re-computed with the CASTER as the
+   *     target — same ATK+MATK, but subtracting the caster's own DEF (reduced to
+   *     2/3 during the cast) and MDEF, the Holy element table vs the caster's
+   *     armour element, then the caster's own Holy resist (bSubEle Ele_Holy — e.g.
+   *     Talisman of Holy Protection −7%, Angeling-carded armour −100%) and
+   *     Demi-Human resist (bSubRace RC_DemiHuman — e.g. Thara Frog). 3 waves,
+   *     summed like the outgoing hit.
+   *   Part 2 (fixed): 20% of MaxHP every cast, ignores all reductions — part of
+   *     the casting cost.
+   *
+   * Returns a compact summary object (not a full step log); the outgoing step
+   * breakdown is untouched.
+   */
+  _computeGrandCrossSelfDamage(status, weapon, skill, build, gearBonuses, ratio, profile = STANDARD) {
+    const scratch = createDamageResult(); // throwaway — self-damage keeps no step log
+    const casterTarget = playerBuildToTarget(build, status, gearBonuses, weapon, loader);
+    // During the GC cast the caster's hard DEF drops to 2/3 (PS wiki "Vs. Caster").
+    casterTarget.def_ = Math.floor(casterTarget.def_ * 2 / 3);
+
+    // ── Physical part vs the caster (size fix, caster DEF, refine, mastery) ──
+    let atkPmf = calculateBaseDamage(status, weapon, build, casterTarget, skill, scratch, {
+      gear_bonuses: gearBonuses, is_crit: false, is_ranged: false,
+    });
+    if (gearBonuses && gearBonuses.atk_rate) atkPmf = scaleFloor(atkPmf, 100 + gearBonuses.atk_rate, 100);
+    atkPmf = calculateDefenseFix(casterTarget, build, gearBonuses, atkPmf, this.config, scratch, { is_crit: false, skill });
+    atkPmf = calculateRefineFix(weapon, skill, atkPmf, scratch);
+    const ctx = createCalcContext({
+      skill_levels: gearBonuses.effective_mastery,
+      skill_params: build.skill_params,
+      base_level: build.base_level,
+      base_str: build.base_str,
+      str_: status.str,
+      vit: status.vit,
+      dex: status.dex,
+      int_: status.int_,
+      weapon_type: weapon ? weapon.weapon_type : "",
+    });
+    atkPmf = calculateMasteryFix(weapon, build, casterTarget, atkPmf, scratch, skill, { profile, ctx });
+
+    // ── Magic part vs the caster's MDEF ──
+    const matkLo = Math.max(1, status.matk_min);
+    const matkHi = Math.max(matkLo, status.matk_max);
+    let matkPmf = uniformPmf(matkLo, matkHi);
+    if (gearBonuses && gearBonuses.matk_rate) matkPmf = scaleFloor(matkPmf, 100 + gearBonuses.matk_rate, 100);
+    matkPmf = calculateMagicDefenseFix(casterTarget, gearBonuses || {}, matkPmf, scratch);
+
+    // ── Sum → Holy element vs caster armour → × ratio → HALVE (build=null: the
+    //    caster's own ground-effect enchant buffs OUTGOING element, not this
+    //    self-hit). PR-Hercules battle.c:3798-3808: the summed (wd+ad) hit is
+    //    attr-fixed, ×(100+40×lv)%, then — because src==target and the caster is a
+    //    player (BL_PC) — the recoil is HALVED (`ad.damage = ad.damage/2`). A mob
+    //    caster would take 0; only players take the halved recoil. ──
+    let wave = convolve(atkPmf, matkPmf);
+    wave = calculateAttrFix(weapon, casterTarget, wave, scratch, null, 6 /* Ele_Holy — fixed */);
+    wave = scaleFloor(wave, ratio, 100);
+    wave = scaleFloor(wave, 50, 100);           // PC self-hit halved (battle.c:3805)
+
+    // ── Caster's own resist cards, via the BF_MAGIC card-fix path Hercules uses
+    //    for the recoil (battle.c:3811 calc_cardfix(BF_MAGIC …)): Holy resist
+    //    (bSubEle Ele_Holy — Faith up to −50%, Talisman −7%) + Demi-Human resist
+    //    (bSubRace RC_DemiHuman — Thara Frog). gearBonuses=null: skip the caster's
+    //    OWN offensive magic-add bonuses (not part of the recoil reduction). ──
+    wave = calculateCardFixMagic(casterTarget, "Ele_Holy", wave, scratch, null);
+    // NO min-1 floor here: the physical (calculateDefenseFix) and magic
+    // (calculateMagicDefenseFix) halves were each already floored at 1 BEFORE the
+    // Holy element step, matching Hercules. If the caster's armour is Holy-element
+    // (Angeling card), Holy-vs-Holy is a 0% multiplier and the recoil is genuinely
+    // negated to 0 — flooring here would wrongly leave 1 per wave (→ 3 for 3 waves).
+    const [wMin, wMax, wAvg] = pmfStats(wave);
+
+    // 3 independent self-hits per cast, summed (same wave count as outgoing).
+    const total = convolve(convolve(wave, wave), wave);
+    const [p1min, p1max, p1avg] = pmfStats(total);
+
+    // Part 2 — the GC casting cost: 20% of CURRENT HP, ignores all reductions.
+    // Hercules skill.c:3119-3125 (skill_get_requirement): a POSITIVE hp_rate is a
+    // percentage of CURRENT HP (`st->hp`), a negative one is of MaxHP. GC's
+    // hp_rate_cost is +20, so it drains 20% of whatever HP you have when you cast.
+    // Defaults to full HP (MaxHP) when no current HP is set on the build.
+    const currentHp = build.current_hp != null ? build.current_hp : status.max_hp;
+    const part2 = Math.floor(currentHp * 0.20);
+
+    const holyResist = (casterTarget.sub_ele.Ele_Holy || 0) + (casterTarget.sub_ele.Ele_All || 0);
+    const demiResist = casterTarget.sub_race.RC_DemiHuman || 0;
+
+    return {
+      part1: { min: p1min, avg: p1avg, max: p1max },
+      part2,
+      total: { min: p1min + part2, avg: p1avg + part2, max: p1max + part2 },
+      per_wave: { min: wMin, avg: wAvg, max: wMax },
+      waves: 3,
+      max_hp: status.max_hp,
+      current_hp: currentHp,
+      // Survivable at current HP if even the worst-case cast leaves HP > 0.
+      survives: currentHp - (p1avg + part2) > 0,
+      survives_worst: currentHp - (p1max + part2) > 0,
+      halved: true, // players take half the recoil (battle.c:3805)
+      reductions: {
+        holy_resist: holyResist,
+        demihuman_resist: demiResist,
+        def: casterTarget.def_,                              // hard DEF (already ⅔), reduces the physical half
+        mdef: casterTarget.mdef_,                            // hard MDEF (gear), reduces the magic half
+        mdef_soft: casterTarget.int_ + (casterTarget.vit >> 1), // soft MDEF (INT + VIT/2), subtracted from the magic half
+        armor_element: loader.getElementName(casterTarget.element),
+      },
+    };
   }
 
   /**

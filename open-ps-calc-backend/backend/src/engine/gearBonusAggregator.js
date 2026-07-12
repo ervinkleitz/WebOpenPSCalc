@@ -79,7 +79,14 @@ function applyEffect(bonuses, eff) {
     const val = typeof p[1] === "number" ? p[1] : 0;
     if (defn.mode === "dict") {
       const d = bonuses[defn.field];
-      if ((defn.field === "add_race" || defn.field === "magic_add_race") && RC_FANOUT[key]) {
+      // Composite race constants (RC_DemiPlayer, RC_NonPlayer, …) fan out to their
+      // constituent races at storage time (pc.c:3169-3185). This must apply to the
+      // DEFENSIVE race dicts too, not just add_race/magic_add_race: e.g. Thara Frog
+      // is `bSubRace,RC_DemiPlayer,30`, which has to land on RC_DemiHuman so it
+      // reduces damage from Demi-Human monsters (its card text) AND the Grand Cross
+      // recoil (a Demi-Human/player self-hit). RC_FANOUT keys are all RC_* race
+      // composites, so this never mis-fires on element/size dicts (Ele_/Size_ keys).
+      if (RC_FANOUT[key]) {
         for (const constituent of RC_FANOUT[key]) d[constituent] = (d[constituent] || 0) + val;
       } else {
         d[key] = (d[key] || 0) + val;

@@ -11,11 +11,34 @@ interface Step {
   info?: boolean;
 }
 
+interface SelfDamageRange { min: number; avg: number; max: number; }
+interface SelfDamage {
+  part1: SelfDamageRange;      // damage-based recoil, after the caster's own reductions (3 waves)
+  part2: number;              // fixed casting cost: 20% of current HP per cast
+  total: SelfDamageRange;     // part1 + part2
+  per_wave: SelfDamageRange;
+  waves: number;
+  max_hp: number;
+  current_hp: number;
+  survives: boolean;          // survives an average-roll cast at current HP
+  survives_worst: boolean;    // survives even a worst-case cast
+  halved: boolean;            // players take half the recoil (battle.c:3805)
+  reductions: {
+    holy_resist: number;      // % (bSubEle Ele_Holy — e.g. Faith −50%, Talisman −7%)
+    demihuman_resist: number; // % (bSubRace RC_DemiHuman — e.g. Thara Frog)
+    def: number;              // caster hard DEF used (already ⅔ of normal), reduces the physical half
+    mdef: number;             // caster hard MDEF (gear), reduces the magic half
+    mdef_soft: number;        // caster soft MDEF (INT + VIT/2), subtracted from the magic half
+    armor_element: string;
+  };
+}
+
 interface DamageBranch {
   avg_damage: number;
   min_damage: number;
   max_damage: number;
   steps: Step[];
+  self_damage?: SelfDamage;   // Grand Cross blowback (self-recoil) — only present for CR_GRANDCROSS
 }
 
 interface FalconResult {
@@ -168,6 +191,64 @@ function FalconView({ falcon }: { falcon: FalconResult }) {
   );
 }
 
+function SelfDamageView({ sd }: { sd: SelfDamage }) {
+  const n = (v: number) => Math.round(v).toLocaleString();
+  // Show the min–max range when one exists; fall back to a single value otherwise
+  // (no separate average — the range already conveys it).
+  const rng = (x: SelfDamageRange) =>
+    Math.round(x.min) !== Math.round(x.max) ? `${n(x.min)}–${n(x.max)}` : n(x.avg);
+  const r = sd.reductions;
+  const hasResist = r.holy_resist > 0 || r.demihuman_resist > 0;
+  const lostPct = sd.max_hp > 0 ? Math.round((sd.total.avg / sd.max_hp) * 100) : 0;
+  return (
+    <div className="self-damage">
+      <div className="self-damage-head">
+        <span className="self-damage-title">Self-damage per cast</span>
+        <span className="self-damage-sub">Grand Cross recoils onto the caster</span>
+      </div>
+
+      <div className="self-damage-part">
+        <div className="self-damage-part-row">
+          <span className="self-damage-part-label">Part 1 — Holy recoil, vs your DEF/MDEF{sd.halved ? " (halved)" : ""}</span>
+          <span className="self-damage-part-val">{rng(sd.part1)}</span>
+        </div>
+        <div className="self-damage-resists">
+          {r.holy_resist > 0 && <span className="self-damage-chip good">Holy resist −{r.holy_resist}%</span>}
+          {r.demihuman_resist > 0 && <span className="self-damage-chip good">Demi-Human −{r.demihuman_resist}%</span>}
+          {!hasResist && <span className="self-damage-chip muted">no Holy / Demi-Human resist</span>}
+          <span className="self-damage-chip muted">DEF {n(r.def)}</span>
+          <span className="self-damage-chip muted">MDEF {n(r.mdef)} + {n(r.mdef_soft)} soft</span>
+          <span className="self-damage-chip muted">{r.armor_element} armor</span>
+        </div>
+      </div>
+
+      <div className="self-damage-part">
+        <div className="self-damage-part-row">
+          <span className="self-damage-part-label">Part 2 — 20% current HP, fixed</span>
+          <span className="self-damage-part-val">{n(sd.part2)}</span>
+        </div>
+        <div className="self-damage-resists">
+          <span className="self-damage-chip muted">ignores all reductions</span>
+        </div>
+      </div>
+
+      <div className="self-damage-total">
+        <span className="self-damage-total-label">Total HP lost / cast</span>
+        <span className="self-damage-total-val">{rng(sd.total)}</span>
+        <span className="self-damage-total-pct">{lostPct}% of {n(sd.max_hp)} MaxHP</span>
+      </div>
+
+      <div className={`self-damage-survive ${sd.survives_worst ? "ok" : sd.survives ? "warn" : "bad"}`}>
+        {sd.survives_worst
+          ? `Survivable — even a worst-case cast leaves ${n(sd.current_hp - sd.total.max)} HP.`
+          : sd.survives
+            ? `Risky — an average cast leaves ${n(sd.current_hp - sd.total.avg)} HP, but a worst-case cast would kill you.`
+            : `Fatal — an average cast (${n(sd.total.avg)}) exceeds your ${n(sd.current_hp)} HP.`}
+      </div>
+    </div>
+  );
+}
+
 function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit, psBonusPct }: {
   rh: DamageBranch; lh: DamageBranch;
   rhFactor: number; lhFactor: number; isCrit: boolean; psBonusPct?: number;
@@ -244,6 +325,10 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
 
   const notImplemented = activeDamage?.steps?.length === 1 && activeDamage.steps[0].name === "Not yet implemented";
   const { result, status } = activeResult;
+
+  // Grand Cross blowback (self-recoil): lives on the skill's normal branch. GC has
+  // no crit/falcon/katar branches, so surface it whenever it's present.
+  const selfDamage = (hasSkill ? skillResult! : normal_attack).result.normal.self_damage ?? null;
 
   // Combined DW damage range for the headline (PS mode, normal/crit branch)
   const showDwCombined = hasDualWield && dwMode === "ps" && !!dwLhNormal && (activeBranch === "normal" || activeBranch === "crit");
@@ -490,6 +575,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
       ) : !notImplemented && activeDamage ? (
         <PipelineView steps={activeDamage.steps} />
       ) : null}
+
+      {selfDamage && <SelfDamageView sd={selfDamage} />}
     </div>
   );
 }

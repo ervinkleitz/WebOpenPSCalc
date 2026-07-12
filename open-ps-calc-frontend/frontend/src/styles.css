@@ -762,6 +762,39 @@ label {
 .dw-ps-bonus-label { font-size: 0.8rem; color: var(--text); flex: 1; }
 .dw-ps-bonus-val { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); font-weight: 600; }
 .dw-ps-bonus-note { font-size: 0.72rem; color: var(--text-faint); }
+
+/* Grand Cross self-damage (blowback) — a caution-toned readout, distinct from the
+   gold-accented outgoing breakdown. Uses the crit/red hue since it's HP you lose. */
+.self-damage {
+  margin-top: 1rem;
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--crit);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--crit) 6%, var(--bg));
+  padding: 0.7rem 0.85rem;
+}
+.self-damage-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.55rem; }
+.self-damage-title { font-size: 0.9rem; font-weight: 600; color: var(--crit); }
+.self-damage-sub { font-size: 0.72rem; color: var(--text-faint); }
+.self-damage-part { padding: 0.35rem 0 0.4rem; border-top: 1px dashed var(--border-soft); }
+.self-damage-part:first-of-type { border-top: none; padding-top: 0; }
+.self-damage-part-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
+.self-damage-part-label { font-size: 0.8rem; color: var(--text); }
+.self-damage-part-val { font-family: var(--mono); font-size: 0.9rem; color: var(--text); white-space: nowrap; }
+.self-damage-avg { color: var(--text-faint); font-size: 0.8rem; }
+.self-damage-resists { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+.self-damage-chip { font-size: 0.68rem; padding: 0.08rem 0.4rem; border-radius: 3px; letter-spacing: 0.02em; border: 1px solid var(--border-soft); color: var(--text-dim); }
+.self-damage-chip.good { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); background: color-mix(in srgb, var(--good) 10%, transparent); }
+.self-damage-chip.muted { color: var(--text-faint); }
+.self-damage-total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.6rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-soft); }
+.self-damage-total-label { font-size: 0.82rem; font-weight: 600; color: var(--text); flex: 1; }
+.self-damage-total-val { font-family: var(--mono); font-size: 1.05rem; color: var(--crit); font-weight: 600; }
+.self-damage-total-range { font-size: 0.78rem; color: var(--text-faint); font-weight: 400; }
+.self-damage-total-pct { flex-basis: 100%; font-size: 0.72rem; color: var(--text-faint); }
+.self-damage-survive { margin-top: 0.5rem; font-size: 0.76rem; padding: 0.35rem 0.5rem; border-radius: var(--radius); }
+.self-damage-survive.ok { color: var(--good); background: color-mix(in srgb, var(--good) 9%, transparent); }
+.self-damage-survive.warn { color: #e6a817; background: rgba(230,168,23,0.1); }
+.self-damage-survive.bad { color: var(--crit); background: color-mix(in srgb, var(--crit) 10%, transparent); }
 .beta-tag { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #e6a817; background: rgba(230,168,23,0.15); border-radius: 3px; padding: 0.1rem 0.35rem; margin-left: 0.3rem; vertical-align: middle; }
 .proc-mode-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.3rem 0 0.45rem; }
 .proc-mode-label { font-size: 0.74rem; color: var(--text-faint); letter-spacing: 0.02em; }
