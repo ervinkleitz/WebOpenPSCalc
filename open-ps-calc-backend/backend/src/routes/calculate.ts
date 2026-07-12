@@ -6,8 +6,38 @@ import { createSkillInstance, createTarget } from "../engine/models";
 import { loader } from "../engine/dataLoader";
 import { getProfile } from "../engine/serverProfiles";
 import { resolvePlayerState } from "../engine/playerStateBuilder";
-import { BattlePipeline } from "../engine/calculators/battlePipeline";
+import { BattlePipeline, BF_MAGIC_RATIOS } from "../engine/calculators/battlePipeline";
 import { calculateIncomingPhysicalDamage, calculateIncomingMagicDamage } from "../engine/calculators/incomingPipeline";
+const { BF_WEAPON_RATIOS } = require("../engine/calculators/modifiers/skillRatio");
+
+// A monster casting a player/NPC skill at YOU. Resolve the skill's element, hit
+// count and %-ratio (from the engine's ratio maps) so the incoming pipeline can
+// price it. Only Magic/Weapon skills deal modellable damage; Misc/support (heals,
+// summons, ailments) return modeled:false so the UI lists them without a number.
+const ELE_NAME_TO_INT: Record<string, number> = {
+  Ele_Neutral: 0, Ele_Water: 1, Ele_Earth: 2, Ele_Fire: 3, Ele_Wind: 4,
+  Ele_Poison: 5, Ele_Holy: 6, Ele_Dark: 7, Ele_Ghost: 8, Ele_Undead: 9,
+};
+function resolveMobSkillDamage(skillId: number, level: number) {
+  const sk = (loader as any).getSkill(skillId);
+  if (!sk) return null;
+  const lv = Math.max(1, Math.min(level || 1, sk.max_level || 10));
+  const attackType: string = sk.attack_type; // "Magic" | "Weapon" | "Misc"
+  const eleName = Array.isArray(sk.element) ? sk.element[lv - 1] : sk.element;
+  const elementInt = ELE_NAME_TO_INT[eleName] ?? 0;
+  const hitsRaw = Array.isArray(sk.number_of_hits) ? sk.number_of_hits[lv - 1] : sk.number_of_hits;
+  const hits = Math.max(1, Math.abs(Number(hitsRaw) || 1));
+  const targetsFoe = Array.isArray(sk.skill_type)
+    ? sk.skill_type.some((t: string) => t === "Enemy" || t === "Place")
+    : true;
+  let ratio = 100, ratioKnown = false;
+  try {
+    const map = attackType === "Magic" ? BF_MAGIC_RATIOS : attackType === "Weapon" ? BF_WEAPON_RATIOS : null;
+    if (map && typeof map[sk.name] === "function") { ratio = map[sk.name](lv, {}, {}); ratioKnown = true; }
+  } catch { ratio = 100; ratioKnown = false; }
+  const modeled = targetsFoe && (attackType === "Magic" || attackType === "Weapon");
+  return { name: sk.name, desc: sk.description || sk.name, attackType, elementInt, hits, ratio, ratioKnown, modeled, level: lv };
+}
 const gearBonusAggregator = require("../engine/gearBonusAggregator");
 const { applyPetBonuses } = require("../engine/buildApplicator");
 const { computeFalconDamage } = require("../engine/calculators/falconCalc");
@@ -215,7 +245,7 @@ router.post("/", (req: Request, res: Response) => {
 
 router.post("/incoming", (req: Request, res: Response) => {
   try {
-    const { build: buildData, target: targetInput, direction, opts } = req.body || {};
+    const { build: buildData, target: targetInput, direction, opts, mob_skill: mobSkill } = req.body || {};
     if (!buildData) return res.status(400).json({ error: "build is required" });
     if (!targetInput || targetInput.mob_id == null) return res.status(400).json({ error: "target.mob_id is required" });
 
@@ -229,6 +259,21 @@ router.post("/incoming", (req: Request, res: Response) => {
     const mobId = Number(targetInput.mob_id);
     const mob = loader.getMonsterData(mobId);
     if (!mob) return res.status(404).json({ error: "Monster not found" });
+
+    // A specific mob skill cast at the player (survivability "which skill hits me").
+    if (mobSkill && mobSkill.id != null) {
+      const spec = resolveMobSkillDamage(Number(mobSkill.id), Number(mobSkill.level) || 1);
+      if (!spec) return res.status(404).json({ error: "Skill not found" });
+      if (!spec.modeled) {
+        // Support/ailment/summon or unmapped ratio — no direct damage number.
+        return res.json({ status, mob, skill: spec, result: null, modeled: false });
+      }
+      const skOpts = { ele_override: spec.elementInt, ratio_override: spec.ratio };
+      const result = spec.attackType === "Magic"
+        ? calculateIncomingMagicDamage(mobId, effBuild, status, gearBonuses, weapon, skOpts)
+        : calculateIncomingPhysicalDamage(mobId, effBuild, status, gearBonuses, weapon, config, skOpts);
+      return res.json({ status, mob, skill: spec, result, modeled: true });
+    }
 
     const result = direction === "magic"
       ? calculateIncomingMagicDamage(mobId, effBuild, status, gearBonuses, weapon, opts || {})

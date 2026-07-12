@@ -260,6 +260,18 @@ class DataLoader {
     return this.__mobRace2;
   }
 
+  // Offensive skills a monster uses in combat (parsed from Hercules pre-re
+  // mob_skill_db). Each entry: { id, name, lv, rate (per-10000), target, ele }.
+  // `ele` is the element int for NPC_*ATTACK elemental hits (else null). Same AI
+  // across PS, so this is a single pre-re table.
+  getMobSkills(mobId) {
+    try {
+      return this._loadJson("db/mob_skill_db.json")[String(mobId)] || [];
+    } catch {
+      return [];
+    }
+  }
+
   getMonster(mobId) {
     const { createTarget } = require("./models");
     const entry = this.getMonsterData(mobId);

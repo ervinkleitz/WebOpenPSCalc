@@ -381,7 +381,16 @@ class BattlePipeline {
       const [mn, mx, av] = pmfStats(atkPmf);
       result.add_step({ name: "bAtkRate", value: av, min_value: mn, max_value: mx, multiplier: (100 + gearBonuses.atk_rate) / 100, note: `bAtkRate +${gearBonuses.atk_rate}%`, formula: `dmg*(100+${gearBonuses.atk_rate})//100`, hercules_ref: "battle.c:5330" });
     }
-    atkPmf = calculateDefenseFix(target, build, gearBonuses, atkPmf, this.config, result, { is_crit: false, skill });
+    // Grand Cross ignores the target's HARD DEF/MDEF. The PS wiki damage formula is
+    // literally "(ATK + MATK) × (100% + 40×lvl%)" with no defense term
+    // (wiki.payonstories.com/Grand_Cross), and RateMyServer (skid=254) states the
+    // skill "ignores target's defense" — confirmed in-game on Payon Stories, where GC
+    // does ~10-19k on Knight of Abyss (DEF 55 / MDEF 50) vs the ~6k a full DEF/MDEF
+    // cut would give. The soft (VIT/INT-based) DEF2/MDEF2 still applies, matching the
+    // observed magnitude. This deviates from the older "with-DEF" ROADMAP audit; the
+    // authoritative PS-wiki formula + live in-game data win. `ignore_hard_def` zeroes
+    // hard DEF but keeps the soft Soft-DEF subtraction (no ignore-def cards here).
+    atkPmf = calculateDefenseFix(target, { ...build, ignore_hard_def: true }, gearBonuses, atkPmf, this.config, result, { is_crit: false, skill });
     atkPmf = calculateRefineFix(weapon, skill, atkPmf, result);
     const ctx = createCalcContext({
       skill_levels: gearBonuses.effective_mastery,
@@ -406,7 +415,10 @@ class BattlePipeline {
       matkPmf = scaleFloor(matkPmf, 100 + gearBonuses.matk_rate, 100);
     }
     { const [mn, mx, av] = pmfStats(matkPmf); result.add_step({ name: "Base MATK", value: av, min_value: mn, max_value: mx, note: `INT=${status.int_}  MATK ${matkLo}-${matkHi}`, formula: "int+(int/7)^2 to int+(int/5)^2", hercules_ref: "status.c status_calc_matk" }); }
-    matkPmf = calculateMagicDefenseFix(target, gearBonuses || {}, matkPmf, result);
+    // GC ignores the target's HARD MDEF too (see the DEF note above): pass a target
+    // clone with mdef_ = 0 so the ×(100−MDEF)% step is skipped, while soft MDEF2
+    // (INT + VIT/2) still subtracts.
+    matkPmf = calculateMagicDefenseFix({ ...target, mdef_: 0 }, gearBonuses || {}, matkPmf, result);
 
     // ── Sum (wd + ad) → Holy element → × ratio (applied LAST, per Hercules) ──
     let pmf = convolve(atkPmf, matkPmf);
@@ -1137,7 +1149,12 @@ class BattlePipeline {
     skill.nk_ignore_flee = damageType.includes("IgnoreFlee");
     skill.nk_ignore_ele = damageType.includes("IgnoreElement");
     skill.nk_ignore_cards = damageType.includes("IgnoreCards");
-    skill.ignore_size_fix = skillName === "MO_EXTREMITYFIST";
+    // Asura Strike and Grand Cross both ignore the weapon size penalty. GC:
+    // "the damage ignores size modifications" (ratemyserver.net skill_db skid=254,
+    // Aegis behaviour) — its physical (ATK) half is NOT scaled by weapon-vs-size,
+    // unlike an ordinary weapon hit. Applies to both the outgoing hit and the
+    // self-recoil (they share this skill object).
+    skill.ignore_size_fix = skillName === "MO_EXTREMITYFIST" || skillName === "CR_GRANDCROSS";
 
     const amotion = Math.max(100, Math.round(2000 - status.aspd * 10));
     const adelay = 2 * amotion;
@@ -1615,4 +1632,4 @@ class BattlePipeline {
   }
 }
 
-module.exports = { BattlePipeline, resolveIsRanged };
+module.exports = { BattlePipeline, resolveIsRanged, BF_MAGIC_RATIOS };

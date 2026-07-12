@@ -61,6 +61,22 @@ export const api = {
     }>,
   calculate: (payload: unknown) =>
     request("/calculate", { method: "POST", body: payload }) as Promise<any>,
+  // Incoming damage (mob → player): how hard the selected monster hits YOU.
+  // direction "physical" (basic attack) or "magic" (INT-based MATK, for casters).
+  calculateIncoming: (build: unknown, mobId: number, direction: "physical" | "magic", opts: Record<string, unknown> = {}) =>
+    request("/calculate/incoming", { method: "POST", body: { build, target: { mob_id: mobId }, direction, opts } }) as Promise<{
+      status: { max_hp: number; flee: number; [k: string]: any };
+      mob: any;
+      result: { min_damage: number; max_damage: number; avg_damage: number; steps: any[] };
+    }>,
+  // Damage a specific mob skill would do to the player (survivability "which skill hits me").
+  calculateIncomingSkill: (build: unknown, mobId: number, skillId: number, level: number) =>
+    request("/calculate/incoming", { method: "POST", body: { build, target: { mob_id: mobId }, mob_skill: { id: skillId, level } } }) as Promise<{
+      status: { max_hp: number; [k: string]: any };
+      modeled: boolean;
+      skill: { name: string; desc: string; attackType: string; elementInt: number; hits: number; ratio: number; ratioKnown: boolean; level: number };
+      result: { min_damage: number; max_damage: number; avg_damage: number } | null;
+    }>,
   importJaludev: (url: string, server: string) =>
     request(`/data/import/jaludev?server=${encodeURIComponent(server)}`, { method: "POST", body: { url } }) as Promise<{
       build: any; unmapped: string[]; jobName: string;

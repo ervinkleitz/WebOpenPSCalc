@@ -44,7 +44,7 @@ function applyLexAeterna(build, pmf, result) {
 }
 
 function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weapon, config, opts = {}) {
-  const { is_ranged: isRanged = false, mob_atk_bonus_rate: mobAtkBonusRate = 0, ele_override: eleOverride = null } = opts;
+  const { is_ranged: isRanged = false, mob_atk_bonus_rate: mobAtkBonusRate = 0, ele_override: eleOverride = null, ratio_override: ratioOverride = null } = opts;
   const mob = loader.getMonsterData(mobId);
   if (!mob) return notFoundResult(mobId);
 
@@ -66,9 +66,23 @@ function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weap
     formula: "rnd(atk_min,atk_max-1) + str + (str//10)²", hercules_ref: "status.c mob status calc",
   });
 
+  // Skill ratio for a mob-cast physical skill (e.g. Bash, Brandish): scale the mob's
+  // ATK by the skill's %, before the player's DEF/resists — same order as the outgoing
+  // physical skill path.
+  if (ratioOverride != null && ratioOverride !== 100) {
+    pmf = scaleFloor(pmf, ratioOverride, 100);
+    const [mn, mx, av] = pmfStats(pmf);
+    result.add_step({ name: "Skill Ratio", value: av, min_value: mn, max_value: mx, multiplier: ratioOverride / 100, note: `Ratio ${ratioOverride}%`, formula: `dmg × ${ratioOverride}%`, hercules_ref: "" });
+  }
+
   const playerTarget = playerBuildToTarget(build, status, gearBonuses, weapon, loader);
 
-  const atkEle = eleOverride != null ? eleOverride : (mob.element ?? 0);
+  // A monster's basic melee is Neutral (its `element` field is defensive property
+  // only — Hercules keeps attack `rhw.ele` separate from `def_ele`). Elemental hits
+  // come from NPC_*ATTACK skills, passed in via ele_override. So default to Neutral,
+  // NOT mob.element — otherwise a Dark mob would wrongly ignore the player's Neutral
+  // resist (Raydric) on its ordinary attack.
+  const atkEle = eleOverride != null ? eleOverride : 0;
   // build=null: the player's own ground-effect enchant (Volcano/Deluge/etc.)
   // buffs the PLAYER's outgoing element, not a mob's incoming attack element.
   pmf = calculateAttrFix(weapon, playerTarget, pmf, result, null, atkEle);

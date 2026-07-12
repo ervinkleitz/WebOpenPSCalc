@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import DamageSummary from "./DamageSummary";
 import CompareView, { summaryMetrics, type ComparePin } from "./CompareView";
+import SurvivabilityView from "./SurvivabilityView";
 import { statsApi } from "../api/client";
 
 interface Props {
@@ -44,6 +45,9 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
             forceProcs={forceProcs}
             onToggleForceProcs={onToggleForceProcs}
           />
+          {calcResult?.incoming && !calculating && !error && (
+            <SurvivabilityView incoming={calcResult.incoming} />
+          )}
           {calcResult && !calculating && !error && (
             <div className="kofi-results-card">
               <span className="kofi-results-text">This calc runs on milk tea —</span>

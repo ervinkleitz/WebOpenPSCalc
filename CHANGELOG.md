@@ -18,6 +18,13 @@ instead of release version. Dates are taken from actual git commit history.
   (Angeling) armour negates Part 1 entirely; the 20% HP cost always applies.
 - **Faith (Crusader) is now selectable** under Passive skills. Its Holy resistance (up to −50% at
   Lv 10) and +MaxHP now factor into the Grand Cross recoil.
+- **Survivability panel.** Calculate against a monster and a new readout shows how hard it hits *you*:
+  the damage its basic attack (and any elemental attack skills) deals through your DEF/MDEF and
+  reduction gear, hits to down you, effective HP, damage mitigated, and your dodge chance plus the FLEE
+  needed for the 95% cap. It also lists the monster's damage-dealing cast skills — tap one to see its
+  element and physical/magic type so you know what resist to bring. (Mob skill *power* is PS-tuned
+  beyond the available data, so exact skill damage isn't shown — only the accurate basic/elemental
+  attack figures are.)
 
 ### Fixed
 
@@ -25,6 +32,19 @@ instead of release version. Dates are taken from actual git commit history.
   (`bSubRace,RC_DemiPlayer`) were stored under a race key nothing checked, so their 30% reduction
   wasn't being applied to incoming Demi-Human damage — or the Grand Cross recoil. Composite race
   resistances now fan out to their constituent races, so the reduction lands correctly.
+- **Grand Cross now ignores the target's DEF, MDEF and size.** The PS wiki formula is simply
+  `(ATK + MATK) × (100% + 40×lvl%)` with no defense term, and in-game Grand Cross ignores the target's
+  defense (confirmed against RateMyServer and live damage on Knight of Abyss). The calculator was
+  subtracting the target's hard DEF (physical half) and hard MDEF (magic half) and applying the weapon
+  size penalty — undershooting by 2–3× against defended targets. Grand Cross now ignores those; only
+  the small VIT/INT-based soft DEF/MDEF still applies.
+- **Monster basic attacks are treated as Neutral.** A monster's normal melee is Neutral element, not
+  its (defensive) property — which is why Raydric and Ghostring tank most monsters, including
+  non-Neutral ones. Incoming basic-attack damage now uses Neutral, so Neutral-resist gear correctly
+  reduces it; elemental *skills* still carry their own element.
+- **Monster skill data is now Payon Stories-accurate.** The list of which skills each monster casts
+  (and their elements) now comes from Payon Stories' own data instead of a vanilla baseline — so, e.g.,
+  Baphomet shows its real kit and Knight of Abyss its Shadow-element attack.
 
 ## 2026-07-11
 

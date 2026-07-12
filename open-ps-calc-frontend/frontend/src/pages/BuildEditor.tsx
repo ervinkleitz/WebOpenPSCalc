@@ -559,6 +559,7 @@ export default function BuildEditor() {
     hp?: number; def_?: number; mdef?: number; atk_min?: number; atk_max?: number;
     size?: string; element?: number; element_level?: number; is_boss?: boolean;
     stats?: { str: number; agi: number; vit: number; int: number; dex: number; luk: number };
+    skills?: { id: number; name: string; d: string; lv: number; rate: number; target: string; ele: number | null; dmg?: boolean }[];
   } | null>(null);
   const [jobBonusStats, setJobBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [equipBonusStats, setEquipBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
@@ -991,15 +992,44 @@ export default function BuildEditor() {
         : { ...sanitizedBuild, equipped: equippedOverride, wildcard_bonuses: wildcardBonuses };
       const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target, target_mods: targetMods };
       const skillPayload  = { build: buildWithFlags, skill: { id: skill.id, level: skill.level }, target, target_mods: targetMods };
-      const [normalRes, skillRes] = await Promise.all([
+      // Survivability: how hard the selected monster's weapon attacks hit YOU. Monster
+      // mode only. A monster's BASIC melee attack is Neutral element — NOT its property
+      // (its "Element" field is defensive only; Hercules keeps attack `rhw.ele` and
+      // `def_ele` separate, which is why Raydric/Ghostring tank most monsters). So the
+      // basic hit is Neutral (and reduced by Raydric etc.); elemental NPC_*ATTACK skills
+      // add their own elements on top. Compute one incoming hit per distinct element.
+      // Other cast skills (bolts, AoE, ailments) are listed by name only.
+      const mobId = targetMode === "monster" ? data.target_mob_id : null;
+      const mobSkills = mobInfo?.skills ?? [];
+      const attackEles = mobId != null
+        ? Array.from(new Set<number>([0 /* Neutral basic melee */, ...mobSkills.filter((s) => s.ele != null).map((s) => s.ele as number)])).slice(0, 5)
+        : [];
+      const [normalRes, skillRes, ...incByEle] = await Promise.all([
         api.calculate(normalPayload),
         skill.id !== 0 ? api.calculate(skillPayload) : Promise.resolve(null),
+        ...attackEles.map((ele) => api.calculateIncoming(buildWithFlags, mobId!, "physical", { ele_override: ele }).catch(() => null)),
       ]);
+      const elements = attackEles
+        .map((ele, i) => ({ ele, taken: incByEle[i] }))
+        .filter((x) => x.taken);
       setCalcResult({
         normal_attack: normalRes,
         skill: skillRes,
         selected_skill: { id: skill.id, level: skill.level, label: skill.label },
         target_hp: targetMode === "monster" ? (mobInfo?.hp ?? null) : null,
+        incoming: elements.length ? {
+          elements,
+          // The mob's other cast skills (non-elemental-attack). Clickable in the UI:
+          // picking one computes what it does to you (magic/physical), on demand.
+          // Damage-dealing cast skills only (exclude the mob's buffs/summons/heals
+          // and its elemental attacks, which are the element lines above).
+          kit: mobSkills.filter((s) => s.ele == null && s.id != null && s.dmg).map((s) => ({ id: s.id, d: s.d, lv: s.lv })).slice(0, 16),
+          mob_name: mobInfo?.name ?? null,
+          mob_hit: mobInfo?.stats ? mobInfo.level + mobInfo.stats.dex : null,
+          mob_element: 0, // basic melee is Neutral (tags the Neutral line as "basic")
+          build: buildWithFlags, // reused for on-demand "which skill hits me" fetches
+          mob_id: mobId,
+        } : null,
         // Poison ailment DoT: the target loses 2%/s of its Max HP on Payon Stories
         // (1%/s vanilla). Surfaced so time-to-kill folds it in. Monster mode only
         // (Max HP known); the DEF cut itself is applied server-side.

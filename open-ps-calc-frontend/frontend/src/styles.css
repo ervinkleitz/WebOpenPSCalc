@@ -795,6 +795,53 @@ label {
 .self-damage-survive.ok { color: var(--good); background: color-mix(in srgb, var(--good) 9%, transparent); }
 .self-damage-survive.warn { color: #e6a817; background: rgba(230,168,23,0.1); }
 .self-damage-survive.bad { color: var(--crit); background: color-mix(in srgb, var(--crit) 10%, transparent); }
+
+/* Survivability (incoming damage) — a defensive readout, cool-toned to sit apart
+   from the gold offence breakdown and the red self-damage block. */
+.surv-view {
+  margin-top: 1rem;
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid #6aa3d5;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, #6aa3d5 6%, var(--bg));
+  padding: 0.7rem 0.85rem;
+}
+.surv-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.55rem; }
+.surv-title { font-size: 0.9rem; font-weight: 600; color: #7fb3e0; }
+.surv-sub { font-size: 0.74rem; color: var(--text-faint); font-family: var(--mono); }
+.surv-line { padding: 0.4rem 0; border-top: 1px dashed var(--border-soft); }
+.surv-line:first-of-type { border-top: none; padding-top: 0; }
+.surv-line-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
+.surv-line-label { font-size: 0.8rem; color: var(--text); }
+.surv-line--magic .surv-line-label { color: #b58bd6; }
+.surv-line-dmg { font-family: var(--mono); font-size: 1rem; color: var(--text); font-weight: 600; white-space: nowrap; }
+.surv-line-unit { font-size: 0.72rem; color: var(--text-faint); font-weight: 400; }
+.surv-line-metrics { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+.surv-chip { font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 3px; border: 1px solid var(--border-soft); color: var(--text-dim); }
+.surv-chip b { color: var(--text); font-family: var(--mono); }
+.surv-chip--muted, .surv-line-metrics .surv-chip--muted { color: var(--text-faint); border: none; padding-left: 0.15rem; }
+.surv-dodge { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-soft); }
+.surv-dodge-main { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.surv-dodge-label { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.surv-dodge-val { font-family: var(--mono); font-size: 1.05rem; font-weight: 600; color: var(--text); }
+.surv-dodge-val.good { color: var(--good); }
+.surv-dodge-val.bad { color: var(--crit); }
+.surv-dodge-detail { font-size: 0.72rem; color: var(--text-faint); margin-top: 0.2rem; }
+.surv-tag { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); border: 1px solid var(--border-soft); border-radius: 3px; padding: 0.02rem 0.28rem; margin-left: 0.4rem; vertical-align: middle; }
+.surv-tag--skill { color: #b58bd6; border-color: color-mix(in srgb, #b58bd6 40%, transparent); }
+.surv-kit { margin-top: 0.55rem; padding-top: 0.5rem; border-top: 1px solid var(--border-soft); }
+.surv-kit-label { font-size: 0.72rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.surv-kit-list { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+.surv-kit-chip { font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 3px; border: 1px solid var(--border-soft); background: var(--bg-panel-raised); color: var(--text-dim); }
+.surv-kit-chip--btn { cursor: pointer; font-family: inherit; transition: border-color 0.12s, color 0.12s, background 0.12s; }
+.surv-kit-chip--btn:hover { color: var(--text); border-color: color-mix(in srgb, #6aa3d5 55%, transparent); }
+.surv-kit-chip--btn.active { color: #7fb3e0; border-color: #6aa3d5; background: color-mix(in srgb, #6aa3d5 12%, transparent); }
+.surv-skill-detail { margin-top: 0.5rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border-soft); border-left: 3px solid #6aa3d5; border-radius: var(--radius); background: color-mix(in srgb, #6aa3d5 5%, var(--bg)); }
+.surv-skill-body .surv-line-head { margin-bottom: 0.15rem; }
+.surv-skill-msg { font-size: 0.76rem; color: var(--text-faint); }
+.surv-skill-hits { font-family: var(--mono); font-size: 0.82rem; color: var(--text-dim); font-weight: 400; }
+.surv-skill-note { font-size: 0.7rem; color: var(--text-faint); margin: 0.4rem 0 0; line-height: 1.35; }
+.surv-note { font-size: 0.7rem; color: var(--text-faint); margin: 0.55rem 0 0; line-height: 1.4; }
 .beta-tag { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #e6a817; background: rgba(230,168,23,0.15); border-radius: 3px; padding: 0.1rem 0.35rem; margin-left: 0.3rem; vertical-align: middle; }
 .proc-mode-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.3rem 0 0.45rem; }
 .proc-mode-label { font-size: 0.74rem; color: var(--text-faint); letter-spacing: 0.02em; }

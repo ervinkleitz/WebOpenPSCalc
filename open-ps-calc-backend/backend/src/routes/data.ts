@@ -90,7 +90,7 @@ router.get("/mobs/:id", (req: Request, res: Response) => {
   applyServerProfile(req);
   const mob = loader.getMonsterData(Number(req.params.id));
   if (!mob) return res.status(404).json({ error: "Monster not found" });
-  res.json(mob);
+  res.json({ ...mob, skills: (loader as any).getMobSkills(Number(req.params.id)) });
 });
 
 router.get("/skills", (req: Request, res: Response) => {
