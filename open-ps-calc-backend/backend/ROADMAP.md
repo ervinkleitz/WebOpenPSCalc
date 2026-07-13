@@ -462,8 +462,12 @@ and a stat optimiser (given N free points, maximise DPS/TTK).
   and `cardFix.js`'s existing incoming-physical/magic functions. Includes
   the Lex Aeterna ×2 multiplier (`SC_LEXAETERNA`). Verified end-to-end
   against a real mob (Scorpion, id 1001) for both directions, and confirmed
-  Lex Aeterna exactly doubles the result. No frontend UI yet — backend/API
-  only.
+  Lex Aeterna exactly doubles the result. **Frontend UI shipped** (2026-06-27)
+  as the **Survivability panel** (`components/SurvivabilityView.tsx`): damage
+  taken through DEF/MDEF and reduction gear, hits-to-down, effective HP, damage
+  mitigated, dodge chance, and the FLEE needed for the 95% cap, plus the mob's
+  damage-dealing cast skills (element/type only — PS-tuned skill power isn't
+  shown). A monster's basic melee is priced as Neutral.
 
 ## Payon Stories per-class skill audit (against the PS wiki)
 
@@ -648,7 +652,7 @@ Also drop **HT_POWER** from the picker — it's not a real PS player skill (inte
 ## Suggested order for finishing the port
 
 1. ~~Fill in the rest of `skill_ratio.js`'s `BF_WEAPON_RATIOS` table~~ — done, see above.
-2. ~~Port `incoming_physical_pipeline.js` / `incoming_magic_pipeline.js`~~ — done, see above. Still needed: frontend UI for it.
+2. ~~Port `incoming_physical_pipeline.js` / `incoming_magic_pipeline.js`~~ — done, see above. ~~Still needed: frontend UI for it.~~ Frontend UI shipped (Survivability panel).
 3. ~~Flesh out `PAYON_STORIES` in `serverProfiles.js`~~ — partially done (see
    "Partially ported" above: weapon/magic ratios + vanilla_ok + 4 mechanic
    flags); ~13 mechanic flags still need new modifier code, 3 PS-custom

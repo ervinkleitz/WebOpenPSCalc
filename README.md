@@ -48,7 +48,8 @@ motivated several changes beyond a straight 1:1 port:
 - **Card slot UI** (up to 4 per item, filtered to `IT_CARD`), a **passive
   skill panel** (filtered to an explicit allowlist of masteries that
   actually affect damage — not every passive in a job's skill tree does),
-  a **consumables panel** (ASPD potions, ATK/MATK items), and a **buffs
+  a **consumables panel** (ASPD potions, ATK/MATK items, and the box buffs —
+  Gloom / Resentment / Drowsiness), and a **buffs
   panel** (quickens, Impositio Manus, Overthrust, Bard/Dancer songs) — none
   of these existed in the original web port's first pass; built
   incrementally by finding cases where the engine already supported the
@@ -268,6 +269,39 @@ motivated several changes beyond a straight 1:1 port:
   monster's live stats (DEF / MDEF / VIT / element / etc.) shown inline in the
   Target panel. Mobile layout tuned for small screens (tighter panel padding,
   full-width sections, scrollable modals on iOS).
+- **Survivability panel (incoming damage)** — the `POST /api/calculate/incoming`
+  pipeline now has a frontend: a Survivability card shows how hard the selected
+  monster hits *you* — damage through your DEF/MDEF and reduction gear, hits to
+  down you, effective HP, damage mitigated, dodge chance, and the FLEE needed for
+  the 95% dodge cap. It also lists the monster's damage-dealing cast skills with
+  their element and physical/magic type (skill *power* isn't shown — PS tunes it
+  beyond the available data). A monster's basic melee is priced as Neutral, so
+  Neutral-resist gear (Raydric/Ghostring) reduces it.
+- **Grand Cross self-damage (recoil)** — the damage panel shows the HP Grand Cross
+  deals back to the caster each cast, in two parts: **Part 1** is the Holy,
+  Demi-Human hit recomputed against *your own* DEF/MDEF and reduced by your Holy
+  (Faith, Talisman of Holy Protection, Angeling armour) and Demi-Human (Thara Frog)
+  resistances, then halved; **Part 2** is the fixed 20%-of-current-HP casting cost.
+  **Faith (CR_TRUST)** is selectable under passives and feeds its Holy resist and
+  +MaxHP into the recoil.
+- **Box consumables** — **Box of Gloom** (casts Improve Concentration Lv1, +3%
+  AGI/DEX from base stats), **Box of Resentment** (+20 ATK), and **Box of
+  Drowsiness** (+20 MATK), matching their `item_db` scripts (IDs 12029–12031). The
+  ATK/MATK boxes stack on the flat ATK/MATK item fields.
+- **Non-damage clause audit** — a systematic sweep of every skill description for
+  the non-damage mechanics the damage-focused audit didn't cover (accuracy,
+  crit, auto-hit, ignore-DEF, forced element, hit count). Fixes shipped: **Holy
+  Cross** and **Shield Chain** now apply their built-in +20% accuracy; **Sharp
+  Shooting**'s +20 crit (silently disabled by a skill-id mismatch) now applies;
+  and **Pierce** hits by target size (Small 1 / Medium 2 / Large 3) instead of a
+  flat 3. See the "Non-damage clause coverage audit" section of `ROADMAP.md` for
+  the full findings and remaining punch-list.
+- **Build comparison, clan & pet bonuses** — a **Compare builds** section in the
+  results panel diffs a second build against the current one side by side; a
+  **clan** selector applies the PS clan stat bonuses (Sword / Arch & Wand / Golden
+  Mace / Crossbow / Artisan / Vile Wind — +stats and MaxHP/SP); and a **pet**
+  selector applies Cute Pet System loyalty bonuses (profile `pet_bonuses`). All
+  three are URL-encoded alongside the build.
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.
