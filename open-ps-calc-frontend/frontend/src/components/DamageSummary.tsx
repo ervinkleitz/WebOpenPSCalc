@@ -1,4 +1,4 @@
-import { useState, Fragment } from "react";
+import { useState } from "react";
 
 interface Step {
   name: string;
@@ -100,23 +100,27 @@ function stepDisplayVal(step: Step): string {
 }
 
 
-function connectorInfo(step: Step, prev: Step): { label: string; cls: string } {
+// Compact inline badge showing what this step did to the running total: a ×multiplier
+// (boost/reduce) or a +/− flat delta. Empty for pure passthroughs.
+function connectorInfo(step: Step, prev: Step): { badge: string; cls: string } {
   const m = step.multiplier ?? 1.0;
   if (Math.abs(m - 1.0) > 0.001) {
-    const pct = Math.round((m - 1) * 100);
-    const sign = pct >= 0 ? "+" : "";
-    return {
-      label: `× ${m % 1 === 0 ? m.toFixed(0) : m.toFixed(2)}  (${sign}${pct}%)`,
-      cls: m >= 1 ? "conn-boost" : "conn-reduce",
-    };
+    return { badge: `×${m % 1 === 0 ? m.toFixed(0) : m.toFixed(2)}`, cls: m >= 1 ? "conn-boost" : "conn-reduce" };
   }
   const delta = Math.round((step.value ?? 0) - (prev.value ?? 0));
-  if (delta > 0) return { label: `+ ${delta}`, cls: "conn-add" };
-  if (delta < 0) return { label: `− ${-delta}`, cls: "conn-sub" };
-  return { label: "→", cls: "conn-pass" };
+  if (delta > 0) return { badge: `+${delta.toLocaleString()}`, cls: "conn-add" };
+  if (delta < 0) return { badge: `−${(-delta).toLocaleString()}`, cls: "conn-sub" };
+  return { badge: "", cls: "conn-pass" };
 }
 
-function PipelineView({ steps }: { steps: Step[] }) {
+function PipelineView({ steps, hideFinal = false }: { steps: Step[]; hideFinal?: boolean }) {
+  // Notes are hidden by default (hover reveals, tap pins) to keep the breakdown compact.
+  const [open, setOpen] = useState<Set<number>>(() => new Set());
+  const toggle = (i: number) => setOpen((prev) => {
+    const next = new Set(prev);
+    next.has(i) ? next.delete(i) : next.add(i);
+    return next;
+  });
   const chips = steps.filter(s => s.info);
   const visible = steps.filter(s => !s.info);
   // Hide pure no-op passthrough rows — multiplier ≈ 1 AND value unchanged from the
@@ -128,7 +132,7 @@ function PipelineView({ steps }: { steps: Step[] }) {
     const m = s.multiplier ?? 1.0;
     const unchanged = Math.round(s.value ?? 0) === Math.round(visible[i - 1].value ?? 0);
     return !(Math.abs(m - 1) < 0.001 && unchanged);
-  });
+  }).filter((s) => !(hideFinal && s.name === "Final Damage")); // final shown separately as a prominent total
   return (
     <div className="pipeline-view">
       {chips.length > 0 && (
@@ -141,29 +145,28 @@ function PipelineView({ steps }: { steps: Step[] }) {
           ))}
         </div>
       )}
-      <div className="pipeline-track">
+      <div className="pl-track">
         {nodes.map((step, i) => {
           const prev = nodes[i - 1];
           const conn = prev ? connectorInfo(step, prev) : null;
           const isFinal = step.name === "Final Damage";
+          const hasNote = !!step.note && !isFinal;
+          const isOpen = open.has(i);
           return (
-            <Fragment key={i}>
-              {conn && (
-                <div className={`pipeline-conn ${conn.cls}`}>
-                  <span className="pipeline-conn-arrow">↓</span>
-                  <span className="pipeline-conn-badge">{conn.label}</span>
-                  {(conn.cls === "conn-boost" || conn.cls === "conn-reduce") && !isFinal && (
-                    <span className="pipeline-conn-dest">→ {step.name}</span>
-                  )}
-                  {step.note && <span className="pipeline-conn-note">{step.note}</span>}
-                </div>
-              )}
-              <div className={`pipeline-row${isFinal ? " pipeline-row--final" : ""}`}>
-                <span className="pipeline-row-name">{step.name}</span>
-                {!isFinal && <span className="pipeline-row-dots" aria-hidden="true" />}
-                <span className="pipeline-row-val">{stepDisplayVal(step)}</span>
+            <div className="pl-step" key={i}>
+              <div
+                className={`pl-row${isFinal ? " pl-row--final" : ""}${hasNote ? " pl-row--note" : ""}`}
+                onClick={hasNote ? () => toggle(i) : undefined}
+                title={hasNote ? step.note : undefined}
+              >
+                <span className={`pl-badge ${conn ? conn.cls : ""}`}>{conn ? conn.badge : ""}</span>
+                <span className="pl-name">{step.name}</span>
+                <span className="pl-dots" aria-hidden="true" />
+                <span className="pl-val">{stepDisplayVal(step)}</span>
+                {hasNote && <span className="pl-info" aria-hidden="true">ⓘ</span>}
               </div>
-            </Fragment>
+              {hasNote && <div className={`pl-note${isOpen ? " open" : ""}`}>{step.note}</div>}
+            </div>
           );
         })}
       </div>
@@ -393,6 +396,17 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const effectiveDps = isInstaKill && target_hp != null && timeToKill != null && timeToKill > 0
     ? target_hp / timeToKill : displayDps;
 
+  // Header + prominent-total support for the breakdown card.
+  const nfmt = (v: number) => Math.round(v).toLocaleString();
+  const breakdownLabel =
+    activeBranch === "crit" ? "Critical hit"
+    : activeBranch === "katar" ? "Katar 2nd hit"
+    : activeBranch === "falcon" ? "Falcon"
+    : activeBranch === "normal" ? "Normal attack"
+    : hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}`
+    : "Normal attack";
+  const finalRange = killMin != null && killMax != null && Math.round(killMin) !== Math.round(killMax);
+
   return (
     <div>
       <div className="summary-headline">
@@ -453,11 +467,9 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             </div>
           </div>
         )}
-        {hitsAvg != null && (
-          <div className="metric" title={isInstaKill
-            ? `Expected casts to kill the ${target_hp!.toLocaleString()}-HP target, folding in the instant-kill success chance (and chip damage on failed rolls).`
-            : "Average hits to kill, from the average damage roll."}>
-            <div className="label">{isInstaKill ? "Casts to kill" : "Avg hits"}</div>
+        {isInstaKill && hitsAvg != null && (
+          <div className="metric" title={`Expected casts to kill the ${target_hp!.toLocaleString()}-HP target, folding in the instant-kill success chance (and chip damage on failed rolls).`}>
+            <div className="label">Casts to kill</div>
             <div className="value">{hitsAvg}</div>
           </div>
         )}
@@ -561,20 +573,36 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         )}
       </div>
 
-      {activeBranch === "falcon" && falcon ? (
-        <FalconView falcon={falcon} />
-      ) : showDwCombined && dwRhBranch && dwLhBranch ? (
-        <DualWieldStepList
-          rh={dwRhBranch}
-          lh={dwLhBranch}
-          rhFactor={dwRhFactor}
-          lhFactor={dwLhFactor}
-          isCrit={activeBranch === "crit"}
-          psBonusPct={dwPsBonusPct}
-        />
-      ) : !notImplemented && activeDamage ? (
-        <PipelineView steps={activeDamage.steps} />
-      ) : null}
+      {!notImplemented && (activeDamage || (activeBranch === "falcon" && falcon)) && (
+        <div className="breakdown-view">
+          <div className="breakdown-head">
+            <span className="breakdown-title">Damage breakdown</span>
+            <span className="breakdown-sub">{breakdownLabel}</span>
+          </div>
+          {activeBranch === "falcon" && falcon ? (
+            <FalconView falcon={falcon} />
+          ) : showDwCombined && dwRhBranch && dwLhBranch ? (
+            <DualWieldStepList
+              rh={dwRhBranch}
+              lh={dwLhBranch}
+              rhFactor={dwRhFactor}
+              lhFactor={dwLhFactor}
+              isCrit={activeBranch === "crit"}
+              psBonusPct={dwPsBonusPct}
+            />
+          ) : activeDamage ? (
+            <PipelineView steps={activeDamage.steps} hideFinal />
+          ) : null}
+          {activeBranch !== "falcon" && killAvg != null && (
+            <div className="breakdown-total">
+              <span className="breakdown-total-label">Final damage</span>
+              <span className="breakdown-total-val">
+                {finalRange ? `${nfmt(killMin!)}–${nfmt(killMax!)}` : nfmt(killAvg)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {selfDamage && <SelfDamageView sd={selfDamage} />}
     </div>

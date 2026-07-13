@@ -26,6 +26,16 @@ instead of release version. Dates are taken from actual git commit history.
   beyond the available data, so exact skill damage isn't shown — only the accurate basic/elemental
   attack figures are.)
 
+### Changed
+
+- **Damage breakdown redesigned.** The step-by-step breakdown is now a compact one-line-per-step list —
+  each step's explanatory note is revealed on hover/tap instead of always being shown, so it's no longer
+  a wall of text. It sits in its own card matching the self-damage and survivability readouts, with the
+  **final damage shown as a prominent total**. Averages were removed (the total shows a min–max range,
+  and the "average hits" metric is gone). The **Compare builds** panel is now a neutral utility panel so
+  the colour-coded damage cards (gold breakdown · red self-damage · blue survivability) read as a
+  distinct, consistent set.
+
 ### Fixed
 
 - **Demi-Human resistance now applies defensively.** Cards such as **Thara Frog**

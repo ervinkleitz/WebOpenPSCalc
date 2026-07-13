@@ -696,54 +696,63 @@ label {
 .pipeline-chip-label { color: var(--text-dim); font-style: italic; }
 .pipeline-chip-val { font-family: var(--mono); color: var(--text-dim); }
 
-.pipeline-track {
-  display: flex; flex-direction: column;
+/* Compact damage breakdown — one row per step, notes revealed on hover/tap. */
+.pl-track { display: flex; flex-direction: column; }
+.pl-step { display: flex; flex-direction: column; }
+.pl-row {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  padding: 0.24rem 0.35rem; border-radius: 5px;
 }
-
-.pipeline-row {
-  display: flex; align-items: baseline; gap: 0;
-  padding: 0.28rem 0;
+.pl-row--note { cursor: pointer; }
+.pl-row--note:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.pl-badge {
+  flex: 0 0 3.4rem; text-align: right;
+  font-family: var(--mono); font-size: 0.74rem; white-space: nowrap; color: var(--text-faint);
 }
-.pipeline-row--final {
-  border-top: 1px solid var(--border-soft);
-  margin-top: 0.15rem; padding-top: 0.35rem;
-  justify-content: space-between;
-}
-.pipeline-row-name { font-size: 0.82rem; color: var(--text); flex-shrink: 0; }
-.pipeline-row-dots {
-  flex: 1; min-width: 1rem;
-  height: 1px;
-  margin: 0 0.55rem 0.15rem;
+.pl-badge.conn-boost, .pl-badge.conn-add { color: var(--good); }
+.pl-badge.conn-reduce, .pl-badge.conn-sub { color: var(--crit); }
+.pl-name { font-size: 0.82rem; color: var(--text); white-space: nowrap; flex-shrink: 0; }
+.pl-dots {
+  flex: 1 1 auto; min-width: 0.8rem; height: 1px; align-self: center;
   background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
-  background-size: 7px 1px;
-  background-repeat: repeat-x;
-  background-position: center;
+  background-size: 7px 1px; background-repeat: repeat-x; background-position: center;
 }
-.pipeline-row-val { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); flex-shrink: 0; }
-.pipeline-row--final .pipeline-row-name { color: var(--accent); font-weight: 600; }
-.pipeline-row--final .pipeline-row-val { font-size: 0.95rem; }
-.pipeline-row--final .pipeline-row-dots { display: none; }
+.pl-val { font-family: var(--mono); font-size: 0.88rem; color: var(--text); flex-shrink: 0; }
+.pl-info { font-size: 0.68rem; color: var(--text-faint); flex-shrink: 0; }
+.pl-row--final {
+  border-top: 1px solid var(--border-soft); margin-top: 0.2rem; padding-top: 0.4rem;
+}
+.pl-row--final .pl-name { color: var(--accent); font-weight: 600; }
+.pl-row--final .pl-val { color: var(--accent); font-weight: 600; font-size: 0.98rem; }
+.pl-row--final .pl-dots { display: none; }
+.pl-note {
+  max-height: 0; overflow: hidden; opacity: 0;
+  font-size: 0.71rem; color: var(--text-faint); line-height: 1.4;
+  padding: 0 0.35rem 0 3.9rem;
+  transition: max-height 0.16s ease, opacity 0.16s ease, padding 0.16s ease;
+}
+.pl-step:hover .pl-note, .pl-note.open { max-height: 6rem; opacity: 1; padding-top: 0.05rem; padding-bottom: 0.35rem; }
 
-.pipeline-conn {
-  display: flex; align-items: center; gap: 0.35rem;
-  padding: 0.04rem 0; min-width: 0;
+/* Damage breakdown card — same card treatment as the self-damage and survivability
+   readouts, gold-accented since it's the offensive breakdown, with a large final total. */
+.breakdown-view {
+  margin-top: 1rem;
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg));
+  padding: 0.7rem 0.85rem;
 }
-.pipeline-conn-arrow { color: var(--border); font-size: 0.65rem; flex-shrink: 0; }
-.pipeline-conn-badge {
-  font-family: var(--mono); font-size: 0.71rem; white-space: nowrap; flex-shrink: 0;
+.breakdown-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
+.breakdown-title { font-size: 0.9rem; font-weight: 600; color: var(--accent); }
+.breakdown-sub { font-size: 0.74rem; color: var(--text-faint); }
+.breakdown-total {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.6rem;
+  margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-soft);
 }
-.conn-boost .pipeline-conn-badge { color: var(--good); }
-.conn-reduce .pipeline-conn-badge { color: var(--text-dim); }
-.conn-add .pipeline-conn-badge { color: var(--good); }
-.conn-sub .pipeline-conn-badge { color: var(--crit); }
-.conn-pass .pipeline-conn-badge { color: var(--text-faint); }
-.pipeline-conn-dest {
-  font-size: 0.68rem; color: var(--text-dim); white-space: nowrap; flex-shrink: 0;
-}
-.pipeline-conn-note {
-  font-size: 0.65rem; color: var(--text-faint);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
-}
+.breakdown-total-label { font-size: 0.82rem; font-weight: 600; color: var(--text); flex: 1; }
+.breakdown-total-val { font-family: var(--mono); font-size: 1.05rem; font-weight: 600; color: var(--accent); }
+.breakdown-total-avg { font-size: 0.78rem; color: var(--text-faint); font-weight: 400; font-family: var(--mono); }
 
 .falcon-section { margin-top: 1.2rem; }
 .falcon-rows { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.4rem; }
@@ -775,7 +784,7 @@ label {
 }
 .self-damage-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.55rem; }
 .self-damage-title { font-size: 0.9rem; font-weight: 600; color: var(--crit); }
-.self-damage-sub { font-size: 0.72rem; color: var(--text-faint); }
+.self-damage-sub { font-size: 0.74rem; color: var(--text-faint); }
 .self-damage-part { padding: 0.35rem 0 0.4rem; border-top: 1px dashed var(--border-soft); }
 .self-damage-part:first-of-type { border-top: none; padding-top: 0; }
 .self-damage-part-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
@@ -783,7 +792,7 @@ label {
 .self-damage-part-val { font-family: var(--mono); font-size: 0.9rem; color: var(--text); white-space: nowrap; }
 .self-damage-avg { color: var(--text-faint); font-size: 0.8rem; }
 .self-damage-resists { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
-.self-damage-chip { font-size: 0.68rem; padding: 0.08rem 0.4rem; border-radius: 3px; letter-spacing: 0.02em; border: 1px solid var(--border-soft); color: var(--text-dim); }
+.self-damage-chip { font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 3px; letter-spacing: 0.02em; border: 1px solid var(--border-soft); color: var(--text-dim); }
 .self-damage-chip.good { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); background: color-mix(in srgb, var(--good) 10%, transparent); }
 .self-damage-chip.muted { color: var(--text-faint); }
 .self-damage-total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.6rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-soft); }
@@ -801,19 +810,19 @@ label {
 .surv-view {
   margin-top: 1rem;
   border: 1px solid var(--border-soft);
-  border-left: 3px solid #6aa3d5;
+  border-left: 3px solid var(--link);
   border-radius: var(--radius);
-  background: color-mix(in srgb, #6aa3d5 6%, var(--bg));
+  background: color-mix(in srgb, var(--link) 6%, var(--bg));
   padding: 0.7rem 0.85rem;
 }
 .surv-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.55rem; }
-.surv-title { font-size: 0.9rem; font-weight: 600; color: #7fb3e0; }
+.surv-title { font-size: 0.9rem; font-weight: 600; color: var(--link); }
 .surv-sub { font-size: 0.74rem; color: var(--text-faint); font-family: var(--mono); }
 .surv-line { padding: 0.4rem 0; border-top: 1px dashed var(--border-soft); }
 .surv-line:first-of-type { border-top: none; padding-top: 0; }
 .surv-line-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
 .surv-line-label { font-size: 0.8rem; color: var(--text); }
-.surv-line--magic .surv-line-label { color: #b58bd6; }
+.surv-line--magic .surv-line-label { color: var(--link); }
 .surv-line-dmg { font-family: var(--mono); font-size: 1rem; color: var(--text); font-weight: 600; white-space: nowrap; }
 .surv-line-unit { font-size: 0.72rem; color: var(--text-faint); font-weight: 400; }
 .surv-line-metrics { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
@@ -828,15 +837,15 @@ label {
 .surv-dodge-val.bad { color: var(--crit); }
 .surv-dodge-detail { font-size: 0.72rem; color: var(--text-faint); margin-top: 0.2rem; }
 .surv-tag { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); border: 1px solid var(--border-soft); border-radius: 3px; padding: 0.02rem 0.28rem; margin-left: 0.4rem; vertical-align: middle; }
-.surv-tag--skill { color: #b58bd6; border-color: color-mix(in srgb, #b58bd6 40%, transparent); }
+.surv-tag--skill { color: var(--link); border-color: color-mix(in srgb, var(--link) 40%, transparent); }
 .surv-kit { margin-top: 0.55rem; padding-top: 0.5rem; border-top: 1px solid var(--border-soft); }
 .surv-kit-label { font-size: 0.72rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
 .surv-kit-list { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
 .surv-kit-chip { font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 3px; border: 1px solid var(--border-soft); background: var(--bg-panel-raised); color: var(--text-dim); }
 .surv-kit-chip--btn { cursor: pointer; font-family: inherit; transition: border-color 0.12s, color 0.12s, background 0.12s; }
-.surv-kit-chip--btn:hover { color: var(--text); border-color: color-mix(in srgb, #6aa3d5 55%, transparent); }
-.surv-kit-chip--btn.active { color: #7fb3e0; border-color: #6aa3d5; background: color-mix(in srgb, #6aa3d5 12%, transparent); }
-.surv-skill-detail { margin-top: 0.5rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border-soft); border-left: 3px solid #6aa3d5; border-radius: var(--radius); background: color-mix(in srgb, #6aa3d5 5%, var(--bg)); }
+.surv-kit-chip--btn:hover { color: var(--text); border-color: color-mix(in srgb, var(--link) 55%, transparent); }
+.surv-kit-chip--btn.active { color: var(--link); border-color: var(--link); background: color-mix(in srgb, var(--link) 12%, transparent); }
+.surv-skill-detail { margin-top: 0.5rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border-soft); border-left: 3px solid var(--link); border-radius: var(--radius); background: color-mix(in srgb, var(--link) 5%, var(--bg)); }
 .surv-skill-body .surv-line-head { margin-bottom: 0.15rem; }
 .surv-skill-msg { font-size: 0.76rem; color: var(--text-faint); }
 .surv-skill-hits { font-family: var(--mono); font-size: 0.82rem; color: var(--text-dim); font-weight: 400; }
@@ -1171,15 +1180,17 @@ label {
 }
 
 /* ── Build-vs-build comparison ─────────────────────────────────────── */
+/* Neutral utility panel — deliberately NOT accent-striped, so it reads as a
+   comparison tool distinct from the colour-coded damage readouts below (gold
+   breakdown / red self-damage / blue survivability). */
 .compare-view {
   margin: 0 0 1.1rem;
   background: var(--bg-panel-raised);
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: inset 3px 0 0 var(--accent); /* accent left edge marks it as a distinct module */
   padding: 0.9rem 1rem 1rem;
 }
-.compare-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+.compare-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border-soft); }
 .compare-head h3 { margin: 0; font-size: 1rem; color: var(--text); display: flex; align-items: center; gap: 0.4rem; }
 .compare-count {
   font-size: 0.68rem; color: var(--accent);
