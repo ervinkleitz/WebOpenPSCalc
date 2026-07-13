@@ -39,11 +39,13 @@ function computeConsumableBonuses(consumableBuffs) {
 
   if (cb.cri_food) result.cri = 7;
 
-  const atkItem = Number(cb.atk_item || 0);
+  let atkItem = Number(cb.atk_item || 0);
+  if (cb.box_resentment) atkItem += 20; // Box of Resentment: sc_start SC_PLUSATTACKPOWER,,20
   if (atkItem) result.batk = atkItem;
 
   let matkFlat = Number(cb.matk_item || 0);
   if (cb.matk_food) matkFlat += 10;
+  if (cb.box_drowsiness) matkFlat += 20; // Box of Drowsiness: sc_start SC_PLUSMAGICPOWER,,20
   if (matkFlat) result.matk_flat = matkFlat;
 
   return result;
@@ -90,8 +92,18 @@ function applyGearBonuses(build, gearBonuses) {
   const cons = computeConsumableBonuses(build.consumable_buffs);
   const cl = CLAN_STATS[build.clan] || {};
 
+  // Box of Gloom casts Improve Concentration (AC_CONCENTRATION) Lv1 → SC_CONCENTRATION
+  // (+3% AGI/DEX on base stats). Merge it in without downgrading a higher level the
+  // character already has from the buff picker.
+  let activeStatusLevels = build.active_status_levels;
+  if (build.consumable_buffs && build.consumable_buffs.box_gloom) {
+    const cur = activeStatusLevels.SC_CONCENTRATION || 0;
+    activeStatusLevels = { ...activeStatusLevels, SC_CONCENTRATION: Math.max(cur, 1) };
+  }
+
   return {
     ...build,
+    active_status_levels: activeStatusLevels,
     bonus_str: build.bonus_str + gb.str_ + (ma.str || 0) + (cons.str || 0) + (cl.str || 0),
     bonus_agi: build.bonus_agi + gb.agi + (ma.agi || 0) + (cons.agi || 0) + (cl.agi || 0),
     bonus_vit: build.bonus_vit + gb.vit + (ma.vit || 0) + (cons.vit || 0) + (cl.vit || 0),

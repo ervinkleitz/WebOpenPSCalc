@@ -5,6 +5,14 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-13
+
+### Added
+
+- **Box consumables in the Consumables panel.** Three new toggles: **Box of Gloom** (casts Improve
+  Concentration Lv1 — +3% AGI/DEX from base stats), **Box of Resentment** (+20 ATK), and **Box of
+  Drowsiness** (+20 MATK). The ATK/MATK boxes stack on top of the flat ATK/MATK item fields.
+
 ## 2026-07-12
 
 ### Added

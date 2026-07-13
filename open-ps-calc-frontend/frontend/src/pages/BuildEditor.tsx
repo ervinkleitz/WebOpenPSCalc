@@ -1787,6 +1787,36 @@ export default function BuildEditor() {
                 />
               </div>
             </div>
+            <div className="field field-checkbox" style={{ marginTop: "0.6rem" }}>
+              <label title="Box of Gloom: casts Improve Concentration Lv1 (+3% AGI/DEX, base stats only).">
+                <input
+                  type="checkbox"
+                  checked={!!data.consumable_buffs?.box_gloom}
+                  onChange={(e) => updateConsumable("box_gloom", e.target.checked || undefined)}
+                />
+                <span>Box of Gloom (+3% AGI/DEX)</span>
+              </label>
+            </div>
+            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
+              <label title="Box of Resentment: +20 ATK for 60s (sc_start SC_PLUSATTACKPOWER).">
+                <input
+                  type="checkbox"
+                  checked={!!data.consumable_buffs?.box_resentment}
+                  onChange={(e) => updateConsumable("box_resentment", e.target.checked || undefined)}
+                />
+                <span>Box of Resentment (+20 ATK)</span>
+              </label>
+            </div>
+            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
+              <label title="Box of Drowsiness: +20 MATK for 60s (sc_start SC_PLUSMAGICPOWER).">
+                <input
+                  type="checkbox"
+                  checked={!!data.consumable_buffs?.box_drowsiness}
+                  onChange={(e) => updateConsumable("box_drowsiness", e.target.checked || undefined)}
+                />
+                <span>Box of Drowsiness (+20 MATK)</span>
+              </label>
+            </div>
           </Panel>
 
           <Panel eyebrow="06" title="Buffs">

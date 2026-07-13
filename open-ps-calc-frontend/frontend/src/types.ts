@@ -42,6 +42,9 @@ export interface ConsumableBuffs {
   aspd_potion?: number;
   atk_item?: number;
   matk_item?: number;
+  box_resentment?: boolean;  // Box of Resentment: +20 ATK
+  box_drowsiness?: boolean;  // Box of Drowsiness: +20 MATK
+  box_gloom?: boolean;       // Box of Gloom: casts Improve Concentration Lv1 (+3% AGI/DEX)
 }
 
 export interface SkillState {
