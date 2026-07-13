@@ -15,6 +15,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Weapon bonus audit — magic weapons now apply their MATK bonus, and several other weapon bonuses
+  corrected.** A sweep of all 708 weapons against the PS item database found weapons whose stated
+  bonuses were missing from the script the calculator reads. Now fixed: **Book, Bible, Tablet, Girl's
+  Diary, Legacy of Dragon, Book of the Apocalypse** (each missing MATK +15%) and **Diary of Great
+  Sage** (missing MATK +20% / −5% after-cast delay); **Guardian of Light Wand** (missing MATK +18% and
+  MaxSP +150); **Balmung** (missing Int +20 / Luk +20); **Hypnotist's Staff** (showed MATK +25%, should
+  be +18%); **Cleaver** (its +5% Demi-Human bonus was applied as damage *reduction* instead of extra
+  *damage*); and the rental **Ahlspiess** (Demi-Human bonus was +10%, should be +20%).
 - **Dragon-slaying weapons now apply their refine bonuses.** Dragon Killer, Dragon Slayer, Gae Bolg,
   and Dragon Wing grant refine-conditional bonuses against Dragon monsters (+HIT, +% damage, crit, and
   Dragon resistance at +6 refine, doubled at +7) that the calculator wasn't applying — the reworked PS

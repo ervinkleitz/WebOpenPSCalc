@@ -1,4 +1,43 @@
 {
+  "1161": {
+    "script": "bonus bUnbreakableWeapon,0; bonus bAtkEle,Ele_Holy; bonus bInt,20; bonus bLuk,20;"
+  },
+  "1305": {
+    "script": "bonus2 bAddRace,RC_DemiPlayer,5; bonus3 bAddMonsterDropItem,517,RC_Brute,3000;"
+  },
+  "1488": {
+    "script": "bonus bIgnoreDefRace,RC_All; bonus2 bAddRace,RC_DemiPlayer,20; bonus3 bAutoSpell,KN_PIERCE,5,30;"
+  },
+  "1550": {
+    "script": "bonus bMatkRate,15;"
+  },
+  "1551": {
+    "script": "bonus bInt,2; bonus bMatkRate,15;"
+  },
+  "1552": {
+    "script": "bonus bMatkRate,15;"
+  },
+  "1557": {
+    "script": "bonus bAtkEle,Ele_Dark; bonus2 bAddEle,Ele_Holy,5; bonus2 bAddEle,Ele_Water,7; bonus2 bAddEle,Ele_Earth,7; bonus2 bAddEle,Ele_Fire,7; bonus2 bAddEle,Ele_Wind,7; bonus bMatkRate,15;"
+  },
+  "1558": {
+    "script": "bonus2 bAddDamageClass,1188,150; bonus bMatkRate,15;"
+  },
+  "1559": {
+    "script": "bonus bInt,3; bonus bIgnoreDefRace,RC_Dragon; bonus2 bSPGainRace,RC_Dragon,10; bonus bMatkRate,15;"
+  },
+  "1581": {
+    "script": "bonus bMatkRate,20; bonus bDelayrate,-5;"
+  },
+  "1621": {
+    "script": "bonus bInt,1; bonus bMatkRate,18;"
+  },
+  "1622": {
+    "script": "bonus bInt,1; bonus bMatkRate,18;"
+  },
+  "2006": {
+    "script": "bonus bAtkEle,Ele_Holy; bonus bInt,6; bonus bMatkRate,18; bonus bMaxSP,150;"
+  },
   "1166": {
     "script": "bonus bIgnoreDefRace,RC_Dragon; bonus2 bAddRace,RC_Dragon,20; if(getrefine()>=6){ bonus bHit,10; bonus bCritical,10; bonus2 bSubRace,RC_Dragon,10; } if(getrefine()>=7){ bonus bHit,10; bonus bCritical,10; bonus2 bSubRace,RC_Dragon,10; }"
   },
