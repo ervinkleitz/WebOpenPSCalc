@@ -2,6 +2,18 @@
   "1161": {
     "script": "bonus bUnbreakableWeapon,0; bonus bAtkEle,Ele_Holy; bonus bInt,20; bonus bLuk,20;"
   },
+  "1373": {
+    "script": "bonus bMatkRate,20; bonus bDelayrate,-5;"
+  },
+  "1541": {
+    "script": "bonus bAtkEle,Ele_Holy; bonus2 bAddEle,Ele_Dark,10; bonus2 bAddRace,RC_Demon,10; bonus3 bAutoSpell,AL_CRUCIS,1+getrefine(),100; autobonus \"{ bonus bBaseAtk,50; }\",10,20000,BF_WEAPON,\"{ specialeffect(EF_BLOODDRAIN, AREA, playerattached()); }\";"
+  },
+  "1567": {
+    "script": "bonus bStr,5; bonus bDex,2; bonus bMatk,100;"
+  },
+  "1618": {
+    "script": "bonus bDex,3; bonus bMatkRate,15; bonus bMaxHP,200;"
+  },
   "1305": {
     "script": "bonus2 bAddRace,RC_DemiPlayer,5; bonus3 bAddMonsterDropItem,517,RC_Brute,3000;"
   },

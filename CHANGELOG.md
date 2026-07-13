@@ -22,7 +22,11 @@ instead of release version. Dates are taken from actual git commit history.
   Sage** (missing MATK +20% / −5% after-cast delay); **Guardian of Light Wand** (missing MATK +18% and
   MaxSP +150); **Balmung** (missing Int +20 / Luk +20); **Hypnotist's Staff** (showed MATK +25%, should
   be +18%); **Cleaver** (its +5% Demi-Human bonus was applied as damage *reduction* instead of extra
-  *damage*); and the rental **Ahlspiess** (Demi-Human bonus was +10%, should be +20%).
+  *damage*); and the rental **Ahlspiess** (Demi-Human bonus was +10%, should be +20%). Cross-checked
+  against the Payon Stories item database and corrected four more: **Staff of Survival** (1-slot Dex
+  version) MaxHP +400 → +200; **Nemesis**'s "Shadow elemental" bonus was applied to the Undead *race*
+  instead of the Shadow *element*; and the rental **Refined Bloody Axe** (MATK +20% / −5% delay) and
+  **Refined Hardcover Book** (flat MATK +100) had unrelated vanilla scripts.
 - **Dragon-slaying weapons now apply their refine bonuses.** Dragon Killer, Dragon Slayer, Gae Bolg,
   and Dragon Wing grant refine-conditional bonuses against Dragon monsters (+HIT, +% damage, crit, and
   Dragon resistance at +6 refine, doubled at +7) that the calculator wasn't applying — the reworked PS
