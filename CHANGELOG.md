@@ -38,6 +38,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Holy Cross now applies its 20% accuracy bonus.** Holy Cross has a built-in 20% accuracy bonus,
+  but the calculator was showing the same hit chance as a normal attack. The bonus is now applied to
+  the hit rate (×1.2 before the 5–100% clamp), so Holy Cross lands more reliably against high-FLEE
+  targets than a plain melee hit — matching in-game behaviour.
 - **Demi-Human resistance now applies defensively.** Cards such as **Thara Frog**
   (`bSubRace,RC_DemiPlayer`) were stored under a race key nothing checked, so their 30% reduction
   wasn't being applied to incoming Demi-Human damage — or the Grand Cross recoil. Composite race

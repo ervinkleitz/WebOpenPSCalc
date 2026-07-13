@@ -1382,7 +1382,7 @@ class BattlePipeline {
       && profile.mechanic_flags.has("MO_TRIPLEATTACK_PS_BONUS")
       && "SC_EXPLOSIONSPIRITS" in (build.active_status_levels || {});
     const [isEligible, critChance] = calculateCritChance(status, weapon, skill, target, this.config, build.server, gearBonuses, taFury);
-    let [hitChance, perfectDodge] = calculateHitChance(status, target, this.config);
+    let [hitChance, perfectDodge] = calculateHitChance(status, target, this.config, skillName, skill.level);
     if (build.target_mob_id != null) perfectDodge = 0.0;
 
     if (profile.mechanic_flags.has(`${skillName}_NK_IGNORE_FLEE`)) skill.nk_ignore_flee = true;
