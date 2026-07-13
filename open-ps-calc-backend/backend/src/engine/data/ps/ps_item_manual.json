@@ -1,4 +1,16 @@
 {
+  "1166": {
+    "script": "bonus bIgnoreDefRace,RC_Dragon; bonus2 bAddRace,RC_Dragon,20; if(getrefine()>=6){ bonus bHit,10; bonus bCritical,10; bonus2 bSubRace,RC_Dragon,10; } if(getrefine()>=7){ bonus bHit,10; bonus bCritical,10; bonus2 bSubRace,RC_Dragon,10; }"
+  },
+  "1474": {
+    "script": "bonus bIgnoreDefRace,RC_Dragon; bonus2 bAddRace,RC_Boss,10; bonus2 bAddRace,RC_Dragon,20; if(getrefine()>=6){ bonus bHit,10; bonus bCritical,10; bonus2 bSubRace,RC_Dragon,10; } if(getrefine()>=7){ bonus bHit,10; bonus bCritical,10; bonus2 bSubRace,RC_Dragon,10; }"
+  },
+  "1724": {
+    "script": "bonus bIgnoreDefRace,RC_Dragon; if(getrefine()>=6){ bonus2 bAddRace,RC_Dragon,15; bonus2 bSubRace,RC_Dragon,5; } if(getrefine()>=7){ bonus2 bAddRace,RC_Dragon,15; bonus2 bSubRace,RC_Dragon,5; }"
+  },
+  "13001": {
+    "script": "bonus bIgnoreDefRace,RC_Dragon; if(getrefine()>=6){ bonus bHit,15; bonus2 bAddRace,RC_Dragon,15; } if(getrefine()>=7){ bonus bHit,15; bonus2 bAddRace,RC_Dragon,15; }"
+  },
   "81011": {
     "type": "IT_ARMOR",
     "loc": [

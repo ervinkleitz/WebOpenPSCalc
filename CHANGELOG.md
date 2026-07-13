@@ -15,6 +15,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Dragon-slaying weapons now apply their refine bonuses.** Dragon Killer, Dragon Slayer, Gae Bolg,
+  and Dragon Wing grant refine-conditional bonuses against Dragon monsters (+HIT, +% damage, crit, and
+  Dragon resistance at +6 refine, doubled at +7) that the calculator wasn't applying — the reworked PS
+  effects weren't present in the item script the engine reads. Now applied. Also corrected two base
+  bonuses surfaced along the way: **Dragon Slayer**'s Dragon damage bonus (was 15%, PS is 20%) and
+  **Gae Bolg**'s missing 20% Dragon damage bonus.
 - **Venom Splasher reappears in the skill picker.** Venom Splasher — along with Brandish Spear and
   Bomb (Acid Demonstration) — is flagged "no damage" in the item database because its real hit is a
   delayed explosion, so a filter meant to hide pure support skills was hiding it too. These skills are
