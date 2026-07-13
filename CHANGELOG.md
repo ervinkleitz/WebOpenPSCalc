@@ -13,6 +13,13 @@ instead of release version. Dates are taken from actual git commit history.
   Concentration Lv1 — +3% AGI/DEX from base stats), **Box of Resentment** (+20 ATK), and **Box of
   Drowsiness** (+20 MATK). The ATK/MATK boxes stack on top of the flat ATK/MATK item fields.
 
+### Fixed
+
+- **Venom Splasher reappears in the skill picker.** Venom Splasher — along with Brandish Spear and
+  Bomb (Acid Demonstration) — is flagged "no damage" in the item database because its real hit is a
+  delayed explosion, so a filter meant to hide pure support skills was hiding it too. These skills are
+  selectable again (the calculator computes their damage normally).
+
 ## 2026-07-12
 
 ### Added

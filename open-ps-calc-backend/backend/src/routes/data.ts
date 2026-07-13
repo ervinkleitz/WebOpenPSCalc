@@ -114,15 +114,17 @@ router.get("/skills", (req: Request, res: Response) => {
       if (NON_PS_SKILL_PREFIXES.has(name.split("_")[0])) return false;
       // HT_POWER is an internal Hercules id, not a real player skill.
       if (name === "HT_POWER") return false;
-      // Pure support skills carry the NoDamage flag. Hide them from a *damage* picker.
-      // The one NoDamage skill we compute — offensive Heal — is the documented exception.
-      if ((s.damage_type || []).includes("NoDamage") && name !== "AL_HEAL") return false;
-      return (
-        s.attack_type === "Weapon" ||
-        s.attack_type === "Magic" ||
+      const computable =
         Object.prototype.hasOwnProperty.call(wr, name) ||
-        Object.prototype.hasOwnProperty.call(mr, name)
-      );
+        Object.prototype.hasOwnProperty.call(mr, name);
+      // Pure support skills carry the NoDamage flag. Hide them from a *damage*
+      // picker — UNLESS the active profile can actually compute the skill's damage
+      // (it's in weapon_ratios/magic_ratios). Venom Splasher (AS_SPLASHER) and Acid
+      // Terror are flagged NoDamage in the DB because the real hit is a delayed
+      // explosion, yet the engine computes their damage; offensive Heal (AL_HEAL)
+      // is the other documented NoDamage exception.
+      if ((s.damage_type || []).includes("NoDamage") && name !== "AL_HEAL" && !computable) return false;
+      return s.attack_type === "Weapon" || s.attack_type === "Magic" || computable;
     });
   }
   if (req.query.q) {
