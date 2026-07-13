@@ -10,9 +10,6 @@ const RACE_TO_RC = {
 };
 
 const KN_AUTOCOUNTER = 61;
-const SN_SHARPSHOOTING = 280;
-const MA_SHARPSHOOTING = 357;
-const NJ_KIRIKAGE = 543;
 
 const VANILLA_CRIT_ELIGIBLE = new Set(["KN_AUTOCOUNTER", "SN_SHARPSHOOTING", "MA_SHARPSHOOTING", "NJ_KIRIKAGE"]);
 const PS_CRIT_ELIGIBLE = new Set(["AS_SONICBLOW", "AS_GRIMTOOTH", "GS_TRACKING", "PS_PR_HOLYSTRIKE"]);
@@ -55,11 +52,18 @@ function calculateCritChance(status, weapon, skill, target, config, server = "st
   if (skill.id === KN_AUTOCOUNTER) {
     // Counter Attack (Auto Counter) never misses and always lands a critical.
     return [true, 100.0];
-  } else if (skill.id === SN_SHARPSHOOTING || skill.id === MA_SHARPSHOOTING) {
+  } else if (skill.name === "SN_SHARPSHOOTING" || skill.name === "MA_SHARPSHOOTING") {
+    // Sharp Shooting: +20 crit (×10 internal scale). Keyed by NAME on purpose —
+    // the loaded skills.json ids (382 / 8215) differ from the old hardcoded
+    // constants (280 / 357), which left this branch dead so the +20 never fired.
     cri += 200;
-  } else if (skill.id === NJ_KIRIKAGE) {
-    cri += 250 + 50 * skill.level;
   }
+  // NOTE: NJ_KIRIKAGE (Shadow Slash) crit is deliberately NOT applied here. On PS
+  // it only crits while Shadow's Within is active, with a PS-tuned crit value —
+  // that buff isn't plumbed into this function yet. The old code keyed a
+  // +250+50×lv bonus off id 543, but the real id is 530, so it was already dead;
+  // rather than restore an ungated always-on bonus (which would over-inflate
+  // Kirikage crit vs PS), it stays disabled pending the gated rework. See ROADMAP.
 
   cri = Math.max(config.critical_min, cri);
   const critChance = Math.max(0.0, cri / 10.0);

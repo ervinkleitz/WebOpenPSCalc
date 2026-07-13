@@ -170,6 +170,11 @@ const PS_RATE_BONUSES = {
 const PS_WEAPON_HIT_COUNTS = {
   GS_MAGICALBULLET: () => 3,  // Soul Bullet hits 3× (like Triple Action) — wiki.payonstories.com/Soul_Bullet
   GS_DESPERADO: () => ({ min: 1, max: 10 }),  // Desperado sprays a variable number of shots (in-game 0–10, ~6 avg) — show the damage as a 1–10-hit range rather than a single average. wiki.payonstories.com/Desperado
+  // Pierce hits by target SIZE, not a fixed count: Small 1 / Medium 2 / Large 3
+  // (PR-Hercules battle.c:4395 `wd.div_ = tstatus->size + 1`). The vanilla DB
+  // lists a flat 3, which over-counts Small/Medium targets ~2-3×.
+  KN_PIERCE: (lv, tgt) => ({ Small: 1, Medium: 2, Large: 3 }[tgt && tgt.size] ?? 3),
+  ML_PIERCE: (lv, tgt) => ({ Small: 1, Medium: 2, Large: 3 }[tgt && tgt.size] ?? 3),
 };
 
 // Mechanic flag sentinels — checked by individual modifiers across the engine.

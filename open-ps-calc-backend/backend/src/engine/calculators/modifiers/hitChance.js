@@ -10,6 +10,10 @@
 // skill DB: "This skill has a 20% accuracy bonus."); vanilla RO gives it none.
 const SKILL_HITRATE_PCT_BONUS = {
   CR_HOLYCROSS: () => 20,
+  // Shield Chain shares Holy Cross's +20% hitrate (PR-Hercules battle.c groups
+  // PA_SHIELDCHAIN with the +20% "Hit skill modifiers" case). The PS skill DB
+  // likewise notes accuracy affects its success — vanilla value applies.
+  PA_SHIELDCHAIN: () => 20,
 };
 
 function calculateHitChance(status, target, config, skillName, skillLevel) {

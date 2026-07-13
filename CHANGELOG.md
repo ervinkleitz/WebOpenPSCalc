@@ -38,6 +38,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Sharp Shooting's +20 critical bonus now applies.** Sharp Shooting is a guaranteed-critical
+  skill with a built-in +20 crit rate, but an internal skill-id mismatch meant that bonus was never
+  being added — Sharp Shooting was computing an ordinary critical rate. It now correctly includes the
+  +20.
+- **Shield Chain now applies its 20% accuracy bonus.** Like Holy Cross, Shield Chain lands with a
+  built-in +20% hit rate; the calculator was showing normal accuracy for it. Fixed.
+- **Pierce now hits by target size.** Pierce strikes once against Small targets, twice against Medium,
+  and three times against Large — the calculator was always applying three hits, overstating its
+  damage against Small and Medium enemies by up to 3×.
 - **Holy Cross now applies its 20% accuracy bonus.** Holy Cross has a built-in 20% accuracy bonus,
   but the calculator was showing the same hit chance as a normal attack. The bonus is now applied to
   the hit rate (×1.2 before the 5–100% clamp), so Holy Cross lands more reliably against high-FLEE

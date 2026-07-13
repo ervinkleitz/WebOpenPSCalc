@@ -655,3 +655,68 @@ Also drop **HT_POWER** from the picker — it's not a real PS player skill (inte
    skills need a `getSkill()` data-source fix.
 4. Remaining BF_MISC skills, then the remaining GUI sections (buffs,
    consumables, combat controls) as their own frontend panels.
+
+## Non-damage clause coverage audit (2026-07-12)
+
+**Why this exists.** The per-class audit above verifies *damage numbers* (ratio × DEF × cards ×
+masteries). But many skills carry **non-damage clauses in their description** — accuracy/hit-rate
+bonuses, auto-hit, crit enable/bonus, forced element, multi-hit count, ignore/reduce-DEF — that also
+change the calculator's output (hit%, crit%, damage, DPS). Those were never a checklist item, so
+gaps hid in plain sight (Holy Cross's documented +20% accuracy was in the data the whole time). This
+section makes that category a standing punch-list.
+
+**How to re-run the sweep.** Extract every PS player-skill description clause and bucket by whether it
+touches calc output. A regex scan over `data/ps/ps_skill_db.json` descriptions for
+`accuracy|hit rate|always hit|never miss|ignore (flee|def|mdef)|critical|hits (twice|N times)|forced?
+element|reduces? def|size` (dropping NPC_/mercenary/homunc/3rd-job/guild prefixes) flags ~100 skills
+across 9 categories. Cross-check each flagged clause against the engine and mark modeled/gap. Prefer
+this **description-clause** pass over trusting `levels[].effect` (damage-only) fields.
+
+### Fixed in this pass
+- **CR_HOLYCROSS** — +20% accuracy bonus (`hitChance.js` `SKILL_HITRATE_PCT_BONUS`).
+- **PA_SHIELDCHAIN** — +20% accuracy bonus (same table; battle.c:4713 groups it with Holy Cross).
+- **SN_SHARPSHOOTING / MA_SHARPSHOOTING** — +20 crit was DEAD: `critChance.js` hardcoded ids
+  (280/357) never matched the loaded skills.json ids (382/8215). Re-keyed to skill **name**.
+- **KN_PIERCE / ML_PIERCE** — hits by target size (Small 1 / Medium 2 / Large 3), was flat 3
+  (battle.c:4395 `wd.div_ = size+1`). Added size-based `weapon_hit_counts` fns in `serverProfiles.js`.
+
+### Open gaps (verified, prioritised) — punch-list
+- **NJ_KIRIKAGE (Shadow Slash) crit** [med] — dead id (543 vs real 530) AND on PS should only crit
+  while **Shadow's Within** is active with a PS-tuned value. Needs `skill_params` threaded into
+  `critChance.js` + a source for the crit magnitude. Left disabled (documented in `critChance.js`)
+  rather than restored ungated.
+- **AS_SONICACCEL** [med] — Sonic Blow's +10% damage is modeled (`skillRatio.js:120`) but the
+  accuracy half is missing. **Conflict to resolve:** battle.c:4737 gives `hitrate × 1.5` (+50% of
+  hitrate) when Sonic Accel is learned; the PS skill DB says "+50 Hit" (flat). Confirm on the PS wiki
+  before implementing.
+- **SN_SIGHT (True Sight)** [med, Snipers] — entire self-buff unmodeled: +5 all stats, accuracy,
+  +weapon damage %, +crit. Not currently a selectable buff.
+- **LK_CONCENTRATION** [med] — only the AGI/DEX% is applied (`statusCalculator.js:62`). Vanilla also
+  grants a flat +HIT and an ATK% bonus (the self −DEF is out of scope for outgoing damage). Verify PS
+  values before adding.
+- **LK_SPIRALPIERCE** [med] — ignore-DEF/soft-DEF works via the `IgnoreDefense` flag, but the
+  weapon-weight formula, the inverse size modifier (S 125 / M 100 / L 75%), and the "5 hits, damage
+  divided evenly" model are unported → currently computes `100% × 5`. (See BF_MISC list above.)
+- **PA_PRESSURE** [med] — fixed level-based damage that ignores DEF and ATK; currently runs through
+  the ordinary DEF-reduced weapon-ratio branch. Needs a fixed-damage branch.
+- **SL_SMA (Esma)** [low, Soul Linker] — element is `Ele_Endowed` (Warm Wind), absent from
+  `ELE_STR_TO_INT`, so the magic branch stays Neutral; Warm Wind endow isn't threaded in.
+- **Timing** [low–med, DPS only] — SC_BERSERK +30% ASPD (LK_BERSERK / MS_BERSERK) unmodeled;
+  NJ_ZENYNAGE after-cast delay is 5s in the DB vs 2s described; MO_KITRANSLATION / MO_FINGEROFFENSIVE
+  / Asura hard-cast PS reworks and the combo-ready instant-cast are unmodeled; SG_STAR_COMFORT /
+  SG_DEVIL / SL_CRUSADER ASPD/delay buffs have no consumer.
+- **Niche** [low] — AS_CLOAKING attack-from-cloak crit-double; SG_FUSION never-miss + ignore-DEF
+  buff; HW_GRAVITATION DEF-ignoring damage (currently NoDamage, pending BF_MISC port); LK_AURABLADE
+  flat DEF-ignoring/accuracy-independent damage add; PF_SPIDERWEB Fire ×2.5 vs webbed target.
+
+### Confirmed correct (no action — recorded so they aren't re-flagged)
+- **TK_COUNTER** "always hit" — modeled via `damage_type:["IgnoreFlee"]` in skills.json.
+- Cosmetic multi-hit convention (negative `number_of_hits`): CR_HOLYCROSS −2, WZ_VERMILION −10,
+  AS_SONICBLOW −8, TK_COUNTER −3 — damage applied once, correct.
+- Forced elements for traps (Land/Blast/Claymore), GS_MAGICALBULLET (Ghost), the Ninja/Wizard bolts,
+  and Grand Cross/Holy Cross (Holy) all resolve correctly; TF_POISON intentionally reverts to weapon
+  element on PS (`TF_POISON_USES_WEAPON_ELEMENT`).
+- DEF-reduction debuffs (Signum Crucis, Strip Shield/Armor, Mind Breaker, Fling, Eternal Chaos, Steel
+  Body, Stone Curse) are representable via `target_active_scs` and consumed by `defenseFix.js` — they
+  apply when the caller injects the matching status. (Minor: the *vanilla* Strip Armor branch models
+  the MDEF cut as a VIT cut; the PS branch is correct.)
