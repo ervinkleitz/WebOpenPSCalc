@@ -10,3 +10,7 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Local agent working context (never pushed)
+CLAUDE.md
+context.md
