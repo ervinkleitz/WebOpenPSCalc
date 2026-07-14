@@ -15,6 +15,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Armor / accessory / headgear bonus audit.** Audited all 1,431 non-weapon equipment pieces against
+  the Payon Stories item database and corrected ~44 whose scripts didn't match their stated effects.
+  Several headgear applied a bonus **backwards** — **Classic Hat**, **Gigantic Majestic Goat**
+  (Demi-Human), and **Hunting Cap** gave damage *reduction* (or the wrong damage type) instead of the
+  stated extra *damage*; **Evolved Evil Wings** resisted the wrong race. Wrong stats fixed (**Dark
+  Knight Mask** STR→DEX, **Amistr Hat** VIT +5→+2, **Leaf Cat Hat**, **Aries/Jasper**). Missing bonuses
+  added (**Hawk Eyes** +3% long-range damage, the zodiac **Diadems/Crowns** and **Crown Cap / Book Pile
+  Hat / Red Wing Hat** refine ATK/MATK tiers, **3D Glasses**, **Baby Dragon Hat**, **Neo Valkyrie
+  Shield**, **Devilring Hat**, **Fur Seal Hat**, and more). Resistance values corrected (**Angelic /
+  Satanic Helm**, **Reginrev's Wings**, **Novice Shield**, **Pinwheel Hat** MaxHP/SP).
 - **Weapon bonus audit — magic weapons now apply their MATK bonus, and several other weapon bonuses
   corrected.** A sweep of all 708 weapons against the PS item database found weapons whose stated
   bonuses were missing from the script the calculator reads. Now fixed: **Book, Bible, Tablet, Girl's
