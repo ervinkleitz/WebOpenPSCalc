@@ -1283,12 +1283,20 @@ class BattlePipeline {
       });
     }
 
+    // Whether the active profile can actually compute this skill's damage (a ratio is
+    // defined for it somewhere). PS damage skills like Venom Splasher (AS_SPLASHER),
+    // Brandish Spear and Bomb carry the NoDamage flag in the DB because their real hit
+    // is a delayed explosion, yet the engine computes them via a weapon ratio — those
+    // must NOT be short-circuited by the NoDamage guard below; they flow to the
+    // physical branch. (Same exemption used by the BF_MISC catch-all further down.)
+    const hasRatio = !!((profile.weapon_ratios || {})[skillName] || (profile.magic_ratios || {})[skillName] || BF_WEAPON_RATIOS[skillName]);
+
     // NoDamage guard: buffs/debuffs (Dispell, Soul Change, Benedictio, …) are typed
     // attack_type "Magic" but carry the NoDamage flag, so without this they'd fall into
     // the magic branch and fabricate a phantom MATK hit. The one NoDamage skill we *do*
     // compute — offensive Heal (AL_HEAL) — is dispatched by name above, so it never reaches
     // here. Kept out of the picker too (routes/data.ts), but guard at compute time as well.
-    if (skillData && (skillData.damage_type || []).includes("NoDamage")) {
+    if (skillData && (skillData.damage_type || []).includes("NoDamage") && !hasRatio) {
       return createBattleResult({
         normal: createDamageResult({ steps: [{
           name: "No damage", value: 0, min_value: 0, max_value: 0, multiplier: 1,
@@ -1362,7 +1370,6 @@ class BattlePipeline {
     // ATK-ratio hits (Acid Terror/Demonstration, Venom Splasher, Ground Drift, Counter Attack,
     // Bull's Eye, Magical Bullet …). Those have a real weapon/magic ratio and MUST flow to the
     // physical branch. So only fire this catch-all when NO ratio is defined for the skill.
-    const hasRatio = !!((profile.weapon_ratios || {})[skillName] || (profile.magic_ratios || {})[skillName] || BF_WEAPON_RATIOS[skillName]);
     const looksMisc = attackType === "Misc" || (skillData && (skillData.skill_form === "Misc" || (skillData.damage_type || []).includes("Misc")));
     if (looksMisc && !hasRatio) {
       return createBattleResult({

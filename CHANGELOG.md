@@ -15,6 +15,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Venom Splasher now shows its damage.** The skill was restored to the picker earlier, but the
+  damage calculation still short-circuited it through the same "no damage" guard — its item-DB entry is
+  flagged NoDamage because the real hit is a delayed explosion. The guard now exempts skills the profile
+  can actually compute (those with a damage ratio), so Venom Splasher (and Brandish Spear, Bomb)
+  calculate real damage instead of showing zero.
 - **Armor / accessory / headgear bonus audit.** Audited all 1,431 non-weapon equipment pieces against
   the Payon Stories item database and corrected ~44 whose scripts didn't match their stated effects.
   Several headgear applied a bonus **backwards** — **Classic Hat**, **Gigantic Majestic Goat**
