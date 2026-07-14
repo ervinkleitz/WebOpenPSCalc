@@ -13,6 +13,15 @@ instead of release version. Dates are taken from actual git commit history.
   Concentration Lv1 — +3% AGI/DEX from base stats), **Box of Resentment** (+20 ATK), and **Box of
   Drowsiness** (+20 MATK). The ATK/MATK boxes stack on top of the flat ATK/MATK item fields.
 
+### Added
+
+- **Monster picker distinguishes same-name monsters and hides event copies.** Monsters that share a
+  name now show a tag so you can tell them apart — **Ferus [Fire]** vs **Ferus [Earth]**, **Deleter
+  [Fire] Lv66** vs **Lv65** — using the element, plus the level when the element alone doesn't separate
+  them. Event / WoE / summoned duplicate copies of a field monster (the event Knight of Abyss, the
+  duplicate Porings, and ~300 others) are now hidden from the picker, so only the monster you actually
+  fight in-game is listed.
+
 ### Fixed
 
 - **Venom Splasher now shows its damage.** The skill was restored to the picker earlier, but the

@@ -47,6 +47,59 @@ function paginate(arr: any[], req: Request) {
   return { total: arr.length, items: arr.slice(offset, offset + limit), limit, offset };
 }
 
+// --- Monster picker disambiguation -----------------------------------------
+// Many monsters share a display name: genuinely different variants (Ferus comes
+// in Fire and Earth) and event/summoned copies of a field mob (G_/E_/B_/M_/R_/
+// EVENT_-prefixed sprites — e.g. G_KNIGHT_OF_ABYSS is the WoE clone of the field
+// Knight of Abyss). For the picker we (1) hide an event copy when the un-prefixed
+// base sprite exists as its own mob, and (2) append a distinguishing tag —
+// element, or element+level when the element alone doesn't separate them — to any
+// name still shared by two or more remaining mobs.
+const MOB_EVENT_PREFIX = /^(G|E|B|M|R|EVENT|META|EM|I)_/;
+const MOB_ELEMENT_NAMES = ["Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Dark", "Ghost", "Undead"];
+
+let _mobLabelCache: { server: string; labels: Map<number, string>; dropped: Set<number> } | null = null;
+
+function computeMobLabels(server: string) {
+  if (_mobLabelCache && _mobLabelCache.server === server) return _mobLabelCache;
+  const all = loader.getAllMonsters();
+  const sprites = new Set(all.map((m: any) => m.sprite_name).filter(Boolean));
+
+  // (1) Drop event copies whose de-prefixed base sprite exists as another mob.
+  const dropped = new Set<number>();
+  const kept = all.filter((m: any) => {
+    const sp = m.sprite_name || "";
+    if (MOB_EVENT_PREFIX.test(sp) && sprites.has(sp.replace(MOB_EVENT_PREFIX, ""))) {
+      dropped.add(m.id);
+      return false;
+    }
+    return true;
+  });
+
+  // (2) Tag names still shared by 2+ kept mobs.
+  const byName = new Map<string, any[]>();
+  for (const m of kept) {
+    const n = m.name || "";
+    if (!byName.has(n)) byName.set(n, []);
+    byName.get(n)!.push(m);
+  }
+  const labels = new Map<number, string>();
+  for (const [name, group] of byName) {
+    if (group.length <= 1) {
+      labels.set(group[0].id, name);
+      continue;
+    }
+    const eleName = (m: any) => MOB_ELEMENT_NAMES[m.element] ?? String(m.element);
+    const eleUnique = new Set(group.map(eleName)).size === group.length;
+    for (const m of group) {
+      labels.set(m.id, eleUnique ? `${name} [${eleName(m)}]` : `${name} [${eleName(m)}] Lv${m.level}`);
+    }
+  }
+
+  _mobLabelCache = { server, labels, dropped };
+  return _mobLabelCache;
+}
+
 router.get("/items", (req: Request, res: Response) => {
   applyServerProfile(req);
   const type = (req.query.type as string) || "IT_WEAPON";
@@ -76,21 +129,27 @@ router.get("/items/:id", (req: Request, res: Response) => {
 });
 
 router.get("/mobs", (req: Request, res: Response) => {
-  applyServerProfile(req);
-  let mobs = loader.getAllMonsters();
+  const server = applyServerProfile(req);
+  const { labels, dropped } = computeMobLabels(server);
+  let mobs = loader.getAllMonsters()
+    .filter((m: any) => !dropped.has(m.id) && !loader.isMobHidden(m.id))
+    .map((m: any) => ({ ...m, name: labels.get(m.id) ?? m.name }));
   if (req.query.q) {
     const q = String(req.query.q).toLowerCase();
     mobs = mobs.filter((m: any) => (m.name || "").toLowerCase().includes(q));
   }
-  mobs = mobs.filter((m: any) => !loader.isMobHidden(m.id));
   res.json(paginate(mobs, req));
 });
 
 router.get("/mobs/:id", (req: Request, res: Response) => {
-  applyServerProfile(req);
-  const mob = loader.getMonsterData(Number(req.params.id));
+  const server = applyServerProfile(req);
+  const id = Number(req.params.id);
+  const mob = loader.getMonsterData(id);
   if (!mob) return res.status(404).json({ error: "Monster not found" });
-  res.json({ ...mob, skills: (loader as any).getMobSkills(Number(req.params.id)) });
+  // Use the same disambiguated name as the picker list (so a selected mob keeps its
+  // "[Element]" tag). Falls back to the raw name for un-tagged / dropped mobs.
+  const label = computeMobLabels(server).labels.get(id);
+  res.json({ ...mob, name: label ?? mob.name, skills: (loader as any).getMobSkills(id) });
 });
 
 router.get("/skills", (req: Request, res: Response) => {
