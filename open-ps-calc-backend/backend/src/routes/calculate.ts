@@ -9,6 +9,9 @@ import { resolvePlayerState } from "../engine/playerStateBuilder";
 import { BattlePipeline, BF_MAGIC_RATIOS } from "../engine/calculators/battlePipeline";
 import { calculateIncomingPhysicalDamage, calculateIncomingMagicDamage } from "../engine/calculators/incomingPipeline";
 const { BF_WEAPON_RATIOS } = require("../engine/calculators/modifiers/skillRatio");
+const { StatusCalculator } = require("../engine/calculators/statusCalculator");
+const { calculateSkillTiming } = require("../engine/calculators/skillTiming");
+const { calculateHitChance } = require("../engine/calculators/modifiers/hitChance");
 
 // A monster casting a player/NPC skill at YOU. Resolve the skill's element, hit
 // count and %-ratio (from the engine's ratio maps) so the incoming pipeline can
@@ -347,6 +350,92 @@ router.post("/gear-stat-bonuses", (req: Request, res: Response) => {
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: "Calculation failed", detail: String(err.message || err) });
+  }
+});
+
+// --- Breakpoints (on-demand) -----------------------------------------------
+// "How much more of a stat to cross the next threshold." Computed by SIMULATION:
+// bump AGI/DEX on the already-resolved effective build and re-run the status /
+// timing / hit code, reading the outputs. This reuses every buff/passive/weapon
+// rule verbatim (no formula duplication) and stays consistent with the numbers
+// the calculator already shows. Gear is resolved once; only the cheap status
+// pass is re-run per increment.
+function computeBreakpoints(eff: any, weapon: any, gb: any, status: any, config: any, target: any, skill: any, skillData: any) {
+  const statusWith = (dAgi: number, dDex: number) =>
+    new StatusCalculator(config).calculate({ ...eff, bonus_agi: eff.bonus_agi + dAgi, bonus_dex: eff.bonus_dex + dDex }, weapon, gb);
+
+  // ASPD: pre-renewal ASPD is continuous (each AGI ≈ +0.2, each DEX ≈ +0.05), so
+  // "breakpoints" are the next whole-number ASPD milestones players target — the
+  // smallest +AGI (primary; 4× the weight of DEX) or +DEX to reach the next
+  // integer ASPD. Stops at the ASPD cap (where more stat no longer helps).
+  const aspdBreaks = (which: "agi" | "dex", cap: number, want: number) => {
+    const out: { plus: number; aspd: number }[] = [];
+    let lastInt = Math.floor(Number(status.aspd));
+    for (let k = 1; k <= cap && out.length < want; k++) {
+      const a = Number(which === "agi" ? statusWith(k, 0).aspd : statusWith(0, k).aspd);
+      if (Math.floor(a) > lastInt) { out.push({ plus: k, aspd: Math.floor(a) }); lastInt = Math.floor(a); }
+    }
+    return out;
+  };
+  const aspd = { current: Number(status.aspd), agi: aspdBreaks("agi", 80, 3), dex: aspdBreaks("dex", 160, 2) };
+
+  // Cast: DEX needed to instant-cast the selected skill (only if it has a
+  // variable cast now). castMs is monotonic-decreasing in DEX → binary search.
+  let cast: { skill: string; current_ms: number; instant_plus_dex: number | null } | null = null;
+  if (skill && skill.id && skillData) {
+    const skillName = skillData.name;
+    const castOf = (dDex: number) => calculateSkillTiming(skillName, skill.level, skillData, statusWith(0, dDex), gb, eff.support_buffs, eff.server)[0];
+    const currentMs = castOf(0);
+    if (currentMs > 0) {
+      let instant: number | null = null;
+      if (castOf(200) <= 0) { // reachable at all?
+        let lo = 1, hi = 200;
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (castOf(mid) <= 0) hi = mid; else lo = mid + 1; }
+        instant = lo;
+      }
+      cast = { skill: skillName, current_ms: currentMs, instant_plus_dex: instant };
+    }
+  }
+
+  // HIT: +HIT (= +DEX, 1:1) to reach 95% / 100% hit vs the selected monster.
+  // Uses the real hit-chance fn so any skill accuracy bonus (Holy Cross, Shield
+  // Chain) is folded in. Only meaningful against a real target that can dodge.
+  let hit: { current_pct: number; to95: number | null; to100: number | null } | null = null;
+  if (target && Number(target.flee) > 0) {
+    const skillName = skillData ? skillData.name : "";
+    const rateOf = (dHit: number) => calculateHitChance({ ...status, hit: status.hit + dHit }, target, config, skillName, skill ? skill.level : 1)[0];
+    const need = (thresh: number) => { for (let k = 0; k <= 400; k++) if (rateOf(k) >= thresh) return k; return null; };
+    hit = { current_pct: Math.round(rateOf(0)), to95: need(95), to100: need(100) };
+  }
+
+  return { aspd, cast, hit };
+}
+
+router.post("/breakpoints", (req: Request, res: Response) => {
+  try {
+    const { build: buildData, skill: skillInput, target: targetInput } = req.body || {};
+    if (!buildData) return res.status(400).json({ error: "build is required" });
+
+    const build = buildFromSaveSchema(buildData);
+    const profile = getProfile(build.server);
+    loader.setProfile(profile);
+    const config = createBattleConfig();
+    const [gearBonuses, effBuild, weapon, status] = resolvePlayerState(build, config, profile);
+
+    let target: any = null;
+    if (targetInput && targetInput.mob_id != null) target = loader.getMonster(Number(targetInput.mob_id));
+    else if (targetInput) target = createTarget(targetInput);
+
+    const skill = createSkillInstance({
+      id: skillInput ? Number(skillInput.id) || 0 : 0,
+      level: skillInput ? Math.max(1, Number(skillInput.level) || 1) : 1,
+    });
+    const skillData = skill.id ? loader.getSkill(skill.id) : null;
+
+    res.json({ breakpoints: computeBreakpoints(effBuild, weapon, gearBonuses, status, config, target, skill, skillData) });
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: "Breakpoints failed", detail: String(err.message || err) });
   }
 });
 

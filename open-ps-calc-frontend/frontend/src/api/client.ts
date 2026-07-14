@@ -1,3 +1,5 @@
+import type { Breakpoints } from "../types";
+
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 async function statsRequest(path: string, password: string, params?: Record<string, string>) {
@@ -61,6 +63,9 @@ export const api = {
     }>,
   calculate: (payload: unknown) =>
     request("/calculate", { method: "POST", body: payload }) as Promise<any>,
+  // On-demand stat breakpoints (ASPD / cast / hit) for the current build.
+  breakpoints: (payload: unknown) =>
+    request("/calculate/breakpoints", { method: "POST", body: payload }) as Promise<{ breakpoints: Breakpoints }>,
   // Incoming damage (mob → player): how hard the selected monster hits YOU.
   // direction "physical" (basic attack) or "magic" (INT-based MATK, for casters).
   calculateIncoming: (build: unknown, mobId: number, direction: "physical" | "magic", opts: Record<string, unknown> = {}) =>

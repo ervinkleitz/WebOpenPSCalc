@@ -10,6 +10,7 @@ import ResultsPanel from "../components/ResultsPanel";
 import SavedBuildsModal from "../components/SavedBuildsModal";
 import ImportJaludevModal from "../components/ImportJaludevModal";
 import { summaryMetrics, type ComparePin } from "../components/CompareView";
+import { BreakpointsView } from "../components/BreakpointsView";
 import {
   BuildData, SkillState, CustomTarget, TargetMode, TargetMods,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
@@ -592,6 +593,14 @@ export default function BuildEditor() {
     }
     return { ...data, equipped };
   }, [data, invalidSlots]);
+
+  // Payload for the on-demand Breakpoints readout: current build + selected skill
+  // (for cast breakpoints) + target (for hit breakpoints).
+  const breakpointPayload = useMemo(() => ({
+    build: sanitizedBuild,
+    skill: { id: skill.id, level: skill.level },
+    target: targetMode === "monster" ? { mob_id: data.target_mob_id } : customTarget,
+  }), [sanitizedBuild, skill.id, skill.level, targetMode, data.target_mob_id, customTarget]);
 
   // Signum Crucis only works on Undead and Demon targets.
   const signumApplicable = useMemo(() => {
@@ -1475,6 +1484,7 @@ export default function BuildEditor() {
                 </div>
               ))}
             </div>
+            <BreakpointsView payload={breakpointPayload} />
           </Panel>
 
           <Panel eyebrow="02" title="Equipment">
