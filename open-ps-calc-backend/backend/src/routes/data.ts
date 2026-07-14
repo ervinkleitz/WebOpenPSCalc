@@ -49,13 +49,18 @@ function paginate(arr: any[], req: Request) {
 
 // --- Monster picker disambiguation -----------------------------------------
 // Many monsters share a display name: genuinely different variants (Ferus comes
-// in Fire and Earth) and event/summoned copies of a field mob (G_/E_/B_/M_/R_/
-// EVENT_-prefixed sprites — e.g. G_KNIGHT_OF_ABYSS is the WoE clone of the field
-// Knight of Abyss). For the picker we (1) hide an event copy when the un-prefixed
-// base sprite exists as its own mob, and (2) append a distinguishing tag —
-// element, or element+level when the element alone doesn't separate them — to any
-// name still shared by two or more remaining mobs.
-const MOB_EVENT_PREFIX = /^(G|E|B|M|R|EVENT|META|EM|I)_/;
+// in Fire and Earth) and event/summoned copies of a field mob (sprites carrying a
+// short copy-prefix — G_/E_/S_/M_/R_/EVENT_/META_ — e.g. G_KNIGHT_OF_ABYSS is the
+// WoE clone of the field Knight of Abyss). For the picker we:
+//   (1) hide an event copy when its de-prefixed base sprite exists as its own mob;
+//   (2) collapse remaining same-name mobs that are identical for the calculator
+//       (same element/race/size/level/boss) down to one — pure spawn/id copies;
+//   (3) tag any name STILL shared by 2+ mobs with a distinguishing suffix: the
+//       element in brackets, plus race or level when the element alone doesn't
+//       separate them, with a final #id fallback so labels are always unique.
+// A copy-prefix is any 1-2 letter token (or EVENT/META) before an underscore; the
+// "base sprite must exist" guard means a uniquely-named mob is never dropped.
+const MOB_EVENT_PREFIX = /^([A-Z]{1,2}|EVENT|META)_/;
 const MOB_ELEMENT_NAMES = ["Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Dark", "Ghost", "Undead"];
 
 let _mobLabelCache: { server: string; labels: Map<number, string>; dropped: Set<number> } | null = null;
@@ -64,6 +69,7 @@ function computeMobLabels(server: string) {
   if (_mobLabelCache && _mobLabelCache.server === server) return _mobLabelCache;
   const all = loader.getAllMonsters();
   const sprites = new Set(all.map((m: any) => m.sprite_name).filter(Boolean));
+  const eleName = (m: any) => MOB_ELEMENT_NAMES[m.element] ?? String(m.element);
 
   // (1) Drop event copies whose de-prefixed base sprite exists as another mob.
   const dropped = new Set<number>();
@@ -76,23 +82,37 @@ function computeMobLabels(server: string) {
     return true;
   });
 
-  // (2) Tag names still shared by 2+ kept mobs.
   const byName = new Map<string, any[]>();
   for (const m of kept) {
     const n = m.name || "";
     if (!byName.has(n)) byName.set(n, []);
     byName.get(n)!.push(m);
   }
+
   const labels = new Map<number, string>();
-  for (const [name, group] of byName) {
-    if (group.length <= 1) {
-      labels.set(group[0].id, name);
-      continue;
+  for (const [name, members] of byName) {
+    // (2) Collapse calc-identical spawn copies (keep the lowest id).
+    const seen = new Set<string>();
+    const group: any[] = [];
+    for (const m of [...members].sort((a, b) => a.id - b.id)) {
+      const key = [m.element, m.race, m.size, m.level, !!m.is_boss].join("|");
+      if (seen.has(key)) dropped.add(m.id);
+      else { seen.add(key); group.push(m); }
     }
-    const eleName = (m: any) => MOB_ELEMENT_NAMES[m.element] ?? String(m.element);
+
+    if (group.length === 1) { labels.set(group[0].id, name); continue; }
+
+    // (3) Tag: element, + race or level when element collides, + #id as a last resort.
     const eleUnique = new Set(group.map(eleName)).size === group.length;
+    const raceVaries = new Set(group.map((m: any) => m.race)).size > 1;
     for (const m of group) {
-      labels.set(m.id, eleUnique ? `${name} [${eleName(m)}]` : `${name} [${eleName(m)}] Lv${m.level}`);
+      let tag = `[${eleName(m)}]`;
+      if (!eleUnique) tag += raceVaries ? ` ${m.race}` : ` Lv${m.level}`;
+      labels.set(m.id, `${name} ${tag}`);
+    }
+    const ls = group.map((m: any) => labels.get(m.id));
+    if (new Set(ls).size !== group.length) {
+      for (const m of group) labels.set(m.id, `${labels.get(m.id)} #${m.id}`);
     }
   }
 
