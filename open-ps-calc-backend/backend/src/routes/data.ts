@@ -71,16 +71,28 @@ function computeMobLabels(server: string) {
   const sprites = new Set(all.map((m: any) => m.sprite_name).filter(Boolean));
   const eleName = (m: any) => MOB_ELEMENT_NAMES[m.element] ?? String(m.element);
 
-  // (1) Drop event copies whose de-prefixed base sprite exists as another mob.
+  // (1) Drop event copies whose de-prefixed base sprite exists as another mob —
+  // but never drop the last remaining mob of a name (guards against a case like
+  // G_SEYREN de-prefixing to the unrelated field mob SEYREN).
+  const wantDrop = new Set<number>(
+    all.filter((m: any) => {
+      const sp = m.sprite_name || "";
+      return MOB_EVENT_PREFIX.test(sp) && sprites.has(sp.replace(MOB_EVENT_PREFIX, ""));
+    }).map((m: any) => m.id),
+  );
+  const nameGroups = new Map<string, any[]>();
+  for (const m of all) {
+    const n = m.name || "";
+    if (!nameGroups.has(n)) nameGroups.set(n, []);
+    nameGroups.get(n)!.push(m);
+  }
   const dropped = new Set<number>();
-  const kept = all.filter((m: any) => {
-    const sp = m.sprite_name || "";
-    if (MOB_EVENT_PREFIX.test(sp) && sprites.has(sp.replace(MOB_EVENT_PREFIX, ""))) {
-      dropped.add(m.id);
-      return false;
+  for (const ms of nameGroups.values()) {
+    if (ms.some((m: any) => !wantDrop.has(m.id))) {
+      for (const m of ms) if (wantDrop.has(m.id)) dropped.add(m.id);
     }
-    return true;
-  });
+  }
+  const kept = all.filter((m: any) => !dropped.has(m.id));
 
   const byName = new Map<string, any[]>();
   for (const m of kept) {
@@ -89,31 +101,32 @@ function computeMobLabels(server: string) {
     byName.get(n)!.push(m);
   }
 
+  const distinct = (xs: string[]) => new Set(xs).size;
   const labels = new Map<number, string>();
   for (const [name, members] of byName) {
-    // (2) Collapse calc-identical spawn copies (keep the lowest id).
+    // (2) Collapse calc-identical spawn copies (same element/race/size/level) to
+    // the lowest id — renewal-id copies and map dupes.
     const seen = new Set<string>();
     const group: any[] = [];
     for (const m of [...members].sort((a, b) => a.id - b.id)) {
-      const key = [m.element, m.race, m.size, m.level, !!m.is_boss].join("|");
+      const key = [m.element, m.race, m.size, m.level].join("|");
       if (seen.has(key)) dropped.add(m.id);
       else { seen.add(key); group.push(m); }
     }
-
     if (group.length === 1) { labels.set(group[0].id, name); continue; }
 
-    // (3) Tag: element, + race or level when element collides, + #id as a last resort.
-    const eleUnique = new Set(group.map(eleName)).size === group.length;
-    const raceVaries = new Set(group.map((m: any) => m.race)).size > 1;
-    for (const m of group) {
-      let tag = `[${eleName(m)}]`;
-      if (!eleUnique) tag += raceVaries ? ` ${m.race}` : ` Lv${m.level}`;
-      labels.set(m.id, `${name} ${tag}`);
+    // (3) Tag: always show the element in brackets, then add the fewest of
+    // race / size / level needed to make every label in the group unique — an
+    // attribute is kept only if it raises the distinct-label count. After the
+    // collapse above, element+race+size+level is guaranteed to separate them.
+    const parts: ((m: any) => string)[] = [(m) => `[${eleName(m)}]`];
+    const candidates: ((m: any) => string)[] = [(m) => m.race, (m) => m.size, (m) => `Lv${m.level}`];
+    const tagOf = (m: any) => parts.map((f) => f(m)).join(" ");
+    for (const f of candidates) {
+      if (distinct(group.map(tagOf)) === group.length) break;
+      if (distinct(group.map((m) => `${tagOf(m)}|${f(m)}`)) > distinct(group.map(tagOf))) parts.push(f);
     }
-    const ls = group.map((m: any) => labels.get(m.id));
-    if (new Set(ls).size !== group.length) {
-      for (const m of group) labels.set(m.id, `${labels.get(m.id)} #${m.id}`);
-    }
+    for (const m of group) labels.set(m.id, `${name} ${tagOf(m)}`);
   }
 
   _mobLabelCache = { server, labels, dropped };

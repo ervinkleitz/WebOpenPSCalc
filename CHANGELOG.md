@@ -17,11 +17,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 - **Monster picker distinguishes same-name monsters and hides duplicates.** Monsters that share a name
   now show a tag so you can tell them apart — **Ferus [Fire]** vs **Ferus [Earth]**, **Deleter [Fire]
-  Lv66** vs **Lv65**, **Whisper [Ghost] Demon** vs **[Ghost] Undead** — leading with the element and
-  adding race or level only when the element alone doesn't separate them (labels are always unique).
-  Event / WoE / summoned copies of a field monster (the event Knight of Abyss, the duplicate Porings,
-  Conductring, etc.) and pure spawn-copies with identical stats are hidden from the picker, so only the
-  monster you actually fight in-game is listed.
+  Lv66** vs **Lv65**, **Whisper [Ghost] Demon** vs **[Ghost] Undead**, **Dragon Egg [Neutral] Small /
+  Medium / Large** — always leading with the element and adding the fewest of race / size / level
+  needed to keep every label unique. Event / WoE / summoned copies of a field monster (the event Knight
+  of Abyss, the duplicate Porings, Conductring, etc.) and renewal-id / spawn copies with identical stats
+  are hidden, so only the monster you actually fight in-game is listed.
 
 ### Fixed
 
