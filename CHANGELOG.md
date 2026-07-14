@@ -14,7 +14,8 @@ instead of release version. Dates are taken from actual git commit history.
   ASPD**, the **DEX to instant-cast** your selected skill, and the **HIT (= DEX) to reach 95% / 100%
   hit** against the selected monster. It's computed by re-running the calculator's real status / cast /
   hit formulas with the stat bumped, so the numbers match exactly what the calc shows (including gear,
-  job bonuses, buffs and any skill accuracy bonus). Click **Show** to load it.
+  job bonuses, buffs and any skill accuracy bonus). It refreshes automatically (debounced) as you edit
+  the build, skill, or target.
 
 ## 2026-07-13
 
