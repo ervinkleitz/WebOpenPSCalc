@@ -190,6 +190,12 @@ const PS_MECHANIC_FLAGS = new Set([
   "GS_INCREASING_REMOVED",   // Increasing Accuracy removed on PS (folded into Single Action)
   "PR_MACEMASTERY_EXPANDED_WEAPON_TYPES",
   "MO_EXTREMITYFIST_PS_SP_REWORK",  // PS rework: SP consumed = floor(MaxSP × 0.2 × SkillLv)
+  // PS Asura does NOT ignore the target's DEF (unlike vanilla, whose skill DB
+  // flags it IgnoreDefense). wiki.payonstories.com/Asura_Strike: "does not ignore
+  // the target's DEF" — the damage takes normal hard+soft DEF. Also the flat
+  // bonus is a constant 1000 at all ranks (PSRO Monk Rework 2026 PDF, p.3:
+  // "ATK×(8 + SP/10) + 1000"), not the vanilla 250+150×lv.
+  "MO_EXTREMITYFIST_NK_NORMAL_DEF",
   // wiki.payonstories.com/Grand_Cross: weapon masteries (and Demon Bane's flat
   // bonus) DO count toward Grand Cross's ATK component on PS, unlike vanilla
   // Hercules where CR_GRANDCROSS is in masteryFix.js's MASTERY_EXEMPT_SKILLS.

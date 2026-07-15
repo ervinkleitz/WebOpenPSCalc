@@ -717,9 +717,12 @@ class BattlePipeline {
 
   /**
    * PS rework: MO_EXTREMITYFIST (Asura Strike).
-   * Formula: ATK × (8 + floor(SP/10)) + flat
+   * Formula: ATK × (8 + floor(SP/10)) + 1000 (flat 1000 at ALL ranks — PSRO Monk
+   * Rework 2026 PDF p.3 + wiki.payonstories.com/Asura_Strike; vanilla was 250+150×lv).
    * PS: SP consumed = floor(MaxSP × 0.2 × SkillLv); vanilla: all remaining SP.
-   * Ignores DEF, always hits (IgnoreFlee), ignores size fix, mastery, and refine.
+   * Always hits (IgnoreFlee), ignores size fix, mastery and refine. PS does NOT
+   * ignore DEF (unlike vanilla's IgnoreDefense) — gated on the
+   * MO_EXTREMITYFIST_NK_NORMAL_DEF flag.
    */
   _runAsuraStrikeBranch(status, weapon, skill, target, build, opts = {}) {
     const { profile = STANDARD, gear_bonuses: gearBonuses } = opts;
@@ -735,7 +738,7 @@ class BattlePipeline {
       spNote = `All remaining SP = ${spConsumed}`;
     }
 
-    const flatBonus = [400, 550, 700, 850, 1000][skill.level - 1] ?? 1000;
+    const flatBonus = 1000; // PS: constant 1000 at all ranks (was vanilla 250+150×lv)
     const spDiv = Math.floor(spConsumed / 10);
     const skillRatio = (8 + spDiv) * 100;
 
@@ -758,12 +761,19 @@ class BattlePipeline {
     result.add_step({
       name: "Asura Strike Flat",
       value: av, min_value: mn, max_value: mx, multiplier: 1.0,
-      note: `+${flatBonus} flat at Lv${skill.level}`,
+      note: `+${flatBonus} flat (constant at all ranks)`,
       formula: `+ ${flatBonus}`,
-      hercules_ref: "battle.c battle_calc_skillratio MO_EXTREMITYFIST",
+      hercules_ref: "wiki.payonstories.com/Asura_Strike — PS: ATK×(8+SP/10)+1000",
     });
 
-    // NK_IGNORE_DEF: no defense step
+    // DEF: vanilla Asura ignores DEF (skills.json IgnoreDefense). PS reworked it to
+    // take NORMAL hard+soft DEF (wiki.payonstories.com/Asura_Strike). Clear the
+    // ignore-def flag and run the standard defense step when the PS flag is set.
+    if (profile.mechanic_flags.has("MO_EXTREMITYFIST_NK_NORMAL_DEF")) {
+      skill.nk_ignore_def = false;
+      pmf = calculateDefenseFix(target, build, gearBonuses, pmf, this.config, result, { is_crit: false, skill });
+    }
+
     pmf = calculateActiveStatusBonus(weapon, build, skill, pmf, result, profile);
     pmf = calculateRefineFix(weapon, skill, pmf, result);
     pmf = calculateMasteryFix(weapon, build, target, pmf, result, skill, { profile });

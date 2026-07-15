@@ -84,9 +84,9 @@ without re-auditing everything from scratch.
   slider via `DAMAGE_RELEVANT` / `ACTIVE_SKILL_TYPE_EXCEPTIONS`. Level caps
   added: `WZ_FROSTNOVA:5`, `WZ_FIREPILLAR:5`, `WZ_SIGHTRASHER:5`,
   `WZ_AMPLIFYMAGICPOWER:5`.
-  **Still missing**: upstream has ~7 more `mechanic_flags` with no consumer
+  **Still missing**: upstream has a few more `mechanic_flags` with no consumer
   anywhere in this JS port yet (`SC_CLOAKING_BONUS`,
-  `GS_BLOCK_ENDOW`, `MO_EXTREMITYFIST_NK_NORMAL_DEF`,
+  `GS_BLOCK_ENDOW`,
   `PR_TURNUNDEAD_PS_BONUS`, `PS_HOLYSTRIKE_PROC`,
   `SC_GS_ADJUSTMENT_LR_REDUCE`, `NJ_ISSEN_MIRROR_BONUS`) — these need new
   modifier code, not just data. (The Musical Strike / Throw Arrow "performing"
@@ -539,10 +539,15 @@ brackets are the number of PS-custom entries found across those tables.
    correct, no code changes: Triple Attack (100+40×lv, max 5; crits under Critical Explosion via the
    `taCritProc` path / MO_TRIPLEATTACK_PS_BONUS), Chain Combo (200+60×lv = 260→500%), Combo Finish
    (255+90×lv = 345→705%), Martial Arts/Iron Hand (MO_IRONHAND +5 ATK/lv +2 FLEE/lv, covers Fist and
-   Mace via the PR_MACEMASTERY→MO_IRONHAND fallback), Asura Strike SP rework (consumes 20%×lv×MaxSP;
-   ATK×(8+SP/10)+flat), Critical Explosion/Fury (17.5+2.5×lv crit = 20→30% @Lv5), Demon Bane.
-   Non-damage items (Absorb Spirits / Spirits Recovery SP, combo-ready buffs, Steel Body
-   overcrowding, Ki skills, card sphere-refunds, Fist-weapon drop rates) are out of scope.
+   Mace via the PR_MACEMASTERY→MO_IRONHAND fallback), Asura Strike SP rework (consumes 20%×lv×MaxSP).
+   **Corrected 2026-07-14** (against the PSRO Monk Rework 2026 PDF p.3 + wiki.payonstories.com/Asura_Strike):
+   Asura's flat bonus is a **constant 1000 at all ranks** (was the vanilla `250+150×lv` = 400→1000), and
+   PS Asura **does NOT ignore DEF** — it takes normal hard+soft DEF (vanilla flags it IgnoreDefense).
+   Wired via the `MO_EXTREMITYFIST_NK_NORMAL_DEF` flag. Critical Explosion/Fury (17.5+2.5×lv crit =
+   20→30% @Lv5), Demon Bane. **Open**: spirit-sphere ATK bonus (+3 ATK/sphere, standard pre-re Monk
+   mechanic) is unmodelled — the PS wiki's Asura page doesn't restate it, so it needs confirmation +
+   a spirit-sphere input before wiring. Other non-damage items (Absorb Spirits / Spirits Recovery SP,
+   combo-ready buffs, Steel Body overcrowding, Ki skills, card sphere-refunds) are out of scope.
 7. **Acolyte / Priest [6]** — ✅ done. Fixed: AL_HOLYLIGHT (flat 250% MATK + Cookie card +20% on
    PS, **plus the LUK% chance to deal +60% damage** — modeled as a pmf mixture so avg/range fold in
    the proc), PR_TURNUNDEAD (real fixed-damage formula (BaseLv+INT+SkillLv×10)×3×(1+LUK×3/200), Holy,

@@ -17,6 +17,14 @@ instead of release version. Dates are taken from actual git commit history.
   job bonuses, buffs and any skill accuracy bonus). It refreshes automatically (debounced) as you edit
   the build, skill, or target.
 
+### Fixed
+
+- **Asura Strike: flat 1000 at all ranks, and it no longer ignores DEF.** The skill's fixed bonus is a
+  constant **+1000** at every level (it was scaling `250 + 150×level`, i.e. 400→1000), and on Payon
+  Stories Asura Strike now takes the target's **normal DEF** instead of ignoring it — a Knight of Abyss
+  or other high-DEF target now reduces Asura damage as it should. Verified against the PSRO Monk Rework
+  2026 document and the PS wiki.
+
 ## 2026-07-13
 
 ### Added
