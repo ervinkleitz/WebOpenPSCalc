@@ -19,6 +19,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Box of Gloom now shows its effect in the stat panel.** The box (which casts Improve Concentration
+  Lv1, +3% AGI/DEX) was correctly applied to damage and to HIT/FLEE/ASPD, but the AGI/DEX totals in the
+  Character panel were computed without it, so toggling the box looked like it did nothing. The stat
+  readout now reflects it.
 - **Equipment/monster search now ranks by relevance.** Search results were a plain substring match in
   id order, so an item like **Legacy of Dragon** fell past the result limit for a broad query ("le")
   and only appeared once you'd typed enough ("leg") for it to be the sole match (which then auto-selected

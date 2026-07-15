@@ -813,9 +813,15 @@ export default function BuildEditor() {
 
   useEffect(() => {
     const base = data.base_stats;
+    // Box of Gloom casts Improve Concentration Lv1 (SC_CONCENTRATION), which the
+    // backend injects — mirror it here so the AGI/DEX stat readout reflects it too
+    // (without it the box's +3% AGI/DEX never showed in the display).
+    const activeSc = data.consumable_buffs?.box_gloom
+      ? { ...(data.active_buffs || {}), SC_CONCENTRATION: Math.max(1, Number((data.active_buffs || {}).SC_CONCENTRATION) || 0) }
+      : (data.active_buffs || {});
     setBuffBonusStats(computeBuffStatBonuses(
       (data.support_buffs || {}) as Record<string, unknown>,
-      (data.active_buffs || {}) as Record<string, unknown>,
+      activeSc as Record<string, unknown>,
       {
         agi: (base.agi ?? 1) + (jobBonusStats.agi ?? 0) + (equipBonusStats.agi ?? 0),
         dex: (base.dex ?? 1) + (jobBonusStats.dex ?? 0) + (equipBonusStats.dex ?? 0),
@@ -825,7 +831,7 @@ export default function BuildEditor() {
     ));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(data.support_buffs), JSON.stringify(data.active_buffs),
-      JSON.stringify(data.mastery_levels), data.clan,
+      JSON.stringify(data.mastery_levels), data.clan, data.consumable_buffs?.box_gloom,
       data.base_stats.agi, data.base_stats.dex, jobBonusStats, equipBonusStats]);
 
   // Secondary status panel (Max HP/SP, regen, ATK, MATK, DEF, MDEF, ASPD, Crit)
