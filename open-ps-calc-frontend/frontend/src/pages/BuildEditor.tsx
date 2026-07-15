@@ -1107,7 +1107,7 @@ export default function BuildEditor() {
     (itemType: string, loc?: string) => (query: string): Promise<SearchResult[]> => {
       const browse = !query.trim();
       const params: Record<string, unknown> = {
-        type: itemType, ...(loc ? { loc } : {}), q: query, limit: browse ? 100 : 20, server: data.server,
+        type: itemType, ...(loc ? { loc } : {}), q: query, limit: browse ? 100 : 50, server: data.server,
         ...(browse ? { job: data.job_id } : {}),
       };
       return api.searchItems(params)
@@ -1123,8 +1123,8 @@ export default function BuildEditor() {
       const browse = !query.trim();
       const jobParam = browse ? { job: data.job_id } : {};
       return Promise.all([
-        api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: browse ? 100 : 20, server: data.server, ...jobParam }),
-        api.searchItems({ type: "IT_WEAPON", q: query, limit: browse ? 100 : 20, server: data.server, ...jobParam }),
+        api.searchItems({ type: "IT_ARMOR", loc: "EQP_SHIELD", q: query, limit: browse ? 100 : 50, server: data.server, ...jobParam }),
+        api.searchItems({ type: "IT_WEAPON", q: query, limit: browse ? 100 : 50, server: data.server, ...jobParam }),
       ]).then(([shields, weapons]) => sortResults([
         ...shields.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Shield #${it.id}`, disabled: !canEquip(it) })),
         ...weapons.items.map((it: any) => ({ id: it.id, label: itemLabel(it), sublabel: `Weapon #${it.id}`, disabled: !canEquip(it) })),
