@@ -15,6 +15,7 @@ const ADRENALINE_WEAPONS = new Set(["1HAxe", "2HAxe", "Mace"]);
 const BOW_GUN_WEAPONS = new Set(["Bow", "Revolver", "Rifle", "Gatling", "Shotgun", "Grenade"]);
 const TF_MISS_JOBL2 = new Set([12, 17, 4013, 4018]);
 const DUAL_WIELD_JOBS = new Set([12, 4013]);
+const MONK_LINE_JOBS = new Set([15, 4016]); // Monk, Champion (spirit-sphere ATK)
 const DELUGE_EFF = [5, 9, 12, 14, 15];
 const PS_VG_FLEE = [3, 8, 15];
 const PS_VOL_MATK_PCT = [2, 4, 6];
@@ -97,6 +98,12 @@ class StatusCalculator {
     const dstr = Math.floor(strVal / 10);
     status.batk = strVal + dstr * dstr + Math.floor(dexVal / 5) + Math.floor(status.luk / 5);
     status.batk += build.bonus_batk;
+
+    // Spirit spheres: each active sphere adds +3 ATK for the Monk line (standard
+    // pre-re mechanic). Added to base ATK so it flows into all their attacks —
+    // auto-attacks, combos, and Asura Strike (where it's amplified by ×(8+SP/10)).
+    const spheres = Math.max(0, Math.min(15, build.spirit_spheres || 0));
+    if (spheres > 0 && MONK_LINE_JOBS.has(build.job_id)) status.batk += 3 * spheres;
 
     if (mastery.BS_HILTBINDING) status.batk += 4;
 

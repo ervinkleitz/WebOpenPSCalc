@@ -24,6 +24,10 @@ instead of release version. Dates are taken from actual git commit history.
   Stories Asura Strike now takes the target's **normal DEF** instead of ignoring it — a Knight of Abyss
   or other high-DEF target now reduces Asura damage as it should. Verified against the PSRO Monk Rework
   2026 document and the PS wiki.
+- **Spirit spheres now add damage for Monks/Champions.** A new **Spirit spheres** input (in the Buffs
+  panel, for Monk/Champion) adds **+3 ATK per active sphere** to all their attacks — auto-attacks,
+  combos, and Asura Strike, where it's amplified by the `×(8 + SP/10)` multiplier. Capped at 5 (Monk) /
+  15 (Champion).
 
 ## 2026-07-13
 

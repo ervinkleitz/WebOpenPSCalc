@@ -1839,7 +1839,10 @@ export default function BuildEditor() {
               const isAssassin = [12, 4013].includes(data.job_id);
               // Knight / Crusader / Lord Knight / Paladin can ride a Peco Peco.
               const isKnightLine = [7, 14, 4008, 4015].includes(data.job_id);
-              const hasSelfSection = selfBuffs.length > 0 || isBardDancer || isAssassin || isKnightLine;
+              // Monk (15) / Champion (4016): active spirit spheres add +3 ATK each.
+              const isMonkLine = [15, 4016].includes(data.job_id);
+              const maxSpheres = data.job_id === 4016 ? 15 : 5;
+              const hasSelfSection = selfBuffs.length > 0 || isBardDancer || isAssassin || isKnightLine || isMonkLine;
               const supportBuffs = (data.support_buffs || {}) as Record<string, unknown>;
               const groundEffectType = (supportBuffs.ground_effect as string) || "";
               // SA_VOLCANO/SA_DELUGE/SA_VIOLENTGALE's vanilla max_level is 5;
@@ -1897,6 +1900,25 @@ export default function BuildEditor() {
                               <input type="checkbox" checked={!!data.flags?.is_riding_peco} onChange={(e) => setData((prev) => ({ ...prev, flags: { ...(prev.flags || {}), is_riding_peco: e.target.checked } }))} />
                               <span>Riding Peco Peco</span>
                             </label>
+                          </div>
+                        )}
+                        {isMonkLine && (
+                          <div className="field" key="__spirit_spheres">
+                            <label title="Active spirit spheres: each adds +3 ATK to all Monk/Champion attacks — auto-attacks, combos, and Asura Strike (where it's amplified by ×(8 + SP/10)). Max 5 (Monk) / 15 (Champion).">
+                              Spirit spheres (0–{maxSpheres})
+                            </label>
+                            <input
+                              className="mono"
+                              type="number"
+                              min={0}
+                              max={maxSpheres}
+                              value={(data.flags?.spirit_spheres as number) ?? 0}
+                              onFocus={(e) => e.target.select()}
+                              onChange={(e) => {
+                                const v = Math.max(0, Math.min(maxSpheres, Number(e.target.value) || 0));
+                                setData((prev) => ({ ...prev, flags: { ...(prev.flags || {}), spirit_spheres: v || undefined } }));
+                              }}
+                            />
                           </div>
                         )}
                       </div>

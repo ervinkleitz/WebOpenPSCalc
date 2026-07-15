@@ -80,6 +80,7 @@ function createPlayerBuild(overrides = {}) {
 
     current_hp: null,
     current_sp: null,
+    spirit_spheres: 0, // active Monk spirit spheres (+3 ATK each for Monk/Champion)
 
     wildcard_bonuses: {},
 
