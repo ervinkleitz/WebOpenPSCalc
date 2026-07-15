@@ -47,6 +47,28 @@ function paginate(arr: any[], req: Request) {
   return { total: arr.length, items: arr.slice(offset, offset + limit), limit, offset };
 }
 
+// Rank name-substring search results so the most relevant surface first (a plain
+// substring filter left buried, e.g., "Legacy of Dragon" past the result limit for
+// a broad query like "le"). Score: whole name starts with q (4) > a word starts
+// with q (3) > name contains q (2) > alt/aegis name matches (1); ties by name.
+// Returns only the matching entries, best-first.
+function rankByQuery<T>(items: T[], q: string, nameOf: (it: T) => string, altOf?: (it: T) => string): T[] {
+  const query = q.toLowerCase();
+  const scored: { it: T; score: number; name: string }[] = [];
+  for (const it of items) {
+    const name = (nameOf(it) || "").toLowerCase();
+    const alt = (altOf ? altOf(it) : "").toLowerCase();
+    let score = 0;
+    if (name.startsWith(query)) score = 4;
+    else if (name.split(/[^a-z0-9]+/).some((w) => w.startsWith(query))) score = 3;
+    else if (name.includes(query)) score = 2;
+    else if (alt.includes(query)) score = 1;
+    if (score > 0) scored.push({ it, score, name });
+  }
+  scored.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+  return scored.map((x) => x.it);
+}
+
 // --- Monster picker disambiguation -----------------------------------------
 // Many monsters share a display name: genuinely different variants (Ferus comes
 // in Fire and Earth) and event/summoned copies of a field mob (sprites carrying a
@@ -142,8 +164,7 @@ router.get("/items", (req: Request, res: Response) => {
     items = items.filter((it: any) => Array.isArray(it.loc) && it.loc.includes(loc));
   }
   if (req.query.q) {
-    const q = String(req.query.q).toLowerCase();
-    items = items.filter((it: any) => (it.name || "").toLowerCase().includes(q) || (it.aegis_name || "").toLowerCase().includes(q));
+    items = rankByQuery(items, String(req.query.q), (it: any) => it.name, (it: any) => it.aegis_name);
   }
   if (req.query.job !== undefined) {
     const jobId = Number(req.query.job);
@@ -168,8 +189,7 @@ router.get("/mobs", (req: Request, res: Response) => {
     .filter((m: any) => !dropped.has(m.id) && !loader.isMobHidden(m.id))
     .map((m: any) => ({ ...m, name: labels.get(m.id) ?? m.name }));
   if (req.query.q) {
-    const q = String(req.query.q).toLowerCase();
-    mobs = mobs.filter((m: any) => (m.name || "").toLowerCase().includes(q));
+    mobs = rankByQuery(mobs, String(req.query.q), (m: any) => m.name, (m: any) => m.sprite_name);
   }
   res.json(paginate(mobs, req));
 });

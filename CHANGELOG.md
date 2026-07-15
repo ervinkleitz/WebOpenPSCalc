@@ -19,6 +19,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Equipment/monster search now ranks by relevance.** Search results were a plain substring match in
+  id order, so an item like **Legacy of Dragon** fell past the result limit for a broad query ("le")
+  and only appeared once you'd typed enough ("leg") for it to be the sole match (which then auto-selected
+  it). Results are now ranked — name starts with your text, then a word starts with it, then a plain
+  substring — so the item you want surfaces at the top right away.
 - **Asura Strike: flat 1000 at all ranks, and it no longer ignores DEF.** The skill's fixed bonus is a
   constant **+1000** at every level (it was scaling `250 + 150×level`, i.e. 400→1000), and on Payon
   Stories Asura Strike now takes the target's **normal DEF** instead of ignoring it — a Knight of Abyss
