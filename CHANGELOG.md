@@ -7,6 +7,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-16
 
+### Added
+
+- **"HIT 100%" on the monster card.** The Target panel's monster stats now include the HIT needed to
+  land every attack on that monster (hit% = 80 + HIT − flee, so 100% at flee + 20), next to the
+  existing Flee / Flee 95% readouts. Quagmire-aware: with Quagmire toggled it shows the lowered
+  requirement (e.g. 90 → 80).
+
 ### Fixed
 
 - **jaludev import: the arrow now comes along.** The jaludev calculator stores the selected arrow in

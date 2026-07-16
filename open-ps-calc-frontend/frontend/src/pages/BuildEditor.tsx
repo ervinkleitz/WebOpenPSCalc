@@ -631,6 +631,12 @@ export default function BuildEditor() {
     ? mobBaseFlee - Math.floor((mobInfo!.stats!.agi * 10 * quagmireLv) / 100)
     : mobBaseFlee;
 
+  // HIT needed to land every attack on the selected monster. Your hit% =
+  // 80 + HIT − mobFLEE (hitChance.js), so 100% is reached at mobFLEE + 20.
+  // Uses the Quagmire-reduced flee when active, same as the Flee card.
+  const mobBaseHit100 = mobBaseFlee != null ? mobBaseFlee + 20 : null;
+  const mobHit100 = mobEffFlee != null ? mobEffFlee + 20 : null;
+
   const totalStatPoints = useMemo(
     () => getTotalStatPoints(data.base_level, data.job_id),
     [data.base_level, data.job_id],
@@ -2137,6 +2143,7 @@ export default function BuildEditor() {
                         { label: "LUK",     value: mobInfo.stats ? String(mobInfo.stats.luk) : undefined },
                         { label: "Flee",    value: mobBaseFlee != null ? (mobEffFlee !== mobBaseFlee ? `${mobBaseFlee} → ${mobEffFlee}` : String(mobBaseFlee)) : undefined, title: `The monster's own soft FLEE (level + AGI). ${mobEffFlee !== mobBaseFlee ? `Quagmire Lv${quagmireLv} lowers it from ${mobBaseFlee} to ${mobEffFlee}, raising your hit chance.` : "Lowered by Quagmire (−AGI)."}` },
                         { label: "Flee 95%", value: mobDodgeFlee != null ? mobDodgeFlee.toLocaleString() : undefined, title: `FLEE to dodge this monster 95% of the time (mob level + DEX + 75 = ${mobDodgeFlee ?? "?"}). Soft-flee only — Perfect Dodge is separate, and FLEE drops when several mobs attack at once.` },
+                        { label: "HIT 100%", value: mobHit100 != null ? (mobHit100 !== mobBaseHit100 ? `${mobBaseHit100} → ${mobHit100}` : String(mobHit100)) : undefined, title: `HIT to land every attack on this monster (hit% = 80 + HIT − flee → 100% at flee + 20 = ${mobHit100 ?? "?"}).${mobHit100 !== mobBaseHit100 ? ` Quagmire Lv${quagmireLv} lowers it from ${mobBaseHit100} to ${mobHit100}.` : ""} Your HIT is in the Character stats readout.` },
                       ] as { label: string; value?: string; title?: string }[]).map(({ label, value, title }) => (
                         <div key={label} className="sec-stat-card" title={title}>
                           <div className="sec-stat-label">{label}</div>
