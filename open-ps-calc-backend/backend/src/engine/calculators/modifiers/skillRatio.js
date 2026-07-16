@@ -122,6 +122,17 @@ function calculateSkillRatio(skill, pmf, build, result, opts = {}) {
     ratioSrc += " ×1.1 (Sonic Accel)";
   }
 
+  // PS Performing (Bard/Dancer, Musical Strike / Throw Arrow): the profile
+  // ratio fn folds the +100-point bonus into `ratio`. Re-evaluate with the
+  // flag off so the bonus can be surfaced as its own breakdown step below —
+  // the full ratio is still applied in a single floor, as in-game.
+  let perfBaseRatio = null;
+  if (psRatioFn != null && params.PS_PERFORMING_active && ctx) {
+    const ctxOff = { ...ctx, skill_params: { ...params, PS_PERFORMING_active: false } };
+    const base = psRatioFn(skill.level, target, ctxOff);
+    if (base !== ratio) perfBaseRatio = base;
+  }
+
   let hitCountRaw = 1;
   if (skillName === "MO_FINGEROFFENSIVE") {
     hitCountRaw = Math.max(1, params.MO_FINGEROFFENSIVE_spheres || 1);
@@ -167,12 +178,34 @@ function calculateSkillRatio(skill, pmf, build, result, opts = {}) {
   }
 
   const [mn, mx, av] = pmfStats(pmf);
-  result.add_step({
-    name: `Skill Ratio (ID ${skill.id} Lv ${skill.level})`, value: av, min_value: mn, max_value: mx, multiplier: ratio / 100,
-    note: skillData ? skillData.description || "" : "",
-    formula: `dmg × ${ratio}% × ${hitLabel} (${ratioSrc})`,
-    hercules_ref: "battle.c battle_calc_skillratio",
-  });
+  if (perfBaseRatio != null) {
+    // Display split: base ratio first, then the Performing bonus as its own
+    // step. The intermediate row's values are scaled back from the real pmf
+    // (cosmetic only — the damage applied the full ratio in one floor above).
+    const back = perfBaseRatio / ratio;
+    result.add_step({
+      name: `Skill Ratio (ID ${skill.id} Lv ${skill.level})`,
+      value: Math.round(av * back), min_value: Math.round(mn * back), max_value: Math.round(mx * back),
+      multiplier: perfBaseRatio / 100,
+      note: skillData ? skillData.description || "" : "",
+      formula: `dmg × ${perfBaseRatio}% × ${hitLabel} (${ratioSrc})`,
+      hercules_ref: "battle.c battle_calc_skillratio",
+    });
+    result.add_step({
+      name: "Performing", value: av, min_value: mn, max_value: mx,
+      multiplier: ratio / perfBaseRatio,
+      note: `Song/dance active: +${ratio - perfBaseRatio} ratio points (${perfBaseRatio}% → ${ratio}%)`,
+      formula: `dmg × ${ratio} / ${perfBaseRatio}`,
+      hercules_ref: "wiki.payonstories.com — Musical Strike / Throw Arrow",
+    });
+  } else {
+    result.add_step({
+      name: `Skill Ratio (ID ${skill.id} Lv ${skill.level})`, value: av, min_value: mn, max_value: mx, multiplier: ratio / 100,
+      note: skillData ? skillData.description || "" : "",
+      formula: `dmg × ${ratio}% × ${hitLabel} (${ratioSrc})`,
+      hercules_ref: "battle.c battle_calc_skillratio",
+    });
+  }
 
   if (
     profile !== STANDARD && skillName &&

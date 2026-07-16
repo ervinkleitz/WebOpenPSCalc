@@ -26,6 +26,28 @@ const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 // jaludev job names that differ from ours beyond punctuation
 const JOB_ALIAS = { swordman: "swordsman" };
 
+// jaludev's m_Arrow table (etc.js) — index → arrow name (index 0 is a real
+// entry, plain "Arrow", not an empty slot). Stored in the hash at offset 22
+// for arrow-using classes. jaludev applies the arrow's element to bow attacks
+// and to Musical Strike / Throw Arrow; this engine models the same thing via
+// the ammo item's `bonus bAtkEle` script, so map it to the ammo slot.
+// "Mute Arrow" is named "Silence Arrow" on this server.
+const JD_ARROWS = [
+  "Arrow", "Silver Arrow", "Fire Arrow", "Iron Arrow", "Stone Arrow",
+  "Crystal Arrow", "Arrow of Wind", "Arrow of Shadow", "Immaterial Arrow",
+  "Rusty Arrow", "Steel Arrow", "Oridecon Arrow", "Arrow of Counter Evil",
+  "Frozen Arrow", "Poison Arrow", "Sharp Arrow", "Holy Arrow",
+  "Hunting Arrow", "Elven Arrow", "Stun Arrow", "Cursed Arrow",
+  "Flash Arrow", "Sleep Arrow", "Silence Arrow",
+];
+// jaludev only stores the arrow field for the archer / bard / dancer / rogue
+// job classes (foot.js LoadURL gates on n_A_JobClass() 2 or 4) — for anyone
+// else offset 22 is stale filler and must be ignored.
+const JD_ARROW_JOBS = new Set([
+  "Archer", "High Archer", "Hunter", "Sniper", "Rogue", "Stalker",
+  "Bard", "Clown", "Dancer", "Gypsy",
+]);
+
 let _idx = null;
 function indexes() {
   if (_idx) return _idx;
@@ -111,6 +133,18 @@ function importJaludev(input) {
   refine.garment = f(77, 1);
   refine.shoes = f(78, 1);
 
+  // --- arrow (offset 22, arrow-using classes only) ---
+  if (JD_ARROW_JOBS.has(jdJobName)) {
+    const arrowName = JD_ARROWS[f(22, 1)];
+    if (arrowName) {
+      const id = items.get(norm(arrowName));
+      if (id != null) equipped.ammo = id;
+      else unmapped.push(`Ammo: ${arrowName}`);
+    }
+  }
+
+  // Offset 19 packs two fields: high digit = speed potion, low digit = the
+  // manual weapon-element dropdown.
   const weaponElement = f(19, 1) % 10;
 
   const build = {
@@ -121,8 +155,12 @@ function importJaludev(input) {
     base_stats: { str: f(7, 2), agi: f(9, 2), vit: f(11, 2), int: f(15, 2), dex: f(13, 2), luk: f(17, 2) },
     equipped,
     refine,
-    weapon_element: weaponElement || 0,
   };
+  // Only carry a non-Neutral manual element: build.weapon_element is a hard
+  // override in resolveWeapon (it beats the arrow's bAtkEle script and the
+  // weapon's innate element), so persisting the default 0 would force every
+  // attack Neutral — e.g. killing the arrow element on Musical Strike.
+  if (weaponElement) build.weapon_element = weaponElement;
 
   return { build, unmapped, jobName: jdJobName };
 }

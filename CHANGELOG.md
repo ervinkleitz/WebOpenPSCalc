@@ -5,6 +5,27 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-16
+
+### Fixed
+
+- **jaludev import: the arrow now comes along.** The jaludev calculator stores the selected arrow in
+  its share link (and applies its element to bow attacks and Musical Strike / Throw Arrow), but the
+  import ignored that field — so an imported Bard/Dancer/Archer build lost its Fire/Silver/etc. arrow
+  and, with it, the elemental damage modifier. The arrow is now imported into the Ammo slot (matched by
+  name; arrows this server doesn't have are listed as unmapped). Arrows not on this server (Hunting,
+  Elven) are reported instead of silently dropped.
+- **jaludev import: imported builds no longer force Neutral weapon element.** The import always wrote a
+  weapon-element override of 0 (Neutral) even when jaludev's element dropdown was untouched. That
+  override outranks the equipped arrow's element and the weapon's own innate element, so after an
+  import, elemental arrows did nothing — Musical Strike (and every other weapon attack) was stuck
+  Neutral even if you equipped a Fire Arrow by hand afterward. The override is now only carried when a
+  non-Neutral element was actually selected on the jaludev side.
+- **Performing bonus now visible in the damage breakdown.** The +100 ratio-point Performing bonus for
+  Musical Strike / Throw Arrow was folded silently into the Skill Ratio multiplier (the damage was
+  right, but nothing showed the bonus was applied). The breakdown now shows the base skill ratio and a
+  separate **Performing** step (e.g. 300% → 400%) so you can see exactly what the toggle contributes.
+
 ## 2026-07-14
 
 ### Added
