@@ -7,7 +7,7 @@
   "scripts": {
     "start": "tsx src/server.ts",
     "dev": "tsx watch src/server.ts",
-    "test": "node --test \"test/*.test.js\"",
+    "test": "node --test test/calc-goldens.test.js test/engine-units.test.js",
     "test:gen-goldens": "node test/gen-goldens.js"
   },
   "dependencies": {
