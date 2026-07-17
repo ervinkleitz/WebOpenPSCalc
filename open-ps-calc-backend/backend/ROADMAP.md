@@ -612,6 +612,26 @@ brackets are the number of PS-custom entries found across those tables.
     fixed in item 13 and verified here too (Lv10 1200%). Dancing Lesson passive gives +5 ATK/lv
     and +10% crit at Lv10 as configured. The "+100% while performing" bonus applies here too via
     the same Performing toggle (item 13).
+15. **Super Novice [23]** — ✅ done (wiki.payonstories.com/Super_Novice, 2026-07-16 audit).
+    **Equipment**: the Hercules item DB has no SN job bit — the game equips SN via the Novice
+    base-class mask, so all job filters map 23 → 0 (fixed; SN-only gear like the Super Novice Hat
+    is EquipLv-gated instead). The **Angel's Protection Set** 5-piece combo (Kiss_Of_Angel +
+    Angels_Protection/Warmth/Arrival/Safeguard → MaxHP +900, MaxSP +100) was already in the vanilla
+    combo DB and matches the PS item API exactly; piece scripts verified. **Skill tree** (57 skills =
+    all six 1st-class trees, no bow skills) matches; the damage picker is job-agnostic so Bash /
+    Magnum / Mammonite / Envenom / bolts / Heal-bomb all work with their audited ratios. **Job
+    bonuses** (+5 all stats by JL68, breakpoints STR@49/AGI@52/VIT@56/INT@60/DEX@64/LUK@68) match the
+    wiki; JL cap 99. **HP/SP**: base = Novice table (Hercules `Inherit: Novice`) + the PS staged
+    bonuses (L40+100 … L99+1000 = +2400 HP; +10 SP per 10 levels from 20 + 30@99 = +110 SP) — already
+    modeled via `sn_hp_bonus`/`sn_sp_bonus`. **Added this audit**: SN **Fury chant** toggle
+    (grants Explosion Spirits at Lv 13 → PS formula 175+25×13 = +50% crit, matching the wiki's
+    "critical rate +50"; same formula as the Monk's cast), **Attention Concentrate** made
+    available to SN (AC_CONCENTRATION is in its tree), and the **never-died** toggle (job 70+ without
+    dying → +10 all stats, `flags.sn_never_died`). **Deferred**: Mental Strength (post-99 Steel Body
+    at 0 HP after 99,999,999 exp — survivability-only, needs a Steel Body toggle that Monks don't
+    have either); Guardian Angel level-up buffs (one-shot Kyrie/Magnificat/Gloria/Suffragium/
+    Impositio — obtainable via the existing Priest support-buff toggles); Soul Harvest (no damage
+    surface).
 
 Cross-cutting PS mechanics to keep in view while auditing any class: `PS_BLEEDING_REVAMP`,
 `PS_GRANDCROSS_MASTERY_APPLIES`, `SC_AMPLIFYMAGICPOWER_SCALING`, `PS_CRIT_SHIELD_DISABLED`, and the

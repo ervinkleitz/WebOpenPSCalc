@@ -40,6 +40,7 @@ function createPlayerBuild(overrides = {}) {
     is_ranged_override: null, // null = derive from weapon_type
     no_sizefix: false,
     is_riding_peco: false,
+    sn_never_died: false, // Super Novice: no death by job 70+ → +10 all stats
 
     active_status_levels: {},
     mastery_levels: {},

@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Super Novice class audit — Fury, never-died bonus, Attention Concentrate.** Audited Super Novice
+  against the PS wiki. New in the Buffs panel for Super Novices: the **Fury chant** (+50% crit —
+  Explosion Spirits at its true level 13, distinct from the Monk's 5-level Fury), the
+  **never-died bonus** (job level 70+ without dying: all stats +10), and **Attention Concentrate**
+  (it's in the SN skill tree but was only offered to Archer classes). Verified as already correct:
+  job stat bonuses (+5 to every stat by job 68), job level cap 99, the PS staged HP/SP bonuses
+  (+2,400 HP / +110 SP by 99), the full first-class skill tree, and the Angel's Protection Set
+  5-piece combo (MaxHP +900, MaxSP +100 — matches the official PS item data).
+
 - **"HIT 100%" on the monster card.** The Target panel's monster stats now include the HIT needed to
   land every attack on that monster (hit% = 80 + HIT − flee, so 100% at flee + 20), next to the
   existing Flee / Flee 95% readouts. Quagmire-aware: with Quagmire toggled it shows the lowered

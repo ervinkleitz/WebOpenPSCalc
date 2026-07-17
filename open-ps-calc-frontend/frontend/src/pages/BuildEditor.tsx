@@ -217,8 +217,14 @@ const ASPD_POTION_LABELS = [
 // from OTHER players, so they're never filtered by your own job -- any
 // class could be standing in a Priest/Blacksmith/Bard's range.
 const SELF_BUFFS = [
-  // Archer / Hunter / Sniper / Bard / Dancer / Clown / Gypsy
-  { key: "SC_CONCENTRATION",    label: "Attention Concentrate", max: 10, jobs: [3, 11, 19, 20, 4012, 4020, 4021] },
+  // Archer / Hunter / Sniper / Bard / Dancer / Clown / Gypsy — and Super Novice
+  // (23), whose tree carries every 1st-class skill incl. AC_CONCENTRATION.
+  { key: "SC_CONCENTRATION",    label: "Attention Concentrate", max: 10, jobs: [3, 11, 19, 20, 23, 4012, 4020, 4021] },
+  // Super Novice — the Fury chant (typed at exact 10% EXP increments) grants
+  // Explosion Spirits at level 13: PS formula 175+25×13 = +50% crit
+  // (wiki.payonstories.com/Super_Novice "critical rate +50"). Distinct from
+  // the Monk's 5-level Fury below.
+  { key: "SC_EXPLOSIONSPIRITS", label: "Fury (chant, +50% crit)", max: 13, jobs: [23] },
   // Swordman line — Auto Berserk (SM_AUTOBERSERK): while HP < 25% you gain a
   // self Provoke Lv10 (+32% base ATK, −55% self-DEF). Presence-only. Jobs
   // derived from skill_tree.json: Swordman / Knight / Crusader / LK / Paladin.
@@ -309,8 +315,10 @@ function computeBuffStatBonuses(
   preTotals: { agi: number; dex: number } = { agi: 0, dex: 0 },
   masteryLevels: Record<string, unknown> = {},
   clan = "",
+  flatAll = 0, // flat bonus to all six stats (SN never-died +10) — applied first so Concentration scales it
 ): Record<string, number> {
   const b = { ...emptyBuff };
+  if (flatAll) for (const k of Object.keys(b)) (b as Record<string, number>)[k] += flatAll;
   // Passive skill stat bonuses (mirror of statusCalculator.js lines 45-49)
   if (masteryLevels.BS_HILTBINDING) b.str_ += 1;
   const dragonologyLv = (masteryLevels.SA_DRAGONOLOGY as number) || 0;
@@ -828,6 +836,9 @@ export default function BuildEditor() {
     const activeSc = data.consumable_buffs?.box_gloom
       ? { ...(data.active_buffs || {}), SC_CONCENTRATION: Math.max(1, Number((data.active_buffs || {}).SC_CONCENTRATION) || 0) }
       : (data.active_buffs || {});
+    // SN never-died bonus (+10 all stats at job 70+) — mirror of statusCalculator.js
+    // so the stat readout reflects it (damage/`/status` already do).
+    const snNeverDied = data.job_id === 23 && !!data.flags?.sn_never_died && data.job_level >= 70 ? 10 : 0;
     setBuffBonusStats(computeBuffStatBonuses(
       (data.support_buffs || {}) as Record<string, unknown>,
       activeSc as Record<string, unknown>,
@@ -837,11 +848,13 @@ export default function BuildEditor() {
       },
       (data.mastery_levels || {}) as Record<string, unknown>,
       data.clan ?? "",
+      snNeverDied,
     ));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(data.support_buffs), JSON.stringify(data.active_buffs),
       JSON.stringify(data.mastery_levels), data.clan, data.consumable_buffs?.box_gloom,
-      data.base_stats.agi, data.base_stats.dex, jobBonusStats, equipBonusStats]);
+      data.base_stats.agi, data.base_stats.dex, jobBonusStats, equipBonusStats,
+      data.job_id, data.job_level, data.flags?.sn_never_died]);
 
   // Secondary status panel (Max HP/SP, regen, ATK, MATK, DEF, MDEF, ASPD, Crit)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1863,7 +1876,9 @@ export default function BuildEditor() {
               // Monk (15) / Champion (4016): active spirit spheres add +3 ATK each.
               const isMonkLine = [15, 4016].includes(data.job_id);
               const maxSpheres = data.job_id === 4016 ? 15 : 5;
-              const hasSelfSection = selfBuffs.length > 0 || isBardDancer || isAssassin || isKnightLine || isMonkLine;
+              // Super Novice (23): never-died bonus (+10 all stats at job 70+).
+              const isSuperNovice = data.job_id === 23;
+              const hasSelfSection = selfBuffs.length > 0 || isBardDancer || isAssassin || isKnightLine || isMonkLine || isSuperNovice;
               const supportBuffs = (data.support_buffs || {}) as Record<string, unknown>;
               const groundEffectType = (supportBuffs.ground_effect as string) || "";
               // SA_VOLCANO/SA_DELUGE/SA_VIOLENTGALE's vanilla max_level is 5;
@@ -1912,6 +1927,18 @@ export default function BuildEditor() {
                             <label title="Breaking Cloak (Assassin, requires Cloak Lv3+): breaking Cloak with an auto-attack makes that opening hit deal ×2 damage; breaking it with Sonic Blow adds +10%. Applies to the shown per-hit damage only (a one-time opener), not sustained DPS.">
                               <input type="checkbox" checked={!!targetMods.breaking_cloak} onChange={(e) => setTargetMods((m) => ({ ...m, breaking_cloak: e.target.checked }))} />
                               <span>Breaking Cloak (opener: auto ×2 / Sonic Blow +10%)</span>
+                            </label>
+                          </div>
+                        )}
+                        {isSuperNovice && (
+                          <div className="field field-checkbox" key="__sn_never_died">
+                            <label title="Super Novice: reaching job level 70+ without ever dying grants +10 to all stats (lost on the next death). Only applies while job level is 70 or higher.">
+                              <input
+                                type="checkbox"
+                                checked={!!data.flags?.sn_never_died}
+                                onChange={(e) => setData((prev) => ({ ...prev, flags: { ...(prev.flags || {}), sn_never_died: e.target.checked } }))}
+                              />
+                              <span>Never died (job 70+: all stats +10)</span>
                             </label>
                           </div>
                         )}

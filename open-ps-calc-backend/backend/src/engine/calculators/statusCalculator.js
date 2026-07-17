@@ -40,6 +40,14 @@ class StatusCalculator {
     status.dex = build.base_dex + build.bonus_dex + jb.dex;
     status.luk = build.base_luk + build.bonus_luk + jb.luk;
 
+    // Super Novice: reaching job level 70+ without ever dying grants +10 to
+    // all stats, lost on the next death (wiki.payonstories.com/Super_Novice —
+    // a vanilla SN mechanic). Toggled via flags.sn_never_died.
+    if (build.job_id === 23 && build.sn_never_died && build.job_level >= 70) {
+      status.str += 10; status.agi += 10; status.vit += 10;
+      status.int_ += 10; status.dex += 10; status.luk += 10;
+    }
+
     const support = build.support_buffs;
     const activeSc = build.active_status_levels;
 
@@ -185,6 +193,9 @@ class StatusCalculator {
     status.cri = 10 + Math.floor(status.luk * 10 / 3) + build.bonus_cri * 10;
 
     if ("SC_EXPLOSIONSPIRITS" in activeSc) {
+      // Monk Fury is cast at levels 1-5; the Super Novice chant grants it at
+      // level 13, which under the PS formula lands on 175 + 25×13 = +50% crit
+      // (wiki.payonstories.com/Super_Novice: "critical rate +50").
       const lv = activeSc.SC_EXPLOSIONSPIRITS;
       const expSpec = (profile.passive_overrides || {}).SC_EXPLOSIONSPIRITS || {};
       const criBase   = expSpec.cri_base   ?? 75;
