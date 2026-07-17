@@ -23,7 +23,21 @@ instead of release version. Dates are taken from actual git commit history.
   existing Flee / Flee 95% readouts. Quagmire-aware: with Quagmire toggled it shows the lowered
   requirement (e.g. 90 → 80).
 
+- **Calculation regression test suite.** The backend now ships ~50 automated tests: 30 golden
+  scenarios covering every engine branch (normal/crit/katar hits, Asura Strike, Grand Cross with
+  recoil, Heal-bomb, Turn Undead, Killing Stroke, Shield Boomerang, magic, traps, Acid Terror,
+  Desperado's hit range, arrow elements, cards, refine, Super Novice mechanics, survivability) with
+  frozen expected outputs, plus unit tests for the engine's building blocks (probability math, ratio
+  precedence, hit clamps, element precedence, the jaludev importer). CI runs them before every
+  deploy, so a future change that alters any damage number is caught immediately.
+
 ### Fixed
+
+- **PS custom Super Novice gear no longer hidden.** The Super Novice equip fix mapped SN to the
+  Novice mask outright, which was right for vanilla gear but wrongly hid Payon Stories custom items
+  that flag Super Novice explicitly without the Novice bit (Guardian's Skull, Ghostly Muffler, Ghost
+  Shroom Hat, Aggayu Mask, Fancy Shoes, Dragon's Hide, Aquatic Shawl, Poring Dagger). Super Novices
+  now match both — caught by the new test suite.
 
 - **Super Novice gear no longer missing.** With Super Novice selected, the equipment picker showed no
   weapons and none of the Novice/Angel gear (Angelic Guard, Angelic Protection, Angelic Cardigan,

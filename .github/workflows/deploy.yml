@@ -17,11 +17,12 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Backend install + typecheck
+      - name: Backend install + typecheck + tests
         working-directory: open-ps-calc-backend/backend
         run: |
           npm ci
           npx tsc --noEmit
+          npm test
 
       - name: Frontend install + build
         working-directory: open-ps-calc-frontend/frontend

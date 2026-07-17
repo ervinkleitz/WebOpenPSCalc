@@ -579,16 +579,18 @@ export default function BuildEditor() {
   // Derived — no extra state. Assumes valid when item not yet in cache.
   const invalidSlots = useMemo(() => {
     const invalid = new Set<string>();
-    // Super Novice (23) equips via its base-class mask, Novice (0) — the item
-    // DB has no SN bit of its own (same mapping as canEquip / the item picker).
-    const equipJobId = data.job_id === 23 ? 0 : data.job_id;
+    // Super Novice (23) equips Novice-flagged (0) gear via its base-class
+    // mask, plus PS custom gear that lists 23 explicitly (same rule as
+    // canEquip / the item picker).
+    const jobMatch = (job: number[]) =>
+      job.includes(data.job_id) || (data.job_id === 23 && job.includes(0));
     for (const slot of EQUIP_SLOTS) {
       if (slot.itemType === "IT_AMMO") continue; // ammo restrictions enforced by search filter only
       const equippedId = data.equipped[slot.key] as number | null | undefined;
       if (equippedId == null) continue;
       const item = itemCache[equippedId];
       if (!item?.job || item.job.length === 0) continue;
-      if (!item.job.includes(equipJobId)) invalid.add(slot.key);
+      if (!jobMatch(item.job)) invalid.add(slot.key);
     }
     return invalid;
   }, [data.equipped, data.job_id, itemCache]);
@@ -1125,11 +1127,12 @@ export default function BuildEditor() {
 
   const canEquip = useCallback(
     (it: any) => {
-      // Super Novice (23) has no bit of its own in the item DB — the game's
-      // equip check uses its base-class mask, Novice (0). Mirrors the backend
-      // /data/items job filter.
-      const jobId = data.job_id === 23 ? 0 : data.job_id;
-      return !Array.isArray(it.job) || it.job.length === 0 || it.job.includes(jobId);
+      // Super Novice (23): vanilla items carry no SN bit (the game equips SN
+      // via its Novice base mask → accept 0), but PS custom gear lists 23
+      // explicitly — accept both. Mirrors the backend /data/items job filter.
+      if (!Array.isArray(it.job) || it.job.length === 0) return true;
+      if (it.job.includes(data.job_id)) return true;
+      return data.job_id === 23 && it.job.includes(0);
     },
     [data.job_id],
   );

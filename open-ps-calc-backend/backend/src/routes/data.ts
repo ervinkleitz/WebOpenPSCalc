@@ -167,14 +167,16 @@ router.get("/items", (req: Request, res: Response) => {
     items = rankByQuery(items, String(req.query.q), (it: any) => it.name, (it: any) => it.aegis_name);
   }
   if (req.query.job !== undefined) {
-    let jobId = Number(req.query.job);
-    // Super Novice (23) has no bit of its own in the Hercules item DB — the
-    // game's equip check uses its BASE class mask, which is Novice. (SN-only
-    // gear like the Super Novice Hat is instead gated by EquipLv 40+, which a
-    // real Novice can never reach.) Filter as Novice so the Angel set, novice
-    // gear and every Novice-flagged weapon show up for Super Novices.
-    if (jobId === 23) jobId = 0;
-    items = items.filter((it: any) => !Array.isArray(it.job) || it.job.length === 0 || it.job.includes(jobId));
+    const jobId = Number(req.query.job);
+    // Super Novice (23): the vanilla Hercules item DB has no SN bit — the
+    // game's equip check uses its BASE class mask, which is Novice — so SN
+    // accepts every Novice-flagged (0) item. PS CUSTOM gear, however, lists
+    // 23 explicitly (sometimes without the Novice bit, e.g. Guardian's
+    // Skull), so 23 must also match directly. (SN-only vanilla gear like the
+    // Super Novice Hat is instead gated by EquipLv 40+, which a real Novice
+    // can never reach.)
+    const jobMatch = (job: number[]) => job.includes(jobId) || (jobId === 23 && job.includes(0));
+    items = items.filter((it: any) => !Array.isArray(it.job) || it.job.length === 0 || jobMatch(it.job));
   }
   items = items.filter((it: any) => !loader.isItemHidden(it.id));
   res.json(paginate(items, req));

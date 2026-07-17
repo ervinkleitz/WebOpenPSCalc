@@ -1,0 +1,1580 @@
+{
+ "knight-normal-attack-sword": {
+  "status": {
+   "str": 88,
+   "agi": 62,
+   "vit": 50,
+   "int_": 1,
+   "dex": 46,
+   "luk": 24,
+   "batk": 165,
+   "max_hp": 7969,
+   "max_sp": 252,
+   "aspd": 164.7,
+   "cri": 90,
+   "hit": 126,
+   "flee": 142,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 1,
+   "matk_max": 1
+  },
+  "result": {
+   "dps": 230.184,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 9,
+   "period_ms": 706,
+   "normal": {
+    "min": 159,
+    "max": 159,
+    "avg": 159,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 198,
+    "max": 198,
+    "avg": 198,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "knight-bash-lv10": {
+  "status": {
+   "str": 88,
+   "agi": 62,
+   "vit": 50,
+   "int_": 1,
+   "dex": 46,
+   "luk": 24,
+   "batk": 165,
+   "max_hp": 7969,
+   "max_sp": 252,
+   "aspd": 164.7,
+   "cri": 90,
+   "hit": 126,
+   "flee": 142,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 1,
+   "matk_max": 1
+  },
+  "result": {
+   "dps": 981.586,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 706,
+   "normal": {
+    "min": 693,
+    "max": 693,
+    "avg": 693,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 5 Lv 10)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "refine-plus10-overrefine": {
+  "status": {
+   "str": 58,
+   "agi": 52,
+   "vit": 60,
+   "int_": 50,
+   "dex": 56,
+   "luk": 54,
+   "batk": 104,
+   "max_hp": 12764,
+   "max_sp": 460,
+   "aspd": 163.2,
+   "cri": 190,
+   "hit": 155,
+   "flee": 151,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 99,
+   "matk_max": 150
+  },
+  "result": {
+   "dps": 207.88,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 19,
+   "period_ms": 736,
+   "normal": {
+    "min": 149,
+    "max": 157,
+    "avg": 153,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 150,
+    "max": 158,
+    "avg": 153,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "assassin-katar-normal-crit": {
+  "status": {
+   "str": 86,
+   "agi": 100,
+   "vit": 22,
+   "int_": 5,
+   "dex": 58,
+   "luk": 60,
+   "batk": 173,
+   "max_hp": 6091,
+   "max_sp": 388,
+   "aspd": 172.9,
+   "cri": 210,
+   "hit": 148,
+   "flee": 190,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 5,
+   "matk_max": 6
+  },
+  "result": {
+   "dps": 472.768,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 42,
+   "period_ms": 542,
+   "normal": {
+    "min": 200,
+    "max": 253,
+    "avg": 226,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 298,
+    "max": 298,
+    "avg": 298,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "assassin-sonic-blow-lv10": {
+  "status": {
+   "str": 86,
+   "agi": 100,
+   "vit": 22,
+   "int_": 5,
+   "dex": 58,
+   "luk": 30,
+   "batk": 167,
+   "max_hp": 6091,
+   "max_sp": 388,
+   "aspd": 172.9,
+   "cri": 110,
+   "hit": 148,
+   "flee": 190,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 5,
+   "matk_max": 6
+  },
+  "result": {
+   "dps": 1272.62,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 22,
+   "period_ms": 2000,
+   "normal": {
+    "min": 2190,
+    "max": 2707,
+    "avg": 2448,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 136 Lv 10)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 2890,
+    "max": 2890,
+    "avg": 2890,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 136 Lv 10)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "hunter-double-strafe-fire-arrow": {
+  "status": {
+   "str": 24,
+   "agi": 76,
+   "vit": 22,
+   "int_": 5,
+   "dex": 109,
+   "luk": 34,
+   "batk": 219,
+   "max_hp": 4840,
+   "max_sp": 388,
+   "aspd": 164.7,
+   "cri": 123,
+   "hit": 199,
+   "flee": 166,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 5,
+   "matk_max": 6
+  },
+  "result": {
+   "dps": 725.212,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 706,
+   "normal": {
+    "min": 462,
+    "max": 563,
+    "avg": 512,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Arrow ATK",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 46 Lv 10)",
+     "⚠ Vanilla fallback (PS unaudited)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Long)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "bard-musical-strike-performing-fire-arrow": {
+  "status": {
+   "str": 3,
+   "agi": 67,
+   "vit": 33,
+   "int_": 35,
+   "dex": 108,
+   "luk": 34,
+   "batk": 214,
+   "max_hp": 5394,
+   "max_sp": 815,
+   "aspd": 164.1,
+   "cri": 123,
+   "hit": 207,
+   "flee": 166,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 60,
+   "matk_max": 84
+  },
+  "result": {
+   "dps": 2584.958,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 718,
+   "normal": {
+    "min": 1774,
+    "max": 1939,
+    "avg": 1856,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Arrow ATK",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 316 Lv 5)",
+     "Performing",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Long)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "bard-musical-strike-no-performing": {
+  "status": {
+   "str": 3,
+   "agi": 67,
+   "vit": 33,
+   "int_": 35,
+   "dex": 108,
+   "luk": 34,
+   "batk": 214,
+   "max_hp": 5394,
+   "max_sp": 815,
+   "aspd": 164.1,
+   "cri": 123,
+   "hit": 207,
+   "flee": 166,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 60,
+   "matk_max": 84
+  },
+  "result": {
+   "dps": 1923.398,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 718,
+   "normal": {
+    "min": 1320,
+    "max": 1443,
+    "avg": 1381,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Arrow ATK",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 316 Lv 5)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Long)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "priest-endow-fire-mace-vs-poring": {
+  "status": {
+   "str": 55,
+   "agi": 54,
+   "vit": 55,
+   "int_": 55,
+   "dex": 54,
+   "luk": 57,
+   "batk": 101,
+   "max_hp": 5528,
+   "max_sp": 1131,
+   "aspd": 156.2,
+   "cri": 200,
+   "hit": 144,
+   "flee": 144,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 104,
+   "matk_max": 176
+  },
+  "result": {
+   "dps": 156.621,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 20,
+   "period_ms": 876,
+   "normal": {
+    "min": 137,
+    "max": 137,
+    "avg": 137,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 138,
+    "max": 138,
+    "avg": 138,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "cards-hydra-skelworker-vs-pc-target": {
+  "status": {
+   "str": 86,
+   "agi": 100,
+   "vit": 22,
+   "int_": 5,
+   "dex": 58,
+   "luk": 30,
+   "batk": 172,
+   "max_hp": 6091,
+   "max_sp": 388,
+   "aspd": 172.9,
+   "cri": 110,
+   "hit": 148,
+   "flee": 190,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 5,
+   "matk_max": 6
+  },
+  "result": {
+   "dps": 256.277,
+   "dps_valid": true,
+   "hit_chance": 78,
+   "crit_chance": 11,
+   "period_ms": 542,
+   "normal": {
+    "min": 154,
+    "max": 167,
+    "avg": 160,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 253,
+    "max": 253,
+    "avg": 253,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "monk-asura-5-spheres": {
+  "status": {
+   "str": 98,
+   "agi": 47,
+   "vit": 46,
+   "int_": 42,
+   "dex": 64,
+   "luk": 13,
+   "batk": 208,
+   "max_hp": 7500,
+   "max_sp": 674,
+   "aspd": 170,
+   "cri": 53,
+   "hit": 163,
+   "flee": 146,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 78,
+   "matk_max": 106
+  },
+  "result": {
+   "dps": 5414.259,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 2146,
+   "normal": {
+    "min": 11619,
+    "max": 11619,
+    "avg": 11619,
+    "steps": [
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Asura Strike Ratio",
+     "Asura Strike Flat",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "monk-normal-attack-spheres": {
+  "status": {
+   "str": 98,
+   "agi": 47,
+   "vit": 46,
+   "int_": 42,
+   "dex": 64,
+   "luk": 13,
+   "batk": 208,
+   "max_hp": 7500,
+   "max_sp": 674,
+   "aspd": 170,
+   "cri": 53,
+   "hit": 163,
+   "flee": 146,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 78,
+   "matk_max": 106
+  },
+  "result": {
+   "dps": 283.533,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 5.3,
+   "period_ms": 600,
+   "normal": {
+    "min": 168,
+    "max": 168,
+    "avg": 168,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 208,
+    "max": 208,
+    "avg": 208,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "crusader-grand-cross-recoil": {
+  "status": {
+   "str": 67,
+   "agi": 32,
+   "vit": 77,
+   "int_": 66,
+   "dex": 43,
+   "luk": 15,
+   "batk": 114,
+   "max_hp": 10122,
+   "max_sp": 756,
+   "aspd": 158.5,
+   "cri": 60,
+   "hit": 138,
+   "flee": 127,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 147,
+   "matk_max": 235
+  },
+  "result": {
+   "dps": 2563.568,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 2926,
+   "normal": {
+    "min": 6345,
+    "max": 8655,
+    "avg": 7501,
+    "steps": [
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Defense Fix",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Base MATK",
+     "Magic Defense Fix",
+     "ATK part + MATK part",
+     "Attr Fix",
+     "Grand Cross Ratio (Lv 10)",
+     "Card Fix",
+     "Per-Wave Damage",
+     "Grand Cross Total (3 waves)"
+    ]
+   },
+   "self_damage": {
+    "total_min": 2879,
+    "total_max": 3764,
+    "total_avg": 3320
+   }
+  }
+ },
+ "crusader-shield-boomerang": {
+  "status": {
+   "str": 67,
+   "agi": 32,
+   "vit": 77,
+   "int_": 66,
+   "dex": 43,
+   "luk": 15,
+   "batk": 114,
+   "max_hp": 10122,
+   "max_sp": 756,
+   "aspd": 158.5,
+   "cri": 60,
+   "hit": 138,
+   "flee": 127,
+   "def_": 6,
+   "mdef": 0,
+   "matk_min": 147,
+   "matk_max": 235
+  },
+  "result": {
+   "dps": 655.714,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 700,
+   "normal": {
+    "min": 459,
+    "max": 459,
+    "avg": 459,
+    "steps": [
+     "Shield Boomerang Base",
+     "Defense Fix",
+     "Mastery Fix",
+     "Shield Upgrade Bonus",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Long)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "priest-heal-bomb-vs-ghoul": {
+  "status": {
+   "str": 6,
+   "agi": 44,
+   "vit": 45,
+   "int_": 104,
+   "dex": 64,
+   "luk": 27,
+   "batk": 23,
+   "max_hp": 5172,
+   "max_sp": 1489,
+   "aspd": 154.4,
+   "cri": 100,
+   "hit": 154,
+   "flee": 134,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 345,
+   "matk_max": 579
+  },
+  "result": {
+   "dps": 1764,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 1000,
+   "normal": {
+    "min": 1764,
+    "max": 1764,
+    "avg": 1764,
+    "steps": [
+     "Heal Amount (Lv 10)",
+     "Heal Bomb",
+     "Attr Fix",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "priest-turn-undead": {
+  "status": {
+   "str": 6,
+   "agi": 44,
+   "vit": 45,
+   "int_": 104,
+   "dex": 64,
+   "luk": 27,
+   "batk": 23,
+   "max_hp": 5172,
+   "max_sp": 1489,
+   "aspd": 154.4,
+   "cri": 100,
+   "hit": 154,
+   "flee": 134,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 345,
+   "matk_max": 579
+  },
+  "result": {
+   "dps": 606.773,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 3573,
+   "success_chance": 47.5,
+   "normal": {
+    "min": 2168,
+    "max": 2168,
+    "avg": 2168,
+    "steps": [
+     "Turn Undead Base (Lv 10)",
+     "Attr Fix",
+     "Card Fix",
+     "Final Damage",
+     "Instant-Kill Success Chance"
+    ]
+   }
+  }
+ },
+ "ninja-killing-stroke": {
+  "status": {
+   "str": 90,
+   "agi": 96,
+   "vit": 50,
+   "int_": 5,
+   "dex": 64,
+   "luk": 22,
+   "batk": 187,
+   "max_hp": 6375,
+   "max_sp": 548,
+   "aspd": 172.4,
+   "cri": 83,
+   "hit": 163,
+   "flee": 195,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 5,
+   "matk_max": 6
+  },
+  "result": {
+   "dps": 60890,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 100,
+   "normal": {
+    "min": 6089,
+    "max": 6089,
+    "avg": 6089,
+    "steps": [
+     "Killing Stroke Base (Lv 10)",
+     "Defense Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "mage-firebolt-vs-poring": {
+  "status": {
+   "str": 1,
+   "agi": 44,
+   "vit": 20,
+   "int_": 107,
+   "dex": 63,
+   "luk": 13,
+   "batk": 15,
+   "max_hp": 1360,
+   "max_sp": 890,
+   "aspd": 146.7,
+   "cri": 53,
+   "hit": 133,
+   "flee": 114,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 381,
+   "matk_max": 630
+  },
+  "result": {
+   "dps": 402.041,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 6860,
+   "normal": {
+    "min": 2080,
+    "max": 3438,
+    "avg": 2758,
+    "steps": [
+     "Base MATK",
+     "bMatkRate",
+     "Skill Ratio (ID 19 Lv 10)",
+     "Magic Defense Fix",
+     "Attr Fix",
+     "Card Fix (Magic)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "wizard-lord-of-vermillion": {
+  "status": {
+   "str": 2,
+   "agi": 48,
+   "vit": 31,
+   "int_": 111,
+   "dex": 86,
+   "luk": 12,
+   "batk": 21,
+   "max_hp": 3956,
+   "max_sp": 1825,
+   "aspd": 154.8,
+   "cri": 50,
+   "hit": 181,
+   "flee": 143,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 386,
+   "matk_max": 684
+  },
+  "result": {
+   "dps": 1035.97,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 9480,
+   "normal": {
+    "min": 7073,
+    "max": 12561,
+    "avg": 9821,
+    "steps": [
+     "Base MATK",
+     "bMatkRate",
+     "Skill Ratio (ID 85 Lv 10)",
+     "Magic Defense Fix",
+     "Attr Fix",
+     "Card Fix (Magic)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "sage-soul-strike-vs-undead": {
+  "status": {
+   "str": 6,
+   "agi": 45,
+   "vit": 33,
+   "int_": 108,
+   "dex": 75,
+   "luk": 13,
+   "batk": 23,
+   "max_hp": 4744,
+   "max_sp": 1331,
+   "aspd": 153.4,
+   "cri": 53,
+   "hit": 165,
+   "flee": 135,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 382,
+   "matk_max": 631
+  },
+  "result": {
+   "dps": 2387.317,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 2050,
+   "normal": {
+    "min": 3687,
+    "max": 6100,
+    "avg": 4894,
+    "steps": [
+     "Base MATK",
+     "bMatkRate",
+     "Skill Ratio (ID 13 Lv 10)",
+     "Magic Defense Fix",
+     "Attr Fix",
+     "Soul Strike vs Undead",
+     "Card Fix (Magic)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "alchemist-acid-terror": {
+  "status": {
+   "str": 85,
+   "agi": 56,
+   "vit": 43,
+   "int_": 47,
+   "dex": 69,
+   "luk": 10,
+   "batk": 164,
+   "max_hp": 5968,
+   "max_sp": 543,
+   "aspd": 161.1,
+   "cri": 43,
+   "hit": 159,
+   "flee": 146,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 83,
+   "matk_max": 128
+  },
+  "result": {
+   "dps": 1129.82,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 778,
+   "normal": {
+    "min": 879,
+    "max": 879,
+    "avg": 879,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 230 Lv 5)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "hunter-land-mine": {
+  "status": {
+   "str": 24,
+   "agi": 76,
+   "vit": 22,
+   "int_": 94,
+   "dex": 109,
+   "luk": 34,
+   "batk": 219,
+   "max_hp": 5781,
+   "max_sp": 787,
+   "aspd": 164.7,
+   "cri": 123,
+   "hit": 208,
+   "flee": 175,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 263,
+   "matk_max": 418
+  },
+  "result": {
+   "dps": 34090,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 100,
+   "normal": {
+    "min": 3409,
+    "max": 3409,
+    "avg": 3409,
+    "steps": [
+     "Trap Base",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "whitesmith-mammonite": {
+  "status": {
+   "str": 101,
+   "agi": 62,
+   "vit": 56,
+   "int_": 3,
+   "dex": 72,
+   "luk": 22,
+   "batk": 219,
+   "max_hp": 7205,
+   "max_sp": 401,
+   "aspd": 154.1,
+   "cri": 83,
+   "hit": 167,
+   "flee": 157,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 3,
+   "matk_max": 3
+  },
+  "result": {
+   "dps": 1557.734,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 918,
+   "normal": {
+    "min": 1430,
+    "max": 1430,
+    "avg": 1430,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 42 Lv 10)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "rogue-backstab-opportunity": {
+  "status": {
+   "str": 86,
+   "agi": 87,
+   "vit": 36,
+   "int_": 5,
+   "dex": 77,
+   "luk": 20,
+   "batk": 169,
+   "max_hp": 5396,
+   "max_sp": 483,
+   "aspd": 171.2,
+   "cri": 76,
+   "hit": 167,
+   "flee": 177,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 5,
+   "matk_max": 6
+  },
+  "result": {
+   "dps": 2038.194,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 576,
+   "normal": {
+    "min": 1174,
+    "max": 1174,
+    "avg": 1174,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 212 Lv 10)",
+     "Backstab Opportunity",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "gunslinger-desperado-hit-range": {
+  "status": {
+   "str": 23,
+   "agi": 73,
+   "vit": 30,
+   "int_": 20,
+   "dex": 109,
+   "luk": 35,
+   "batk": 55,
+   "max_hp": 4491,
+   "max_sp": 482,
+   "aspd": 170,
+   "cri": 126,
+   "hit": 199,
+   "flee": 163,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 24,
+   "matk_max": 36
+  },
+  "result": {
+   "dps": 832,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 1000,
+   "normal": {
+    "min": 127,
+    "max": 1538,
+    "avg": 832,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 516 Lv 10)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "sn-status-fury-neverdied-conc": {
+  "status": {
+   "str": 65,
+   "agi": 72,
+   "vit": 65,
+   "int_": 65,
+   "dex": 72,
+   "luk": 65,
+   "batk": 128,
+   "max_hp": 3274,
+   "max_sp": 289,
+   "aspd": 168,
+   "cri": 726,
+   "hit": 171,
+   "flee": 171,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 146,
+   "matk_max": 234
+  }
+ },
+ "sn-angel-set-combo": {
+  "status": {
+   "str": 55,
+   "agi": 55,
+   "vit": 55,
+   "int_": 55,
+   "dex": 55,
+   "luk": 55,
+   "batk": 102,
+   "max_hp": 4221,
+   "max_sp": 378,
+   "aspd": 163.7,
+   "cri": 193,
+   "hit": 154,
+   "flee": 154,
+   "def_": 14,
+   "mdef": 20,
+   "matk_min": 104,
+   "matk_max": 176
+  }
+ },
+ "sn-bash-with-novice-gear": {
+  "status": {
+   "str": 85,
+   "agi": 65,
+   "vit": 45,
+   "int_": 35,
+   "dex": 65,
+   "luk": 35,
+   "batk": 169,
+   "max_hp": 3168,
+   "max_sp": 257,
+   "aspd": 152.7,
+   "cri": 126,
+   "hit": 164,
+   "flee": 164,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 60,
+   "matk_max": 84
+  },
+  "result": {
+   "dps": 748.414,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 946,
+   "normal": {
+    "min": 708,
+    "max": 708,
+    "avg": 708,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 5 Lv 10)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "monk-fury-lv5-crit-chance": {
+  "status": {
+   "str": 98,
+   "agi": 67,
+   "vit": 46,
+   "int_": 22,
+   "dex": 64,
+   "luk": 43,
+   "batk": 199,
+   "max_hp": 7500,
+   "max_sp": 579,
+   "aspd": 173.2,
+   "cri": 453,
+   "hit": 163,
+   "flee": 166,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 31,
+   "matk_max": 38
+  },
+  "result": {
+   "dps": 331.468,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 45.3,
+   "period_ms": 536,
+   "normal": {
+    "min": 160,
+    "max": 160,
+    "avg": 160,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 199,
+    "max": 199,
+    "avg": 199,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "incoming-banshee-physical": {
+  "status": {
+   "str": 67,
+   "agi": 32,
+   "vit": 77,
+   "int_": 66,
+   "dex": 43,
+   "luk": 15,
+   "batk": 114,
+   "max_hp": 10122,
+   "max_sp": 756,
+   "aspd": 158.5,
+   "cri": 60,
+   "hit": 138,
+   "flee": 127,
+   "def_": 4,
+   "mdef": 20,
+   "matk_min": 147,
+   "matk_max": 235
+  },
+  "incoming": {
+   "min": 1568,
+   "max": 2503,
+   "avg": 2035
+  }
+ }
+}
