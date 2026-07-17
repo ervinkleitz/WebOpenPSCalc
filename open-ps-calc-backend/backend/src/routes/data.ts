@@ -167,7 +167,13 @@ router.get("/items", (req: Request, res: Response) => {
     items = rankByQuery(items, String(req.query.q), (it: any) => it.name, (it: any) => it.aegis_name);
   }
   if (req.query.job !== undefined) {
-    const jobId = Number(req.query.job);
+    let jobId = Number(req.query.job);
+    // Super Novice (23) has no bit of its own in the Hercules item DB — the
+    // game's equip check uses its BASE class mask, which is Novice. (SN-only
+    // gear like the Super Novice Hat is instead gated by EquipLv 40+, which a
+    // real Novice can never reach.) Filter as Novice so the Angel set, novice
+    // gear and every Novice-flagged weapon show up for Super Novices.
+    if (jobId === 23) jobId = 0;
     items = items.filter((it: any) => !Array.isArray(it.job) || it.job.length === 0 || it.job.includes(jobId));
   }
   items = items.filter((it: any) => !loader.isItemHidden(it.id));

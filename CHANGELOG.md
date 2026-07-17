@@ -16,6 +16,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Super Novice gear no longer missing.** With Super Novice selected, the equipment picker showed no
+  weapons and none of the Novice/Angel gear (Angelic Guard, Angelic Protection, Angelic Cardigan,
+  Angel's Reincarnation, Angel's Kiss, Super Novice Hat, …), and anything equipped was flagged invalid
+  and stripped from the calculation. Cause: the item DB has no Super Novice bit of its own — the game
+  checks the SN's base-class mask, which is Novice — but the job filters compared against the SN job id
+  directly, matching nothing. Super Novice now filters as Novice everywhere (item picker, equip
+  validity, greyed-out search results), surfacing its real arsenal (daggers, 1H swords, maces, staves,
+  1H axes) and the full Angel set.
+
 - **jaludev import: the arrow now comes along.** The jaludev calculator stores the selected arrow in
   its share link (and applies its element to bow attacks and Musical Strike / Throw Arrow), but the
   import ignored that field — so an imported Bard/Dancer/Archer build lost its Fire/Silver/etc. arrow

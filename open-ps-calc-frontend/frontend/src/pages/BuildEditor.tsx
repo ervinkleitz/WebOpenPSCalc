@@ -571,13 +571,16 @@ export default function BuildEditor() {
   // Derived — no extra state. Assumes valid when item not yet in cache.
   const invalidSlots = useMemo(() => {
     const invalid = new Set<string>();
+    // Super Novice (23) equips via its base-class mask, Novice (0) — the item
+    // DB has no SN bit of its own (same mapping as canEquip / the item picker).
+    const equipJobId = data.job_id === 23 ? 0 : data.job_id;
     for (const slot of EQUIP_SLOTS) {
       if (slot.itemType === "IT_AMMO") continue; // ammo restrictions enforced by search filter only
       const equippedId = data.equipped[slot.key] as number | null | undefined;
       if (equippedId == null) continue;
       const item = itemCache[equippedId];
       if (!item?.job || item.job.length === 0) continue;
-      if (!item.job.includes(data.job_id)) invalid.add(slot.key);
+      if (!item.job.includes(equipJobId)) invalid.add(slot.key);
     }
     return invalid;
   }, [data.equipped, data.job_id, itemCache]);
@@ -1108,7 +1111,13 @@ export default function BuildEditor() {
   const itemLabel = (it: any) => it.slots > 0 ? `${it.name}[${it.slots}]` : it.name;
 
   const canEquip = useCallback(
-    (it: any) => !Array.isArray(it.job) || it.job.length === 0 || it.job.includes(data.job_id),
+    (it: any) => {
+      // Super Novice (23) has no bit of its own in the item DB — the game's
+      // equip check uses its base-class mask, Novice (0). Mirrors the backend
+      // /data/items job filter.
+      const jobId = data.job_id === 23 ? 0 : data.job_id;
+      return !Array.isArray(it.job) || it.job.length === 0 || it.job.includes(jobId);
+    },
     [data.job_id],
   );
 
