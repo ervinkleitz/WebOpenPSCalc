@@ -1333,14 +1333,7 @@ export default function BuildEditor() {
             </button>
             {!featuresBannerCollapsed && (
               <ul>
-                <li>Attack-speed, cast, and hit breakpoint calculator</li>
-                <li>Build-vs-build comparison</li>
-                <li>Full step-by-step damage breakdown — every multiplier and where it comes from</li>
-                <li>Survivability panel — how hard monsters hit you (incoming damage, effective HP, dodge / FLEE)</li>
-                <li>Grand Cross self-damage (recoil) modeling</li>
-                <li>Import builds from the jaludev calculator</li>
-                <li>Shareable build links</li>
-                <li>Light and dark mode</li>
+                <li>Payon Stories custom equipment and skills — card, combo, and gear bonuses modeled from item scripts</li>
                 <li>
                   <button
                     className="reworks-detail-toggle"
@@ -1369,6 +1362,16 @@ export default function BuildEditor() {
                     </ul>
                   )}
                 </li>
+                <li>Attack-speed, cast, and hit breakpoint calculator</li>
+                <li>Build-vs-build comparison</li>
+                <li>Full step-by-step damage breakdown — every multiplier and where it comes from</li>
+                <li>Time-to-kill and hits-to-kill vs any monster (folds in ASPD, crit mix, procs, and cast delay)</li>
+                <li>Real PS monster database — pick the exact mob you fight (element / size / race, disambiguated)</li>
+                <li>Survivability panel — how hard monsters hit you (incoming damage, effective HP, dodge / FLEE)</li>
+                <li>Grand Cross self-damage (recoil) modeling</li>
+                <li>Import builds from the jaludev calculator</li>
+                <li>Shareable build links</li>
+                <li>Light and dark mode</li>
               </ul>
             )}
           </div>
