@@ -439,4 +439,84 @@ router.post("/breakpoints", (req: Request, res: Response) => {
   }
 });
 
+// Upgrade advisor: given a build + skill + target, re-run the engine with each
+// candidate improvement (a stat bump, one more refine per refineable equipped
+// piece) and rank them by DPS gain — answering "what should I upgrade next?".
+// Uses the same resolve→pipeline path as /calculate; the base target only (no
+// target debuffs) since we only need the *relative* deltas between candidates.
+function dpsForBuild(buildData: any, skillInput: any, targetInput: any, config: any): number | null {
+  const build = buildFromSaveSchema(buildData);
+  const profile = getProfile(build.server);
+  const [gearBonuses, effBuild, weapon, status] = resolvePlayerState(build, config, profile);
+  let target: any;
+  if (targetInput && targetInput.mob_id != null) target = loader.getMonster(Number(targetInput.mob_id));
+  else target = createTarget(targetInput || {});
+  target = JSON.parse(JSON.stringify(target)); // isolate — the pipeline may mutate the target
+  const skill = createSkillInstance({
+    id: skillInput ? Number(skillInput.id) || 0 : 0,
+    level: skillInput ? Math.max(1, Number(skillInput.level) || 1) : 1,
+  });
+  const battleResult = new BattlePipeline(config).calculate(status, weapon, skill, target, effBuild, gearBonuses);
+  return battleResult.dps_valid ? battleResult.dps : null;
+}
+
+const ADVISOR_STATS: { key: string; label: string }[] = [
+  { key: "str", label: "STR" }, { key: "agi", label: "AGI" }, { key: "vit", label: "VIT" },
+  { key: "int", label: "INT" }, { key: "dex", label: "DEX" }, { key: "luk", label: "LUK" },
+];
+const STAT_STEP = 10;
+const MAX_STAT = 99;
+const MAX_REFINE = 10;
+
+router.post("/upgrade-advisor", (req: Request, res: Response) => {
+  try {
+    const { build: buildData, skill: skillInput, target: targetInput } = req.body || {};
+    if (!buildData) return res.status(400).json({ error: "build is required" });
+
+    const build = buildFromSaveSchema(buildData);
+    const profile = getProfile(build.server);
+    loader.setProfile(profile);
+    const config = createBattleConfig();
+
+    const baseline = dpsForBuild(buildData, skillInput, targetInput, config);
+    if (baseline == null || baseline <= 0) {
+      return res.json({ advisor: { baseline_dps: baseline ?? 0, suggestions: [] } });
+    }
+
+    const suggestions: { label: string; kind: string; dps_delta: number; dps_pct: number }[] = [];
+
+    // Stat bumps: +STAT_STEP into each stat (capped at 99).
+    const baseStats: Record<string, number> = buildData.base_stats || {};
+    for (const s of ADVISOR_STATS) {
+      const cur = Number(baseStats[s.key] ?? 1);
+      if (cur >= MAX_STAT) continue;
+      const next = Math.min(MAX_STAT, cur + STAT_STEP);
+      const mod = { ...buildData, base_stats: { ...baseStats, [s.key]: next } };
+      const dps = dpsForBuild(mod, skillInput, targetInput, config);
+      if (dps != null) suggestions.push({ label: `+${next - cur} ${s.label}`, kind: "stat", dps_delta: dps - baseline, dps_pct: (dps - baseline) / baseline * 100 });
+    }
+
+    // +1 refine on each refineable equipped piece (weapons and armor).
+    const equipped: Record<string, any> = buildData.equipped || {};
+    const refine: Record<string, number> = buildData.refine || {};
+    for (const [slot, id] of Object.entries(equipped)) {
+      if (slot.includes("card") || id == null) continue;
+      const item = (loader as any).getItem(Number(id));
+      if (!item || !item.refineable) continue;
+      const cur = Number(refine[slot] ?? 0);
+      if (cur >= MAX_REFINE) continue;
+      const mod = { ...buildData, refine: { ...refine, [slot]: cur + 1 } };
+      const dps = dpsForBuild(mod, skillInput, targetInput, config);
+      if (dps != null) suggestions.push({ label: `${item.name} +${cur} → +${cur + 1}`, kind: "refine", dps_delta: dps - baseline, dps_pct: (dps - baseline) / baseline * 100 });
+    }
+
+    // Best gains first; drop anything that doesn't help DPS.
+    suggestions.sort((a, b) => b.dps_delta - a.dps_delta);
+    res.json({ advisor: { baseline_dps: baseline, suggestions: suggestions.filter((s) => s.dps_delta > 0.01) } });
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: "Upgrade advisor failed", detail: String(err.message || err) });
+  }
+});
+
 export default router;

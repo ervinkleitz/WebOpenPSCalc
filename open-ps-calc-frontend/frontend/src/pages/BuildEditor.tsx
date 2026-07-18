@@ -11,6 +11,7 @@ import SavedBuildsModal from "../components/SavedBuildsModal";
 import ImportJaludevModal from "../components/ImportJaludevModal";
 import { summaryMetrics, type ComparePin } from "../components/CompareView";
 import { BreakpointsView } from "../components/BreakpointsView";
+import { UpgradeAdvisorView } from "../components/UpgradeAdvisorView";
 import {
   BuildData, SkillState, CustomTarget, TargetMode, TargetMods,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
@@ -1645,6 +1646,7 @@ export default function BuildEditor() {
               payload={breakpointPayload}
               targetName={targetMode === "monster" ? (mobInfo?.name ?? null) : "custom target"}
             />
+            <UpgradeAdvisorView payload={breakpointPayload} />
           </Panel>
 
           <Panel eyebrow="02" title="Equipment">

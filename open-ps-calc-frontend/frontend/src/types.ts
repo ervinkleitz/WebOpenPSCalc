@@ -117,6 +117,11 @@ export interface UrlEditorState {
   targetMods?: TargetMods;
 }
 
+export interface UpgradeAdvisor {
+  baseline_dps: number;
+  suggestions: { label: string; kind: "stat" | "refine"; dps_delta: number; dps_pct: number }[];
+}
+
 export interface Breakpoints {
   aspd: {
     current: number;
