@@ -26,6 +26,13 @@ instead of release version. Dates are taken from actual git commit history.
   these bonuses were only being added once. They now multiply by the true hit count — e.g. 5 spheres
   on Triple Attack add +45 (5×3×3), not +15 — matching vanilla `ATK_ADD(div × …)`.
 
+- **Super Novice can now use the Awakening Potion.** The ASPD-potion selector had Super Novice capped
+  at Concentration; on Payon Stories it can use up to Awakening Potion (+15% ASPD), now selectable.
+
+- **Improve Dodge is now selectable.** The Improve Dodge passive (+FLEE, i.e. more dodge chance) was
+  read by the engine but never offered in the Passive skills panel. It now appears for the classes that
+  learn it — the Thief line and Super Novice — so you can factor its dodge into survivability.
+
 ### Changed
 
 - **The ASPD / cast / hit Breakpoints panel is now a highlighted accent card.** It was previously a

@@ -424,6 +424,10 @@ class DataLoader {
       "GS_DUST", "GS_FULLBUSTER", "GS_SPREADATTACK",
       // ASPD → attack period → DPS
       "KN_CAVALIERMASTERY",
+      // FLEE → dodge chance (survivability). Improve Dodge is passive and the
+      // engine already reads it (statusCalculator TF_MISS), but it wasn't offered
+      // in the picker. Surfaces for the Thief line and Super Novice.
+      "TF_MISS",
       // Proc-based extra hits on normal attacks (battlePipeline.js#calculate)
       "TF_DOUBLE",
       // PS Monk rework: MO_TRIPLEATTACK level sets proc rate and TA ratio damage

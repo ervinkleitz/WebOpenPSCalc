@@ -59,8 +59,9 @@ const STAT_COST_TABLE: readonly number[] = (() => {
 // Gunslinger references planning around "JobLv70 gunslinger", so this PS
 // instance appears to have retuned them to the trans cap instead.
 const TRANS_JOB_IDS = new Set([4008, 4009, 4010, 4011, 4012, 4013, 4015, 4016, 4017, 4018, 4019, 4020, 4021]);
-// Novice + 1st job (except Magician) + Super Novice: Concentration Potion only
-const NOVICE_OR_1ST_JOB_IDS = new Set([0, 1, 2, 3, 4, 5, 6, 23]);
+// Novice + 1st job (except Magician): Concentration Potion only. (Super Novice, 23,
+// is NOT here — PS lets it use up to Awakening Potion, so it falls through to cap 2.)
+const NOVICE_OR_1ST_JOB_IDS = new Set([0, 1, 2, 3, 4, 5, 6]);
 // These non-trans classes can use Berserk Potion; trans forms already covered by TRANS_JOB_IDS
 const BERSERK_NON_TRANS_IDS = new Set([
   2, 9, 16,   // Mage tree: Magician, Wizard, Sage
@@ -2423,7 +2424,7 @@ export default function BuildEditor() {
           <span className="credits-support-text">This calc runs on milk tea</span>
         </div>
         <div className="credits-row">
-          <span>Thanks to our testers:&nbsp;<span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet, halcyon02</span></span>
+          <span>Thanks to our testers:&nbsp;<span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet, halcyon02, Solepto</span></span>
           <span className="credits-sep">·</span>
           <span>Base engine by&nbsp;<span className="credits-names">tochoco.latte</span></span>
           <span className="credits-sep">·</span>
