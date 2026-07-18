@@ -7,6 +7,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-18
 
+### Added
+
+- **Starter build templates.** A "Start from a template" picker at the top of the Character panel
+  loads a sensible build for a class — Katar Crit Assassin, Combo Monk, DEX Wizard, AGI Hunter, Grand
+  Cross Crusader, Bash Knight, Battle Priest, Acid Demo Alchemist — setting the job, level, and a stat
+  spread that follows the class's stat-priority guidance on the PS wiki (linked from a hint under the
+  picker). Gear and main skill are left for you to pick; it's a starting point to tweak, not a finished
+  build.
+
 ### Fixed
 
 - **Spirit sphere ATK is now modeled as a Star Crumb-style flat bonus, not base ATK.** Each active

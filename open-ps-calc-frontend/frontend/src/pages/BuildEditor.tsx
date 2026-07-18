@@ -157,6 +157,54 @@ const DEFAULT_BUILD: BuildData = {
   wildcard_slots: {},
 };
 
+// Starter build templates. Stat spreads follow the class stat-priority guidance on
+// wiki.payonstories.com (each links to its class page); all fit the level-99 point
+// budget. They set job / level / stats only — gear and main skill are left for the
+// player to pick (see each note). A starting point to tweak, not a finished build.
+type BuildTemplate = {
+  label: string;
+  job_id: number;
+  base_level: number;
+  job_level: number;
+  base_stats: { str: number; agi: number; vit: number; int: number; dex: number; luk: number };
+  wiki: string;
+  note: string;
+};
+const BUILD_TEMPLATES: BuildTemplate[] = [
+  { label: "Katar Crit Assassin", job_id: 12, base_level: 99, job_level: 50,
+    base_stats: { str: 60, agi: 90, vit: 30, int: 1, dex: 1, luk: 70 },
+    wiki: "https://wiki.payonstories.com/Assassin",
+    note: "AGI/LUK katar crit build. Equip a katar and crit/ATK cards, then pick Sonic Blow or auto-attack." },
+  { label: "Combo Monk", job_id: 15, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 60, vit: 40, int: 40, dex: 30, luk: 1 },
+    wiki: "https://wiki.payonstories.com/Monk",
+    note: "STR + AGI/FLEE + SP. Add spirit spheres in Buffs and pick your combo / Asura skill and a knuckle." },
+  { label: "DEX Wizard", job_id: 9, base_level: 99, job_level: 50,
+    base_stats: { str: 1, agi: 1, vit: 33, int: 99, dex: 84, luk: 1 },
+    wiki: "https://wiki.payonstories.com/Wizard",
+    note: "Max INT/DEX nuker. Pick Storm Gust / Lord of Vermilion / Meteor Storm and a staff." },
+  { label: "AGI Hunter", job_id: 11, base_level: 99, job_level: 50,
+    base_stats: { str: 1, agi: 90, vit: 24, int: 1, dex: 87, luk: 30 },
+    wiki: "https://wiki.payonstories.com/Hunter",
+    note: "AGI + DEX with some LUK for Blitz Beat. Equip a bow and elemental arrows (Ammo slot); pick Double Strafe." },
+  { label: "Grand Cross Crusader", job_id: 14, base_level: 99, job_level: 50,
+    base_stats: { str: 60, agi: 1, vit: 80, int: 40, dex: 40, luk: 1 },
+    wiki: "https://wiki.payonstories.com/Crusader",
+    note: "VIT tank / Grand Cross. Equip a spear (or sword + shield); pick Grand Cross and check the recoil panel." },
+  { label: "Bash Knight", job_id: 7, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 60, vit: 60, int: 1, dex: 40, luk: 1 },
+    wiki: "https://wiki.payonstories.com/Knight",
+    note: "STR Bash with a two-hand sword or spear. Max your weapon mastery in Passive skills; pick Bash." },
+  { label: "Battle Priest", job_id: 8, base_level: 99, job_level: 50,
+    base_stats: { str: 70, agi: 60, vit: 50, int: 40, dex: 30, luk: 1 },
+    wiki: "https://wiki.payonstories.com/Priest",
+    note: "Mace battle priest for Undead/Demon hunting. Pick Turn Undead / offensive Heal / Holy Strike." },
+  { label: "Acid Demo Alchemist", job_id: 18, base_level: 99, job_level: 50,
+    base_stats: { str: 30, agi: 1, vit: 70, int: 80, dex: 60, luk: 1 },
+    wiki: "https://wiki.payonstories.com/Alchemist",
+    note: "Acid Demonstration bomber (INT/DEX/VIT). Pick Acid Demonstration; works through DEF." },
+];
+
 // Bonuses from wiki.payonstories.com/Cute_Pet_System. Only PS server has
 // pet_bonuses populated; standard server sends selected_pet but profile
 // pet_bonuses:{} makes applyPetBonuses a no-op.
@@ -717,6 +765,24 @@ export default function BuildEditor() {
     setResultsOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+  const applyTemplate = useCallback((t: BuildTemplate) => {
+    setData((prev) => {
+      const job = jobs.find((j) => j.id === t.job_id);
+      return {
+        ...DEFAULT_BUILD,
+        server: prev.server,
+        target_mob_id: prev.target_mob_id,
+        name: t.label,
+        job_id: t.job_id,
+        job_name: job?.name ?? "",
+        base_level: t.base_level,
+        job_level: t.job_level,
+        base_stats: { ...t.base_stats },
+      };
+    });
+    setSkill(DEFAULT_SKILL);
+    setTemplateHint(t);
+  }, [jobs]);
   const [resultsOpen, setResultsOpen] = useState(false);
   const resultsPanelRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
@@ -727,6 +793,8 @@ export default function BuildEditor() {
   const [featuresBannerCollapsed, setFeaturesBannerCollapsed] = useState(() => localStorage.getItem("featuresBannerCollapsed") === "1");
   // The per-class PS rework detail is collapsed under the "class reworks" feature line.
   const [classReworksOpen, setClassReworksOpen] = useState(false);
+  // The most recently loaded starter template (for the note/wiki-link hint).
+  const [templateHint, setTemplateHint] = useState<BuildTemplate | null>(null);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -1397,6 +1465,29 @@ export default function BuildEditor() {
         <div className="editor-grid">
         <div>
           <Panel eyebrow="01" title="Character">
+            <div className="field-row">
+              <div className="field" style={{ flex: 1 }}>
+                <label>Start from a template</label>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const t = BUILD_TEMPLATES.find((x) => x.label === e.target.value);
+                    if (t) applyTemplate(t);
+                  }}
+                >
+                  <option value="">Load a wiki build…</option>
+                  {BUILD_TEMPLATES.map((t) => (
+                    <option key={t.label} value={t.label}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {templateHint && (
+              <p className="build-template-hint">
+                <strong>{templateHint.label}:</strong> {templateHint.note}{" "}
+                <a href={templateHint.wiki} target="_blank" rel="noreferrer">Wiki guide ↗</a>
+              </p>
+            )}
             <div className="field-row">
               <div className="field">
                 <label>Build name</label>
