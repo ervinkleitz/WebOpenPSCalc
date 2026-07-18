@@ -897,6 +897,28 @@ label {
 .reworks-banner-chevron { color: var(--text-faint); font-size: 0.75rem; flex-shrink: 0; }
 .reworks-banner ul { margin: 0; padding: 0 0.9rem 0.65rem 2.1rem; }
 .reworks-banner li { margin: 0.1rem 0; }
+.reworks-detail-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+.reworks-detail-toggle:hover { color: var(--text); }
+.reworks-detail-chevron { color: var(--text-faint); font-size: 0.7rem; }
+.reworks-detail-list {
+  margin: 0.25rem 0 0.35rem !important;
+  padding: 0 0 0 1.1rem !important;
+  color: var(--text-faint);
+  border-left: 1px solid var(--border);
+}
+.reworks-detail-list li { margin: 0.15rem 0; }
 
 .spinner-text { color: var(--text-faint); font-size: 0.85rem; font-family: var(--mono); }
 

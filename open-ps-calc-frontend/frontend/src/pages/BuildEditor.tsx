@@ -724,6 +724,8 @@ export default function BuildEditor() {
   const [themeHintSeen, setThemeHintSeen] = useState(() => localStorage.getItem("themeHintSeen") === "1");
   // Features banner: expanded by default (collapsed only if the user explicitly collapsed it).
   const [featuresBannerCollapsed, setFeaturesBannerCollapsed] = useState(() => localStorage.getItem("featuresBannerCollapsed") === "1");
+  // The per-class PS rework detail is collapsed under the "class reworks" feature line.
+  const [classReworksOpen, setClassReworksOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -1331,14 +1333,42 @@ export default function BuildEditor() {
             </button>
             {!featuresBannerCollapsed && (
               <ul>
-                <li>Full step-by-step damage breakdown — every multiplier and where it comes from</li>
                 <li>Attack-speed, cast, and hit breakpoint calculator</li>
                 <li>Build-vs-build comparison</li>
+                <li>Full step-by-step damage breakdown — every multiplier and where it comes from</li>
                 <li>Survivability panel — how hard monsters hit you (incoming damage, effective HP, dodge / FLEE)</li>
                 <li>Grand Cross self-damage (recoil) modeling</li>
                 <li>Import builds from the jaludev calculator</li>
                 <li>Shareable build links</li>
-                <li>All PS class reworks modeled (Knight through Ninja)</li>
+                <li>Light and dark mode</li>
+                <li>
+                  <button
+                    className="reworks-detail-toggle"
+                    onClick={() => setClassReworksOpen((v) => !v)}
+                    aria-expanded={classReworksOpen}
+                  >
+                    All PS class reworks modeled (Knight through Ninja)
+                    <span className="reworks-detail-chevron">{classReworksOpen ? "▾" : "▸"}</span>
+                  </button>
+                  {classReworksOpen && (
+                    <ul className="reworks-detail-list">
+                      <li>Knight — Sword Quickening CRIT, Blade Mastery covers 1H Sword, Spear Stab max level 5</li>
+                      <li>Crusader — Grand Cross (physical + magic summed, weapon masteries &amp; Demon Bane apply, ratio applied last), Holy Cross, Reflect Shield formula, Spear Quicken (Hit/Flee), Magnum endow restricted to auto-attacks</li>
+                      <li>Merchant / Whitesmith — Mammonite (100+50×lv, Zeny Pincher 40%), Cart Revolution 250%, Over Thrust full party bonus</li>
+                      <li>Alchemist — Acid Terror (100+80×lv, ignores armor DEF), Acid Demonstration (200+40×lv), Axe Mastery</li>
+                      <li>Assassin / Thief — dual-wield 3-hit model, Enchant Poison bonus, Katar second hit, Envenom element</li>
+                      <li>Rogue — Backstab formula (200+30×lv, +40% opportunity bonus), Trick Arrow 2-hit 200%, Raid 600%, Vulture's Eye enables bow Double Attack, Yser Card functional</li>
+                      <li>Acolyte / Priest — Holy Light (LUK% chance for +60% damage), offensive Heal (heal-bomb vs Undead, higher with Purifying Ring + Rosary), Turn Undead instant-kill chance, Holy Strike proc (101 + baseSTR + baseLevel)%, Magnus Exorcismus (full vs Undead/Demon), Signum Crucis −50% DEF</li>
+                      <li>Monk / Champion — Triple Attack (5 levels; procs on auto-attack, crits during Fury), Chain Combo / Combo Finish reworked ratios, Asura Strike SP formula (flat +1000, takes normal DEF), spirit spheres (Star Crumb-style, true-neutral, per hit)</li>
+                      <li>Wizard / High Wizard — Frost Nova (175+15×lv → 190% at lv 1, +10% per Frost Diver lv, max lv 5), Lord of Vermillion 200×lv% total (4 waves), Napalm Vulcan Shadow element + 50% MDEF ignore, Fire Pillar 50% MDEF ignore, Mystical Amplification +10%/lv (max lv 5), Sightrasher max lv 5, Soul Drain +1% MaxHP/lv</li>
+                      <li>Sage — Soul Strike ignores 50% MDEF (lv 10 learned) and deals +5%×lv bonus vs Undead race; Fireball (70+30×lv)% per hit (lv 1–10: 70%→340%); Earth Spike and Heavens Drive 140%×lv per hit; Advanced Book ATK +10–30 flat (lv 1–5); Volcano/Deluge/Violent Gale persistence buffs at max level 3</li>
+                      <li>Hunter — offensive trap damage (Land Mine, Blast Mine, Freezing Trap, Claymore Trap)</li>
+                      <li>Bard / Dancer — Performing +100 ratio on Musical Strike / Throw Arrow (175+25×lv base), Arrow Vulcan, arrow-element damage</li>
+                      <li>Gunslinger — Triple Action 420% total (100+40×lv), Ground Drift 200+60×lv% (max 800%), Soul Bullet (50+DEX+BaseLvl)%, Heavy-Tipped Bullet ATK 45 +10% all races; Dust/Full Buster/Spread Attack 7% Neutral resist now also triggers with Grenade Launcher</li>
+                      <li>Ninja — Throw Huuma Shuriken (200+150×lv), Shadow Slash, Killing Stroke (STR×40 + HP×8%×lv), Freezing Spear / Lightning Jolt</li>
+                    </ul>
+                  )}
+                </li>
               </ul>
             )}
           </div>

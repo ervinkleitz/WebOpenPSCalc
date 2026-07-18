@@ -37,10 +37,11 @@ instead of release version. Dates are taken from actual git commit history.
   instead of leaving you to guess what the percentage is measured against.
 
 - **The reworks banner is now a Features list.** The banner that listed every per-class rework is now
-  a concise list of what the calculator can do — full step-by-step damage breakdown, the ASPD / cast /
-  hit breakpoint calculator, build-vs-build comparison, the survivability panel, Grand Cross recoil,
-  importing builds from the jaludev calculator, and shareable links — with the PS class reworks
-  collapsed to a single line. It's expanded by default so the tools are easy to find.
+  a concise list of what the calculator can do, led by the ASPD / cast / hit breakpoint calculator and
+  build-vs-build comparison, followed by the step-by-step damage breakdown, the survivability panel,
+  Grand Cross recoil, importing builds from the jaludev calculator, shareable links, and light/dark
+  mode. The PS class reworks collapse to a single line that expands to the full per-class detail on
+  click. Expanded by default so the tools are easy to find.
 
 ## 2026-07-16
 
