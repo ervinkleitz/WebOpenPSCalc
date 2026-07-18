@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-18
+
+### Fixed
+
+- **Spirit sphere ATK is now modeled as a Star Crumb-style flat bonus, not base ATK.** Each active
+  spirit sphere grants +3 ATK, which the PS wiki describes as working "similar to forged weapons
+  imbued with Star Crumb" — a flat, per-hit bonus that ignores the target's DEF and flee. The calc
+  had been adding it into base ATK instead, so it was wrongly scaled by every skill's damage ratio
+  and, worst of all, amplified by Asura Strike's ×(8 + SP/10) multiplier. Spirit sphere damage now
+  applies as a flat post-defense add (like Star Crumb / forged weapons), shown as its own "Spirit
+  Sphere Bonus" step in the breakdown. Auto-attack numbers are essentially unchanged; Asura Strike
+  no longer over-counts sphere ATK (the inflation grew with your SP).
+
 ## 2026-07-16
 
 ### Added

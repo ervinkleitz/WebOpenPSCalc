@@ -33,7 +33,7 @@ const { uniformPmf, scaleFloor, floorAt, pmfStats, convolve, addFlat } = require
 const { calculateBaseDamage } = require("./modifiers/baseDamage");
 const { calculateRefineFix } = require("./modifiers/refineFix");
 const { calculateAttrFix } = require("./modifiers/attrFix");
-const { calculateForgeBonus } = require("./modifiers/forgeBonus");
+const { calculateForgeBonus, calculateSpiritSphereBonus } = require("./modifiers/forgeBonus");
 const { calculateFinalRateBonus } = require("./modifiers/finalRateBonus");
 const { calculateHitChance } = require("./modifiers/hitChance");
 const { isCritEligible, calculateCritChance } = require("./modifiers/critChance");
@@ -779,6 +779,7 @@ class BattlePipeline {
     pmf = calculateMasteryFix(weapon, build, target, pmf, result, skill, { profile });
     pmf = calculateAttrFix(weapon, target, pmf, result, build, 0 /* Ele_Neutral */);
     pmf = calculateForgeBonus(weapon, 1, pmf, result);
+    pmf = calculateSpiritSphereBonus(build, 1, pmf, result);
     pmf = calculateCardFix(build, gearBonuses, 0 /* Ele_Neutral */, target, false, pmf, result);
     pmf = calculateFinalRateBonus(false, pmf, this.config, result);
     pmf = floorAt(pmf, 1);
@@ -1071,6 +1072,7 @@ class BattlePipeline {
 
     const div = hitCount;
     pmf = calculateForgeBonus(weapon, div, pmf, result);
+    pmf = calculateSpiritSphereBonus(build, div, pmf, result);
 
     // NK_IGNORE_CARDS (e.g. Acid Terror): the skill's damage is unaffected by
     // card damage modifiers (bAddRace/bAddEle/bAddSize/atk-ele and the target's
