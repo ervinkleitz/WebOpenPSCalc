@@ -95,6 +95,14 @@ const scenarios = [
     target: 1036,
   },
   {
+    // Spirit sphere bonus procs on EVERY hit of a cosmetic multi-hit skill: Triple
+    // Attack (3 hits) ⇒ +45 flat (5×3×3), Star Crumb-like, added post-DEF/attr.
+    name: "monk-triple-attack-spheres",
+    build: { job_id: 15, base_level: 99, job_level: 50, base_stats: { str: 90, agi: 40, vit: 40, int: 40, dex: 60, luk: 10 }, equipped: { right_hand: 1101 }, flags: { spirit_spheres: 5 } },
+    skill: { name: "MO_TRIPLEATTACK", level: 5 },
+    target: 1036,
+  },
+  {
     name: "crusader-grand-cross-recoil",
     build: { job_id: 14, base_level: 95, job_level: 50, base_stats: { str: 60, agi: 30, vit: 70, int: 60, dex: 40, luk: 10 }, equipped: { right_hand: 1101 } },
     skill: { name: "CR_GRANDCROSS", level: 10 },

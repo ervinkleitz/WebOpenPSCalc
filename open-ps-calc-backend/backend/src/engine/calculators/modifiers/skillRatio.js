@@ -161,11 +161,17 @@ function calculateSkillRatio(skill, pmf, build, result, opts = {}) {
     hitLabel = `${lo}–${hi} hits`;
     hitCount = Math.max(1, Math.round((lo + hi) / 2));
   } else {
-    hitCount = hitCountRaw > 0 ? hitCountRaw : 1;
     const cosmetic = hitCountRaw < 0;
-    const displayHits = Math.abs(hitCountRaw);
-    pmf = scaleFloor(pmf, hitCount, 1);
-    hitLabel = cosmetic ? `${displayHits} cosmetic hits` : `${hitCount} hits`;
+    const trueHits = Math.abs(hitCountRaw) || 1;       // real number of hits (vanilla wd.div_)
+    const pmfMult = hitCountRaw > 0 ? hitCountRaw : 1;  // cosmetic skills fold all hits into one combined-ratio damage
+    pmf = scaleFloor(pmf, pmfMult, 1);
+    // Returned divisor is the TRUE hit count. Flat per-hit mastery adds — the Star
+    // Crumb forge bonus and spirit spheres — proc on every real hit (vanilla
+    // ATK_ADD(wd.div_ × …)). For a cosmetic skill the damage ratio is already
+    // combined (pmfMult=1), but those flat adds must still multiply by all hits
+    // (e.g. Triple Attack = 3, Chain Combo = 4).
+    hitCount = trueHits;
+    hitLabel = cosmetic ? `${trueHits} cosmetic hits` : `${pmfMult} hits`;
   }
 
   if (gearBonuses) {

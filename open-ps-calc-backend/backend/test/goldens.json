@@ -793,6 +793,58 @@
    }
   }
  },
+ "monk-triple-attack-spheres": {
+  "status": {
+   "str": 98,
+   "agi": 47,
+   "vit": 46,
+   "int_": 42,
+   "dex": 64,
+   "luk": 13,
+   "batk": 193,
+   "max_hp": 7500,
+   "max_sp": 674,
+   "aspd": 50.4,
+   "cri": 53,
+   "hit": 163,
+   "flee": 146,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 78,
+   "matk_max": 106
+  },
+  "result": {
+   "dps": 212.901,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 2992,
+   "normal": {
+    "min": 637,
+    "max": 637,
+    "avg": 637,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 263 Lv 5)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Spirit Sphere Bonus",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
  "crusader-grand-cross-recoil": {
   "status": {
    "str": 67,

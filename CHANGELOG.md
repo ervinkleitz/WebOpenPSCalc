@@ -16,7 +16,15 @@ instead of release version. Dates are taken from actual git commit history.
   and, worst of all, amplified by Asura Strike's ×(8 + SP/10) multiplier. Spirit sphere damage now
   applies as a flat post-defense add (like Star Crumb / forged weapons), shown as its own "Spirit
   Sphere Bonus" step in the breakdown. Auto-attack numbers are essentially unchanged; Asura Strike
-  no longer over-counts sphere ATK (the inflation grew with your SP).
+  no longer over-counts sphere ATK (the inflation grew with your SP). Verified true-neutral (ignores
+  weapon endow and the target's element), affected by damage cards (e.g. quad Santa Poring vs Shadow
+  gives spheres ×1.8), and per-hit.
+
+- **Per-hit mastery bonuses now proc on every hit of cosmetic multi-hit skills.** The Star Crumb
+  forge bonus and the spirit sphere bonus are flat, per-hit adds. For skills the engine models as a
+  single combined-ratio hit but that really strike multiple times (Triple Attack ×3, Chain Combo ×4),
+  these bonuses were only being added once. They now multiply by the true hit count — e.g. 5 spheres
+  on Triple Attack add +45 (5×3×3), not +15 — matching vanilla `ATK_ADD(div × …)`.
 
 ## 2026-07-16
 
