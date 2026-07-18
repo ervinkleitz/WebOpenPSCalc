@@ -26,6 +26,12 @@ instead of release version. Dates are taken from actual git commit history.
   these bonuses were only being added once. They now multiply by the true hit count — e.g. 5 spheres
   on Triple Attack add +45 (5×3×3), not +15 — matching vanilla `ATK_ADD(div × …)`.
 
+### Changed
+
+- **The ASPD / cast / hit Breakpoints panel is now a highlighted accent card.** It was previously a
+  muted list that was easy to miss; it now sits in a gold-tinted card with a left accent stripe and a
+  ⚡ heading so the attack-speed and cast-speed breakpoints stand out at a glance.
+
 ## 2026-07-16
 
 ### Added

@@ -1291,16 +1291,24 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 .import-unmapped li { margin: 0.12rem 0; }
 
 /* Breakpoints readout (on-demand ASPD / cast / hit thresholds) */
-.bp { margin-top: 0.6rem; }
+.bp {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.7rem 0.65rem;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dim);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+}
 .bp-head { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; }
-.bp-title { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); }
+.bp-title { font-size: 0.82rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); font-weight: 700; display: flex; align-items: center; gap: 0.35rem; }
+.bp-title::before { content: "⚡"; font-size: 0.9rem; line-height: 1; }
 .bp-btn { font-size: 0.72rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); background: var(--bg-panel-raised); color: var(--text-dim); border-radius: var(--radius); cursor: pointer; }
 .bp-btn:hover:not(:disabled) { color: var(--text); border-color: var(--accent-dim); }
 .bp-btn:disabled { opacity: 0.5; cursor: default; }
 .bp-err { font-size: 0.75rem; color: var(--crit); margin-top: 0.35rem; }
-.bp-body { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; }
-.bp-row { display: flex; gap: 0.5rem; align-items: baseline; font-size: 0.82rem; line-height: 1.35; }
-.bp-k { flex: 0 0 2.6rem; font-size: 0.72rem; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-faint); padding-top: 0.05rem; }
+.bp-body { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.bp-row { display: flex; gap: 0.5rem; align-items: baseline; font-size: 0.85rem; line-height: 1.35; }
+.bp-k { flex: 0 0 2.6rem; font-size: 0.72rem; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; padding-top: 0.05rem; }
 .bp-v { color: var(--text); }
 .bp-v b { font-family: var(--mono); color: var(--accent); font-weight: 600; }
 .bp-sub { color: var(--text-faint); }
