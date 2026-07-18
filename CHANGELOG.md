@@ -32,6 +32,10 @@ instead of release version. Dates are taken from actual git commit history.
   muted list that was easy to miss; it now sits in a gold-tinted card with a left accent stripe and a
   ⚡ heading so the attack-speed and cast-speed breakpoints stand out at a glance.
 
+- **The Breakpoints Hit row now names the target.** The hit-chance breakpoint is computed against the
+  selected monster, so it now says which one — e.g. "92% vs Ferus [Fire]" (or "vs custom target") —
+  instead of leaving you to guess what the percentage is measured against.
+
 ## 2026-07-16
 
 ### Added

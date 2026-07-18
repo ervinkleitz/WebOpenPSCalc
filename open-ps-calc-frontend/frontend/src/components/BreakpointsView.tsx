@@ -10,7 +10,7 @@ import type { Breakpoints } from "../types";
 
 const DEBOUNCE_MS = 450;
 
-export function BreakpointsView({ payload }: { payload: unknown | null }) {
+export function BreakpointsView({ payload, targetName }: { payload: unknown | null; targetName?: string | null }) {
   const [bp, setBp] = useState<Breakpoints | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -40,12 +40,12 @@ export function BreakpointsView({ payload }: { payload: unknown | null }) {
         {loading && <span className="bp-sub">updating…</span>}
       </div>
       {err && !bp && <div className="bp-err">{err}</div>}
-      {bp && <BreakpointsBody bp={bp} />}
+      {bp && <BreakpointsBody bp={bp} targetName={targetName} />}
     </div>
   );
 }
 
-function BreakpointsBody({ bp }: { bp: Breakpoints }) {
+function BreakpointsBody({ bp, targetName }: { bp: Breakpoints; targetName?: string | null }) {
   const { aspd, cast, hit } = bp;
   return (
     <div className="bp-body">
@@ -81,6 +81,7 @@ function BreakpointsBody({ bp }: { bp: Breakpoints }) {
           <span className="bp-k">Hit</span>
           <span className="bp-v">
             <b>{hit.current_pct}%</b>
+            {targetName ? <span className="bp-vs"> vs {targetName}</span> : null}
             {hit.current_pct >= 100 ? (
               <span className="bp-sub"> — always hits</span>
             ) : (

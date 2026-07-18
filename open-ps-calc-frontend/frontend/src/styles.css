@@ -1311,4 +1311,5 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 .bp-k { flex: 0 0 2.6rem; font-size: 0.72rem; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; padding-top: 0.05rem; }
 .bp-v { color: var(--text); }
 .bp-v b { font-family: var(--mono); color: var(--accent); font-weight: 600; }
+.bp-vs { color: var(--text); font-weight: 600; }
 .bp-sub { color: var(--text-faint); }

@@ -1521,7 +1521,10 @@ export default function BuildEditor() {
                 </div>
               ))}
             </div>
-            <BreakpointsView payload={breakpointPayload} />
+            <BreakpointsView
+              payload={breakpointPayload}
+              targetName={targetMode === "monster" ? (mobInfo?.name ?? null) : "custom target"}
+            />
           </Panel>
 
           <Panel eyebrow="02" title="Equipment">
