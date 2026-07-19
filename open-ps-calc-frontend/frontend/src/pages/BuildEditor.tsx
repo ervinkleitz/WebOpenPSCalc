@@ -1533,15 +1533,14 @@ export default function BuildEditor() {
                     </ul>
                   )}
                 </li>
-                <li>Starter build templates from the PS wiki — load a class build (stats + a signature skill) for any of 16 classes and tweak it</li>
-                <li>Attack-speed, cast, and hit breakpoint calculator</li>
-                <li>Build-vs-build comparison</li>
                 <li>Full step-by-step damage breakdown — every multiplier and where it comes from</li>
+                <li>Attack-speed, cast, and hit breakpoint calculator</li>
                 <li>Disambiguated damage, hit, and dodge against the exact monster you pick</li>
                 <li>Survivability panel — how hard monsters hit you (incoming damage, effective HP, dodge / FLEE)</li>
                 <li>Grand Cross self-damage (recoil) modeling</li>
+                <li>Build-vs-build comparison</li>
+                <li>Starter build templates from the PS wiki — load a class build (stats + a signature skill) for any of 16 classes and tweak it</li>
                 <li>Import builds from the jaludev calculator</li>
-                <li>Shareable build links</li>
                 <li>Light and dark mode</li>
               </ul>
             )}
