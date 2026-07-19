@@ -766,14 +766,6 @@ export default function BuildEditor() {
   );
 
   const [calcResult, setCalcResult] = useState<any>(null);
-  // Donation nudge: shown to engaged users after several calculations (a natural
-  // moment to ask). Dismissal persists so it never nags twice.
-  const [calcCount, setCalcCount] = useState(0);
-  const [nudgeDismissed, setNudgeDismissed] = useState(() => localStorage.getItem("donateNudgeDismissed") === "1");
-  const showDonateNudge = calcCount >= 5 && !nudgeDismissed;
-  useEffect(() => {
-    if (showDonateNudge) statsApi.trackFeature("donate_nudge_shown");
-  }, [showDonateNudge]);
 
   // Build-vs-build comparison: pinned snapshots of computed builds.
   const [pins, setPins] = useState<ComparePin[]>([]);
@@ -1215,7 +1207,6 @@ export default function BuildEditor() {
           ? Math.floor(mobInfo.hp * (data.server === "payon_stories" ? 2 : 1) / 100)
           : null,
       });
-      setCalcCount((c) => c + 1);
     } catch (e: any) {
       setCalcError(e.message);
     } finally {
@@ -1418,7 +1409,7 @@ export default function BuildEditor() {
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
             <button onClick={() => { setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
-            <a className="topbar-kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => { statsApi.trackDonateClick("topbar"); setMenuOpen(false); }}>☕ Support me</a>
+            <a className="topbar-kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => { statsApi.trackDonateClick("topbar"); setMenuOpen(false); }}>🍵 Support the calc</a>
           </div>
 
           {/* Hamburger — hidden on desktop */}
@@ -1532,31 +1523,6 @@ export default function BuildEditor() {
           onLoadPin={handleLoadPin}
           onClearPins={handleClearPins}
         />
-
-        {showDonateNudge && (
-          <div className="donate-nudge" role="note">
-            <span className="donate-nudge-emoji">🍵</span>
-            <span className="donate-nudge-text">
-              Finding this calc useful? It's free and ad-free — a small tip keeps it brewing.
-            </span>
-            <a
-              className="donate-nudge-cta"
-              href="https://ko-fi.com/I7A322JOTP"
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => statsApi.trackDonateClick("nudge")}
-            >
-              Buy me a milk tea
-            </a>
-            <button
-              className="donate-nudge-dismiss"
-              aria-label="Dismiss"
-              onClick={() => { setNudgeDismissed(true); localStorage.setItem("donateNudgeDismissed", "1"); }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
 
         <div className="editor-grid">
         <div>
@@ -2616,9 +2582,9 @@ export default function BuildEditor() {
         </div>
         <div className="credits-support">
           <a className="kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => statsApi.trackDonateClick("footer")}>
-            🍵 Buy me a milk tea
+            🍵 Buy me one
           </a>
-          <span className="credits-support-text">This calc runs on milk tea</span>
+          <span className="credits-support-text">A fan project, running on milk tea</span>
         </div>
         <div className="credits-row">
           <span>Thanks to our testers:&nbsp;<span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet, halcyon02, Solepto</span></span>

@@ -49,9 +49,21 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
             <SurvivabilityView incoming={calcResult.incoming} />
           )}
           {calcResult && !calculating && !error && (
-            <div className="kofi-results-card">
-              <span className="kofi-results-text">This calc runs on milk tea —</span>
-              <a className="kofi-results-link" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => statsApi.trackDonateClick("results")}>buy me one 🍵</a>
+            <div className="support-card">
+              <span className="support-card-emoji">🍵</span>
+              <div className="support-card-msg">
+                <span className="support-card-head">Enjoying the calc?</span>
+                <span className="support-card-sub">A fan project for the Payon Stories community — milk tea keeps it brewing.</span>
+              </div>
+              <a
+                className="support-card-cta"
+                href="https://ko-fi.com/I7A322JOTP"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => statsApi.trackDonateClick("results")}
+              >
+                Buy me one
+              </a>
             </div>
           )}
         </div>

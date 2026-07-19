@@ -180,31 +180,40 @@ label {
 }
 .topbar-kofi-btn:hover { border-color: var(--accent-dim); text-decoration: none; }
 
-.kofi-results-card {
+/* Gentle support prompt below the damage breakdown — on-brand, low-key. */
+.support-card {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.7rem;
   margin-top: 1.25rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border-soft);
-}
-.kofi-results-text { font-size: 0.78rem; color: var(--text-faint); }
-.kofi-results-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--accent);
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border-soft);
+  border-left: 2px solid var(--accent-dim);
   background: var(--accent-soft);
-  text-decoration: none;
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
-  transition: background 0.15s, color 0.15s;
+  border-radius: var(--radius);
 }
-.kofi-results-link:hover { background: var(--accent); color: #1a1306; }
+.support-card-emoji { font-size: 1.2rem; flex-shrink: 0; }
+.support-card-msg { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
+.support-card-head { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.support-card-sub { font-size: 0.74rem; color: var(--text-dim); line-height: 1.35; }
+.support-card-cta {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent-dim);
+  text-decoration: none;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.support-card-cta:hover { background: var(--accent); color: var(--bg-panel); border-color: var(--accent); }
+@media (max-width: 480px) {
+  .support-card { flex-wrap: wrap; }
+  .support-card-msg { flex-basis: 100%; }
+}
 
 .topbar {
   display: flex;
@@ -1355,46 +1364,4 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 }
 .build-template-hint strong { color: var(--text); }
 .build-template-hint a { color: var(--link); white-space: nowrap; }
-.donate-nudge {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0.9rem 0 0;
-  padding: 0.7rem 0.9rem;
-  border: 1px solid var(--accent-dim);
-  border-left: 3px solid var(--accent);
-  background: linear-gradient(180deg, var(--accent-soft), var(--bg-panel) 70%);
-  border-radius: var(--radius);
-  box-shadow: 0 0 0 1px var(--accent-soft);
-  font-size: 0.85rem;
-  color: var(--text);
-}
-.donate-nudge-emoji { font-size: 1.1rem; flex-shrink: 0; }
-.donate-nudge-text { flex: 1; line-height: 1.4; }
-.donate-nudge-cta {
-  flex-shrink: 0;
-  padding: 0.35rem 0.7rem;
-  border-radius: var(--radius);
-  background: var(--accent);
-  color: var(--bg-panel);
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.donate-nudge-cta:hover { filter: brightness(1.08); }
-.donate-nudge-dismiss {
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  font-size: 0.85rem;
-  padding: 0.2rem;
-  line-height: 1;
-}
-.donate-nudge-dismiss:hover { color: var(--text); }
-@media (max-width: 640px) {
-  .donate-nudge { flex-wrap: wrap; }
-  .donate-nudge-text { flex-basis: 100%; }
-}
 .bp-sub { color: var(--text-faint); }
