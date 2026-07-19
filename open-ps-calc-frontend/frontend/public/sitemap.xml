@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://openpscalc.com/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/knight-hybrid/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/crusader-grand-cross/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/wizard-pve-dex/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/sage-bolter/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/hunter-double-strafe/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/bard-musical-strike/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/dancer-throw-arrow/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/priest-magnus-exorcismus/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/monk-asura/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/blacksmith-battle-smith/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/alchemist-acid-demonstration/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/assassin-sonic-blow/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/rogue-back-stab/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/super-novice-melee/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/gunslinger-desperado/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://openpscalc.com/guides/ninja-throwing/</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/knight-hybrid.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/crusader-grand-cross.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/wizard-pve-dex.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/sage-bolter.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/hunter-double-strafe.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/bard-musical-strike.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/dancer-throw-arrow.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/priest-magnus-exorcismus.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/monk-asura.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/blacksmith-battle-smith.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/alchemist-acid-demonstration.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/assassin-sonic-blow.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/rogue-back-stab.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/super-novice-melee.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/gunslinger-desperado.html</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://openpscalc.com/guides/ninja-throwing.html</loc><changefreq>weekly</changefreq></url>
 </urlset>

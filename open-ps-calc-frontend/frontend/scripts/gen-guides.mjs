@@ -123,12 +123,12 @@ function shell({ title, desc, canonical, body }) {
 }
 
 function guidePage(g) {
-  const canonical = `${SITE}/guides/${g.slug}/`;
+  const canonical = `${SITE}/guides/${g.slug}.html`;
   const title = `${g.cls} — ${g.build} Build Guide | Payon Stories | Open PS Calc`;
   const desc = `${g.cls} ${g.build} build for Payon Stories (pre-renewal RO): recommended stats, signature skill (${g.skill}), gear, and a link to calculate its damage.`;
   const statRows = STAT_ORDER.map(([k, l]) => `<tr><td>${l}</td><td class="n">${g.stats[k]}</td></tr>`).join("");
   const body = `
-<header><nav><a href="/">Open PS Calc</a> › <a href="/guides/">Build guides</a> › ${esc(g.cls)}</nav></header>
+<header><nav><a href="/">Open PS Calc</a> › <a href="/guides.html">Build guides</a> › ${esc(g.cls)}</nav></header>
 <span class="eyebrow">Payon Stories build guide</span>
 <h1>${esc(g.cls)} — ${esc(g.build)}</h1>
 <p class="lead">${esc(g.summary)}</p>
@@ -141,15 +141,15 @@ function guidePage(g) {
 <h2>Gear &amp; tips</h2>
 <p>${esc(g.gear)}</p>
 <h2>Learn more</h2>
-<p><a href="https://wiki.payonstories.com/${g.wiki}" rel="noopener">${esc(g.cls)} on the Payon Stories wiki ↗</a> · <a href="/guides/">All build guides</a></p>
+<p><a href="https://wiki.payonstories.com/${g.wiki}" rel="noopener">${esc(g.cls)} on the Payon Stories wiki ↗</a> · <a href="/guides.html">All build guides</a></p>
 <footer>Open PS Calc is an unofficial, fan-made <a href="/">Payon Stories damage calculator</a>. Stats are a starting point — tune them to your gear and goals.</footer>`;
   return shell({ title, desc, canonical, body });
 }
 
 function indexPage() {
-  const canonical = `${SITE}/guides/`;
+  const canonical = `${SITE}/guides.html`;
   const cards = GUIDES_DATA.map((g) =>
-    `<a class="card" href="/guides/${g.slug}/"><strong>${esc(g.cls)}</strong><div class="c">${esc(g.build)}</div></a>`
+    `<a class="card" href="/guides/${g.slug}.html"><strong>${esc(g.cls)}</strong><div class="c">${esc(g.build)}</div></a>`
   ).join("");
   const body = `
 <header><nav><a href="/">Open PS Calc</a> › Build guides</nav></header>
@@ -161,20 +161,20 @@ function indexPage() {
   return shell({ title: "Payon Stories Build Guides — every class | Open PS Calc", desc: "Starter build guides for every Payon Stories class (pre-renewal RO): recommended stats and signature skills, ready to open in the damage calculator.", canonical, body });
 }
 
-// --- write files ---
+// --- write flat .html files ---
+// Flat files (not <slug>/index.html) so the host serves them via `try_files $uri`
+// without needing directory-index resolution ($uri/), which it isn't configured for.
 fs.mkdirSync(GUIDES, { recursive: true });
-fs.writeFileSync(path.join(GUIDES, "index.html"), indexPage());
+fs.writeFileSync(path.join(PUBLIC, "guides.html"), indexPage());           // → /guides.html
 for (const g of GUIDES_DATA) {
-  const dir = path.join(GUIDES, g.slug);
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "index.html"), guidePage(g));
+  fs.writeFileSync(path.join(GUIDES, `${g.slug}.html`), guidePage(g));      // → /guides/<slug>.html
 }
 
 // --- regenerate sitemap (home + guides hub + each guide) ---
 const urls = [
   `${SITE}/`,
-  `${SITE}/guides/`,
-  ...GUIDES_DATA.map((g) => `${SITE}/guides/${g.slug}/`),
+  `${SITE}/guides.html`,
+  ...GUIDES_DATA.map((g) => `${SITE}/guides/${g.slug}.html`),
 ];
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

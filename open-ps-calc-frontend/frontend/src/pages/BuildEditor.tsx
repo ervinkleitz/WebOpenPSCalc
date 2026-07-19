@@ -1598,7 +1598,7 @@ export default function BuildEditor() {
               </p>
             )}
             <p className="build-template-hint" style={{ marginTop: "0.15rem" }}>
-              <a href="/guides/">Browse all build guides →</a>
+              <a href="/guides.html">Browse all build guides →</a>
             </p>
           </Panel>
 
@@ -2636,7 +2636,7 @@ export default function BuildEditor() {
           <span className="credits-sep">·</span>
           <span>Base engine by&nbsp;<span className="credits-names">tochoco.latte</span></span>
           <span className="credits-sep">·</span>
-          <a className="credits-link" href="/guides/">Build guides</a>
+          <a className="credits-link" href="/guides.html">Build guides</a>
           <span className="credits-sep">·</span>
           <a className="credits-link" href="https://discord.gg/payonstories" target="_blank" rel="noreferrer">Discord</a>
           <span className="credits-sep">·</span>
