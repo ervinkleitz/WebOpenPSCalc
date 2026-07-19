@@ -23,7 +23,7 @@ async function resolveGeo(ips) {
     const batch = unique.slice(i, i + 100);
     if (i > 0) await sleep(1400); // ~42 req/min
     try {
-      const res = await fetch("http://ip-api.com/batch?fields=status,query,country,city", {
+      const res = await fetch("http://ip-api.com/batch?fields=status,query,country,regionName,city", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(batch),
@@ -31,14 +31,14 @@ async function resolveGeo(ips) {
       const data = await res.json();
       for (const entry of data) {
         cache.set(entry.query, entry.status === "success"
-          ? { country: entry.country || "Unknown", city: entry.city || "" }
-          : { country: "Unknown", city: "" });
+          ? { country: entry.country || "Unknown", region: entry.regionName || "Unknown", city: entry.city || "" }
+          : { country: "Unknown", region: "Unknown", city: "" });
       }
     } catch (e) {
       console.warn("[consolidate] geo batch failed:", e?.message);
     }
     for (const ip of batch) {
-      if (!cache.has(ip)) cache.set(ip, { country: "Unknown", city: "" });
+      if (!cache.has(ip)) cache.set(ip, { country: "Unknown", region: "Unknown", city: "" });
     }
     const done = Math.ceil((i + 100) / 100);
     if (total > 1) process.stdout.write(`\r[consolidate] geo ${Math.min(done, total)}/${total} batches`);
@@ -75,7 +75,7 @@ async function main() {
     const geoMap = await resolveGeo(events.map((e) => e.ip));
     const lines = events
       .map((e) => {
-        const geo = geoMap.get(e.ip) || { country: "Unknown", city: "" };
+        const geo = geoMap.get(e.ip) || { country: "Unknown", region: "Unknown", city: "" };
         return JSON.stringify({ ts: e.ts, type: "page_view", ip: e.ip, ua: e.ua, ...geo, source: "nginx_archive" });
       })
       .join("\n") + "\n";

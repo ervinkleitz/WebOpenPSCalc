@@ -766,6 +766,14 @@ export default function BuildEditor() {
   );
 
   const [calcResult, setCalcResult] = useState<any>(null);
+  // Donation nudge: shown to engaged users after several calculations (a natural
+  // moment to ask). Dismissal persists so it never nags twice.
+  const [calcCount, setCalcCount] = useState(0);
+  const [nudgeDismissed, setNudgeDismissed] = useState(() => localStorage.getItem("donateNudgeDismissed") === "1");
+  const showDonateNudge = calcCount >= 5 && !nudgeDismissed;
+  useEffect(() => {
+    if (showDonateNudge) statsApi.trackFeature("donate_nudge_shown");
+  }, [showDonateNudge]);
 
   // Build-vs-build comparison: pinned snapshots of computed builds.
   const [pins, setPins] = useState<ComparePin[]>([]);
@@ -780,6 +788,7 @@ export default function BuildEditor() {
       const snapshot = JSON.parse(JSON.stringify({ data, skill, targetMode, customTarget, targetMods }));
       return [...prev, { id: `pin-${pinSeq.current++}`, name, metrics: m, snapshot }];
     });
+    statsApi.trackFeature("compare_pin");
   }, [calcResult, data, skill, targetMode, customTarget, targetMods]);
   const handleRemovePin = useCallback((id: string) => setPins((prev) => prev.filter((p) => p.id !== id)), []);
   const handleClearPins = useCallback(() => setPins([]), []);
@@ -812,6 +821,7 @@ export default function BuildEditor() {
   const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const handleImported = useCallback((imported: any) => {
+    statsApi.trackFeature("jaludev_import");
     setData((prev) => ({ ...DEFAULT_BUILD, ...imported, server: prev.server }));
     setSkill(DEFAULT_SKILL);
     setTargetMode("monster");
@@ -838,6 +848,7 @@ export default function BuildEditor() {
     });
     setSkill(t.skill);
     setTemplateHint(t);
+    statsApi.trackFeature("template_load");
   }, [jobs]);
   const [resultsOpen, setResultsOpen] = useState(false);
   const resultsPanelRef = useRef<HTMLDivElement>(null);
@@ -1204,6 +1215,7 @@ export default function BuildEditor() {
           ? Math.floor(mobInfo.hp * (data.server === "payon_stories" ? 2 : 1) / 100)
           : null,
       });
+      setCalcCount((c) => c + 1);
     } catch (e: any) {
       setCalcError(e.message);
     } finally {
@@ -1244,6 +1256,7 @@ export default function BuildEditor() {
   }
 
   function onCopyLink() {
+    statsApi.trackFeature("share_link");
     const url = writeStateToUrl(); // encode current state, reflect it in the URL, and copy that link
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
@@ -1519,6 +1532,31 @@ export default function BuildEditor() {
           onLoadPin={handleLoadPin}
           onClearPins={handleClearPins}
         />
+
+        {showDonateNudge && (
+          <div className="donate-nudge" role="note">
+            <span className="donate-nudge-emoji">🍵</span>
+            <span className="donate-nudge-text">
+              Finding this calc useful? It's free and ad-free — a small tip keeps it brewing.
+            </span>
+            <a
+              className="donate-nudge-cta"
+              href="https://ko-fi.com/I7A322JOTP"
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => statsApi.trackDonateClick("nudge")}
+            >
+              Buy me a milk tea
+            </a>
+            <button
+              className="donate-nudge-dismiss"
+              aria-label="Dismiss"
+              onClick={() => { setNudgeDismissed(true); localStorage.setItem("donateNudgeDismissed", "1"); }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         <div className="editor-grid">
         <div>

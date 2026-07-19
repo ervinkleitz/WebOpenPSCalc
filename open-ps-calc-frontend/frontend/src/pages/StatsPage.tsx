@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { statsApi } from "../api/client";
 
 const SESSION_KEY = "stats_password";
@@ -6,7 +6,9 @@ const SESSION_KEY = "stats_password";
 interface DayEntry { date: string; views: number; calcs: number; }
 interface JobEntry  { job_id: number; name: string; count: number; }
 interface SkillEntry{ skill_id: number; name: string; count: number; }
-interface CountryEntry { country: string; count: number; }
+interface RegionEntry { region: string; count: number; }
+interface CountryEntry { country: string; count: number; regions?: RegionEntry[]; }
+interface FeatureEntry { name: string; count: number; }
 interface DonateTarget { target: string; count: number; }
 interface StatsData {
   total_views: number;
@@ -17,10 +19,20 @@ interface StatsData {
   by_day: DayEntry[];
   top_jobs: JobEntry[];
   top_skills: SkillEntry[];
+  top_features: FeatureEntry[];
   countries: CountryEntry[];
   from_ts: number;
   to_ts: number;
 }
+
+// Human-friendly labels for the feature-usage event names.
+const FEATURE_LABELS: Record<string, string> = {
+  template_load: "Load a template",
+  compare_pin: "Pin build to compare",
+  jaludev_import: "Import from jaludev",
+  share_link: "Copy share link",
+  donate_nudge_shown: "Donate nudge shown",
+};
 
 type Preset = "1" | "7" | "30" | "0" | "custom";
 
@@ -107,6 +119,49 @@ function Funnel({ views, calcs, donates, targets }: { views: number; calcs: numb
         </div>
       )}
     </div>
+  );
+}
+
+// Visitors by country, each row expandable to its regions/states/provinces.
+function CountryTable({ countries }: { countries: CountryEntry[] }) {
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  if (countries.length === 0) return <p className="stats-empty">No data.</p>;
+  const toggle = (c: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      next.has(c) ? next.delete(c) : next.add(c);
+      return next;
+    });
+  return (
+    <table className="stats-table">
+      <tbody>
+        {countries.map((c) => {
+          const regions = (c.regions || []).filter((r) => r.region && r.region !== "Unknown");
+          const canDrill = regions.length > 0;
+          const isOpen = open.has(c.country);
+          return (
+            <React.Fragment key={c.country}>
+              <tr
+                className={canDrill ? "stats-row--drill" : undefined}
+                onClick={canDrill ? () => toggle(c.country) : undefined}
+              >
+                <td className="stats-table-name">
+                  {canDrill && <span className="stats-drill-caret">{isOpen ? "▾" : "▸"}</span>}
+                  {c.country}
+                </td>
+                <td className="stats-table-count">{c.count}</td>
+              </tr>
+              {isOpen && regions.map((r) => (
+                <tr key={c.country + "/" + r.region} className="stats-row--region">
+                  <td className="stats-table-name stats-region-name">{r.region}</td>
+                  <td className="stats-table-count">{r.count}</td>
+                </tr>
+              ))}
+            </React.Fragment>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
@@ -294,21 +349,27 @@ export default function StatsPage() {
             </div>
 
             <div className="stats-section">
-              <h2 className="stats-section-title">Visitors by country</h2>
-              {data.countries.length === 0
-                ? <p className="stats-empty">No data.</p>
+              <h2 className="stats-section-title">Most used features</h2>
+              {(!data.top_features || data.top_features.length === 0)
+                ? <p className="stats-empty">No feature usage recorded yet.</p>
                 : (
                   <table className="stats-table">
                     <tbody>
-                      {data.countries.map((c) => (
-                        <tr key={c.country}>
-                          <td className="stats-table-name">{c.country}</td>
-                          <td className="stats-table-count">{c.count}</td>
+                      {data.top_features.map((f) => (
+                        <tr key={f.name}>
+                          <td className="stats-table-name">{FEATURE_LABELS[f.name] || f.name}</td>
+                          <td className="stats-table-count">{f.count}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 )}
+            </div>
+
+            <div className="stats-section">
+              <h2 className="stats-section-title">Visitors by country</h2>
+              <p className="stats-section-hint">Click a country to see its regions.</p>
+              <CountryTable countries={data.countries} />
             </div>
           </div>
         </>

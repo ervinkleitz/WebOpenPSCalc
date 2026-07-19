@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import fs from "fs";
 import path from "path";
-const { logPageView, logDonateClick, readNginxPageViews, batchResolveGeo, geoCache } = require("../middleware/statsLogger");
+const { logPageView, logDonateClick, logFeature, readNginxPageViews, batchResolveGeo, geoCache } = require("../middleware/statsLogger");
 const { loader } = require("../engine/dataLoader");
 
 const router = Router();
@@ -51,6 +51,12 @@ router.post("/donate", (req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
+// Records use of a named feature (build comparison, breakpoints, templates, …).
+router.post("/feature", (req: Request, res: Response) => {
+  logFeature(req, (req.body && req.body.name) || "unknown");
+  res.json({ ok: true });
+});
+
 router.get("/data", async (req: Request, res: Response) => {
   if (!checkPassword(req, res)) return;
 
@@ -97,6 +103,7 @@ router.get("/data", async (req: Request, res: Response) => {
 
   const calcEvents = ndjsonEvents.filter((e: any) => e.type === "calculate");
   const donateEvents = ndjsonEvents.filter((e: any) => e.type === "donate_click");
+  const featureEvents = ndjsonEvents.filter((e: any) => e.type === "feature");
 
   const allEvents = [...archivedViews, ...recentViews, ...calcEvents];
 
@@ -105,6 +112,8 @@ router.get("/data", async (req: Request, res: Response) => {
   const jobCounts:    Record<number, number> = {};
   const skillCounts:  Record<number, number> = {};
   const countryCounts: Record<string, number> = {};
+  // country → (region → count), for the country drilldown.
+  const regionsByCountry: Record<string, Record<string, number>> = {};
   let totalViews = 0, totalCalcs = 0;
 
   for (const e of allEvents) {
@@ -113,6 +122,8 @@ router.get("/data", async (req: Request, res: Response) => {
     if (!byDay[day]) byDay[day] = { date: day, views: 0, calcs: 0 };
     const country = e.country || "Unknown";
     countryCounts[country] = (countryCounts[country] || 0) + 1;
+    const region = e.region || "Unknown";
+    (regionsByCountry[country] ||= {})[region] = (regionsByCountry[country][region] || 0) + 1;
 
     if (e.type === "page_view") {
       totalViews++;
@@ -165,7 +176,25 @@ router.get("/data", async (req: Request, res: Response) => {
   const countries = Object.entries(countryCounts)
     .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 25)
-    .map(([country, count]) => ({ country, count }));
+    .map(([country, count]) => ({
+      country,
+      count,
+      // Top regions/states/provinces within this country, for drilldown.
+      regions: Object.entries(regionsByCountry[country] || {})
+        .sort((a, b) => (b[1] as number) - (a[1] as number))
+        .slice(0, 15)
+        .map(([region, rc]) => ({ region, count: rc })),
+    }));
+
+  // Most-used functionality (build comparison, breakpoints, templates, …).
+  const featureCounts: Record<string, number> = {};
+  for (const e of featureEvents) {
+    const n = (e.name as string) || "unknown";
+    featureCounts[n] = (featureCounts[n] || 0) + 1;
+  }
+  const topFeatures = Object.entries(featureCounts)
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .map(([name, count]) => ({ name, count }));
 
   // Donation-link clicks (Ko-fi), for the visits → calcs → donations funnel.
   const donateTargetCounts: Record<string, number> = {};
@@ -186,6 +215,7 @@ router.get("/data", async (req: Request, res: Response) => {
     by_day:       filledDays,
     top_jobs:     topJobs,
     top_skills:   topSkills,
+    top_features: topFeatures,
     countries,
     from_ts:      fromTs,
     to_ts:        toTs,

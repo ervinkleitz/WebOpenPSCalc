@@ -10,7 +10,12 @@ const NGINX_LOG   = process.env.NGINX_LOG_PATH || "/var/log/nginx/access.log";
 // to a missing parent directory.
 try { fs.mkdirSync(path.dirname(STATS_FILE), { recursive: true }); } catch {}
 
-const BOT_PATTERN = /bot|crawler|crawl|spider|scraper|scrapy|scan|check|monitor|uptime|pingdom|datadog|lighthouse|headless|phantom|puppeteer|playwright|selenium|wget|curl|python-requests|urllib|go-http-client|okhttp|java\/|libwww|perl\/|axios|node-fetch|httpx|aiohttp|apache-httpclient|httpclient|winhttp|guzzle|postmanruntime|insomnia|restsharp|masscan|zgrab|censys|shodan|nmap|nikto|sqlmap|nuclei|expanse|internet-measurement|netsystemsresearch|paloalto|facebookexternalhit|meta-externalagent|twitterbot|slackbot|embedly|feedfetcher|feedly|slurp|baiduspider|yandex|bytespider|ahrefs|semrush|dotbot|petalbot|mj12|dataforseo|serpstat|mediapartners|google-inspection|bingpreview|validator|nagios|zabbix|statuscake|newrelic|site24x7|hetrixtools|gtmetrix|webpagetest|archive\.org|ia_archiver|netcraft/i;
+const BOT_PATTERN = /bot|crawler|crawl|spider|scraper|scrapy|scan|check|monitor|uptime|pingdom|datadog|lighthouse|headless|phantom|puppeteer|playwright|selenium|wget|curl|python-requests|urllib|go-http-client|okhttp|java\/|libwww|perl\/|axios|node-fetch|httpx|aiohttp|apache-httpclient|httpclient|winhttp|guzzle|postmanruntime|insomnia|restsharp|masscan|zgrab|censys|shodan|nmap|nikto|sqlmap|nuclei|expanse|internet-measurement|netsystemsresearch|paloalto|facebookexternalhit|meta-externalagent|twitterbot|slackbot|embedly|feedfetcher|feedly|slurp|baiduspider|yandex|bytespider|ahrefs|semrush|dotbot|petalbot|mj12|dataforseo|serpstat|mediapartners|google-inspection|bingpreview|validator|nagios|zabbix|statuscake|newrelic|site24x7|hetrixtools|gtmetrix|webpagetest|archive\.org|ia_archiver|netcraft|gptbot|oai-searchbot|chatgpt|claude(bot|-web|-user)?|anthropic|ccbot|amazonbot|applebot|google-extended|perplexity|perplexitybot|cohere|diffbot|omgili|webzio|imagesift|timpibot|bytedance|sogou|coccoc|duckduckbot|discordbot|telegrambot|whatsapp|redditbot|pinterest|linkedinbot|skypeuripreview|viber|line-poker|gigablast|mojeek|seekport|dataminr|scrapy|colly|jsdom|cheerio|http_request|reqwest|http\.rb|httrack|wpscan|feroxbuster|gobuster|dirbuster|acunetix|qualys|censysinspect|gdnplus|zoominfobot|barkrowler|awario|magpie|bubing|pandalytics|trendictionbot|iframely|vercelbot|proximic/i;
+
+// A real browser's User-Agent always begins with "Mozilla/5.0" and carries a
+// rendering-engine/browser token. Most scrapers, HTTP libraries, and no-JS
+// clients don't — so absence of Mozilla is a strong, low-false-positive bot tell.
+const BROWSER_HINT = /mozilla\/5\.0/i;
 const NGINX_LINE  = /^(\S+) \S+ \S+ \[([^\]]+)\] "([^"]+)" (\d+) \S+(?:\s+"[^"]*"\s+"([^"]*)")?/;
 const MONTH_NUM   = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
 
@@ -22,6 +27,7 @@ const geoCache = new Map();
 function isBot(ua = "") {
   const s = String(ua).trim();
   if (!s || s === "-" || s.length < 15) return true;
+  if (!BROWSER_HINT.test(s)) return true;   // doesn't announce itself as a browser
   return BOT_PATTERN.test(s);
 }
 
@@ -108,7 +114,7 @@ async function batchResolveGeo(ips) {
   for (let i = 0; i < fresh.length; i += 100) {
     const batch = fresh.slice(i, i + 100);
     try {
-      const res = await fetch("http://ip-api.com/batch?fields=status,query,country,city", {
+      const res = await fetch("http://ip-api.com/batch?fields=status,query,country,regionName,city", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(batch),
@@ -116,30 +122,30 @@ async function batchResolveGeo(ips) {
       const data = await res.json();
       for (const entry of data) {
         geoCache.set(entry.query, entry.status === "success"
-          ? { country: entry.country || "Unknown", city: entry.city || "" }
-          : { country: "Unknown", city: "" });
+          ? { country: entry.country || "Unknown", region: entry.regionName || "Unknown", city: entry.city || "" }
+          : { country: "Unknown", region: "Unknown", city: "" });
       }
     } catch {}
   }
   // Mark any still-unresolved IPs as unknown so we don't retry on every request
   for (const ip of fresh) {
-    if (!geoCache.has(ip)) geoCache.set(ip, { country: "Unknown", city: "" });
+    if (!geoCache.has(ip)) geoCache.set(ip, { country: "Unknown", region: "Unknown", city: "" });
   }
 }
 
 async function resolveGeo(ip) {
-  if (isLocalIp(ip)) return { country: "Local", city: "" };
+  if (isLocalIp(ip)) return { country: "Local", region: "Local", city: "" };
   if (geoCache.has(ip)) return geoCache.get(ip);
   try {
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,city`);
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city`);
     const data = await res.json();
     const geo = data.status === "success"
-      ? { country: data.country || "Unknown", city: data.city || "" }
-      : { country: "Unknown", city: "" };
+      ? { country: data.country || "Unknown", region: data.regionName || "Unknown", city: data.city || "" }
+      : { country: "Unknown", region: "Unknown", city: "" };
     geoCache.set(ip, geo);
     return geo;
   } catch {
-    const geo = { country: "Unknown", city: "" };
+    const geo = { country: "Unknown", region: "Unknown", city: "" };
     geoCache.set(ip, geo);
     return geo;
   }
@@ -181,4 +187,17 @@ function logDonateClick(req, target) {
   });
 }
 
-module.exports = { isBot, getIp, logPageView, logCalculate, logDonateClick, readNginxPageViews, batchResolveGeo, geoCache };
+// Records use of a named feature (e.g. "template_load", "compare_pin",
+// "jaludev_import", "share_link", "survivability", "breakpoints") so the stats
+// page can rank which functionality players actually use.
+function logFeature(req, name) {
+  const ua = req.headers["user-agent"] || "";
+  if (isBot(ua)) return;
+  const ip = getIp(req);
+  const label = typeof name === "string" ? name.slice(0, 40) : "unknown";
+  resolveGeo(ip).then((geo) => {
+    appendEvent({ ts: Date.now(), type: "feature", ip, ...geo, name: label });
+  });
+}
+
+module.exports = { isBot, getIp, logPageView, logCalculate, logDonateClick, logFeature, readNginxPageViews, batchResolveGeo, geoCache };

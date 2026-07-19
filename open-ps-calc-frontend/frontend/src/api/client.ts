@@ -98,6 +98,21 @@ export const statsApi = {
       body: JSON.stringify({ target }),
       keepalive: true,
     }).catch(() => {}),
+  // Records use of a named feature so the stats page can rank functionality.
+  // Deduped client-side (once per feature per session) to avoid spammy counts.
+  trackFeature: (() => {
+    const seen = new Set<string>();
+    return (name: string) => {
+      if (seen.has(name)) return;
+      seen.add(name);
+      fetch("/stats/feature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+        keepalive: true,
+      }).catch(() => {});
+    };
+  })(),
   getData: (password: string, params: Record<string, string>) =>
     statsRequest("/data", password, params),
 };
