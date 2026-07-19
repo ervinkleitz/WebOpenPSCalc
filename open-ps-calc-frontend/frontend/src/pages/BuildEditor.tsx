@@ -173,46 +173,46 @@ type BuildTemplate = {
   note: string;
 };
 const BUILD_TEMPLATES: BuildTemplate[] = [
-  { label: "Katar Crit Assassin", job_id: 12, base_level: 99, job_level: 50,
-    base_stats: { str: 60, agi: 90, vit: 30, int: 1, dex: 1, luk: 70 },
+  { label: "Assassin — Sonic Blow (PvE)", job_id: 12, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 70, vit: 24, int: 1, dex: 40, luk: 1 },
     skill: { id: 136, level: 10, label: "Sonic Blow", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Assassin",
-    note: "AGI/LUK katar crit build. Equip a katar and crit/ATK cards; Sonic Blow is preselected (or switch to auto-attack)." },
-  { label: "Combo Monk", job_id: 15, base_level: 99, job_level: 50,
+    note: "STR/AGI katar Sonic Blow build. Equip a katar and ATK cards; Sonic Blow is preselected." },
+  { label: "Monk — Asura", job_id: 15, base_level: 99, job_level: 50,
     base_stats: { str: 90, agi: 60, vit: 40, int: 40, dex: 30, luk: 1 },
     skill: { id: 271, level: 5, label: "Asura Strike", max_level: 5 },
     wiki: "https://wiki.payonstories.com/Monk",
-    note: "STR + AGI/FLEE + SP. Add spirit spheres in Buffs and a knuckle; Asura Strike is preselected." },
-  { label: "DEX Wizard", job_id: 9, base_level: 99, job_level: 50,
+    note: "STR + AGI/FLEE + SP for Asura Strike (preselected). Add spirit spheres in Buffs and a knuckle." },
+  { label: "Wizard — PvE (DEX)", job_id: 9, base_level: 99, job_level: 50,
     base_stats: { str: 1, agi: 1, vit: 33, int: 99, dex: 84, luk: 1 },
     skill: { id: 89, level: 10, label: "Storm Gust", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Wizard",
     note: "Max INT/DEX nuker with a staff. Storm Gust is preselected — check its cast breakpoints." },
-  { label: "AGI Hunter", job_id: 11, base_level: 99, job_level: 50,
+  { label: "Hunter — Double Strafe (DS)", job_id: 11, base_level: 99, job_level: 50,
     base_stats: { str: 1, agi: 90, vit: 24, int: 1, dex: 87, luk: 30 },
     skill: { id: 46, level: 10, label: "Double Strafe", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Hunter",
-    note: "AGI + DEX with some LUK for Blitz Beat. Equip a bow and elemental arrows (Ammo slot); Double Strafe preselected." },
-  { label: "Grand Cross Crusader", job_id: 14, base_level: 99, job_level: 50,
+    note: "AGI + DEX single-target build. Equip a bow and elemental arrows (Ammo slot); Double Strafe is preselected." },
+  { label: "Crusader — Grand Cross (GC)", job_id: 14, base_level: 99, job_level: 50,
     base_stats: { str: 60, agi: 1, vit: 80, int: 40, dex: 40, luk: 1 },
     skill: { id: 254, level: 10, label: "Grand Cross", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Crusader",
-    note: "VIT tank / Grand Cross. Equip a spear (or sword + shield); Grand Cross is preselected — check the recoil panel." },
-  { label: "Bash Knight", job_id: 7, base_level: 99, job_level: 50,
+    note: "VIT tank / Grand Cross (preselected). Equip a spear or sword + shield; check the recoil panel." },
+  { label: "Knight — Hybrid", job_id: 7, base_level: 99, job_level: 50,
     base_stats: { str: 90, agi: 60, vit: 60, int: 1, dex: 40, luk: 1 },
     skill: { id: 5, level: 10, label: "Bash", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Knight",
-    note: "STR Bash with a two-hand sword or spear. Max your weapon mastery in Passive skills; Bash is preselected." },
-  { label: "Battle Priest", job_id: 8, base_level: 99, job_level: 50,
-    base_stats: { str: 70, agi: 60, vit: 50, int: 40, dex: 30, luk: 1 },
+    note: "Balanced STR/VIT/AGI two-hander. Max your weapon mastery in Passive skills; Bash is preselected." },
+  { label: "Priest — Magnus Exorcismus", job_id: 8, base_level: 99, job_level: 50,
+    base_stats: { str: 1, agi: 1, vit: 43, int: 99, dex: 80, luk: 1 },
     skill: { id: 79, level: 10, label: "Magnus Exorcismus", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Priest",
-    note: "Mace battle priest for Undead/Demon hunting. Magnus Exorcismus is preselected (try Turn Undead / Holy Strike too)." },
-  { label: "Acid Demo Alchemist", job_id: 18, base_level: 99, job_level: 50,
+    note: "INT/DEX caster for Undead/Demon hunting. Magnus Exorcismus is preselected; equip a book/staff." },
+  { label: "Alchemist — Acid Demonstration (SAD)", job_id: 18, base_level: 99, job_level: 50,
     base_stats: { str: 30, agi: 1, vit: 70, int: 80, dex: 60, luk: 1 },
     skill: { id: 490, level: 10, label: "Acid Demonstration", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Alchemist",
-    note: "Acid Demonstration bomber (INT/DEX/VIT); preselected. Works through DEF." },
+    note: "INT/DEX/VIT Acid Demonstration bomber (preselected). Works through DEF." },
 ];
 
 // Bonuses from wiki.payonstories.com/Cute_Pet_System. Only PS server has
@@ -1441,6 +1441,7 @@ export default function BuildEditor() {
                     </ul>
                   )}
                 </li>
+                <li>Starter build templates from the PS wiki — load a class build (stats + a signature skill) and tweak it</li>
                 <li>Attack-speed, cast, and hit breakpoint calculator</li>
                 <li>Build-vs-build comparison</li>
                 <li>Full step-by-step damage breakdown — every multiplier and where it comes from</li>

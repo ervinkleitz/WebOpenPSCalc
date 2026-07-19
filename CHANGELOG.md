@@ -16,8 +16,9 @@ instead of release version. Dates are taken from actual git commit history.
   It answers the question the calculator existed to answer, using your real build and matchup.
 
 - **Starter build templates.** A "Start from a template" picker at the top of the Character panel
-  loads a sensible build for a class — Katar Crit Assassin, Combo Monk, DEX Wizard, AGI Hunter, Grand
-  Cross Crusader, Bash Knight, Battle Priest, Acid Demo Alchemist — setting the job, level, a stat
+  loads a sensible build for a class, named to match the PS wiki's build archetypes — Assassin Sonic
+  Blow (PvE), Monk Asura, Wizard PvE (DEX), Hunter Double Strafe (DS), Crusader Grand Cross (GC),
+  Knight Hybrid, Priest Magnus Exorcismus, Alchemist Acid Demonstration (SAD) — setting the job, level, a stat
   spread that follows the class's stat-priority guidance on the PS wiki (linked from a hint under the
   picker), and a signature skill (e.g. the DEX Wizard loads Storm Gust, so its cast breakpoints show
   right away). Gear is left for you to pick; it's a starting point to tweak, not a finished build.
@@ -60,8 +61,8 @@ instead of release version. Dates are taken from actual git commit history.
 
 - **The reworks banner is now a Features list.** The banner that listed every per-class rework is now
   a concise list of what the calculator can do — Payon Stories custom equipment and skills, all PS
-  class reworks (collapsed to one line that expands to the full per-class detail), the ASPD / cast /
-  hit breakpoint calculator, build-vs-build comparison, the step-by-step damage breakdown, time- and
+  class reworks (collapsed to one line that expands to the full per-class detail), the starter build
+  templates, the ASPD / cast / hit breakpoint calculator, build-vs-build comparison, the step-by-step damage breakdown, time- and
   hits-to-kill vs any monster, the real PS monster database, the survivability panel, Grand Cross
   recoil, importing builds from the jaludev calculator, shareable links, and light/dark mode. Expanded
   by default so the tools are easy to find.
