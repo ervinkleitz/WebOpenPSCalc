@@ -1538,7 +1538,7 @@ export default function BuildEditor() {
                 <li>Attack-speed, cast, and hit breakpoint calculator</li>
                 <li>Build-vs-build comparison</li>
                 <li>Full step-by-step damage breakdown — every multiplier and where it comes from</li>
-                <li>Real PS monster database — pick the exact mob you fight (element / size / race, disambiguated)</li>
+                <li>Disambiguated damage, hit, and dodge against the exact monster you pick</li>
                 <li>Time-to-kill and hits-to-kill vs any monster (folds in ASPD, crit mix, procs, and cast delay)</li>
                 <li>Survivability panel — how hard monsters hit you (incoming damage, effective HP, dodge / FLEE)</li>
                 <li>Grand Cross self-damage (recoil) modeling</li>
