@@ -428,6 +428,9 @@ class DataLoader {
       // engine already reads it (statusCalculator TF_MISS), but it wasn't offered
       // in the picker. Surfaces for the Thief line and Super Novice.
       "TF_MISS",
+      // PS: Free Cast (Sage) grants +4 FLEE/lv (max Lv5). Engine reads it via
+      // passive_overrides.SA_FREECAST.flee_per_lv; surface it in the Sage picker.
+      "SA_FREECAST",
       // Proc-based extra hits on normal attacks (battlePipeline.js#calculate)
       "TF_DOUBLE",
       // PS Monk rework: MO_TRIPLEATTACK level sets proc rate and TA ratio damage

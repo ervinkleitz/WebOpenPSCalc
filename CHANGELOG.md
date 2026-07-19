@@ -44,6 +44,11 @@ instead of release version. Dates are taken from actual git commit history.
   read by the engine but never offered in the Passive skills panel. It now appears for the classes that
   learn it — the Thief line and Super Novice — so you can factor its dodge into survivability.
 
+- **Sage Free Cast now grants (and shows) its FLEE.** Free Cast gives +4 FLEE per level on Payon
+  Stories (max Lv5 → +20), but the calc applied none of it and didn't offer the passive. It now
+  appears in the Sage's Passive skills panel (capped at Lv5) and adds its FLEE to the stat/breakpoint/
+  survivability readouts.
+
 ### Changed
 
 - **The ASPD / cast / hit Breakpoints panel is now a highlighted accent card.** It was previously a

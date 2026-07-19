@@ -87,6 +87,7 @@ const PS_PASSIVE_OVERRIDES = {
   DC_DANCINGLESSON:  { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50], cri_at_max_lv: 100 }, // +5 ATK/lv, +10% CRIT at lv10
   BA_MUSICALLESSON:  { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
   MO_IRONHAND:       { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50], flee_per_lv: 2 }, // PS rework: Martial Arts — +5 ATK/lv, +2 FLEE/lv, also covers Mace
+  SA_FREECAST:       { flee_per_lv: 4 }, // PS: Free Cast grants +4 FLEE/lv (max Lv5 → +20). wiki.payonstories.com/Free_Cast
   PR_MACEMASTERY:    { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40] },                  // +4 ATK/lv
   AM_AXEMASTERY:     { atk_per_lv: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] },                  // +5 ATK/lv
   AS_KATAR:          { atk_per_lv: [4,  8, 12, 16, 20, 24, 28, 32, 36, 40], cri_per_lv: 5 },  // +4 ATK/lv, +0.5% CRIT/lv
