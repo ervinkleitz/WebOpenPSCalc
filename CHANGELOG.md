@@ -81,10 +81,9 @@ instead of release version. Dates are taken from actual git commit history.
 
 - **The reworks banner is now a Features list.** The banner that listed every per-class rework is now
   a concise list of what the calculator can do — Payon Stories custom equipment and skills, all PS
-  class reworks (collapsed to one line that expands to the full per-class detail), the modeled buffs /
-  consumables / songs / endows / pet bonuses, the starter build templates, the ASPD / cast / hit
-  breakpoint calculator, build-vs-build comparison, the step-by-step damage breakdown, disambiguated
-  damage/hit/dodge per monster, time- and hits-to-kill vs any monster, the survivability panel, Grand Cross
+  class reworks (collapsed to one line that expands to the full per-class detail), the starter build
+  templates, the ASPD / cast / hit breakpoint calculator, build-vs-build comparison, the step-by-step
+  damage breakdown, disambiguated damage/hit/dodge per monster, the survivability panel, Grand Cross
   recoil, importing builds from the jaludev calculator, shareable links, and light/dark mode. Expanded
   by default so the tools are easy to find.
 
