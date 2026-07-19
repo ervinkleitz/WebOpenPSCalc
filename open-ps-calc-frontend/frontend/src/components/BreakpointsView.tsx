@@ -10,7 +10,7 @@ import type { Breakpoints } from "../types";
 
 const DEBOUNCE_MS = 450;
 
-export function BreakpointsView({ payload, targetName, skillLabel }: { payload: unknown | null; targetName?: string | null; skillLabel?: string | null }) {
+export function BreakpointsView({ payload, targetName, skillLabel, skillLevel }: { payload: unknown | null; targetName?: string | null; skillLabel?: string | null; skillLevel?: number | null }) {
   const [bp, setBp] = useState<Breakpoints | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -40,12 +40,12 @@ export function BreakpointsView({ payload, targetName, skillLabel }: { payload: 
         {loading && <span className="bp-sub">updating…</span>}
       </div>
       {err && !bp && <div className="bp-err">{err}</div>}
-      {bp && <BreakpointsBody bp={bp} targetName={targetName} skillLabel={skillLabel} />}
+      {bp && <BreakpointsBody bp={bp} targetName={targetName} skillLabel={skillLabel} skillLevel={skillLevel} />}
     </div>
   );
 }
 
-function BreakpointsBody({ bp, targetName, skillLabel }: { bp: Breakpoints; targetName?: string | null; skillLabel?: string | null }) {
+function BreakpointsBody({ bp, targetName, skillLabel, skillLevel }: { bp: Breakpoints; targetName?: string | null; skillLabel?: string | null; skillLevel?: number | null }) {
   const { aspd, cast, hit } = bp;
   return (
     <div className="bp-body">
@@ -67,7 +67,7 @@ function BreakpointsBody({ bp, targetName, skillLabel }: { bp: Breakpoints; targ
           <span className="bp-k">Cast</span>
           <span className="bp-v">
             <b>{(cast.current_ms / 1000).toFixed(2)}s</b>
-            <span className="bp-vs"> {skillLabel || cast.skill}</span>{" "}
+            <span className="bp-vs"> {skillLabel || cast.skill}{skillLevel ? ` Lv ${skillLevel}` : ""}</span>{" "}
             {cast.instant_plus_dex == null
               ? <span className="bp-sub">— instant cast not reachable</span>
               : cast.instant_plus_dex === 0

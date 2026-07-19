@@ -1711,6 +1711,7 @@ export default function BuildEditor() {
               payload={breakpointPayload}
               targetName={targetMode === "monster" ? (mobInfo?.name ?? null) : "custom target"}
               skillLabel={skill.id ? skill.label : null}
+              skillLevel={skill.id ? skill.level : null}
             />
           </Panel>
 
