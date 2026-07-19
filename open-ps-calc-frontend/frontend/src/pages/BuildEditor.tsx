@@ -11,7 +11,6 @@ import SavedBuildsModal from "../components/SavedBuildsModal";
 import ImportJaludevModal from "../components/ImportJaludevModal";
 import { summaryMetrics, type ComparePin } from "../components/CompareView";
 import { BreakpointsView } from "../components/BreakpointsView";
-import { UpgradeAdvisorView } from "../components/UpgradeAdvisorView";
 import {
   BuildData, SkillState, CustomTarget, TargetMode, TargetMods,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
@@ -173,46 +172,93 @@ type BuildTemplate = {
   note: string;
 };
 const BUILD_TEMPLATES: BuildTemplate[] = [
-  { label: "Assassin — Sonic Blow (PvE)", job_id: 12, base_level: 99, job_level: 50,
-    base_stats: { str: 90, agi: 70, vit: 24, int: 1, dex: 40, luk: 1 },
-    skill: { id: 136, level: 10, label: "Sonic Blow", max_level: 10 },
-    wiki: "https://wiki.payonstories.com/Assassin",
-    note: "STR/AGI katar Sonic Blow build. Equip a katar and ATK cards; Sonic Blow is preselected." },
-  { label: "Monk — Asura", job_id: 15, base_level: 99, job_level: 50,
-    base_stats: { str: 90, agi: 60, vit: 40, int: 40, dex: 30, luk: 1 },
-    skill: { id: 271, level: 5, label: "Asura Strike", max_level: 5 },
-    wiki: "https://wiki.payonstories.com/Monk",
-    note: "STR + AGI/FLEE + SP for Asura Strike (preselected). Add spirit spheres in Buffs and a knuckle." },
-  { label: "Wizard — PvE (DEX)", job_id: 9, base_level: 99, job_level: 50,
-    base_stats: { str: 1, agi: 1, vit: 33, int: 99, dex: 84, luk: 1 },
-    skill: { id: 89, level: 10, label: "Storm Gust", max_level: 10 },
-    wiki: "https://wiki.payonstories.com/Wizard",
-    note: "Max INT/DEX nuker with a staff. Storm Gust is preselected — check its cast breakpoints." },
-  { label: "Hunter — Double Strafe (DS)", job_id: 11, base_level: 99, job_level: 50,
-    base_stats: { str: 1, agi: 90, vit: 24, int: 1, dex: 87, luk: 30 },
-    skill: { id: 46, level: 10, label: "Double Strafe", max_level: 10 },
-    wiki: "https://wiki.payonstories.com/Hunter",
-    note: "AGI + DEX single-target build. Equip a bow and elemental arrows (Ammo slot); Double Strafe is preselected." },
-  { label: "Crusader — Grand Cross (GC)", job_id: 14, base_level: 99, job_level: 50,
-    base_stats: { str: 60, agi: 1, vit: 80, int: 40, dex: 40, luk: 1 },
-    skill: { id: 254, level: 10, label: "Grand Cross", max_level: 10 },
-    wiki: "https://wiki.payonstories.com/Crusader",
-    note: "VIT tank / Grand Cross (preselected). Equip a spear or sword + shield; check the recoil panel." },
+  // Swordman tree
   { label: "Knight — Hybrid", job_id: 7, base_level: 99, job_level: 50,
     base_stats: { str: 90, agi: 60, vit: 60, int: 1, dex: 40, luk: 1 },
     skill: { id: 5, level: 10, label: "Bash", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Knight",
     note: "Balanced STR/VIT/AGI two-hander. Max your weapon mastery in Passive skills; Bash is preselected." },
+  { label: "Crusader — Grand Cross (GC)", job_id: 14, base_level: 99, job_level: 50,
+    base_stats: { str: 60, agi: 1, vit: 80, int: 40, dex: 40, luk: 1 },
+    skill: { id: 254, level: 10, label: "Grand Cross", max_level: 10 },
+    wiki: "https://wiki.payonstories.com/Crusader",
+    note: "VIT tank / Grand Cross (preselected). Equip a spear or sword + shield; check the recoil panel." },
+  // Mage tree
+  { label: "Wizard — PvE (DEX)", job_id: 9, base_level: 99, job_level: 50,
+    base_stats: { str: 1, agi: 1, vit: 33, int: 99, dex: 84, luk: 1 },
+    skill: { id: 89, level: 10, label: "Storm Gust", max_level: 10 },
+    wiki: "https://wiki.payonstories.com/Wizard",
+    note: "Max INT/DEX nuker with a staff. Storm Gust is preselected — check its cast breakpoints." },
+  { label: "Sage — Bolter", job_id: 16, base_level: 99, job_level: 50,
+    base_stats: { str: 1, agi: 1, vit: 40, int: 99, dex: 80, luk: 1 },
+    skill: { id: 19, level: 10, label: "Fire Bolt", max_level: 10 },
+    wiki: "https://wiki.payonstories.com/Sage",
+    note: "INT/DEX bolter (double-cast). Fire Bolt is preselected; equip a book/staff." },
+  // Archer tree
+  { label: "Hunter — Double Strafe (DS)", job_id: 11, base_level: 99, job_level: 50,
+    base_stats: { str: 1, agi: 90, vit: 24, int: 1, dex: 87, luk: 30 },
+    skill: { id: 46, level: 10, label: "Double Strafe", max_level: 10 },
+    wiki: "https://wiki.payonstories.com/Hunter",
+    note: "AGI + DEX single-target build. Equip a bow and elemental arrows (Ammo slot); Double Strafe is preselected." },
+  { label: "Bard — Musical Strike", job_id: 19, base_level: 99, job_level: 50,
+    base_stats: { str: 1, agi: 60, vit: 24, int: 40, dex: 90, luk: 1 },
+    skill: { id: 316, level: 5, label: "Musical Strike", max_level: 5 },
+    wiki: "https://wiki.payonstories.com/Bard",
+    note: "DEX/AGI performer. Equip an instrument + arrows; Musical Strike is preselected (toggle Performing in Target)." },
+  { label: "Dancer — Throw Arrow", job_id: 20, base_level: 99, job_level: 50,
+    base_stats: { str: 1, agi: 60, vit: 24, int: 40, dex: 90, luk: 1 },
+    skill: { id: 324, level: 5, label: "Throw Arrow", max_level: 5 },
+    wiki: "https://wiki.payonstories.com/Dancer",
+    note: "DEX/AGI performer. Equip a whip + arrows; Throw Arrow is preselected (toggle Performing in Target)." },
+  // Acolyte tree
   { label: "Priest — Magnus Exorcismus", job_id: 8, base_level: 99, job_level: 50,
     base_stats: { str: 1, agi: 1, vit: 43, int: 99, dex: 80, luk: 1 },
     skill: { id: 79, level: 10, label: "Magnus Exorcismus", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Priest",
     note: "INT/DEX caster for Undead/Demon hunting. Magnus Exorcismus is preselected; equip a book/staff." },
+  { label: "Monk — Asura", job_id: 15, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 60, vit: 40, int: 40, dex: 30, luk: 1 },
+    skill: { id: 271, level: 5, label: "Asura Strike", max_level: 5 },
+    wiki: "https://wiki.payonstories.com/Monk",
+    note: "STR + AGI/FLEE + SP for Asura Strike (preselected). Add spirit spheres in Buffs and a knuckle." },
+  // Merchant tree
+  { label: "Blacksmith — Battle Smith (AGI)", job_id: 10, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 70, vit: 40, int: 1, dex: 40, luk: 1 },
+    skill: { id: 42, level: 10, label: "Mammonite", max_level: 10 },
+    wiki: "https://wiki.payonstories.com/Blacksmith",
+    note: "STR/AGI Battle Smith. Max your weapon mastery in Passive skills; Mammonite is preselected." },
   { label: "Alchemist — Acid Demonstration (SAD)", job_id: 18, base_level: 99, job_level: 50,
     base_stats: { str: 30, agi: 1, vit: 70, int: 80, dex: 60, luk: 1 },
     skill: { id: 490, level: 10, label: "Acid Demonstration", max_level: 10 },
     wiki: "https://wiki.payonstories.com/Alchemist",
     note: "INT/DEX/VIT Acid Demonstration bomber (preselected). Works through DEF." },
+  // Thief tree
+  { label: "Assassin — Sonic Blow (PvE)", job_id: 12, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 70, vit: 24, int: 1, dex: 40, luk: 1 },
+    skill: { id: 136, level: 10, label: "Sonic Blow", max_level: 10 },
+    wiki: "https://wiki.payonstories.com/Assassin",
+    note: "STR/AGI katar Sonic Blow build. Equip a katar and ATK cards; Sonic Blow is preselected." },
+  { label: "Rogue — Back Stab", job_id: 17, base_level: 99, job_level: 50,
+    base_stats: { str: 80, agi: 70, vit: 30, int: 1, dex: 60, luk: 1 },
+    skill: { id: 212, level: 10, label: "Back Stab", max_level: 10 },
+    wiki: "https://wiki.payonstories.com/Rogue",
+    note: "STR/AGI/DEX Back Stab build. Equip a dagger; Back Stab is preselected." },
+  // Novice / Expanded
+  { label: "Super Novice — Melee (Auto-attacker)", job_id: 23, base_level: 99, job_level: 70,
+    base_stats: { str: 80, agi: 90, vit: 40, int: 1, dex: 40, luk: 1 },
+    skill: { id: 0, level: 1, label: "Normal Attack", max_level: 10 },
+    wiki: "https://wiki.payonstories.com/Super_Novice",
+    note: "STR/AGI auto-attacker. Equip a dagger, 1H sword, or mace; add Fury / never-died in Buffs." },
+  { label: "Gunslinger — Desperado", job_id: 24, base_level: 99, job_level: 70,
+    base_stats: { str: 1, agi: 90, vit: 30, int: 20, dex: 90, luk: 1 },
+    skill: { id: 516, level: 10, label: "Desperado", max_level: 10 },
+    wiki: "https://wiki.payonstories.com/Gunslinger",
+    note: "AGI/DEX Desperado. Equip a revolver; Desperado is preselected." },
+  { label: "Ninja — Throwing (DEX)", job_id: 25, base_level: 99, job_level: 70,
+    base_stats: { str: 1, agi: 60, vit: 30, int: 40, dex: 90, luk: 1 },
+    skill: { id: 525, level: 5, label: "Throw Huuma Shuriken", max_level: 5 },
+    wiki: "https://wiki.payonstories.com/Ninja",
+    note: "DEX throwing build. Equip a huuma shuriken; Throw Huuma Shuriken is preselected." },
 ];
 
 // Bonuses from wiki.payonstories.com/Cute_Pet_System. Only PS server has
@@ -1475,10 +1521,10 @@ export default function BuildEditor() {
 
         <div className="editor-grid">
         <div>
-          <Panel eyebrow="01" title="Character">
+          <Panel eyebrow="00" title="Start from a template">
             <div className="field-row">
               <div className="field" style={{ flex: 1 }}>
-                <label>Start from a template</label>
+                <label>Load a PS wiki build</label>
                 <select
                   value=""
                   onChange={(e) => {
@@ -1486,19 +1532,27 @@ export default function BuildEditor() {
                     if (t) applyTemplate(t);
                   }}
                 >
-                  <option value="">Load a wiki build…</option>
+                  <option value="">Choose a class build…</option>
                   {BUILD_TEMPLATES.map((t) => (
                     <option key={t.label} value={t.label}>{t.label}</option>
                   ))}
                 </select>
               </div>
             </div>
-            {templateHint && (
+            {templateHint ? (
               <p className="build-template-hint">
                 <strong>{templateHint.label}:</strong> {templateHint.note}{" "}
                 <a href={templateHint.wiki} target="_blank" rel="noreferrer">Wiki guide ↗</a>
               </p>
+            ) : (
+              <p className="build-template-hint">
+                Loads a class starter build — job, level, a stat spread from the PS wiki, and a signature
+                skill — for you to tweak. Optional; you can build from scratch below.
+              </p>
             )}
+          </Panel>
+
+          <Panel eyebrow="01" title="Character">
             <div className="field-row">
               <div className="field">
                 <label>Build name</label>
@@ -1656,7 +1710,6 @@ export default function BuildEditor() {
               payload={breakpointPayload}
               targetName={targetMode === "monster" ? (mobInfo?.name ?? null) : "custom target"}
             />
-            <UpgradeAdvisorView payload={breakpointPayload} />
           </Panel>
 
           <Panel eyebrow="02" title="Equipment">

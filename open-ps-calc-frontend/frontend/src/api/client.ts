@@ -1,4 +1,4 @@
-import type { Breakpoints, UpgradeAdvisor } from "../types";
+import type { Breakpoints } from "../types";
 
 const API_KEY = import.meta.env.VITE_API_KEY;
 
@@ -66,9 +66,6 @@ export const api = {
   // On-demand stat breakpoints (ASPD / cast / hit) for the current build.
   breakpoints: (payload: unknown) =>
     request("/calculate/breakpoints", { method: "POST", body: payload }) as Promise<{ breakpoints: Breakpoints }>,
-  // On-demand "what should I upgrade?" — ranks candidate stat/refine gains by DPS.
-  upgradeAdvisor: (payload: unknown) =>
-    request("/calculate/upgrade-advisor", { method: "POST", body: payload }) as Promise<{ advisor: UpgradeAdvisor }>,
   // Incoming damage (mob → player): how hard the selected monster hits YOU.
   // direction "physical" (basic attack) or "magic" (INT-based MATK, for casters).
   calculateIncoming: (build: unknown, mobId: number, direction: "physical" | "magic", opts: Record<string, unknown> = {}) =>

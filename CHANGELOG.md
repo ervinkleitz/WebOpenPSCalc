@@ -9,19 +9,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
-- **Upgrade advisor — "what should I upgrade next?"** A new button under the Character stats runs the
-  engine against your current skill and target with each candidate change applied — +10 in each stat,
-  and one more refine on each refineable equipped piece — and ranks them by the DPS gain, shown as a
-  bar list (e.g. "+10 STR +9.9%", "Claymore +4 → +5 +1.8%"). Changes that don't help DPS are dropped.
-  It answers the question the calculator existed to answer, using your real build and matchup.
-
-- **Starter build templates.** A "Start from a template" picker at the top of the Character panel
-  loads a sensible build for a class, named to match the PS wiki's build archetypes — Assassin Sonic
-  Blow (PvE), Monk Asura, Wizard PvE (DEX), Hunter Double Strafe (DS), Crusader Grand Cross (GC),
-  Knight Hybrid, Priest Magnus Exorcismus, Alchemist Acid Demonstration (SAD) — setting the job, level, a stat
-  spread that follows the class's stat-priority guidance on the PS wiki (linked from a hint under the
-  picker), and a signature skill (e.g. the DEX Wizard loads Storm Gust, so its cast breakpoints show
-  right away). Gear is left for you to pick; it's a starting point to tweak, not a finished build.
+- **Starter build templates** — its own "Start from a template" section (00) above Character. A picker
+  loads a sensible build for any of the **sixteen classes**, named to match the PS wiki's build
+  archetypes (Knight Hybrid, Crusader Grand Cross, Wizard PvE (DEX), Sage Bolter, Hunter Double Strafe,
+  Bard Musical Strike, Dancer Throw Arrow, Priest Magnus Exorcismus, Monk Asura, Blacksmith Battle
+  Smith, Alchemist Acid Demonstration (SAD), Assassin Sonic Blow, Rogue Back Stab, Super Novice Melee,
+  Gunslinger Desperado, Ninja Throwing). Each sets the job, level, a stat spread following the class's
+  PS-wiki stat guidance (linked from a hint), and a signature skill (e.g. Wizard loads Storm Gust, so
+  its cast breakpoints show right away). Gear is left for you to pick — a starting point to tweak.
 
 ### Fixed
 
