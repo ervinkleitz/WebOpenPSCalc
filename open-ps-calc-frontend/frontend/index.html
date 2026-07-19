@@ -4,9 +4,24 @@
     <meta charset="UTF-8" />
     <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Open PS Calc — Payon Stories Calculator</title>
-    <meta name="description" content="Unofficial, fan-made damage calculator for Payon Stories (pre-renewal Ragnarok Online) — build a character, equip gear and cards, and see a full attack-damage breakdown. Not maintained by PS staff; numbers may be inaccurate." />
+    <title>Payon Stories Damage Calculator — Open PS Calc</title>
+    <meta name="description" content="Free Payon Stories damage calculator (pre-renewal Ragnarok Online). Build a character, equip gear and cards, and get a step-by-step damage breakdown with ASPD/cast/hit breakpoints, build comparison, time-to-kill and survivability. Unofficial fan project." />
     <meta name="theme-color" content="#12141c" />
+    <link rel="canonical" href="https://openpscalc.com/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Open PS Calc",
+        "alternateName": "Payon Stories Damage Calculator",
+        "url": "https://openpscalc.com/",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Web browser",
+        "description": "Free, fan-made damage calculator for Payon Stories (pre-renewal Ragnarok Online): step-by-step damage breakdown, ASPD/cast/hit breakpoints, build comparison, time-to-kill and survivability, modeling the server's reworked mechanics.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "isAccessibleForFree": true
+      }
+    </script>
 
     <!-- Favicons & app icons (served from /public) -->
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
@@ -19,8 +34,8 @@
     <!-- Open Graph / link embeds (Discord, Facebook, etc.) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Open PS Calc" />
-    <meta property="og:title" content="Open PS Calc — Payon Stories Calculator" />
-    <meta property="og:description" content="Unofficial fan-made tool (not maintained by PS staff; may be inaccurate). Build a character, equip gear and cards, and see a full attack-damage breakdown for Payon Stories." />
+    <meta property="og:title" content="Payon Stories Damage Calculator — Open PS Calc" />
+    <meta property="og:description" content="Free fan-made Payon Stories calculator: build a character, equip gear and cards, and get a step-by-step damage breakdown with breakpoints, build comparison, time-to-kill and survivability." />
     <meta property="og:url" content="https://openpscalc.com/" />
     <meta property="og:image" content="https://openpscalc.com/icon-512.png" />
     <meta property="og:image:type" content="image/png" />
@@ -30,16 +45,48 @@
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Open PS Calc — Payon Stories Calculator" />
-    <meta name="twitter:description" content="Unofficial fan-made tool (not maintained by PS staff; may be inaccurate). Build a character, equip gear and cards, and see a full attack-damage breakdown for Payon Stories." />
+    <meta name="twitter:title" content="Payon Stories Damage Calculator — Open PS Calc" />
+    <meta name="twitter:description" content="Free fan-made Payon Stories calculator: build a character, equip gear and cards, and get a step-by-step damage breakdown with breakpoints, build comparison, time-to-kill and survivability." />
     <meta name="twitter:image" content="https://openpscalc.com/icon-512.png" />
     <meta name="twitter:image:alt" content="Open PS Calc logo" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <!-- Styles for the pre-hydration landing content below (bundle CSS isn't
+         loaded yet). React replaces #root on mount, so this only shows to
+         crawlers, no-JS visitors, and briefly while the app loads. -->
+    <style>
+      #seo-hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; text-align: center; background: #12141c; color: #e8e6df; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+      #seo-hero h1 { font-size: 1.7rem; margin: 0; color: #e8e6df; }
+      #seo-hero p { max-width: 640px; margin: 0; color: #9a9fb0; line-height: 1.6; }
+      #seo-hero ul { list-style: none; padding: 0; margin: .25rem 0; display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; justify-content: center; max-width: 700px; color: #9a9fb0; font-size: .9rem; }
+      #seo-hero .seo-load { color: #5d6276; font-size: .85rem; }
+      #seo-hero a { color: #8fb4d9; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="seo-hero">
+        <h1>Payon Stories Damage Calculator</h1>
+        <p>A free, fan-made damage calculator for <strong>Payon Stories</strong>, the pre-renewal Ragnarok Online server. Build a character, equip gear and cards, pick a skill and a target, and get a transparent, step-by-step attack-damage breakdown that models the server's reworked mechanics.</p>
+        <ul>
+          <li>Step-by-step damage breakdown</li>
+          <li>ASPD / cast / hit breakpoints</li>
+          <li>Build-vs-build comparison</li>
+          <li>Time-to-kill vs any monster</li>
+          <li>Survivability</li>
+          <li>All 16 classes &amp; PS reworks</li>
+        </ul>
+        <p class="seo-load">Loading the calculator…</p>
+        <p style="font-size:.8rem;color:#5d6276">Unofficial fan project · <a href="https://discord.gg/payonstories" rel="noopener">Payon Stories Discord</a></p>
+      </div>
+    </div>
+    <noscript>
+      <div style="max-width:680px;margin:2rem auto;padding:0 1.5rem;font-family:system-ui,sans-serif;color:#e8e6df;background:#12141c;">
+        <h1>Payon Stories Damage Calculator — Open PS Calc</h1>
+        <p>Open PS Calc is a free, unofficial fan-made damage calculator for Payon Stories (pre-renewal Ragnarok Online). It needs JavaScript to run. Enable JavaScript to build a character, equip gear and cards, and see a full step-by-step damage breakdown, ASPD/cast/hit breakpoints, build comparison, time-to-kill, and survivability across all 16 classes.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
