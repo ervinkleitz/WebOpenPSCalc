@@ -1487,12 +1487,13 @@ export default function BuildEditor() {
                     </ul>
                   )}
                 </li>
-                <li>Starter build templates from the PS wiki — load a class build (stats + a signature skill) and tweak it</li>
+                <li>Buffs, consumables, songs, weapon endows &amp; pet bonuses — all modeled and toggleable</li>
+                <li>Starter build templates from the PS wiki — load a class build (stats + a signature skill) for any of 16 classes and tweak it</li>
                 <li>Attack-speed, cast, and hit breakpoint calculator</li>
                 <li>Build-vs-build comparison</li>
                 <li>Full step-by-step damage breakdown — every multiplier and where it comes from</li>
-                <li>Time-to-kill and hits-to-kill vs any monster (folds in ASPD, crit mix, procs, and cast delay)</li>
                 <li>Real PS monster database — pick the exact mob you fight (element / size / race, disambiguated)</li>
+                <li>Time-to-kill and hits-to-kill vs any monster (folds in ASPD, crit mix, procs, and cast delay)</li>
                 <li>Survivability panel — how hard monsters hit you (incoming damage, effective HP, dodge / FLEE)</li>
                 <li>Grand Cross self-damage (recoil) modeling</li>
                 <li>Import builds from the jaludev calculator</li>
