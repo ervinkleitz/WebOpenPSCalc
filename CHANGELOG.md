@@ -50,6 +50,9 @@ instead of release version. Dates are taken from actual git commit history.
   muted list that was easy to miss; it now sits in a gold-tinted card with a left accent stripe and a
   ⚡ heading so the attack-speed and cast-speed breakpoints stand out at a glance.
 
+- **The Breakpoints Cast row now names the skill.** It shows which skill the cast time is for — e.g.
+  "6.00s Storm Gust — instant cast at +40 DEX" — so it's clear what's being cast at that speed.
+
 - **The Breakpoints Hit row now names the target.** The hit-chance breakpoint is computed against the
   selected monster, so it now says which one — e.g. "92% vs Ferus [Fire]" (or "vs custom target") —
   instead of leaving you to guess what the percentage is measured against.

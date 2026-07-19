@@ -10,7 +10,7 @@ import type { Breakpoints } from "../types";
 
 const DEBOUNCE_MS = 450;
 
-export function BreakpointsView({ payload, targetName }: { payload: unknown | null; targetName?: string | null }) {
+export function BreakpointsView({ payload, targetName, skillLabel }: { payload: unknown | null; targetName?: string | null; skillLabel?: string | null }) {
   const [bp, setBp] = useState<Breakpoints | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -40,12 +40,12 @@ export function BreakpointsView({ payload, targetName }: { payload: unknown | nu
         {loading && <span className="bp-sub">updating…</span>}
       </div>
       {err && !bp && <div className="bp-err">{err}</div>}
-      {bp && <BreakpointsBody bp={bp} targetName={targetName} />}
+      {bp && <BreakpointsBody bp={bp} targetName={targetName} skillLabel={skillLabel} />}
     </div>
   );
 }
 
-function BreakpointsBody({ bp, targetName }: { bp: Breakpoints; targetName?: string | null }) {
+function BreakpointsBody({ bp, targetName, skillLabel }: { bp: Breakpoints; targetName?: string | null; skillLabel?: string | null }) {
   const { aspd, cast, hit } = bp;
   return (
     <div className="bp-body">
@@ -66,7 +66,8 @@ function BreakpointsBody({ bp, targetName }: { bp: Breakpoints; targetName?: str
         <div className="bp-row">
           <span className="bp-k">Cast</span>
           <span className="bp-v">
-            <b>{(cast.current_ms / 1000).toFixed(2)}s</b>{" "}
+            <b>{(cast.current_ms / 1000).toFixed(2)}s</b>
+            <span className="bp-vs"> {skillLabel || cast.skill}</span>{" "}
             {cast.instant_plus_dex == null
               ? <span className="bp-sub">— instant cast not reachable</span>
               : cast.instant_plus_dex === 0
