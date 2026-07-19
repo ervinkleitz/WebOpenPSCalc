@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-const { logCalculate } = require("../middleware/statsLogger");
+const { logCalculate, logFeature, logDonateClick, logPageView } = require("../middleware/statsLogger");
 import { createBattleConfig } from "../engine/config";
 import { buildFromSaveSchema } from "../engine/buildManager";
 import { createSkillInstance, createTarget } from "../engine/models";
@@ -437,6 +437,17 @@ router.post("/breakpoints", (req: Request, res: Response) => {
     console.error(err);
     res.status(500).json({ error: "Breakpoints failed", detail: String(err.message || err) });
   }
+});
+
+// Tracking beacon. Lives under the proxied /api/calculate prefix (POST /stats/*
+// isn't proxied) and behind the API-key gate — the frontend sends the key, which
+// also keeps stray bots out. Dispatches to the same loggers as the /stats routes.
+router.post("/track", (req: Request, res: Response) => {
+  const b = (req.body || {}) as { ev?: string; name?: string; target?: string };
+  if (b.ev === "feature") logFeature(req, b.name);
+  else if (b.ev === "donate") logDonateClick(req, b.target);
+  else if (b.ev === "view") logPageView(req);
+  res.json({ ok: true });
 });
 
 export default router;

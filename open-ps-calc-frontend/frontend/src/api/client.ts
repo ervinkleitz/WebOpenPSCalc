@@ -88,16 +88,17 @@ export const api = {
     }>,
 };
 
+// Fire-and-forget tracking beacon. Uses the proxied /api/calculate prefix (POST
+// to /stats/* isn't proxied) and sends the API key so it clears the /api gate.
+function beacon(payload: Record<string, unknown>) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (API_KEY) headers["X-API-Key"] = API_KEY;
+  fetch("/api/calculate/track", { method: "POST", headers, body: JSON.stringify(payload), keepalive: true }).catch(() => {});
+}
+
 export const statsApi = {
-  recordPageView: () =>
-    fetch("/stats/ping", { method: "POST" }).catch(() => {}),
-  trackDonateClick: (target: string) =>
-    fetch("/stats/donate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target }),
-      keepalive: true,
-    }).catch(() => {}),
+  recordPageView: () => beacon({ ev: "view" }),
+  trackDonateClick: (target: string) => beacon({ ev: "donate", target }),
   // Records use of a named feature so the stats page can rank functionality.
   // Deduped client-side (once per feature per session) to avoid spammy counts.
   trackFeature: (() => {
@@ -105,12 +106,7 @@ export const statsApi = {
     return (name: string) => {
       if (seen.has(name)) return;
       seen.add(name);
-      fetch("/stats/feature", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-        keepalive: true,
-      }).catch(() => {});
+      beacon({ ev: "feature", name });
     };
   })(),
   getData: (password: string, params: Record<string, string>) =>
