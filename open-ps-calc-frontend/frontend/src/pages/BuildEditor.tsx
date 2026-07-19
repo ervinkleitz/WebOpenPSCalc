@@ -261,6 +261,28 @@ const BUILD_TEMPLATES: BuildTemplate[] = [
     note: "DEX throwing build. Equip a huuma shuriken; Throw Huuma Shuriken is preselected." },
 ];
 
+// Maps a guide-page slug (?t=…) to a template label. MUST match the slugs in
+// scripts/gen-guides.mjs so a guide's "Open in the calculator" deep-link
+// auto-loads the matching build.
+const GUIDE_SLUG_TO_LABEL: Record<string, string> = {
+  "knight-hybrid": "Knight — Hybrid",
+  "crusader-grand-cross": "Crusader — Grand Cross (GC)",
+  "wizard-pve-dex": "Wizard — PvE (DEX)",
+  "sage-bolter": "Sage — Bolter",
+  "hunter-double-strafe": "Hunter — Double Strafe (DS)",
+  "bard-musical-strike": "Bard — Musical Strike",
+  "dancer-throw-arrow": "Dancer — Throw Arrow",
+  "priest-magnus-exorcismus": "Priest — Magnus Exorcismus",
+  "monk-asura": "Monk — Asura",
+  "blacksmith-battle-smith": "Blacksmith — Battle Smith (AGI)",
+  "alchemist-acid-demonstration": "Alchemist — Acid Demonstration (SAD)",
+  "assassin-sonic-blow": "Assassin — Sonic Blow (PvE)",
+  "rogue-back-stab": "Rogue — Back Stab",
+  "super-novice-melee": "Super Novice — Melee (Auto-attacker)",
+  "gunslinger-desperado": "Gunslinger — Desperado",
+  "ninja-throwing": "Ninja — Throwing (DEX)",
+};
+
 // Bonuses from wiki.payonstories.com/Cute_Pet_System. Only PS server has
 // pet_bonuses populated; standard server sends selected_pet but profile
 // pet_bonuses:{} makes applyPetBonuses a no-op.
@@ -842,6 +864,26 @@ export default function BuildEditor() {
     setTemplateHint(t);
     statsApi.trackFeature("template_load");
   }, [jobs]);
+
+  // Deep-link from a guide page: ?t=<slug> auto-loads that template (unless a
+  // shared build ?b is present, which wins). The param is stripped afterward so
+  // a refresh or edit doesn't reapply it. Runs once on mount.
+  const guideDeepLinkApplied = useRef(false);
+  useEffect(() => {
+    if (guideDeepLinkApplied.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get("t");
+    if (!slug || params.get("b")) return;
+    const label = GUIDE_SLUG_TO_LABEL[slug];
+    const tpl = label ? BUILD_TEMPLATES.find((x) => x.label === label) : undefined;
+    if (!tpl) return;
+    guideDeepLinkApplied.current = true;
+    applyTemplate(tpl);
+    params.delete("t");
+    const qs = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
+  }, [applyTemplate]);
+
   const [resultsOpen, setResultsOpen] = useState(false);
   const resultsPanelRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
@@ -1555,6 +1597,9 @@ export default function BuildEditor() {
                 skill — for you to tweak. Optional; you can build from scratch below.
               </p>
             )}
+            <p className="build-template-hint" style={{ marginTop: "0.15rem" }}>
+              <a href="/guides/">Browse all build guides →</a>
+            </p>
           </Panel>
 
           <Panel eyebrow="01" title="Character">
@@ -2590,6 +2635,8 @@ export default function BuildEditor() {
           <span>Thanks to our testers:&nbsp;<span className="credits-names">Metan, hokageyyy, leafhill, knightzeroxx, kerfuffl, jenardpwet, halcyon02, Solepto</span></span>
           <span className="credits-sep">·</span>
           <span>Base engine by&nbsp;<span className="credits-names">tochoco.latte</span></span>
+          <span className="credits-sep">·</span>
+          <a className="credits-link" href="/guides/">Build guides</a>
           <span className="credits-sep">·</span>
           <a className="credits-link" href="https://discord.gg/payonstories" target="_blank" rel="noreferrer">Discord</a>
           <span className="credits-sep">·</span>

@@ -7,6 +7,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-19
 
+### Added
+
+- **Build guides for every class.** A new set of Payon Stories build guides — an index at `/guides/`
+  plus a page per class (Knight, Wizard, Monk, Sniper-style Hunter, … all 16) — with recommended
+  stats, the signature skill, and gear tips. Each guide's "Open in the calculator" button deep-links
+  the build straight into the calc preloaded, and the calc links back from the template picker and the
+  footer.
+
 ### Changed
 
 - **The Features banner is more prominent.** It now uses the app's own highlighted-panel treatment — a

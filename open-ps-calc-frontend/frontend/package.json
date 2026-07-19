@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "gen:guides": "node scripts/gen-guides.mjs",
+    "prebuild": "node scripts/gen-guides.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
