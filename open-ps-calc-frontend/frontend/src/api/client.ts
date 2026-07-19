@@ -3,7 +3,9 @@ import type { Breakpoints } from "../types";
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 async function statsRequest(path: string, password: string, params?: Record<string, string>) {
-  const url = `/stats${path}${params ? "?" + new URLSearchParams(params) : ""}`;
+  // /api/e is a blocker-resistant alias for /stats (some content blockers drop
+  // URLs containing "stats"). Both are served by the same backend router.
+  const url = `/api/e${path}${params ? "?" + new URLSearchParams(params) : ""}`;
   const res = await fetch(url, { headers: { "X-Stats-Password": password } });
   const text = await res.text();
   let data: unknown = null;
@@ -90,9 +92,9 @@ export const api = {
 
 export const statsApi = {
   recordPageView: () =>
-    fetch("/stats/ping", { method: "POST" }).catch(() => {}),
+    fetch("/api/e/ping", { method: "POST" }).catch(() => {}),
   trackDonateClick: (target: string) =>
-    fetch("/stats/donate", {
+    fetch("/api/e/donate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ target }),
@@ -105,7 +107,7 @@ export const statsApi = {
     return (name: string) => {
       if (seen.has(name)) return;
       seen.add(name);
-      fetch("/stats/feature", {
+      fetch("/api/e/feature", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),

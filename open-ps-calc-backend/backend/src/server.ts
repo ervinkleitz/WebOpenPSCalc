@@ -12,7 +12,11 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
 // Stats routes are outside the API key gate and use their own password.
+// Mounted twice: /stats (legacy) and /api/e — the latter is a blocker-resistant
+// path (content/ad blockers commonly drop requests to URLs containing "stats").
+// Both are placed BEFORE the /api key gate below, so the beacons stay ungated.
 app.use("/stats", statsRoutes);
+app.use("/api/e", statsRoutes);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
