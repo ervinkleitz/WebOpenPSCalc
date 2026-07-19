@@ -8,7 +8,9 @@
     "start": "tsx src/server.ts",
     "dev": "tsx watch src/server.ts",
     "test": "node --test test/calc-goldens.test.js test/engine-units.test.js",
-    "test:gen-goldens": "node test/gen-goldens.js"
+    "test:gen-goldens": "node test/gen-goldens.js",
+    "stats:backfill-regions": "node src/scripts/backfill-regions.js",
+    "stats:refilter-bots": "node src/scripts/refilter-bots.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
