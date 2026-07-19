@@ -111,6 +111,7 @@ router.get("/data", async (req: Request, res: Response) => {
   const byDay: Record<string, { date: string; views: number; calcs: number }> = {};
   const jobCounts:    Record<number, number> = {};
   const skillCounts:  Record<number, number> = {};
+  const targetCounts: Record<number, number> = {};
   const countryCounts: Record<string, number> = {};
   // country → (region → count), for the country drilldown.
   const regionsByCountry: Record<string, Record<string, number>> = {};
@@ -133,6 +134,7 @@ router.get("/data", async (req: Request, res: Response) => {
       byDay[day].calcs++;
       if (e.job_id != null) jobCounts[e.job_id] = (jobCounts[e.job_id] || 0) + 1;
       if (e.skill_id != null && e.skill_id !== 0) skillCounts[e.skill_id] = (skillCounts[e.skill_id] || 0) + 1;
+      if (e.target_mob_id != null) targetCounts[e.target_mob_id] = (targetCounts[e.target_mob_id] || 0) + 1;
     }
   }
 
@@ -171,6 +173,16 @@ router.get("/data", async (req: Request, res: Response) => {
       } catch {
         return { skill_id: Number(id), name: `Skill ${id}`, count };
       }
+    });
+
+  // Most-calculated-against monsters, enriched with names.
+  const topTargets = Object.entries(targetCounts)
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .slice(0, 10)
+    .map(([id, count]) => {
+      let name = `Mob ${id}`;
+      try { const m = loader.getMonsterData ? loader.getMonsterData(Number(id)) : null; if (m?.name) name = m.name; } catch {}
+      return { mob_id: Number(id), name, count };
     });
 
   const countries = Object.entries(countryCounts)
@@ -215,6 +227,7 @@ router.get("/data", async (req: Request, res: Response) => {
     by_day:       filledDays,
     top_jobs:     topJobs,
     top_skills:   topSkills,
+    top_targets:  topTargets,
     top_features: topFeatures,
     countries,
     from_ts:      fromTs,

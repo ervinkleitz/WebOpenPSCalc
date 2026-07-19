@@ -6,6 +6,7 @@ const SESSION_KEY = "stats_password";
 interface DayEntry { date: string; views: number; calcs: number; }
 interface JobEntry  { job_id: number; name: string; count: number; }
 interface SkillEntry{ skill_id: number; name: string; count: number; }
+interface TargetEntry { mob_id: number; name: string; count: number; }
 interface RegionEntry { region: string; count: number; }
 interface CountryEntry { country: string; count: number; regions?: RegionEntry[]; }
 interface FeatureEntry { name: string; count: number; }
@@ -19,6 +20,7 @@ interface StatsData {
   by_day: DayEntry[];
   top_jobs: JobEntry[];
   top_skills: SkillEntry[];
+  top_targets: TargetEntry[];
   top_features: FeatureEntry[];
   countries: CountryEntry[];
   from_ts: number;
@@ -343,6 +345,24 @@ export default function StatsPage() {
                         <tr key={s.skill_id}>
                           <td className="stats-table-name">{s.name}</td>
                           <td className="stats-table-count">{s.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+            </div>
+
+            <div className="stats-section">
+              <h2 className="stats-section-title">Top targets</h2>
+              {(!data.top_targets || data.top_targets.length === 0)
+                ? <p className="stats-empty">No monster targets yet.</p>
+                : (
+                  <table className="stats-table">
+                    <tbody>
+                      {data.top_targets.map((t) => (
+                        <tr key={t.mob_id}>
+                          <td className="stats-table-name">{t.name}</td>
+                          <td className="stats-table-count">{t.count}</td>
                         </tr>
                       ))}
                     </tbody>

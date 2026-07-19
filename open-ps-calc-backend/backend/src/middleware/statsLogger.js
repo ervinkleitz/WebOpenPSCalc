@@ -166,12 +166,12 @@ function logPageView(req) {
   });
 }
 
-function logCalculate(req, jobId, skillId) {
+function logCalculate(req, jobId, skillId, mobId) {
   const ua = req.headers["user-agent"] || "";
   if (isBot(ua)) return;
   const ip = getIp(req);
   resolveGeo(ip).then((geo) => {
-    appendEvent({ ts: Date.now(), type: "calculate", ip, ...geo, job_id: jobId ?? null, skill_id: skillId ?? null });
+    appendEvent({ ts: Date.now(), type: "calculate", ip, ...geo, job_id: jobId ?? null, skill_id: skillId ?? null, target_mob_id: mobId ?? null });
   });
 }
 

@@ -119,7 +119,7 @@ router.post("/", (req: Request, res: Response) => {
   try {
     const { build: buildData, skill: skillInput, target: targetInput, target_mods: targetModsInput } = req.body || {};
     if (!buildData) return res.status(400).json({ error: "build is required" });
-    logCalculate(req, buildData?.job_id ?? null, skillInput?.id ?? null);
+    logCalculate(req, buildData?.job_id ?? null, skillInput?.id ?? null, targetInput?.mob_id ?? null);
 
     const build = buildFromSaveSchema(buildData);
     const profile = getProfile(build.server);
