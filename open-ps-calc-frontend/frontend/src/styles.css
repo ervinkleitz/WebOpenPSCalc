@@ -872,8 +872,10 @@ label {
 .notice.warn { background: rgba(226, 104, 92, 0.1); color: var(--text); }
 
 .reworks-banner {
-  background: var(--accent-soft);
-  border: 1px solid var(--border);
+  /* Mirrors .panel-highlight so it reads as the app's own "prominent" element. */
+  border: 1px solid var(--accent-dim);
+  background: linear-gradient(180deg, var(--accent-soft), var(--bg-panel) 60%);
+  box-shadow: 0 0 0 1px var(--accent-soft), 0 8px 24px -8px rgba(216, 166, 87, 0.25);
   border-radius: var(--radius);
   font-size: 0.8rem;
   color: var(--text-dim);
@@ -893,8 +895,12 @@ label {
   gap: 0.5rem;
 }
 .reworks-banner-toggle:hover { background: var(--accent-soft-hover, rgba(255,255,255,0.04)); }
-.reworks-banner-toggle strong { color: var(--text); font-size: 0.8rem; }
-.reworks-banner-chevron { color: var(--text-faint); font-size: 0.75rem; flex-shrink: 0; }
+.reworks-banner-toggle strong {
+  color: var(--accent);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+.reworks-banner-chevron { color: var(--accent-dim); font-size: 0.8rem; flex-shrink: 0; }
 .reworks-banner ul { margin: 0; padding: 0 0.9rem 0.65rem 2.1rem; }
 .reworks-banner li { margin: 0.1rem 0; }
 .reworks-detail-toggle {

@@ -5,6 +5,14 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-19
+
+### Changed
+
+- **The Features banner is more prominent.** It now uses the app's own highlighted-panel treatment — a
+  gold-tinted gradient, an accent-colored border and a soft gold glow, with the "Features" title lifted
+  into the accent color — so it stands out at a glance while still reading as native to the UI.
+
 ## 2026-07-18
 
 ### Added
