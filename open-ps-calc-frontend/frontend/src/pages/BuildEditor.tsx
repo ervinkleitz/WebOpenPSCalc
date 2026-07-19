@@ -2433,7 +2433,7 @@ export default function BuildEditor() {
                   )}
                   </>
                 ) : (
-                  <SearchPicker placeholder="Search monsters…" search={mobSearch} onSelect={(r) => updateField(["target_mob_id"], r.id)} />
+                  <SearchPicker placeholder="Search monsters…" search={mobSearch} onSelect={(r) => { updateField(["target_mob_id"], r.id); statsApi.trackFeature("target_pick"); }} />
                 )}
               </>
             )}

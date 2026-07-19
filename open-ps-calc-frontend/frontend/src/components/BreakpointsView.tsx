@@ -5,7 +5,7 @@
 // routes/calculate.ts POST /breakpoints), so the numbers match the calculator.
 // Auto-refreshes (debounced) whenever the build / skill / target changes.
 import { useState, useEffect, useRef } from "react";
-import { api } from "../api/client";
+import { api, statsApi } from "../api/client";
 import type { Breakpoints } from "../types";
 
 const DEBOUNCE_MS = 450;
@@ -23,7 +23,7 @@ export function BreakpointsView({ payload, targetName, skillLabel, skillLevel }:
       setLoading(true);
       try {
         const r = await api.breakpoints(payload);
-        if (reqId.current === id) { setBp(r.breakpoints); setErr(""); }
+        if (reqId.current === id) { setBp(r.breakpoints); setErr(""); statsApi.trackFeature("breakpoints"); }
       } catch (e: any) {
         if (reqId.current === id) setErr(String(e?.message || e));
       } finally {

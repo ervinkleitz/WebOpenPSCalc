@@ -31,6 +31,8 @@ const FEATURE_LABELS: Record<string, string> = {
   compare_pin: "Pin build to compare",
   jaludev_import: "Import from jaludev",
   share_link: "Copy share link",
+  target_pick: "Pick a monster target",
+  breakpoints: "View breakpoints",
   donate_nudge_shown: "Donate nudge shown",
 };
 
