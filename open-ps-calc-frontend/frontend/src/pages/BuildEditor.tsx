@@ -909,6 +909,8 @@ export default function BuildEditor() {
   const [featuresBannerCollapsed, setFeaturesBannerCollapsed] = useState(() => localStorage.getItem("featuresBannerCollapsed") === "1");
   // The per-class PS rework detail is collapsed under the "class reworks" feature line.
   const [classReworksOpen, setClassReworksOpen] = useState(false);
+  // Manual stat bonuses: a niche override, collapsed by default (remembers the user's choice).
+  const [manualStatsOpen, setManualStatsOpen] = useState(() => localStorage.getItem("manualStatsOpen") === "1");
   // The most recently loaded starter template (for the note/wiki-link hint).
   const [templateHint, setTemplateHint] = useState<BuildTemplate | null>(null);
 
@@ -1723,29 +1725,43 @@ export default function BuildEditor() {
                 );
               })}
             </div>
-            <label style={{ marginTop: "0.9rem" }} className="section-label">
-              Manual stat bonuses
+            <div style={{ marginTop: "0.9rem" }} className="section-label">
+              <button
+                type="button"
+                className="reworks-detail-toggle"
+                onClick={() => {
+                  const next = !manualStatsOpen;
+                  setManualStatsOpen(next);
+                  localStorage.setItem("manualStatsOpen", next ? "1" : "0");
+                }}
+                aria-expanded={manualStatsOpen}
+              >
+                Manual stat bonuses
+                <span className="reworks-detail-chevron">{manualStatsOpen ? "▾" : "▸"}</span>
+              </button>
               <InfoTooltip>
                 Flat additions applied on top of your allocated stats — use this
                 to model any stat source the calculator doesn't cover (temporary
                 food buffs, quest rewards, etc.). Folded into the bold total
                 above and the damage calculation. Negative values are allowed.
               </InfoTooltip>
-            </label>
-            <div className="passive-grid">
-              {STATS.map((s) => (
-                <div className="field" key={s}>
-                  <label>{s.toUpperCase()}</label>
-                  <input
-                    className="mono"
-                    type="number"
-                    value={(data.bonus_stats?.[s] as number) ?? 0}
-                    onFocus={(e) => e.target.select()}
-                    onChange={(e) => updateField(["bonus_stats", s], Math.trunc(Number(e.target.value) || 0))}
-                  />
-                </div>
-              ))}
             </div>
+            {manualStatsOpen && (
+              <div className="passive-grid">
+                {STATS.map((s) => (
+                  <div className="field" key={s}>
+                    <label>{s.toUpperCase()}</label>
+                    <input
+                      className="mono"
+                      type="number"
+                      value={(data.bonus_stats?.[s] as number) ?? 0}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => updateField(["bonus_stats", s], Math.trunc(Number(e.target.value) || 0))}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
             <label style={{ marginTop: "0.9rem" }} className="section-label">Combat stats</label>
             <div className="sec-stat-grid">
               {([

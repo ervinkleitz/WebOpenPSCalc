@@ -5,6 +5,15 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-20
+
+### Changed
+
+- **Manual stat bonuses are collapsible.** The "Manual stat bonuses" editor (flat STR/AGI/…
+  overrides) now collapses under a toggle and is closed by default, trimming clutter for the
+  common case. Any active override still shows as a badge on the stat card above, and the
+  section remembers whether you left it open.
+
 ## 2026-07-19
 
 ### Added
