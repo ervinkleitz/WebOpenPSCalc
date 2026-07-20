@@ -1553,6 +1553,7 @@ export default function BuildEditor() {
                 <li>Disambiguated damage, hit, and dodge against the exact monster you pick</li>
                 <li>Survivability panel — how hard monsters hit you (incoming damage, effective HP, dodge / FLEE)</li>
                 <li>Grand Cross self-damage (recoil) modeling</li>
+                <li>Forged weapons — Star Crumb (VS / VVS / VVVS) and ranked-forge seeking damage on blacksmith-forgeable weapons</li>
                 <li>Build-vs-build comparison</li>
                 <li>Starter build templates from the PS wiki — load a class build (stats + a signature skill) for any of 16 classes and tweak it</li>
                 <li>Import builds from the jaludev calculator</li>
