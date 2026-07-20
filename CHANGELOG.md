@@ -22,6 +22,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **Wider screens now use three columns.** The build editor lays its panels out in three columns on
+  wide displays (still two on a normal desktop, one on mobile), so the extra horizontal space isn't
+  wasted.
+
 - **The Features banner is more prominent.** It now uses the app's own highlighted-panel treatment — a
   gold-tinted gradient, an accent-colored border and a soft gold glow, with the "Features" title lifted
   into the accent color — so it stands out at a glance while still reading as native to the UI.

@@ -1574,7 +1574,6 @@ export default function BuildEditor() {
         />
 
         <div className="editor-grid">
-        <div>
           <Panel eyebrow="00" title="Start from a template">
             <div className="field-row">
               <div className="field" style={{ flex: 1 }}>
@@ -2027,9 +2026,7 @@ export default function BuildEditor() {
               </div>
             </Panel>
           )}
-        </div>
 
-        <div>
           <Panel eyebrow="04" title="Passive skills">
             {passiveSkills.length === 0 ? (
               <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
@@ -2662,7 +2659,6 @@ export default function BuildEditor() {
             </div>
           </Panel>
 
-        </div>
       </div>
       </div>
 
