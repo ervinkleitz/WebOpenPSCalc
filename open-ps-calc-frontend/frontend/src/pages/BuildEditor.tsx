@@ -110,11 +110,16 @@ function aspdPotionCap(jobId: number): number {
 // Whether a slot can be refined depends on the specific equipped item, not
 // the slot itself (e.g. most headgears ARE refineable, but not all; same
 // for every other armor slot) -- see item.refineable, checked at render time.
-// Weapon types a Blacksmith can forge with Star Crumbs (Dagger/Sword/Axe/Mace/
-// Spear/Knuckle). The forge control only shows for these; bows, guns, staves,
-// katars, books, instruments, whips, huuma, etc. aren't forgeable.
-const FORGEABLE_WEAPON_TYPES = new Set([
-  "Knife", "1HSword", "2HSword", "1HAxe", "2HAxe", "Mace", "1HSpear", "2HSpear", "Knuckle",
+// Blacksmith-forgeable weapon item IDs (the star-crumb forge list from
+// ratemyserver.net creation_db op=3). The forge control shows only for these,
+// so named/elemental weapons (Fire Brand, Excalibur, Muramasa…) are excluded
+// while scripted-but-forgeable ones (Damascus, Flamberge) are kept.
+// Keep in sync with FORGEABLE_WEAPON_IDS in backend buildManager.js.
+const FORGEABLE_WEAPON_IDS = new Set([
+  1101, 1104, 1107, 1110, 1113, 1116, 1119, 1122, 1123, 1126, 1129, 1151, 1154, 1157, 1160, 1163,
+  1201, 1204, 1207, 1210, 1213, 1216, 1219, 1222, 1301, 1351, 1354, 1357, 1360, 1401, 1404, 1407,
+  1410, 1451, 1454, 1457, 1460, 1463, 1501, 1504, 1507, 1510, 1513, 1516, 1519, 1522, 1801, 1803,
+  1805, 1807, 1809, 1811,
 ]);
 
 const EQUIP_SLOTS = [
@@ -1778,12 +1783,12 @@ export default function BuildEditor() {
                 const cardSlotCount = item?.slots ?? 0;
                 const isWeaponSlot = slot.key === "right_hand" || (slot.key === "left_hand" && item?.type === "IT_WEAPON");
                 const isRefineable = item?.refineable ?? false;
-                // A weapon can be Star-Crumb forged only if it's a forgeable type AND a
-                // plain weapon — named/elemental weapons (Fire Brand, Excalibur, Muramasa…)
-                // carry a script and aren't forgeable.
+                // A weapon can be Star-Crumb forged only if it's on the blacksmith
+                // forge list (FORGEABLE_WEAPON_IDS) — named/elemental weapons like
+                // Fire Brand or Muramasa are excluded; Damascus/Flamberge are kept.
                 const isForgeableWeapon = slot.key === "right_hand"
-                  && FORGEABLE_WEAPON_TYPES.has((item as any)?.weapon_type)
-                  && !String((item as any)?.script || "").trim();
+                  && equippedId != null
+                  && FORGEABLE_WEAPON_IDS.has(equippedId);
                 const isInvalid = invalidSlots.has(slot.key);
                 const cardLoc = slot.key === "left_hand" && item?.type === "IT_WEAPON"
                   ? "EQP_WEAPON"

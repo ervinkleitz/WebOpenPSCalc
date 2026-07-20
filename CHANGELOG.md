@@ -9,10 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
-- **Forged weapons (Star Crumb bonus).** On a right-hand weapon you can now set the forge quality —
-  Very Strong, Very Very Strong, or Very Very Very Strong (1 / 2 / 3 Star Crumbs) — plus a Ranked-forge
-  toggle. That adds the "seeking damage" (ignores DEF, can't miss, per hit): **+5 / +10 / +40**, and
-  **+10** more for a ranked forge, stacking. It shows as a "Forge Bonus" step in the damage breakdown.
+- **Forged weapons (Star Crumb bonus).** On a blacksmith-forgeable right-hand weapon (daggers, swords,
+  axes, maces, spears and knuckles — the actual forge list, so Damascus and Flamberge qualify but named
+  weapons like Fire Brand don't) you can now set the forge quality — Very Strong, Very Very Strong, or
+  Very Very Very Strong (1 / 2 / 3 Star Crumbs) — plus a Ranked-forge toggle. That adds the "seeking
+  damage" (ignores DEF, can't miss, per hit): **+5 / +10 / +40**, and **+10** more for a ranked forge,
+  stacking. It shows as a "Forge Bonus" step in the damage breakdown.
 
 - **Build guides for every class.** A new set of Payon Stories build guides — an index at `/guides/`
   plus a page per class (Knight, Wizard, Monk, Sniper-style Hunter, … all 16) — with recommended

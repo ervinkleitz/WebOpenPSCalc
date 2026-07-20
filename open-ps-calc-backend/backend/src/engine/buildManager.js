@@ -9,6 +9,18 @@ const { createPlayerBuild, createTarget, RANGED_WEAPON_TYPES } = require("./mode
 const { resolveArmorElement } = require("./buildApplicator");
 const { getProfile } = require("./serverProfiles");
 
+// Blacksmith-forgeable weapon item IDs (star-crumb forge list, ratemyserver.net
+// creation_db op=3). The star-crumb/forge ATK bonus applies only to these, so
+// stale forge data on a non-forgeable weapon (e.g. from an old share URL after a
+// weapon swap) is ignored. Keep in sync with FORGEABLE_WEAPON_IDS in the frontend
+// BuildEditor.tsx.
+const FORGEABLE_WEAPON_IDS = new Set([
+  1101, 1104, 1107, 1110, 1113, 1116, 1119, 1122, 1123, 1126, 1129, 1151, 1154, 1157, 1160, 1163,
+  1201, 1204, 1207, 1210, 1213, 1216, 1219, 1222, 1301, 1351, 1354, 1357, 1360, 1401, 1404, 1407,
+  1410, 1451, 1454, 1457, 1460, 1463, 1501, 1504, 1507, 1510, 1513, 1516, 1519, 1522, 1801, 1803,
+  1805, 1807, 1809, 1811,
+]);
+
 function effectiveIsRanged(build, weapon) {
   if (build.is_ranged_override !== null && build.is_ranged_override !== undefined) {
     return build.is_ranged_override;
@@ -223,10 +235,14 @@ function resolveWeapon(loader, itemId, refine = 0, elementOverride = null, opts 
   const item = loader.getItem(itemId);
   if (item == null) return createWeapon();
 
+  // Only genuinely forgeable weapons carry a star-crumb forge bonus.
+  const forgeable = FORGEABLE_WEAPON_IDS.has(itemId);
+  const forged = is_forged && forgeable;
+
   let element;
   if (elementOverride != null) element = elementOverride;
   else if (script_atk_ele_rh != null) element = script_atk_ele_rh;
-  else if (is_forged) element = forge_element;
+  else if (forged) element = forge_element;
   else element = item.element ?? 0;
 
   return createWeapon({
@@ -238,8 +254,8 @@ function resolveWeapon(loader, itemId, refine = 0, elementOverride = null, opts 
     hand: "right",
     aegis_name: item.aegis_name || "",
     refineable: item.refineable ?? true,
-    forge_sc_count: is_forged ? forge_sc_count : 0,
-    forge_ranked: is_forged ? forge_ranked : false,
+    forge_sc_count: forged ? forge_sc_count : 0,
+    forge_ranked: forged ? forge_ranked : false,
   });
 }
 
