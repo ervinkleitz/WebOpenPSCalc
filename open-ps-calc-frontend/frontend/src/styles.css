@@ -488,6 +488,23 @@ label {
 .panel-chevron:not(.open) { transform: rotate(-90deg); }
 .panel-content { margin-top: 0.9rem; }
 
+/* Section reorder controls (up/down) injected into the panel header. */
+.panel-reorder { display: inline-flex; gap: 0.1rem; margin-left: 0.35rem; }
+.panel-reorder-btn {
+  background: none;
+  border: none;
+  padding: 0 0.15rem;
+  margin: 0;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 0.6rem;
+  line-height: 1;
+  opacity: 0.55;
+  transition: color 0.15s, opacity 0.15s;
+}
+.panel-reorder-btn:hover:not(:disabled) { color: var(--accent); opacity: 1; }
+.panel-reorder-btn:disabled { opacity: 0.18; cursor: default; }
+
 .panel-highlight {
   border: 1px solid var(--accent-dim);
   background: linear-gradient(180deg, var(--accent-soft), var(--bg-panel) 60%);

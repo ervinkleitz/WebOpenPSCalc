@@ -7,6 +7,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-07-20
 
+### Added
+
+- **Reorderable build sections.** Each build-editor section (Character, Equipment, Buffs, Skill,
+  Target, …) now has small up/down arrows in its header, so you can arrange the panels in whatever
+  order suits you — put the sections you tweak most at the top. Your layout is remembered on this
+  device (it's a personal preference, not part of a shared build link).
+
 ### Changed
 
 - **Manual stat bonuses are collapsible.** The "Manual stat bonuses" editor (flat STR/AGI/…

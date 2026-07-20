@@ -4,6 +4,7 @@ import LZString from "lz-string";
 import { api, statsApi } from "../api/client";
 import SearchPicker from "../components/SearchPicker";
 import Panel from "../components/Panel";
+import PanelDeck from "../components/PanelDeck";
 import InfoTooltip from "../components/InfoTooltip";
 import ChangelogModal from "../components/ChangelogModal";
 import ResultsPanel from "../components/ResultsPanel";
@@ -35,6 +36,12 @@ const STAT_TO_BONUS_KEY: Record<typeof STATS[number], string> = {
 };
 const BASE_LEVEL_CAP = 99;
 const MAX_STAT = 99;
+// Default top-to-bottom order of the build-editor panels (ids match the items
+// passed to <PanelDeck>). Users can reorder these; the choice lives in
+// localStorage["panelOrder"].
+const DEFAULT_PANEL_ORDER = [
+  "template", "character", "equipment", "pet", "passive", "consumables", "buffs", "skill", "target",
+];
 
 // Cumulative status points available at each base level (index = level - 1).
 // Mirrors dataLoader.js statpoint_table.json (pre-re, levels 1–99).
@@ -911,6 +918,35 @@ export default function BuildEditor() {
   const [classReworksOpen, setClassReworksOpen] = useState(false);
   // Manual stat bonuses: a niche override, collapsed by default (remembers the user's choice).
   const [manualStatsOpen, setManualStatsOpen] = useState(() => localStorage.getItem("manualStatsOpen") === "1");
+
+  // Build-editor panel order — a personal layout preference (localStorage only,
+  // NOT part of the shared build). Reconciled against DEFAULT_PANEL_ORDER so
+  // unknown ids are dropped and newly added panels are appended.
+  const [panelOrder, setPanelOrder] = useState<string[]>(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("panelOrder") || "null");
+      if (Array.isArray(stored)) {
+        const known = stored.filter((id) => DEFAULT_PANEL_ORDER.includes(id));
+        return [...known, ...DEFAULT_PANEL_ORDER.filter((id) => !known.includes(id))];
+      }
+    } catch { /* ignore malformed storage */ }
+    return DEFAULT_PANEL_ORDER;
+  });
+  // Pet is the only conditional panel (PS servers only); everything else is always shown.
+  const isPanelVisible = (id: string) => (id === "pet" ? data.server === "payon_stories" : true);
+  function movePanel(id: string, dir: -1 | 1) {
+    setPanelOrder((prev) => {
+      const arr = [...prev];
+      const i = arr.indexOf(id);
+      if (i === -1) return prev;
+      let j = i + dir;
+      while (j >= 0 && j < arr.length && !isPanelVisible(arr[j])) j += dir; // skip hidden neighbours
+      if (j < 0 || j >= arr.length) return prev;
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      localStorage.setItem("panelOrder", JSON.stringify(arr));
+      return arr;
+    });
+  }
   // The most recently loaded starter template (for the note/wiki-link hint).
   const [templateHint, setTemplateHint] = useState<BuildTemplate | null>(null);
 
@@ -1582,6 +1618,8 @@ export default function BuildEditor() {
         />
 
         <div className="editor-grid">
+          <PanelDeck order={panelOrder} onMove={movePanel} items={[
+          { id: "template", node: (
           <Panel eyebrow="00" title="Start from a template">
             <div className="field-row">
               <div className="field" style={{ flex: 1 }}>
@@ -1615,7 +1653,8 @@ export default function BuildEditor() {
               <a href="/guides.html">Browse all build guides →</a>
             </p>
           </Panel>
-
+          ) },
+          { id: "character", node: (
           <Panel eyebrow="01" title="Character">
             <div className="field-row">
               <div className="field">
@@ -1791,7 +1830,8 @@ export default function BuildEditor() {
               skillLevel={skill.id ? skill.level : null}
             />
           </Panel>
-
+          ) },
+          { id: "equipment", node: (
           <Panel eyebrow="02" title="Equipment">
             <div className="equip-grid">
               {EQUIP_SLOTS.map((slot) => {
@@ -2022,8 +2062,8 @@ export default function BuildEditor() {
               })}
             </div>
           </Panel>
-
-          {data.server === "payon_stories" && (
+          ) },
+          { id: "pet", node: data.server === "payon_stories" ? (
             <Panel eyebrow="03" title="Pet">
               <div className="field">
                 <label>
@@ -2053,8 +2093,8 @@ export default function BuildEditor() {
                 </select>
               </div>
             </Panel>
-          )}
-
+          ) : null },
+          { id: "passive", node: (
           <Panel eyebrow="04" title="Passive skills">
             {passiveSkills.length === 0 ? (
               <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
@@ -2108,7 +2148,8 @@ export default function BuildEditor() {
               </>
             )}
           </Panel>
-
+          ) },
+          { id: "consumables", node: (
           <Panel eyebrow="05" title="Consumables">
             <div className="field">
               <label>ASPD potion</label>
@@ -2176,7 +2217,8 @@ export default function BuildEditor() {
               </label>
             </div>
           </Panel>
-
+          ) },
+          { id: "buffs", node: (
           <Panel eyebrow="06" title="Buffs">
             {(() => {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id)
@@ -2410,7 +2452,8 @@ export default function BuildEditor() {
               );
             })()}
           </Panel>
-
+          ) },
+          { id: "skill", node: (
           <Panel eyebrow="07" title="Skill">
             <div className="selected-pill" style={{ marginBottom: "0.6rem" }}>
               <span>{skill.label}{skill.id !== 0 ? ` Lv.${skill.level}` : ""}</span>
@@ -2456,7 +2499,8 @@ export default function BuildEditor() {
               </div>
             )}
           </Panel>
-
+          ) },
+          { id: "target", node: (
           <Panel eyebrow="08" title="Target">
             <div className="tabs">
               <button className={targetMode === "monster" ? "active" : ""} onClick={() => setTargetMode("monster")}>Monster</button>
@@ -2686,6 +2730,8 @@ export default function BuildEditor() {
               </label>
             </div>
           </Panel>
+          ) },
+          ]} />
 
       </div>
       </div>
