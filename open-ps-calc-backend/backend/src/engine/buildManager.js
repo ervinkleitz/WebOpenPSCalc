@@ -36,6 +36,7 @@ function buildToSaveSchema(build, loader) {
     target_mob_id: build.target_mob_id,
     equipped: build.equipped,
     refine: build.refine_levels,
+    forge: build.forge || {},
     weapon_element: build.weapon_element,
     active_buffs: build.active_status_levels,
     mastery_levels: build.mastery_levels,
@@ -83,6 +84,11 @@ function buildFromSaveSchema(data) {
   const bn = data.bonus_stats || {};
   const flags = data.flags || {};
   const equipped = data.equipped || {};
+  // Forged-weapon Star Crumb bonus on the right-hand weapon (VS/VVS/VVVS = 1/2/3
+  // crumbs). Fed to the engine's forge fields; the raw map round-trips via save.
+  const rhForge = (data.forge || {}).right_hand || {};
+  const rhForgeSc = Math.max(0, Math.min(3, Number(rhForge.sc) || 0));
+  const rhForgeRanked = !!rhForge.ranked;
 
   let activeBuffs = { ...(data.active_buffs || {}) };
   let supportBuffs = { ...(data.support_buffs || {}) };
@@ -115,6 +121,11 @@ function buildFromSaveSchema(data) {
     equipped,
     refine_levels: data.refine || {},
     weapon_element: data.weapon_element ?? null,
+    forge: data.forge || {},
+    is_forged: rhForgeSc > 0 || rhForgeRanked,
+    forge_sc_count: rhForgeSc,
+    forge_ranked: rhForgeRanked,
+    forge_element: 0,
     active_status_levels: activeBuffs,
     mastery_levels: data.mastery_levels || {},
     is_ranged_override: flags.is_ranged_override ?? null,

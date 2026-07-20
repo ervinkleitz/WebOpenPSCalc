@@ -81,6 +81,13 @@ const scenarios = [
     build: { job_id: 12, base_level: 90, job_level: 50, base_stats: { str: 80, agi: 90, vit: 20, int: 1, dex: 50, luk: 30 }, equipped: { right_hand: 1201, right_hand_card1: 4035, right_hand_card2: 4092 } },
     target: { def_: 20, vit: 50, level: 90, size: "Medium", race: "Demi-Human", element: 0, element_level: 1, luk: 30, agi: 60, flee: 150, is_pc: true },
   },
+  {
+    // Forged weapon Star Crumb bonus: VVVS (3 crumbs = +40) + ranked (+10) = +50
+    // seeking damage per hit on the right-hand weapon.
+    name: "knight-vvvs-ranked-forged-sword",
+    build: { job_id: 7, base_level: 99, job_level: 50, base_stats: { str: 90, agi: 60, vit: 40, int: 1, dex: 40, luk: 1 }, equipped: { right_hand: 1101 }, refine: { right_hand: 0 }, forge: { right_hand: { sc: 3, ranked: true } } },
+    target: 1036,
+  },
 
   // --- named branches ----------------------------------------------------------
   {

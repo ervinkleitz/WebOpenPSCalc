@@ -110,6 +110,9 @@ function aspdPotionCap(jobId: number): number {
 // Whether a slot can be refined depends on the specific equipped item, not
 // the slot itself (e.g. most headgears ARE refineable, but not all; same
 // for every other armor slot) -- see item.refineable, checked at render time.
+// Ranged weapons can't be star-crumb forged — hide the forge control for them.
+const NON_FORGEABLE_WEAPON = new Set(["Bow", "Revolver", "Rifle", "Gatling", "Shotgun", "Grenade"]);
+
 const EQUIP_SLOTS = [
   { key: "right_hand", label: "Right hand (weapon)", itemType: "IT_WEAPON" },
   { key: "left_hand", label: "Left hand (shield / weapon)", itemType: "IT_ARMOR", loc: "EQP_SHIELD", dualWield: true },
@@ -149,6 +152,7 @@ const DEFAULT_BUILD: BuildData = {
   bonus_stats: {},
   equipped: {},
   refine: {},
+  forge: {},
   target_mob_id: null,
   server: "payon_stories",
   consumable_buffs: {},
@@ -570,6 +574,8 @@ const Z3_KEYS: string[] = [
   "type", "bonus",
   // Card slots (frozen order): <slot>_card1..4
   ...Z3_CARD_SLOTS.flatMap((s) => [1, 2, 3, 4].map((i) => `${s}_card${i}`)),
+  // Appended (keep at the end — Z3 codes are positional and must stay stable).
+  "forge", "sc", "ranked",
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -1827,6 +1833,43 @@ export default function BuildEditor() {
                         onFocus={(e) => e.target.select()}
                         title="Refine level"
                       />
+                    )}
+                    {slot.key === "right_hand" && equippedId != null && !NON_FORGEABLE_WEAPON.has((item as any)?.weapon_type) && (
+                      <div className="forge-row" style={{ marginTop: "0.4rem" }}>
+                        <select
+                          className="mono"
+                          value={data.forge?.[slot.key]?.sc ?? 0}
+                          title="Forged Star Crumbs — seeking damage that ignores DEF and can't miss (+5 / +10 / +40 per hit)"
+                          onChange={(e) => {
+                            const sc = Number(e.target.value);
+                            setData((prev) => {
+                              const forge = { ...(prev.forge || {}) };
+                              forge[slot.key] = { ranked: false, ...(forge[slot.key] || {}), sc };
+                              return { ...prev, forge };
+                            });
+                          }}
+                        >
+                          <option value={0}>Not forged</option>
+                          <option value={1}>Very Strong (+5)</option>
+                          <option value={2}>Very Very Strong (+10)</option>
+                          <option value={3}>Very Very Very Strong (+40)</option>
+                        </select>
+                        <label className="forge-ranked" title="Forged by a ranked blacksmith (+10 seeking damage)">
+                          <input
+                            type="checkbox"
+                            checked={!!data.forge?.[slot.key]?.ranked}
+                            onChange={(e) => {
+                              const ranked = e.target.checked;
+                              setData((prev) => {
+                                const forge = { ...(prev.forge || {}) };
+                                forge[slot.key] = { sc: 0, ...(forge[slot.key] || {}), ranked };
+                                return { ...prev, forge };
+                              });
+                            }}
+                          />
+                          Ranked
+                        </label>
+                      </div>
                     )}
                     {cardSlotCount > 0 && (
                       <>
