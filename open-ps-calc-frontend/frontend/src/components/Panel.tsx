@@ -34,18 +34,18 @@ export default function Panel({
         {eyebrow && <span className="eyebrow">{eyebrow}</span>}
         <span className="panel-title">{title}</span>
         {reorderable && (
-          <span className="panel-reorder" onClick={(e) => e.stopPropagation()}>
+          <span className="panel-reorder" onClick={(e) => e.stopPropagation()} title={`Reorder — move the ${title} section`}>
             <button
               type="button" className="panel-reorder-btn"
               disabled={!canMoveUp}
               onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
-              title="Move section up" aria-label={`Move ${title} up`}
+              title={`Move the ${title} section up`} aria-label={`Move ${title} section up`}
             >▲</button>
             <button
               type="button" className="panel-reorder-btn"
               disabled={!canMoveDown}
               onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
-              title="Move section down" aria-label={`Move ${title} down`}
+              title={`Move the ${title} section down`} aria-label={`Move ${title} section down`}
             >▼</button>
           </span>
         )}

@@ -488,22 +488,33 @@ label {
 .panel-chevron:not(.open) { transform: rotate(-90deg); }
 .panel-content { margin-top: 0.9rem; }
 
-/* Section reorder controls (up/down) injected into the panel header. */
-.panel-reorder { display: inline-flex; gap: 0.1rem; margin-left: 0.35rem; }
+/* Section reorder controls (up/down) injected into the panel header.
+   Styled as a segmented pill so it reads as a "move this section" control,
+   distinct from the collapse chevron next to it. */
+.panel-reorder {
+  display: inline-flex;
+  align-items: stretch;
+  margin-left: 0.5rem;
+  margin-right: 0.1rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  overflow: hidden;
+}
 .panel-reorder-btn {
   background: none;
   border: none;
-  padding: 0 0.15rem;
+  padding: 0.12rem 0.4rem;
   margin: 0;
   cursor: pointer;
-  color: var(--text-faint);
-  font-size: 0.6rem;
+  color: var(--text-muted, var(--text-faint));
+  font-size: 0.78rem;
   line-height: 1;
-  opacity: 0.55;
-  transition: color 0.15s, opacity 0.15s;
+  transition: color 0.12s, background 0.12s;
 }
-.panel-reorder-btn:hover:not(:disabled) { color: var(--accent); opacity: 1; }
-.panel-reorder-btn:disabled { opacity: 0.18; cursor: default; }
+.panel-reorder-btn + .panel-reorder-btn { border-left: 1px solid var(--border-soft); }
+.panel-reorder-btn:hover:not(:disabled) { color: var(--accent); background: var(--accent-soft); }
+.panel-reorder-btn:active:not(:disabled) { color: var(--accent); background: var(--accent-dim); }
+.panel-reorder-btn:disabled { opacity: 0.22; cursor: default; }
 
 .panel-highlight {
   border: 1px solid var(--accent-dim);
