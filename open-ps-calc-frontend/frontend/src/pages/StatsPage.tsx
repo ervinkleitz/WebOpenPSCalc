@@ -254,7 +254,7 @@ export default function StatsPage() {
               className={`stats-preset-btn${preset === p ? " active" : ""}`}
               onClick={() => setPreset(p)}
             >
-              {p === "1" ? "Last day" : p === "7" ? "Last 7 days" : p === "30" ? "Last 30 days" : p === "0" ? "All time" : "Custom"}
+              {p === "1" ? "Today" : p === "7" ? "Last 7 days" : p === "30" ? "Last 30 days" : p === "0" ? "All time" : "Custom"}
             </button>
           ))}
         </div>
