@@ -110,8 +110,12 @@ function aspdPotionCap(jobId: number): number {
 // Whether a slot can be refined depends on the specific equipped item, not
 // the slot itself (e.g. most headgears ARE refineable, but not all; same
 // for every other armor slot) -- see item.refineable, checked at render time.
-// Ranged weapons can't be star-crumb forged — hide the forge control for them.
-const NON_FORGEABLE_WEAPON = new Set(["Bow", "Revolver", "Rifle", "Gatling", "Shotgun", "Grenade"]);
+// Weapon types a Blacksmith can forge with Star Crumbs (Dagger/Sword/Axe/Mace/
+// Spear/Knuckle). The forge control only shows for these; bows, guns, staves,
+// katars, books, instruments, whips, huuma, etc. aren't forgeable.
+const FORGEABLE_WEAPON_TYPES = new Set([
+  "Knife", "1HSword", "2HSword", "1HAxe", "2HAxe", "Mace", "1HSpear", "2HSpear", "Knuckle",
+]);
 
 const EQUIP_SLOTS = [
   { key: "right_hand", label: "Right hand (weapon)", itemType: "IT_WEAPON" },
@@ -1834,7 +1838,7 @@ export default function BuildEditor() {
                         title="Refine level"
                       />
                     )}
-                    {slot.key === "right_hand" && equippedId != null && !NON_FORGEABLE_WEAPON.has((item as any)?.weapon_type) && (
+                    {slot.key === "right_hand" && equippedId != null && FORGEABLE_WEAPON_TYPES.has((item as any)?.weapon_type) && (
                       <>
                         <label style={{ marginTop: "0.5rem" }}>Forge</label>
                         <select
@@ -2668,9 +2672,6 @@ export default function BuildEditor() {
           Numbers may be inaccurate; verify anything important in-game.
         </div>
         <div className="credits-support">
-          <a className="kofi-btn" href="https://ko-fi.com/I7A322JOTP" target="_blank" rel="noreferrer" onClick={() => statsApi.trackDonateClick("footer")}>
-            🍵 Buy me one
-          </a>
           <span className="credits-support-text">A fan project, running on milk tea</span>
         </div>
         <div className="credits-row">
