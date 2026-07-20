@@ -1778,6 +1778,12 @@ export default function BuildEditor() {
                 const cardSlotCount = item?.slots ?? 0;
                 const isWeaponSlot = slot.key === "right_hand" || (slot.key === "left_hand" && item?.type === "IT_WEAPON");
                 const isRefineable = item?.refineable ?? false;
+                // A weapon can be Star-Crumb forged only if it's a forgeable type AND a
+                // plain weapon — named/elemental weapons (Fire Brand, Excalibur, Muramasa…)
+                // carry a script and aren't forgeable.
+                const isForgeableWeapon = slot.key === "right_hand"
+                  && FORGEABLE_WEAPON_TYPES.has((item as any)?.weapon_type)
+                  && !String((item as any)?.script || "").trim();
                 const isInvalid = invalidSlots.has(slot.key);
                 const cardLoc = slot.key === "left_hand" && item?.type === "IT_WEAPON"
                   ? "EQP_WEAPON"
@@ -1837,7 +1843,7 @@ export default function BuildEditor() {
                         title="Refine level"
                       />
                     )}
-                    {slot.key === "right_hand" && equippedId != null && FORGEABLE_WEAPON_TYPES.has((item as any)?.weapon_type) && (
+                    {isForgeableWeapon && equippedId != null && (
                       <>
                         <label style={{ marginTop: "0.5rem" }}>Forge</label>
                         <select
