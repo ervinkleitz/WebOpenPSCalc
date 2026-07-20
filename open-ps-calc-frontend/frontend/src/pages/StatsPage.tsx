@@ -191,6 +191,12 @@ export default function StatsPage() {
       if (p === "custom") {
         if (fd) params.from = String(new Date(fd).getTime());
         if (td) params.to   = String(new Date(td + "T23:59:59").getTime());
+      } else if (p === "1") {
+        // "Today" = the current calendar day (local midnight → now), not a
+        // rolling 24h window that would bleed into yesterday.
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        params.from = String(start.getTime());
       } else {
         params.days = p;
       }
