@@ -1835,11 +1835,11 @@ export default function BuildEditor() {
                       />
                     )}
                     {slot.key === "right_hand" && equippedId != null && !NON_FORGEABLE_WEAPON.has((item as any)?.weapon_type) && (
-                      <div className="forge-row" style={{ marginTop: "0.4rem" }}>
+                      <>
+                        <label style={{ marginTop: "0.5rem" }}>Forge</label>
                         <select
-                          className="mono"
                           value={data.forge?.[slot.key]?.sc ?? 0}
-                          title="Forged Star Crumbs — seeking damage that ignores DEF and can't miss (+5 / +10 / +40 per hit)"
+                          title="Forged Star Crumbs — seeking damage that ignores DEF and can't miss (per hit)"
                           onChange={(e) => {
                             const sc = Number(e.target.value);
                             setData((prev) => {
@@ -1854,22 +1854,24 @@ export default function BuildEditor() {
                           <option value={2}>Very Very Strong (+10)</option>
                           <option value={3}>Very Very Very Strong (+40)</option>
                         </select>
-                        <label className="forge-ranked" title="Forged by a ranked blacksmith (+10 seeking damage)">
-                          <input
-                            type="checkbox"
-                            checked={!!data.forge?.[slot.key]?.ranked}
-                            onChange={(e) => {
-                              const ranked = e.target.checked;
-                              setData((prev) => {
-                                const forge = { ...(prev.forge || {}) };
-                                forge[slot.key] = { sc: 0, ...(forge[slot.key] || {}), ranked };
-                                return { ...prev, forge };
-                              });
-                            }}
-                          />
-                          Ranked
-                        </label>
-                      </div>
+                        <div className="field-checkbox" style={{ marginTop: "0.35rem" }}>
+                          <label title="Forged by a ranked blacksmith — +10 seeking damage on top of the Star Crumb bonus.">
+                            <input
+                              type="checkbox"
+                              checked={!!data.forge?.[slot.key]?.ranked}
+                              onChange={(e) => {
+                                const ranked = e.target.checked;
+                                setData((prev) => {
+                                  const forge = { ...(prev.forge || {}) };
+                                  forge[slot.key] = { sc: 0, ...(forge[slot.key] || {}), ranked };
+                                  return { ...prev, forge };
+                                });
+                              }}
+                            />
+                            <span>Ranked forge (+10)</span>
+                          </label>
+                        </div>
+                      </>
                     )}
                     {cardSlotCount > 0 && (
                       <>
