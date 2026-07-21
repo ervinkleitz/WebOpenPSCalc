@@ -467,11 +467,11 @@ label {
 /* Masonry-style columns: panels stack independently per column. 2 columns by
    default, 3 on wide screens, 1 on narrow. */
 .editor-grid { columns: 2; column-gap: 1.5rem; }
-/* Widen the .page cap step-by-step with the column count (base cap is 1400px) so
-   each breakpoint actually uses the extra horizontal room instead of leaving it
-   as empty side margins. */
-@media (min-width: 1500px) { .editor-grid { columns: 3; } .page { max-width: 1560px; } }
-@media (min-width: 1800px) { .editor-grid { columns: 4; } .page { max-width: 1760px; } }
+/* At 3 and 4 columns let the page fill the viewport (drop the 1400px cap) so the
+   side padding stays the same 2rem the 2-column layout shows, instead of growing
+   into wide empty side margins. */
+@media (min-width: 1500px) { .editor-grid { columns: 3; } .page { max-width: none; } }
+@media (min-width: 1800px) { .editor-grid { columns: 4; } }
 @media (max-width: 980px) { .editor-grid { columns: 1; } }
 
 .panel {

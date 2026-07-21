@@ -11,8 +11,9 @@ instead of release version. Dates are taken from actual git commit history.
 
 - **A fourth column on very wide screens.** The build editor now lays its sections out in four
   columns on very wide displays (≥1800px), up from three, so more sections fit on one screen — handy
-  for seeing stats and equipment together at a glance. Narrower screens are unchanged (3 / 2 / 1
-  columns).
+  for seeing stats and equipment together at a glance. On three- and four-column layouts the editor
+  now fills the screen width (same side padding as the two-column view) instead of leaving wide empty
+  margins. Narrower screens are unchanged (2 / 1 columns).
 
 - **Manual stat bonuses are collapsible.** The "Manual stat bonuses" editor (flat STR/AGI/…
   overrides) now collapses under a toggle and is closed by default, trimming clutter for the
