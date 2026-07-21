@@ -467,7 +467,11 @@ label {
 /* Masonry-style columns: panels stack independently per column. 2 columns by
    default, 3 on wide screens, 1 on narrow. */
 .editor-grid { columns: 2; column-gap: 1.5rem; }
-@media (min-width: 1500px) { .editor-grid { columns: 3; } }
+/* Widen the .page cap step-by-step with the column count (base cap is 1400px) so
+   each breakpoint actually uses the extra horizontal room instead of leaving it
+   as empty side margins. */
+@media (min-width: 1500px) { .editor-grid { columns: 3; } .page { max-width: 1560px; } }
+@media (min-width: 1800px) { .editor-grid { columns: 4; } .page { max-width: 1760px; } }
 @media (max-width: 980px) { .editor-grid { columns: 1; } }
 
 .panel {
@@ -487,34 +491,6 @@ label {
 .panel-chevron.open { transform: rotate(0deg); }
 .panel-chevron:not(.open) { transform: rotate(-90deg); }
 .panel-content { margin-top: 0.9rem; }
-
-/* Section reorder controls (up/down) injected into the panel header.
-   Styled as a segmented pill so it reads as a "move this section" control,
-   distinct from the collapse chevron next to it. */
-.panel-reorder {
-  display: inline-flex;
-  align-items: stretch;
-  margin-left: 0.5rem;
-  margin-right: 0.1rem;
-  border: 1px solid var(--border-soft);
-  border-radius: 6px;
-  overflow: hidden;
-}
-.panel-reorder-btn {
-  background: none;
-  border: none;
-  padding: 0.12rem 0.4rem;
-  margin: 0;
-  cursor: pointer;
-  color: var(--text-muted, var(--text-faint));
-  font-size: 0.78rem;
-  line-height: 1;
-  transition: color 0.12s, background 0.12s;
-}
-.panel-reorder-btn + .panel-reorder-btn { border-left: 1px solid var(--border-soft); }
-.panel-reorder-btn:hover:not(:disabled) { color: var(--accent); background: var(--accent-soft); }
-.panel-reorder-btn:active:not(:disabled) { color: var(--accent); background: var(--accent-dim); }
-.panel-reorder-btn:disabled { opacity: 0.22; cursor: default; }
 
 .panel-highlight {
   border: 1px solid var(--accent-dim);
