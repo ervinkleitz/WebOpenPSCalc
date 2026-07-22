@@ -308,13 +308,19 @@ motivated several changes beyond a straight 1:1 port:
 
 ## Quick start
 
+Requires **Node 20** (see `.nvmrc`; anything 18+ works — `tsx`, Vite 5 and the
+`node --test` suite all need 18 or newer). With nvm on macOS/Linux, `nvm use`
+in the repo root picks it up.
+
 ```bash
 cd open-ps-calc-backend/backend && npm install && npm start    # http://localhost:4000
 cd open-ps-calc-frontend/frontend && npm install && npm run dev # http://localhost:5173
 ```
 
 The frontend dev server proxies `/api/*` to `http://localhost:4000`, so just
-open `http://localhost:5173` once both are running. See
+open `http://localhost:5173` once both are running. If port 4000 is held by a
+stale server, `npm run kill-port` in the backend frees it (works on macOS,
+Linux and Windows). See
 `open-ps-calc-backend/backend/README.md` and
 `open-ps-calc-frontend/frontend/README.md` for more detail, and
 `DEPLOYMENT.md` for deploying to EC2.

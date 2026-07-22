@@ -14,3 +14,6 @@ Thumbs.db
 # Local agent working context (never pushed)
 CLAUDE.md
 context.md
+
+# Per-machine Claude permissions (.claude/settings.json IS shared and committed)
+.claude/settings.local.json

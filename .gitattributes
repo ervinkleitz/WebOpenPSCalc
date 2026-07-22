@@ -1,0 +1,16 @@
+# Normalize line endings so the repo reads the same on macOS and Windows.
+# Everything text is stored LF in git and checked out LF on both platforms;
+# without this, editing on Windows can rewrite whole files to CRLF and turn
+# a one-line change into a thousand-line diff.
+* text=auto eol=lf
+
+# Shell scripts must stay LF -- they run on the Linux EC2 box.
+*.sh text eol=lf
+
+# Binaries: never touch.
+*.png binary
+*.ico binary
+*.jpg binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
