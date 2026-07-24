@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-07-24
+
+### Added
+
+- **Sage Auto Spell (Hindsight).** Sages and Professors can now set an Auto Spell / Hindsight level
+  in the Buffs panel. On Payon Stories the activated level selects exactly one spell — Lv1 Soul
+  Strike, Lv2–4 Fire/Cold/Lightning Bolt, Lv5 Earth Spike, Lv6 Fire Ball, Lv7 Thunderstorm, Lv8
+  Heaven's Drive (Lv9 Stone Curse and Lv10 Safety Wall deal no damage) — which autocasts at a flat
+  30% chance on every physical attack. The results now show an **Auto Spell (Hindsight)** breakdown
+  with the per-proc magic damage (bolt ranks roll a random Lv2–4 cast, shown as a range), and the
+  proc's expected value is folded into the DPS estimate. Assumes the underlying spell is learned.
+
 ## 2026-07-20
 
 ### Changed

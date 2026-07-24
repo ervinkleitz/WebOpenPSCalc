@@ -222,3 +222,42 @@ test("profiles: PS profile is layered on STANDARD without mutating it", () => {
   assert.ok(ps.weapon_ratios.BA_MUSICALSTRIKE, "PS weapon ratio table missing Musical Strike");
   assert.strictEqual(Object.keys(STANDARD.sn_hp_bonus).length, 0, "vanilla profile must not carry PS SN bonuses");
 });
+
+// ---------------------------------------------------------------------------
+// PS Auto Spell / "Hindsight" (SA_AUTOSPELL) autocast — wiki.payonstories.com/Auto_Spell
+// ---------------------------------------------------------------------------
+const { runScenario } = require("./engineRunner");
+
+const SAGE_HINDSIGHT = (lv, server = "payon_stories", jobId = 16) => ({
+  build: {
+    server, job_id: jobId, base_level: 99, job_level: 50,
+    base_stats: { str: 50, agi: 40, vit: 30, int: 70, dex: 60, luk: 20 },
+    equipped: { right_hand: 1601 }, support_buffs: lv ? { auto_spell_lv: lv } : {},
+  },
+  target: 1002, // Poring (Water)
+});
+
+test("Hindsight: bolt rank surfaces an autocast proc branch spanning the Lv2–4 cast mix", () => {
+  const as = runScenario(SAGE_HINDSIGHT(2)).result.proc_branches?.autospell;
+  assert.ok(as, "expected proc_branches.autospell for Sage Hindsight Lv2");
+  assert.ok(as.min < as.max, "bolt mix must span a range (Lv2 low → Lv4 high)");
+  assert.ok(as.avg > as.min && as.avg < as.max, "avg lies inside the mix range");
+});
+
+test("Hindsight: proc adds damage — DPS with it exceeds the same build without it", () => {
+  const withAS = runScenario(SAGE_HINDSIGHT(1)).result.dps;   // Soul Strike Lv5
+  const without = runScenario(SAGE_HINDSIGHT(0)).result.dps;
+  assert.ok(withAS > without, `autocast should raise DPS (${withAS} !> ${without})`);
+});
+
+test("Hindsight: no-damage ranks (9 Stone Curse / 10 Safety Wall) produce no branch", () => {
+  assert.strictEqual(runScenario(SAGE_HINDSIGHT(9)).result.proc_branches, undefined);
+  assert.strictEqual(runScenario(SAGE_HINDSIGHT(10)).result.proc_branches, undefined);
+});
+
+test("Hindsight: gated to PS profile and the Sage line", () => {
+  // Standard (vanilla) profile lacks the SA_AUTOSPELL_PS flag.
+  assert.strictEqual(runScenario(SAGE_HINDSIGHT(2, "standard")).result.proc_branches, undefined);
+  // A non-Sage job with the field set is ignored (Knight = 7).
+  assert.strictEqual(runScenario(SAGE_HINDSIGHT(2, "payon_stories", 7)).result.proc_branches, undefined);
+});

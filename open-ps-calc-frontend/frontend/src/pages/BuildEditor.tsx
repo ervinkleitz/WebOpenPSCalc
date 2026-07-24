@@ -566,6 +566,22 @@ const Z3_CARD_SLOTS = [
   "right_hand", "left_hand", "head_top", "head_mid", "head_low",
   "armor", "garment", "shoes", "accessory_left", "accessory_right",
 ];
+
+// Sage Auto Spell / "Hindsight" (SA_AUTOSPELL) — the activated level selects one
+// autocast spell (wiki.payonstories.com/Auto_Spell). Levels 9 & 10 deal no damage
+// (status / buff). Kept in sync with AUTO_SPELL_MAP in the backend battlePipeline.
+const AUTO_SPELL_OPTIONS: { lv: number; label: string }[] = [
+  { lv: 1, label: "Lv1 — Soul Strike (Lv5)" },
+  { lv: 2, label: "Lv2 — Fire Bolt (Lv2–4)" },
+  { lv: 3, label: "Lv3 — Cold Bolt (Lv2–4)" },
+  { lv: 4, label: "Lv4 — Lightning Bolt (Lv2–4)" },
+  { lv: 5, label: "Lv5 — Earth Spike (Lv2)" },
+  { lv: 6, label: "Lv6 — Fire Ball (Lv10)" },
+  { lv: 7, label: "Lv7 — Thunderstorm (Lv3)" },
+  { lv: 8, label: "Lv8 — Heaven's Drive (Lv3)" },
+  { lv: 9, label: "Lv9 — Stone Curse (no damage)" },
+  { lv: 10, label: "Lv10 — Safety Wall (no damage)" },
+];
 const Z3_KEYS: string[] = [
   "build", "skill", "targetMode", "customTarget", "targetMods",
   "name", "job_id", "base_level", "job_level", "base_stats", "bonus_stats",
@@ -1167,6 +1183,19 @@ export default function BuildEditor() {
     });
   }, []);
 
+  // Sage Auto Spell / "Hindsight" (support_buffs.auto_spell_lv). The activated
+  // level selects exactly one autocast spell (see AUTO_SPELL_OPTIONS); the engine
+  // fires it at a flat 30% on every physical attack and surfaces the per-proc
+  // damage as a proc branch. Lv0/"" = off.
+  const updateAutoSpell = useCallback((level: number) => {
+    setData((prev) => {
+      const next: Record<string, unknown> = { ...(prev.support_buffs || {}) };
+      if (level > 0) next.auto_spell_lv = level;
+      else delete next.auto_spell_lv;
+      return { ...prev, support_buffs: next };
+    });
+  }, []);
+
   // Priest weapon endow -- also a single mutually-exclusive slot
   // (support_buffs.weapon_endow_sc, or the boolean SC_ASPERSIO for Holy).
   const updateWeaponEndow = useCallback((value: string) => {
@@ -1542,7 +1571,7 @@ export default function BuildEditor() {
                       <li>Acolyte / Priest — Holy Light (LUK% chance for +60% damage), offensive Heal (heal-bomb vs Undead, higher with Purifying Ring + Rosary), Turn Undead instant-kill chance, Holy Strike proc (101 + baseSTR + baseLevel)%, Magnus Exorcismus (full vs Undead/Demon), Signum Crucis −50% DEF</li>
                       <li>Monk / Champion — Triple Attack (5 levels; procs on auto-attack, crits during Fury), Chain Combo / Combo Finish reworked ratios, Asura Strike SP formula (flat +1000, takes normal DEF), spirit spheres (Star Crumb-style, true-neutral, per hit)</li>
                       <li>Wizard / High Wizard — Frost Nova (175+15×lv → 190% at lv 1, +10% per Frost Diver lv, max lv 5), Lord of Vermillion 200×lv% total (4 waves), Napalm Vulcan Shadow element + 50% MDEF ignore, Fire Pillar 50% MDEF ignore, Mystical Amplification +10%/lv (max lv 5), Sightrasher max lv 5, Soul Drain +1% MaxHP/lv</li>
-                      <li>Sage — Soul Strike ignores 50% MDEF (lv 10 learned) and deals +5%×lv bonus vs Undead race; Fireball (70+30×lv)% per hit (lv 1–10: 70%→340%); Earth Spike and Heavens Drive 140%×lv per hit; Advanced Book ATK +10–30 flat (lv 1–5); Volcano/Deluge/Violent Gale persistence buffs at max level 3</li>
+                      <li>Sage — Soul Strike ignores 50% MDEF (lv 10 learned) and deals +5%×lv bonus vs Undead race; Fireball (70+30×lv)% per hit (lv 1–10: 70%→340%); Earth Spike and Heavens Drive 140%×lv per hit; Advanced Book ATK +10–30 flat (lv 1–5); Volcano/Deluge/Violent Gale persistence buffs at max level 3; Auto Spell (Hindsight) autocast — level selects the spell (Soul Strike / bolts / Earth Spike / Fire Ball / Thunderstorm / Heaven's Drive), 30% on physical attacks, folded into DPS</li>
                       <li>Hunter — offensive trap damage (Land Mine, Blast Mine, Freezing Trap, Claymore Trap)</li>
                       <li>Bard / Dancer — Performing +100 ratio on Musical Strike / Throw Arrow (175+25×lv base), Arrow Vulcan, arrow-element damage</li>
                       <li>Gunslinger — Triple Action 420% total (100+40×lv), Ground Drift 200+60×lv% (max 800%), Soul Bullet (50+DEX+BaseLvl)%, Heavy-Tipped Bullet ATK 45 +10% all races; Dust/Full Buster/Spread Attack 7% Neutral resist now also triggers with Grenade Launcher</li>
@@ -1635,6 +1664,11 @@ export default function BuildEditor() {
                       job_name: job?.name ?? "",
                       job_level: Math.min(prev.job_level, getJobLevelCap(id)),
                     }));
+                    // A class switch invalidates the previously-selected damage skill
+                    // (e.g. a Wizard's Storm Gust when you switch to Sage), so reset to
+                    // Normal Attack rather than silently calculating a skill the new job
+                    // can't use. Normal Attack is valid for every job.
+                    if (id !== data.job_id) setSkill(DEFAULT_SKILL);
                   }}
                 >
                   {jobs.length === 0 && <option value={data.job_id}>{data.job_name || `Job ${data.job_id}`}</option>}
@@ -2203,6 +2237,10 @@ export default function BuildEditor() {
               // and PS_ENCHANT_EFF both being 3-element arrays.
               const groundEffectMax = data.server === "payon_stories" ? 3 : 5;
               const endowValue = supportBuffs.SC_ASPERSIO ? "SC_ASPERSIO" : (supportBuffs.weapon_endow_sc as string) || "";
+              // Auto Spell (Hindsight) is a Sage/Professor skill; the engine only
+              // computes it for those jobs, so gate the selector to match.
+              const isSageLine = [16, 4017].includes(data.job_id);
+              const autoSpellLv = Number(supportBuffs.auto_spell_lv || 0);
               return (
                 <>
                   {!hasSelfSection ? (
@@ -2367,6 +2405,20 @@ export default function BuildEditor() {
                           <option value="SC_VIOLENTGALE">Violent Gale (Wind, +Flee/move speed)</option>
                         </select>
                       </div>
+                      {isSageLine && (
+                        <div className="field">
+                          <label title="Auto Spell (Hindsight): the activated level autocasts one spell at a flat 30% chance on every physical attack. Assumes the mapped spell is learned. Damage shows in the results as an Auto Spell proc branch.">Auto Spell (Hindsight)</label>
+                          <select
+                            value={autoSpellLv || ""}
+                            onChange={(e) => updateAutoSpell(Number(e.target.value))}
+                          >
+                            <option value="">None</option>
+                            {AUTO_SPELL_OPTIONS.map((o) => (
+                              <option key={o.lv} value={o.lv}>{o.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                   </div>
 

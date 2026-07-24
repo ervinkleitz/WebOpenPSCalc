@@ -133,6 +133,27 @@ function skillPeriodMs(castMs, delayMs, skillData, skillLv, minPeriodOverride, a
 // Assassin (12) and Assassin Cross (4013) can dual-wield daggers.
 const DUAL_WIELD_JOBS = new Set([12, 4013]);
 
+// PS Auto Spell / "Hindsight" (SA_AUTOSPELL) — wiki.payonstories.com/Auto_Spell.
+// Unlike vanilla's random pool, the *activated level* selects exactly one spell,
+// cast at a fixed level, with a flat 30% chance on every physical attack (hit or
+// miss). Levels 9 & 10 (Stone Curse / Safety Wall) deal no damage, so they carry
+// no `casts`. Bolt ranks (2-4) autocast at a random level 2, 3 or 4 per proc — a
+// uniform mixture over the listed casts (user-confirmed reading of "Level 2
+// through 4"). Each `casts` entry is one equiprobable variant.
+const AUTO_SPELL_PROC_CHANCE = 30; // flat %, all ranks
+const AUTO_SPELL_MAP = {
+  1:  { label: "Soul Strike Lv5",     casts: [{ name: "MG_SOULSTRIKE",    level: 5 }] },
+  2:  { label: "Fire Bolt Lv2–4",     casts: [{ name: "MG_FIREBOLT", level: 2 }, { name: "MG_FIREBOLT", level: 3 }, { name: "MG_FIREBOLT", level: 4 }] },
+  3:  { label: "Cold Bolt Lv2–4",     casts: [{ name: "MG_COLDBOLT", level: 2 }, { name: "MG_COLDBOLT", level: 3 }, { name: "MG_COLDBOLT", level: 4 }] },
+  4:  { label: "Lightning Bolt Lv2–4", casts: [{ name: "MG_LIGHTNINGBOLT", level: 2 }, { name: "MG_LIGHTNINGBOLT", level: 3 }, { name: "MG_LIGHTNINGBOLT", level: 4 }] },
+  5:  { label: "Earth Spike Lv2",     casts: [{ name: "WZ_EARTHSPIKE",    level: 2 }] },
+  6:  { label: "Fire Ball Lv10",      casts: [{ name: "MG_FIREBALL",      level: 10 }] },
+  7:  { label: "Thunderstorm Lv3",    casts: [{ name: "MG_THUNDERSTORM",  level: 3 }] },
+  8:  { label: "Heaven's Drive Lv3",  casts: [{ name: "WZ_HEAVENDRIVE",   level: 3 }] },
+  9:  { label: "Stone Curse Lv10 (no damage)", casts: [] },
+  10: { label: "Safety Wall Lv5 (no damage)", casts: [] },
+};
+
 class BattlePipeline {
   constructor(config) {
     this.config = config;
@@ -336,6 +357,66 @@ class BattlePipeline {
     result.max_damage = mx;
     result.avg_damage = av;
     result.pmf = pmf;
+    return result;
+  }
+
+  /**
+   * PS Auto Spell / "Hindsight" (SA_AUTOSPELL) autocast branch. Given the
+   * activated Hindsight level, builds a magic damage result for the mapped spell
+   * via the normal magic branch — a uniform pmf mixture over the level's `casts`
+   * (bolt ranks randomise their cast level 2-4). Returns null for ranks with no
+   * damaging cast (9-10) or an unknown/unset level. The flat 30% proc chance is
+   * applied by the caller (folded into DPS + surfaced as a proc branch), since
+   * Hindsight fires on the physical attack rather than inside the spell's own
+   * pipeline. wiki.payonstories.com/Auto_Spell.
+   */
+  _runAutoSpellBranch(status, weapon, target, build, opts, autoLv) {
+    const entry = AUTO_SPELL_MAP[autoLv];
+    if (!entry || !entry.casts.length) return null;
+
+    const perCast = [];
+    for (const c of entry.casts) {
+      const id = loader.getSkillIdByName(c.name);
+      if (!id) continue;
+      const sd = loader.getSkill(id);
+      const dt = (sd && sd.damage_type) || [];
+      const spellSkill = {
+        id, name: c.name, level: c.level,
+        nk_ignore_def: dt.includes("IgnoreDefense"),
+        nk_ignore_flee: dt.includes("IgnoreFlee"),
+        nk_ignore_ele: dt.includes("IgnoreElement"),
+        nk_ignore_cards: dt.includes("IgnoreCards"),
+      };
+      perCast.push(this._runMagicBranch(status, weapon, spellSkill, target, build, opts));
+    }
+    if (!perCast.length) return null;
+
+    // Uniform mixture of the per-cast pmfs — every listed cast is equiprobable.
+    const w = 1 / perCast.length;
+    const mixed = {};
+    for (const r of perCast) {
+      for (const [dmg, prob] of Object.entries(r.pmf || {})) {
+        mixed[dmg] = (mixed[dmg] || 0) + prob * w;
+      }
+    }
+    const [mn, mx, av] = pmfStats(mixed);
+
+    // Reuse the representative (middle) cast's step log so the breakdown stays
+    // transparent, then override the headline numbers with the true mixture.
+    const repIdx = Math.floor(perCast.length / 2);
+    const result = createDamageResult({
+      steps: perCast[repIdx].steps.slice(),
+      min_damage: mn, max_damage: mx, avg_damage: av, pmf: mixed,
+    });
+    if (perCast.length > 1) {
+      const loLv = entry.casts[0].level;
+      const hiLv = entry.casts[entry.casts.length - 1].level;
+      result.add_step({
+        name: "Auto Spell level mix", value: av, min_value: mn, max_value: mx,
+        note: `${entry.label}: random cast level ${loLv}–${hiLv} (uniform); steps above shown for Lv${entry.casts[repIdx].level}`,
+        formula: "", hercules_ref: "wiki.payonstories.com/Auto_Spell",
+      });
+    }
     return result;
   }
 
@@ -1622,6 +1703,27 @@ class BattlePipeline {
       if (katarSecondCrit) attacks.push(createAttackDefinition(katarSecondCrit.avg_damage, 0.0, period, kpf * effCrit));
     }
 
+    // PS Auto Spell (Hindsight): flat 30% autocast on this physical attack (hit
+    // or miss), Sage/Professor only. The autocast is an independent extra spell
+    // that rides on the swing — its expected value folds into DPS with no added
+    // attack time (post_delay 0), and the per-proc magic damage is surfaced as a
+    // proc branch for the breakdown. Levels 9-10 (Stone Curse / Safety Wall) map
+    // to no damaging cast, so _runAutoSpellBranch returns null and nothing shows.
+    let autoSpellBranch = null, autoSpellChance = 0, autoSpellLabel = "";
+    const autoSpellLv = Number(build.support_buffs?.auto_spell_lv || 0);
+    if (
+      autoSpellLv >= 1 && autoSpellLv <= 10 &&
+      profile.mechanic_flags.has("SA_AUTOSPELL_PS") &&
+      (build.job_id === 16 || build.job_id === 4017)
+    ) {
+      autoSpellBranch = this._runAutoSpellBranch(status, weapon, target, build, { profile, gear_bonuses: gearBonuses }, autoSpellLv);
+      if (autoSpellBranch) {
+        autoSpellChance = AUTO_SPELL_PROC_CHANCE;
+        autoSpellLabel = (AUTO_SPELL_MAP[autoSpellLv] || {}).label || "";
+        attacks.push(createAttackDefinition(autoSpellBranch.avg_damage, 0.0, 0.0, autoSpellChance / 100.0));
+      }
+    }
+
     const dps = calculateDps(attacks);
 
     return createBattleResult({
@@ -1642,6 +1744,9 @@ class BattlePipeline {
       ta_proc: taProc,
       ta_crit_proc: taCritProc,
       ta_proc_chance: taProcChance,
+      proc_branches: autoSpellBranch ? { autospell: autoSpellBranch } : {},
+      proc_chances: autoSpellBranch ? { autospell: autoSpellChance } : {},
+      proc_labels: autoSpellBranch ? { autospell: autoSpellLabel } : {},
       dw_lh_normal:    dualWield ? dualWield.lhNormal        : null,
       dw_lh_crit:      dualWield ? dualWield.lhCrit          : null,
       dw_rh_factor:    dualWield ? dualWield.rhFactor         : null,

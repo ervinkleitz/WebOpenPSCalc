@@ -69,6 +69,9 @@ interface SingleResult {
     dw_lh_normal?: DamageBranch | null;
     dw_lh_crit?: DamageBranch | null;
     dw_ps_bonus_pct?: number | null;
+    proc_branches?: Record<string, DamageBranch>;
+    proc_chances?: Record<string, number>;
+    proc_labels?: Record<string, string>;
   };
   falcon?: FalconResult;
 }
@@ -252,6 +255,33 @@ function SelfDamageView({ sd }: { sd: SelfDamage }) {
   );
 }
 
+// Sage Auto Spell / "Hindsight" autocast — a magic spell that fires at a flat
+// chance on the physical attack shown above. Surfaces the per-proc damage and
+// its full pipeline; its expected value is already folded into the DPS estimate.
+function AutoSpellView({ branch, chance, label }: { branch: DamageBranch; chance: number; label: string }) {
+  const n = (v: number) => Math.round(v).toLocaleString();
+  const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
+    ? `${n(branch.min_damage)}–${n(branch.max_damage)}`
+    : n(branch.avg_damage);
+  return (
+    <div className="breakdown-view">
+      <div className="breakdown-head">
+        <span className="breakdown-title">Auto Spell (Hindsight)</span>
+        <span className="breakdown-sub">{label} · {chance}% per physical attack</span>
+      </div>
+      <PipelineView steps={branch.steps} hideFinal />
+      <div className="breakdown-total">
+        <span className="breakdown-total-label">Per-proc damage</span>
+        <span className="breakdown-total-val">{range}</span>
+      </div>
+      <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
+        <span className="self-damage-chip muted">assumes the spell is learned</span>
+        <span className="self-damage-chip muted">expected value folded into DPS</span>
+      </div>
+    </div>
+  );
+}
+
 function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit, psBonusPct }: {
   rh: DamageBranch; lh: DamageBranch;
   rhFactor: number; lhFactor: number; isCrit: boolean; psBonusPct?: number;
@@ -320,6 +350,17 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
     : branch;
 
   const activeResult: SingleResult = (activeBranch === "normal" || activeBranch === "katar") ? normal_attack : primary;
+  // Auto Spell (Hindsight) proc branch — present only on a physical attack that
+  // has Hindsight active. Tied to the attack currently in view (magic skills
+  // don't autocast, so it's absent there).
+  const autoSpellDamage = activeResult.result.proc_branches?.autospell ?? null;
+  const autoSpell = autoSpellDamage
+    ? {
+        branch: autoSpellDamage,
+        chance: activeResult.result.proc_chances?.autospell ?? 30,
+        label: activeResult.result.proc_labels?.autospell ?? "",
+      }
+    : null;
   const activeDamage: DamageBranch | null = activeBranch === "falcon"
     ? null
     : activeBranch === "katar" ? (normal_attack.result.katar_second ?? null)
@@ -605,6 +646,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
       )}
 
       {selfDamage && <SelfDamageView sd={selfDamage} />}
+
+      {autoSpell && <AutoSpellView branch={autoSpell.branch} chance={autoSpell.chance} label={autoSpell.label} />}
     </div>
   );
 }

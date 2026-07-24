@@ -242,6 +242,11 @@ const PS_MECHANIC_FLAGS = new Set([
   "MG_SOULSTRIKE_MDEF_IGNORE",
   // PS Sage rework: Soul Strike deals +5% damage per skill level against Undead race.
   "MG_SOULSTRIKE_UNDEAD_BONUS",
+  // PS Sage rework: Auto Spell (Hindsight, SA_AUTOSPELL) is level-SELECTED, not the
+  // vanilla random pool — activating a given level autocasts exactly one spell at a
+  // fixed level, flat 30% on every physical attack (hit or miss). See AUTO_SPELL_MAP
+  // in battlePipeline.js for the level→spell table. wiki.payonstories.com/Auto_Spell.
+  "SA_AUTOSPELL_PS",
   // PSRO Priest/Acolyte rework: Holy Light has a LUK% chance to deal an additional
   // +60% damage (×1.6). Modeled as a pmf mixture in the magic branch.
   "AL_HOLYLIGHT_LUK_PROC",

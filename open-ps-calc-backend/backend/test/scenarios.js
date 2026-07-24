@@ -215,6 +215,29 @@ const scenarios = [
     target: 1036,
   },
 
+  // --- Sage Auto Spell / Hindsight (SA_AUTOSPELL) autocast ---------------------------------
+  // Level-selected autocast on physical attacks (flat 30%). Surfaced as a
+  // proc_branches.autospell magic damage result; folded into DPS.
+  {
+    // Lv1 → Soul Strike Lv5 (Ghost, 3 hits) vs Ghoul (Undead) — single-cast branch.
+    name: "sage-hindsight-soulstrike-lv1",
+    build: { job_id: 16, base_level: 99, job_level: 50, base_stats: { str: 50, agi: 40, vit: 30, int: 70, dex: 60, luk: 20 }, equipped: { right_hand: 1601 }, support_buffs: { auto_spell_lv: 1 } },
+    target: 1036,
+  },
+  {
+    // Lv2 → Fire Bolt Lv2–4 (uniform mixture) vs Poring (Water) — Fire beats Water,
+    // and the min/max span the lv2→lv4 cast-level range.
+    name: "sage-hindsight-firebolt-lv2-mix",
+    build: { job_id: 16, base_level: 99, job_level: 50, base_stats: { str: 50, agi: 40, vit: 30, int: 70, dex: 60, luk: 20 }, equipped: { right_hand: 1601 }, support_buffs: { auto_spell_lv: 2 } },
+    target: 1002,
+  },
+  {
+    // Lv9 → Stone Curse (no damage): must produce NO proc branch.
+    name: "sage-hindsight-lv9-no-damage",
+    build: { job_id: 16, base_level: 99, job_level: 50, base_stats: { str: 50, agi: 40, vit: 30, int: 70, dex: 60, luk: 20 }, equipped: { right_hand: 1601 }, support_buffs: { auto_spell_lv: 9 } },
+    target: 1002,
+  },
+
   // --- incoming (survivability) -----------------------------------------------------------
   {
     name: "incoming-banshee-physical",

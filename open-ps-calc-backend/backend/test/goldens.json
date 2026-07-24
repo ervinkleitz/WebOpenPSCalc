@@ -1684,6 +1684,268 @@
    }
   }
  },
+ "sage-hindsight-soulstrike-lv1": {
+  "status": {
+   "str": 55,
+   "agi": 45,
+   "vit": 33,
+   "int_": 79,
+   "dex": 65,
+   "luk": 23,
+   "batk": 97,
+   "max_hp": 5657,
+   "max_sp": 1258,
+   "aspd": 152.8,
+   "cri": 86,
+   "hit": 164,
+   "flee": 144,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 230,
+   "matk_max": 349
+  },
+  "result": {
+   "dps": 472.786,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 8.6,
+   "period_ms": 944,
+   "normal": {
+    "min": 77,
+    "max": 77,
+    "avg": 77,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 112,
+    "max": 112,
+    "avg": 112,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "proc_branches": {
+    "autospell": {
+     "min": 965,
+     "max": 1478,
+     "avg": 1221,
+     "steps": [
+      "Base MATK",
+      "bMatkRate",
+      "Skill Ratio (ID 13 Lv 5)",
+      "Magic Defense Fix",
+      "Attr Fix",
+      "Soul Strike vs Undead",
+      "Card Fix (Magic)",
+      "Final Damage"
+     ]
+    }
+   }
+  }
+ },
+ "sage-hindsight-firebolt-lv2-mix": {
+  "status": {
+   "str": 55,
+   "agi": 45,
+   "vit": 33,
+   "int_": 79,
+   "dex": 65,
+   "luk": 23,
+   "batk": 97,
+   "max_hp": 5657,
+   "max_sp": 1258,
+   "aspd": 152.8,
+   "cri": 86,
+   "hit": 164,
+   "flee": 144,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 230,
+   "matk_max": 349
+  },
+  "result": {
+   "dps": 267.676,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 8.6,
+   "period_ms": 944,
+   "normal": {
+    "min": 111,
+    "max": 111,
+    "avg": 111,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 112,
+    "max": 112,
+    "avg": 112,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "proc_branches": {
+    "autospell": {
+     "min": 250,
+     "max": 761,
+     "avg": 472,
+     "steps": [
+      "Base MATK",
+      "bMatkRate",
+      "Skill Ratio (ID 19 Lv 3)",
+      "Magic Defense Fix",
+      "Attr Fix",
+      "Card Fix (Magic)",
+      "Final Damage",
+      "Auto Spell level mix"
+     ]
+    }
+   }
+  }
+ },
+ "sage-hindsight-lv9-no-damage": {
+  "status": {
+   "str": 55,
+   "agi": 45,
+   "vit": 33,
+   "int_": 79,
+   "dex": 65,
+   "luk": 23,
+   "batk": 97,
+   "max_hp": 5657,
+   "max_sp": 1258,
+   "aspd": 152.8,
+   "cri": 86,
+   "hit": 164,
+   "flee": 144,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 230,
+   "matk_max": 349
+  },
+  "result": {
+   "dps": 117.676,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 8.6,
+   "period_ms": 944,
+   "normal": {
+    "min": 111,
+    "max": 111,
+    "avg": 111,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 112,
+    "max": 112,
+    "avg": 112,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (ID 0 Lv 1)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   }
+  }
+ },
  "incoming-banshee-physical": {
   "status": {
    "str": 67,
