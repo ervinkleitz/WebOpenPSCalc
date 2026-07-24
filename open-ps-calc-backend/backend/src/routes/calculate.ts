@@ -379,21 +379,54 @@ function computeBreakpoints(eff: any, weapon: any, gb: any, status: any, config:
   };
   const aspd = { current: Number(status.aspd), agi: aspdBreaks("agi", 80, 3), dex: aspdBreaks("dex", 160, 2) };
 
-  // Cast: DEX needed to instant-cast the selected skill (only if it has a
-  // variable cast now). castMs is monotonic-decreasing in DEX → binary search.
-  let cast: { skill: string; current_ms: number; instant_plus_dex: number | null } | null = null;
+  // Cast: DEX needed to shorten / instant-cast the selected skill (only if it
+  // has a variable cast now). castMs is monotonic-decreasing in DEX → binary
+  // search. Pre-re cast is linear in DEX (instant at 150 total DEX). Like the
+  // ASPD row, we surface the next few breakpoint jumps — the smallest +DEX to
+  // reach each of the next round cast-time steps below the current value — plus
+  // the instant-cast point.
+  let cast:
+    | {
+        skill: string;
+        current_ms: number;
+        current_dex: number;
+        instant_plus_dex: number | null;
+        next_jumps: { plus: number; dex: number; ms: number }[];
+      }
+    | null = null;
   if (skill && skill.id && skillData) {
     const skillName = skillData.name;
     const castOf = (dDex: number) => calculateSkillTiming(skillName, skill.level, skillData, statusWith(0, dDex), gb, eff.support_buffs, eff.server)[0];
     const currentMs = castOf(0);
     if (currentMs > 0) {
-      let instant: number | null = null;
-      if (castOf(200) <= 0) { // reachable at all?
+      // Smallest +DEX (within +200, the practical ceiling) for cast ≤ target ms.
+      const dexForMs = (targetMs: number): number | null => {
+        if (castOf(0) <= targetMs) return 0;
+        if (castOf(200) > targetMs) return null; // unreachable
         let lo = 1, hi = 200;
-        while (lo < hi) { const mid = (lo + hi) >> 1; if (castOf(mid) <= 0) hi = mid; else lo = mid + 1; }
-        instant = lo;
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (castOf(mid) <= targetMs) hi = mid; else lo = mid + 1; }
+        return lo;
+      };
+      const instant = dexForMs(0);
+      const curDex = Math.round(Number(status.dex));
+
+      // Up to the next 3 round milestones below the current cast (step scaled to
+      // magnitude: 1s / 0.5s / 0.1s). Each is only kept when it's a genuine
+      // intermediate step — cheaper than going straight to instant — and each
+      // distinct +DEX is listed once.
+      const step = currentMs >= 2000 ? 1000 : currentMs >= 500 ? 500 : 100;
+      const next_jumps: { plus: number; dex: number; ms: number }[] = [];
+      const seen = new Set<number>();
+      let t = Math.floor((currentMs - 1) / step) * step;
+      for (; t > 0 && next_jumps.length < 3; t -= step) {
+        const plus = dexForMs(t);
+        if (plus == null || plus <= 0 || seen.has(plus)) continue;
+        if (instant != null && plus >= instant) break; // reached instant — stop
+        seen.add(plus);
+        next_jumps.push({ plus, dex: curDex + plus, ms: castOf(plus) });
       }
-      cast = { skill: skillName, current_ms: currentMs, instant_plus_dex: instant };
+
+      cast = { skill: skillName, current_ms: currentMs, current_dex: curDex, instant_plus_dex: instant, next_jumps };
     }
   }
 

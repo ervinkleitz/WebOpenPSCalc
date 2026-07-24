@@ -67,12 +67,18 @@ function BreakpointsBody({ bp, targetName, skillLabel, skillLevel }: { bp: Break
           <span className="bp-k">Cast</span>
           <span className="bp-v">
             <b>{(cast.current_ms / 1000).toFixed(2)}s</b>
-            <span className="bp-vs"> {skillLabel || cast.skill}{skillLevel ? ` Lv ${skillLevel}` : ""}</span>{" "}
-            {cast.instant_plus_dex == null
-              ? <span className="bp-sub">— instant cast not reachable</span>
-              : cast.instant_plus_dex === 0
-                ? <span className="bp-sub">— already instant</span>
-                : <>— instant cast at <b>+{cast.instant_plus_dex} DEX</b></>}
+            <span className="bp-vs"> {skillLabel || cast.skill}{skillLevel ? ` Lv ${skillLevel}` : ""}{cast.current_dex != null ? ` @ ${cast.current_dex} DEX` : ""}</span>{" "}
+            {(cast.next_jumps && cast.next_jumps.length) || (cast.instant_plus_dex != null && cast.instant_plus_dex > 0) ? (
+              <span title="Pre-renewal cast time falls linearly with DEX (instant at 150 total DEX). Each step is the smallest extra DEX to reach the next cast-time value.">
+                {" — "}
+                {(cast.next_jumps ?? []).map((b) => `+${b.plus} DEX → ${(b.ms / 1000).toFixed(2)}s`).join(" · ")}
+                {cast.instant_plus_dex != null && cast.instant_plus_dex > 0 && (
+                  <>{cast.next_jumps && cast.next_jumps.length ? " · " : ""}<span className="bp-sub">instant at </span><b>+{cast.instant_plus_dex} DEX</b></>
+                )}
+              </span>
+            ) : cast.instant_plus_dex === 0
+              ? <span className="bp-sub">— already instant</span>
+              : <span className="bp-sub">— DEX doesn't reduce this cast</span>}
           </span>
         </div>
       )}

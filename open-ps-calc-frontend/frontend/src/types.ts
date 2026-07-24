@@ -125,6 +125,12 @@ export interface Breakpoints {
     agi: { plus: number; aspd: number }[];
     dex: { plus: number; aspd: number }[];
   };
-  cast: { skill: string; current_ms: number; instant_plus_dex: number | null } | null;
+  cast: {
+    skill: string;
+    current_ms: number;
+    current_dex?: number;
+    instant_plus_dex: number | null;
+    next_jumps?: { plus: number; dex: number; ms: number }[];
+  } | null;
   hit: { current_pct: number; to95: number | null; to100: number | null } | null;
 }
