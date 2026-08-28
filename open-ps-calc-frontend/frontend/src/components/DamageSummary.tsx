@@ -95,6 +95,8 @@ interface CalcResult {
   skill: SingleResult | null;
   selected_skill: { id: number; level: number; label: string };
   target_hp?: number | null; // monster HP (monster-mode only) for hits-to-kill / time-to-kill
+  target_exp?: number | null; // base EXP the kill awards (monster mode) — divided by hits-to-kill
+  target_job_exp?: number | null; // job EXP the kill awards (monster mode)
   poison_dot_per_sec?: number | null; // Poison ailment damage-over-time (per second), folded into time-to-kill
 }
 
@@ -496,12 +498,13 @@ function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit, psBonusPct }: {
 export default function DamageSummary({ calcResult, calculating, error, forceProcs, onToggleForceProcs }: Props) {
   const [branch, setBranch] = useState<Branch>("skill");
   const [dwMode, setDwMode] = useState<DwMode>("ps");
+  const [showExp, setShowExp] = useState(false);
 
   if (error) return <div className="notice warn">{error}</div>;
   if (calculating) return <p className="spinner-text">Calculating…</p>;
   if (!calcResult) return <p className="hint-text">Set up a build and target, then calculate damage.</p>;
 
-  const { normal_attack, skill: skillResult, selected_skill, target_hp, poison_dot_per_sec } = calcResult;
+  const { normal_attack, skill: skillResult, selected_skill, target_hp, target_exp, target_job_exp, poison_dot_per_sec } = calcResult;
   const hasAutoBonus = !!normal_attack.has_auto_bonuses;
   const hasSkill = skillResult !== null && selected_skill.id !== 0;
   const primary = hasSkill ? skillResult! : normal_attack;
@@ -686,6 +689,30 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const hitsAvg = isInstaKill ? tuCastsRounded : hitsToKill(expPerHit);
   const hitsWorst = isInstaKill ? null : hitsToKill(expPerHit != null ? expPerHit * loRatio : null);  // most hits — worst-case rolls
 
+  // EXP per hit = what the kill awards ÷ how many hits it takes. The headline number
+  // uses the SAME expected-hits basis as "Hits to kill" and "Time to kill" (expected
+  // damage per attack cycle), so the three can never disagree; the best/worst damage
+  // rolls give the envelope quoted in the tooltip — fewest hits is the most EXP per
+  // hit, so best-case hits maps to the HIGH end. Monster mode only: a custom target
+  // awards no EXP. Kill rewards are the mob DB's own values — the server's EXP rate
+  // and the level-difference penalty are not modelled here.
+  const expPerN = (exp: number | null | undefined, hits: number | null) =>
+    exp != null && exp > 0 && hits != null && hits > 0 ? exp / hits : null;
+  const baseExpPerHit = expPerN(target_exp, hitsAvg);
+  const jobExpPerHit = expPerN(target_job_exp, hitsAvg);
+  const baseExpHigh = expPerN(target_exp, hitsBest);
+  const baseExpLow = expPerN(target_exp, hitsWorst);
+  const jobExpHigh = expPerN(target_job_exp, hitsBest);
+  const jobExpLow = expPerN(target_job_exp, hitsWorst);
+  const hasExpPerHit = baseExpPerHit != null || jobExpPerHit != null;
+  // A cast-counted branch (Turn Undead's instant kill, or a no-rate skill) earns its
+  // EXP per CAST, not per swing — label it for what it counts.
+  const expUnitLabel = isInstaKill || noRateHit ? "cast" : "hit";
+  const expFmt = (v: number | null) =>
+    v == null ? "—" : v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(1);
+  const expRangeNote = (lo: number | null, hi: number | null) =>
+    lo != null && hi != null && expFmt(lo) !== expFmt(hi) ? ` Best-to-worst damage rolls: ${expFmt(hi)} – ${expFmt(lo)}.` : "";
+
   const timeToKill = isInstaKill
     ? (tuCasts != null && periodS > 0 ? tuCasts * periodS : null)
     : (target_hp != null && killDps > 0 ? target_hp / killDps : null);
@@ -810,6 +837,18 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             <div className="value">{timeToKill.toFixed(1)}<span className="unit">s</span></div>
           </div>
         )}
+        {showExp && baseExpPerHit != null && (
+          <div className="metric" title={`${target_exp!.toLocaleString()} base EXP ÷ ${hitsAvg} ${expUnitLabel}s to kill.${expRangeNote(baseExpLow, baseExpHigh)} The monster's own EXP value — the server's EXP rate and the level-difference penalty are not applied.`}>
+            <div className="label">Base EXP / {expUnitLabel}</div>
+            <div className="value">{expFmt(baseExpPerHit)}</div>
+          </div>
+        )}
+        {showExp && jobExpPerHit != null && (
+          <div className="metric" title={`${target_job_exp!.toLocaleString()} job EXP ÷ ${hitsAvg} ${expUnitLabel}s to kill.${expRangeNote(jobExpLow, jobExpHigh)} The monster's own EXP value — the server's EXP rate and the level-difference penalty are not applied.`}>
+            <div className="label">Job EXP / {expUnitLabel}</div>
+            <div className="value">{expFmt(jobExpPerHit)}</div>
+          </div>
+        )}
         {activeBranch === "katar" && normal_attack.result.katar_proc_chance != null && (
           <div className="metric">
             <div className="label">2nd hit proc</div>
@@ -831,6 +870,29 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           <button className={dwMode === "vanilla" ? "active" : ""} onClick={() => setDwMode("vanilla")}>
             Vanilla
           </button>
+        </div>
+      )}
+
+      {/* EXP per hit toggle — monster mode only, where the kill's EXP is known */}
+      {hasExpPerHit && (
+        <div className="proc-mode-row">
+          <span className="proc-mode-label">EXP / {expUnitLabel}</span>
+          <div className="proc-mode-toggle">
+            <button
+              className={!showExp ? "active" : ""}
+              onClick={() => setShowExp(false)}
+              title="Hide the EXP-per-hit readout"
+            >
+              Hide
+            </button>
+            <button
+              className={showExp ? "active" : ""}
+              onClick={() => setShowExp(true)}
+              title={`Show the base and job EXP this kill awards, divided by the ${expUnitLabel}s it takes to kill`}
+            >
+              Show
+            </button>
+          </div>
         </div>
       )}
 

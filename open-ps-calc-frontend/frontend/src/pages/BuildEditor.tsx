@@ -853,7 +853,7 @@ export default function BuildEditor() {
   const [itemCache, setItemCache] = useState<Record<number, EquippedItemInfo>>({});
   const [mobInfo, setMobInfo] = useState<{
     name: string; level: number; race?: string;
-    hp?: number; def_?: number; mdef?: number; atk_min?: number; atk_max?: number;
+    hp?: number; exp?: number; jexp?: number; def_?: number; mdef?: number; atk_min?: number; atk_max?: number;
     size?: string; element?: number; element_level?: number; is_boss?: boolean;
     stats?: { str: number; agi: number; vit: number; int: number; dex: number; luk: number };
     skills?: { id: number; name: string; d: string; lv: number; rate: number; target: string; ele: number | null; dmg?: boolean }[];
@@ -1533,6 +1533,11 @@ export default function BuildEditor() {
         skill: skillRes,
         selected_skill: { id: skill.id, level: skill.level, label: skill.label },
         target_hp: targetMode === "monster" ? (mobInfo?.hp ?? null) : null,
+        // Base / job EXP the kill awards, for the EXP-per-hit readout. Straight from
+        // the mob DB (`/mobs/:id` already returns them) — monster mode only, since a
+        // custom target has no EXP to divide.
+        target_exp: targetMode === "monster" ? (mobInfo?.exp ?? null) : null,
+        target_job_exp: targetMode === "monster" ? (mobInfo?.jexp ?? null) : null,
         incoming: elements.length ? {
           elements,
           // The mob's other cast skills (non-elemental-attack). Clickable in the UI:

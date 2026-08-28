@@ -7,6 +7,19 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-08-28
 
+### Added
+
+- **EXP per hit, behind a toggle.** In monster mode the damage summary can now show what
+  each hit is worth in experience: the monster's base and job EXP divided by the hits it
+  takes to kill it. It shares the expected-hits basis with "Hits to kill" and "Time to
+  kill" — so it folds in crit rate, procs and ASPD the same way and can never disagree
+  with them — and the tooltip quotes the best-to-worst damage-roll envelope alongside the
+  arithmetic (e.g. "2,268 base EXP ÷ 15 hits"). On a skill counted in casts (Turn Undead,
+  or a branch with no repeat rate) it reads EXP / cast instead. The EXP values were
+  already bundled with the monster data, so nothing new is fetched. What it is *not*:
+  the server's EXP rate and the level-difference penalty are not applied — these are the
+  monster's own published values.
+
 ### Fixed
 
 - **Throw Kunai wasn't even selectable.** Like Throw Shuriken before it, the skill had no damage

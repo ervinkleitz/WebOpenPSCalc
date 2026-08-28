@@ -303,7 +303,12 @@ motivated several changes beyond a straight 1:1 port:
   kill** (target HP ÷ estimated DPS, so it folds in ASPD, crit mix and procs;
   cast + after-cast delay for skills). The monster-stat grid, shown inline in
   the Target panel, also lists the **FLEE needed to dodge the target 95%** of
-  the time (`mob level + DEX + 75`, soft-flee only).
+  the time (`mob level + DEX + 75`, soft-flee only). An **EXP / hit** toggle
+  turns on two more readouts next to those: the monster's **base** and **job**
+  EXP divided by the hits it takes to kill it, on the same expected-hits basis
+  as the kill metrics (best-to-worst damage rolls in the tooltip). The kill
+  reward comes straight from the mob DB - the server's EXP rate and the
+  level-difference penalty are not applied.
 - **Manual overrides & fuller build UI** — a manual +stat panel (raw
   STR/AGI/VIT/INT/DEX/LUK added on top of the computed totals), one-click
   "max" toggles for passive skills and Bard/Dancer buffs, and the selected
