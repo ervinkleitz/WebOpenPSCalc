@@ -26,6 +26,15 @@ instead of release version. Dates are taken from actual git commit history.
   treating it as an automatic hit regardless of the target's evasion. It now rolls hit chance the
   normal way, like any other attack.
 
+- **Smokie's Perfect Dodge was worth a tenth of what it should be.** The pet's
+  "Perfect Dodge +1" was adding 0.1% instead of 1%, so the stat barely moved when
+  you equipped it — reported by a player. Perfect Dodge is tracked internally in
+  tenths of a percent (the display divides by 10), and the pet table had been
+  filled in with the wiki's display numbers verbatim. Hunter Fly had the identical
+  error and now gives its full +2% instead of 0.2%; no other pet in the table
+  touches Perfect Dodge. Bard's "A Whistle" and item/card bonuses were already
+  using the right units and are unchanged.
+
 ## 2026-08-27
 
 ### Added

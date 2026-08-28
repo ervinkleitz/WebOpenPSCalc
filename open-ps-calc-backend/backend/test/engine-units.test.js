@@ -471,6 +471,27 @@ test("pet AGI/DEX are excluded from Improve Concentration (not scaled)", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Pet Perfect Dodge units. status.flee2 is per-1000 (the UI shows flee2/10 %),
+// so the wiki's "Perfect Dodge +1" for Smokie — the number the status window
+// shows, i.e. a full 1% — must be stored as 10. It was stored as the literal 1,
+// making Smokie worth 0.1%.
+// ---------------------------------------------------------------------------
+test("pet Perfect Dodge is in display units: Smokie = +1%, Hunter Fly = +2%", () => {
+  const flee2With = (pet) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 11, base_level: 50, job_level: 1,
+      base_stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 15, luk: 1 },
+      equipped: {}, active_buffs: {}, selected_pet: pet,
+    });
+    const [, , , status] = resolvePlayerState(b, createBattleConfig(), getProfile("payon_stories"));
+    return status.flee2;
+  };
+  const noPet = flee2With(null);
+  assert.strictEqual(flee2With("smokie") - noPet, 10, "Smokie must add 1.0% Perfect Dodge (10 per-1000)");
+  assert.strictEqual(flee2With("hunter_fly") - noPet, 20, "Hunter Fly must add 2.0% Perfect Dodge (20 per-1000)");
+});
+
+// ---------------------------------------------------------------------------
 // INT breakpoints (MATK + SP regen). The /breakpoints endpoint surfaces these
 // by re-running statusCalculator with bumped INT; these pin the formula shape
 // that detection assumes — pre-re MATK jumps at INT multiples of 5 (max) / 7

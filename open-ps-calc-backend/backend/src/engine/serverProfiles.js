@@ -763,6 +763,9 @@ const PS_MAGIC_VANILLA_OK = new Set([
 // Bonuses that can't be modelled in the current engine (HP drain procs, specific
 // monster-type bonuses) are omitted — the pet is still selectable so the
 // supported portion applies.
+// NB flee2 units: status.flee2 is per-1000 (displayed as flee2/10 %), so a wiki
+// "Perfect Dodge +1" — which quotes the number the status window shows, i.e. a
+// full 1% — must be entered here as 10, not 1.
 const PS_PET_BONUSES = {
   // ── Standard pets ────────────────────────────────────────────────────────
   poring:          { luk: 2, cri: 1 },
@@ -773,7 +776,7 @@ const PS_PET_BONUSES = {
   steel_chonchon:  { flee: 6, agi: -1 },
   spore:           { hit: 5, batk: -2 },
   poison_spore:    { str_: 1, int_: 1 },
-  smokie:          { agi: 1, flee2: 1 },
+  smokie:          { agi: 1, flee2: 10 },                  // Perfect Dodge +1% (10 = 1%)
   rocker:          { maxhp: 25 },                          // +HP; regen not modelled
   yoyo:            { cri: 3, luk: -1 },
   munak:           { int_: 1, def_: 1 },
@@ -791,7 +794,7 @@ const PS_PET_BONUSES = {
   baby_desert_wolf:{ int_: 1, maxsp: 20 },
   baphomet_jr:     { def_: 1, mdef_: 1 },                 // +stun resist not modelled
   imp:             { sub_ele: { Ele_Fire: 2 }, add_ele: { Ele_Fire: 1 } },
-  hunter_fly:      { flee: -5, flee2: 2 },
+  hunter_fly:      { flee: -5, flee2: 20 },                // Perfect Dodge +2% (20 = 2%)
   dullahan:        { crit_atk_rate: 4, luk: -1 },
   earth_petite:    { def_: -2, mdef_: -2, aspd_percent: 1 },
   santa_goblin:    { maxhp: 30, sub_ele: { Ele_Water: 1 } },
