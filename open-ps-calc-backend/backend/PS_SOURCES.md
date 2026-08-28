@@ -16,6 +16,10 @@ calculator is an unofficial fan tool.
   2026-08-22 audit found six skills where the wiki still showed pre-rework formulas that we
   had already correctly taken from a PDF (recorded in `ROADMAP.md`). Where the two disagree
   the PDF wins, and the conflict gets written down rather than quietly resolved.
+- **A direct CC ruling outranks both.** The Content Curators write these reworks, so where one
+  of them states how a skill is meant to behave, that is the intent the server is coded to -
+  including for behaviour no PDF or wiki page spells out. Rulings reach us second-hand, so
+  record who said it, when, and what was asked. Section 4 collects them.
 - **The GM patch notes carry changes the class PDFs do not.** The 2026-08-09 PDFs covered
   Merchant / Blacksmith / Alchemist, but the same day's GM post also reworked Crusader's
   Reflect Shield and Swordsman's Magnum Break. Read both.
@@ -42,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-08-28 | Laila, via the CCs | Staff ruling | Gunslinger / Soul Bullet |
 | 2026-08-18 | Patch Notes (18th August 2026) | GM patch notes | Super Novice, Crazy Uproar, DPS room |
 | 2026-08-18 | Dastgir client hotfix | Discord (@Payon News) | Super Novice skill tab |
 | 2026-03-23 *(downloaded)* | Payon Stories Knight Patch | Class rework | Knight / Swordsman |
@@ -6110,3 +6115,68 @@ When they do, **the script is usually the correct one and the description is sta
 2026-08-22 audit found 15 such items where damage was right but the tooltip was wrong
 (Grizzly Card, Flame Beetle, Tengu, Ancient Mummy and others). Fix the description; do not
 "correct" a script to match stale text without checking a PDF or the live item API first.
+
+
+---
+
+# 4. Staff rulings (Content Curators)
+
+Behaviour confirmed directly by a Payon Stories CC, relayed to us second-hand. Each entry keeps
+the ruling verbatim, the mechanic we read it onto, and what the calculator was doing at the time -
+so a later reader can tell the CC's words apart from our interpretation of them.
+
+## 2026-08-28 - Soul Bullet ignores ammo entirely (Laila, via the CCs)
+
+> Soul Bullet should ignore ammo completely (i.e. even +x% bonuses shouldn't affect it) and that
+> also means it shouldn't be affected by range scaling bonus from weapon atk.
+
+This matches the skill's own PS description - *"Fires 3 magic shot **that does not use any
+bullets**, inflicting an amount of Ghost elemental damage equal to the caster's (- 50 + DEX +
+Base_Lvl). Consumes 1 coin"* (quoted as scraped; the damage constant is a separate open conflict -
+wiki prose `50 + Dex + BaseLvl`, which the engine uses, against the release PDF's `100 + DEX +
+Base Lvl`). The ruling settles what the description leaves open: "does not use bullets" means the
+bullet contributes **nothing**, not merely that none is spent.
+
+**The mechanic it lands on.** Everything ammo grants in Hercules hangs off one flag,
+`flag.arrow` (= `sd->state.arrow_atk`), which for a skill cast is set from the skill's own ammo
+requirement (`skill_check_condition_castbegin`, skill.c:15810). `GS_MAGICALBULLET` has
+`ammo_types: []` / `ammo_amount: [0]`, so the flag is 0 and all four of these are off:
+
+| Ammo effect | Hercules gate |
+|---|---|
+| Ammo ATK roll | `if (flag&2 && sd->bonus.arrow_atk)` - battle.c:661 |
+| Ammo element | `if (flag.arrow && sd && sd->bonus.arrow_ele)` - battle.c:5042 |
+| Ammo **+x% bonuses** (`bAddRace`, `bAddEle`, `bCritical`, `bHit`) | stored in the `arrow_*` pool because ammo scripts run with `lr_flag == 2` (pc.c `pc_bonus`), read only on an arrow attack |
+| **Ranged min-ATK scaling** `atkmin = atkmin * atkmax / 100` | `if (flag&2 && !(flag&16)) { //Bows` - battle.c:644, inside `battle_calc_base_damage2` |
+
+The last row is what "range scaling bonus from weapon atk" is: the bow/gun step that rescales the
+DEX-derived minimum ATK by the weapon's own ATK. It is **not** gated on holding a bow or a gun -
+it is gated on the attack actually using ammo, so a no-ammo skill never gets it. Its sign follows
+the weapon: it raises the floor above 100 weapon ATK and lowers it below.
+
+**What the calculator did when this was recorded** (measured 2026-08-28: Gunslinger, Garrison,
+DEX 90, Demi-Human target):
+
+| Behaviour | State |
+|---|---|
+| Bullet ATK excluded from Soul Bullet | correct - `skillUsesAmmo()` already reads the ammo requirement (`baseDamage.js`) |
+| Bullet element excluded (stays Ghost) | correct |
+| Bullet +x% bonuses excluded | **wrong** - Hollow-Point Bullet's `bAddRace,RC_DemiHuman,20` took Soul Bullet from 481 to 577 avg, because `gearBonusAggregator.js` folds ammo scripts into the one global bonus pool with no arrow gate |
+| Ranged min-ATK scaling excluded | **wrong** - `baseDamage.js` gates that step on `ARROW_BOW_GUN_TYPES.has(weapon.weapon_type)` (the weapon), where Hercules gates it on `flag&2` (the attack) |
+
+Neither gap is Soul-Bullet-specific: the same two apply to every attack that does not consume the
+equipped ammo (a bow Rogue's plagiarised Acid Terror, Grimtooth Lv1-2, a bare-handed punch with
+bullets loaded). Ammo carrying +x% scripts: Hollow-Point (+20% Demi-Human), Heavy-Tipped (+10% all
+races), Frostfire (+15% Fire/Water), Plated Bullet (+20% Neutral), Holy Arrow (+5% Demon), Sharp
+Arrow (`bCritical,20` - measured at +20 crit-rate points on every attack today, 9.0% -> 29.0%).
+
+**One thing the ruling does not decide.** Long/short *classification* is a separate mechanic from
+the scaling above: for a skill, Hercules takes it from the skill's range
+(`wd.flag |= battle->range_type(...)`, battle.c:4896 - only a **normal** attack uses
+`flag.arrow ? BF_LONG : BF_SHORT`, battle.c:5024). Soul Bullet's range is the gun's 9 cells, so it
+is `BF_LONG` and `bLongAtkRate` gear (Archer Skeleton Card, Captain's Hat, Hawk Eyes) applies to it
+- as it does in the calculator now (+7% from Captain's Hat: 481 -> 518). That is untouched by
+"ignores ammo", and the PS wiki uses the same rule elsewhere (Grimtooth is ranged from Lv3 with no
+ammo involved). **If the ruling was also meant to strip `bLongAtkRate` from Soul Bullet, that is a
+PS deviation from Hercules and needs a follow-up question to the CCs** - it is not implied by
+ammo-independence.
