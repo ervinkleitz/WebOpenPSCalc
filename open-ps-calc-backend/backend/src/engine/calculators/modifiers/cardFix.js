@@ -14,7 +14,7 @@ const ELE_TO_KEY = {
 };
 const SIZE_TO_KEY = { Small: "Size_Small", Medium: "Size_Medium", Large: "Size_Large" };
 
-function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf, result) {
+function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf, result, usesAmmo = false) {
   const raceRc = RACE_TO_RC[target.race] || "";
   const bossRc = target.is_boss ? "RC_Boss" : "RC_NonBoss";
   const eleKey = ELE_TO_KEY[target.element] || "";
@@ -25,10 +25,22 @@ function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf,
   const addEle = gearBonuses.add_ele;
   const addSize = gearBonuses.add_size;
 
-  const raceBonus = addRace[raceRc] || 0;
-  const eleBonus = (addEle[eleKey] || 0) + (addEle.Ele_All || 0);
-  const sizeBonus = (addSize[sizeKey] || 0) + (addSize.Size_All || 0);
-  const bossBonus = addRace[bossRc] || 0;
+  // The equipped ammo's own bAddRace / bAddEle / bAddSize, but ONLY on an attack that
+  // fires it (`if (sd->state.arrow_atk)`, battle.c:1166-1182). They are SUMMED into the
+  // same per-category factor as the weapon's — `(100 + right_weapon.addrace[race] +
+  // arrow_addrace[race])` — not applied as a separate multiplier, which is why they are
+  // added to these four terms rather than pushed onto the factor list below.
+  const ammoGb = usesAmmo ? gearBonuses.from_ammo : null;
+  const ammoRace = ammoGb ? ammoGb.add_race : null;
+  const ammoEle = ammoGb ? ammoGb.add_ele : null;
+  const ammoSize = ammoGb ? ammoGb.add_size : null;
+
+  const raceBonus = (addRace[raceRc] || 0) + (ammoRace ? ammoRace[raceRc] || 0 : 0);
+  const eleBonus = (addEle[eleKey] || 0) + (addEle.Ele_All || 0)
+    + (ammoEle ? (ammoEle[eleKey] || 0) + (ammoEle.Ele_All || 0) : 0);
+  const sizeBonus = (addSize[sizeKey] || 0) + (addSize.Size_All || 0)
+    + (ammoSize ? (ammoSize[sizeKey] || 0) + (ammoSize.Size_All || 0) : 0);
+  const bossBonus = (addRace[bossRc] || 0) + (ammoRace ? ammoRace[bossRc] || 0 : 0);
   const longBonus = isRanged ? gearBonuses.long_atk_rate : 0;
   const atkEleBonus = gearBonuses.add_atk_ele[atkEleKey] || 0;
   // Monster-family (bAddRace2 / "Bane" cards) damage — a separate multiplicative
@@ -65,7 +77,7 @@ function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf,
   const multiplier = avIn ? av / avIn : 1.0;
   result.add_step({
     name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier,
-    note: `Race ${raceRc}+${raceBonus}%  ${target.is_boss ? "Boss" : "NonBoss"}+${bossBonus}%  Ele+${addEle[eleKey] || 0}%  Size+${addSize[sizeKey] || 0}%${isRanged ? `  LongAtk+${longBonus}%` : ""}${typeBonus ? `  Type+${typeBonus}%` : ""}${race2Bonus ? `  Family(${(target.race2 || []).join(",")})+${race2Bonus}%` : ""}${classBonus ? `  Mob#${target.mob_id}+${classBonus}%` : ""}`,
+    note: `Race ${raceRc}+${raceBonus}%  ${target.is_boss ? "Boss" : "NonBoss"}+${bossBonus}%  Ele+${eleBonus}%  Size+${sizeBonus}%${isRanged ? `  LongAtk+${longBonus}%` : ""}${typeBonus ? `  Type+${typeBonus}%` : ""}${race2Bonus ? `  Family(${(target.race2 || []).join(",")})+${race2Bonus}%` : ""}${classBonus ? `  Mob#${target.mob_id}+${classBonus}%` : ""}`,
     formula: `dmg × multiple race/ele/size/boss/long/atk-ele factors`,
     hercules_ref: "battle.c:1183-1198",
   });

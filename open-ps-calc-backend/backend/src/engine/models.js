@@ -265,6 +265,11 @@ function createGearBonuses(overrides = {}) {
     effective_mastery: {},
     auto_bonuses: [],
     from_cards: null,
+    // Bonuses from the AMMO slot, kept OUT of the pools above. Hercules runs an ammo
+    // script with `lr_flag == 2`, which routes its bonuses into the arrow_* arrays and
+    // reads them only on an attack that actually uses the ammo (battle.c:1166-1182 for
+    // race/ele/size, 5172 for crit, 5277 for hit). See gearBonusAggregator.
+    from_ammo: null,
     ...overrides,
   };
 }

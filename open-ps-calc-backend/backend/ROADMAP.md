@@ -1208,15 +1208,23 @@ number.
 
 `test/server-traces.json` + `server-traces.test.js` compare our pipeline **stage by stage**
 against debug output from the live server. The first fixture is why it exists: on Laila
-Braveheart's Soul Bullet build our total is 4.5% from the server's, while every intermediate
-stage is ~46% out — an inflated base damage cancelling a multiplier we do not model. A
+Braveheart's Soul Bullet build our total was 4.5% from the server's, while every intermediate
+stage was ~46% out — an inflated base damage cancelling a multiplier we do not model. A
 final-number check sails straight through that, and did, until a player noticed.
 
-    post ratio (3-hit total)   server    4323   ours    6315   +46.1%
-    post defense               server    3202   ours    4694   +46.6%
-    post madness (+30%)        server    4162   ours    6102   +46.6%
-    post element fix           server    7327   ours   10722   +46.3%
-    pre cardfix                server   10346   ours   10812    +4.5%
+Both halves of that have since been acted on. The inflated base was the ranged min-ATK
+scaling being applied on weapon type rather than on whether the attack fires ammo
+(`baseDamage.js`, fixed 2026-08-28 — Soul Bullet consumes no bullet). Every stage moved
+from +46% to +15%, and with the cancellation gone the final stage now reads **-17.6%**:
+the server's unmodelled ×1.412 between element fix and cardfix is the next real gap, and
+the remaining +15% on the base is in the status BATK / gear ATK we feed the ratio.
+
+    stage                      server     was (+off)      now (+off)
+    post ratio (3-hit total)     4323   6315  +46.1%    4976  +15.1%
+    post defense                 3202   4694  +46.6%    3690  +15.2%
+    post madness (+30%)          4162   6102  +46.6%    4796  +15.2%
+    post element fix             7327  10722  +46.3%    8437  +15.1%
+    pre cardfix                 10346  10812   +4.5%    8527  -17.6%
 
 Every stage is pinned to its current value, divergent or not, so drift always fails; a stage
 marked `diverges` that starts matching also fails, telling you to promote it. Divergences must

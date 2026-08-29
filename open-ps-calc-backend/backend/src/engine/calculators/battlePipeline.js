@@ -1701,7 +1701,9 @@ class BattlePipeline {
       const [mn, mx, av] = pmfStats(pmf);
       result.add_step({ name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier: 1.0, note: "BYPASSED — damage_type includes IgnoreCards", formula: "no change", hercules_ref: "skills.json damage_type / battle.c NK_IGNORE_CARDS" });
     } else {
-      pmf = calculateCardFix(build, gearBonuses, effAtkEle, target, isRanged, pmf, result);
+      // usesAmmo gates the ammo's own bAddRace/bAddEle/bAddSize — Hercules' arrow_*
+      // pool, read only when this attack fires the ammo (battle.c:1166-1182).
+      pmf = calculateCardFix(build, gearBonuses, effAtkEle, target, isRanged, pmf, result, skillUsesAmmo(skill, isRanged));
     }
 
     pmf = calculateFinalRateBonus(isRanged, pmf, this.config, result);
@@ -2144,10 +2146,16 @@ class BattlePipeline {
     // PS Ninja: Shadow's Within is what lets Shadow Slash crit at all, and it
     // carries the +30..50 crit rate with it. Both live in critChance.js.
     const shadowsWithin = !!(build.skill_params && build.skill_params.PS_NJ_SHADOWSWITHIN_active);
-    const [isEligible, critChance] = calculateCritChance(status, weapon, skill, target, this.config, build.server, gearBonuses, taFury, shadowsWithin);
+    // Does THIS attack fire the equipped ammo? Gates the ammo's own crit/hit bonuses
+    // below and its damage bonuses in cardFix — Hercules' arrow_* pool (battle.c:5172,
+    // 5277, 1166-1182), which a no-ammo skill never reads.
+    const usesAmmo = skillUsesAmmo(skill, resolveIsRanged(build, weapon, skill));
+    const ammoGb = gearBonuses ? gearBonuses.from_ammo : null;
+    const [isEligible, critChance] = calculateCritChance(status, weapon, skill, target, this.config, build.server, gearBonuses, taFury, shadowsWithin, usesAmmo);
     let [hitChance, perfectDodge] = calculateHitChance(status, target, this.config, skillName, skill.level, {
       mastery: gearBonuses ? gearBonuses.effective_mastery : build.mastery_levels,
       skill_params: build.skill_params,
+      arrow_hit: usesAmmo && ammoGb ? ammoGb.hit || 0 : 0,
     });
     if (build.target_mob_id != null) perfectDodge = 0.0;
 

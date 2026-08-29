@@ -102,7 +102,18 @@ function calculateBaseDamage(status, weapon, build, target, skill, result, opts 
   let atkmin = Math.floor(status.dex * (80 + wlv * 20) / 100);
   if (atkmin > atkmax) atkmin = atkmax;
 
-  if (ARROW_BOW_GUN_TYPES.has(weapon.weapon_type)) {
+  // The ranged min-ATK scaling ("ranged scaling"): a bow/gun rescales the DEX-derived
+  // damage floor by the weapon's own ATK. battle.c:644 gates it on `flag&2 && !(flag&16)`
+  // — flag&2 is the ARROW flag (this attack uses ammo), flag&16 marks an arrow attack
+  // made with something that isn't a bow or gun (a thrown shuriken/kunai, which "must
+  // not be influenced by DEX", battle.c:5528). So it takes BOTH: the attack must consume
+  // ammo AND the weapon must be a bow or gun. This used to test the weapon alone, which
+  // handed the scaling to skills that fire nothing — Soul Bullet above all, which "does
+  // not use any bullets". A CC put the rule plainly (PS_SOURCES.md §4): "skill that don't
+  // use ammo (except Phantasm arrow for some reason) don't get the ranged scaling". The
+  // exception is Phantasmic Arrow, and it needs no special case here — skillUsesAmmo()
+  // already carries it via FORCED_ARROW_SKILLS, the same hard-code battle.c:4908 has.
+  if (usesAmmo && ARROW_BOW_GUN_TYPES.has(weapon.weapon_type)) {
     atkmin = Math.floor(atkmin * atkmax / 100);
     if (atkmin > atkmax) atkmax = atkmin;
   }

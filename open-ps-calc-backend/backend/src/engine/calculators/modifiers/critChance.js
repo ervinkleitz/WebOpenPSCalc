@@ -32,10 +32,20 @@ function isCritEligible(skillId, skillName, server = "standard", furyActive = fa
   return VANILLA_CRIT_ELIGIBLE.has(skillName);
 }
 
-function calculateCritChance(status, weapon, skill, target, config, server = "standard", gearBonuses = null, furyActive = false, shadowsWithin = false) {
+function calculateCritChance(status, weapon, skill, target, config, server = "standard", gearBonuses = null, furyActive = false, shadowsWithin = false, usesAmmo = false) {
   if (!isCritEligible(skill.id, skill.name, server, furyActive, shadowsWithin)) return [false, 0.0];
 
   let cri = status.cri;
+
+  // The equipped ammo's own bCritical (Sharp Arrow's +20), on an ammo-firing attack
+  // only: `if (flag.arrow) cri += sd->bonus.arrow_cri;` (battle.c:5172). It is NOT in
+  // `status.cri` for the same reason it is not in the client's status window — an ammo
+  // script's bonuses live in the arrow_* pool, not the character's stats. Added here,
+  // before the Katar doubling and the target's LUK, exactly where battle.c adds it.
+  // ×10 because `cri` is stored in tenths of a percent, the same conversion
+  // statusCalculator applies to gear crit (`build.bonus_cri * 10`) and pc.c applies
+  // when it files the bonus (`sd->bonus.arrow_cri += val*10`).
+  if (usesAmmo && gearBonuses && gearBonuses.from_ammo) cri += (gearBonuses.from_ammo.cri || 0) * 10;
 
   // bCriticalAddRace — extra crit vs the target's race / boss group (crit points,
   // stored ×10 like the rest of `cri`). Part of the attacker's crit, so it's also

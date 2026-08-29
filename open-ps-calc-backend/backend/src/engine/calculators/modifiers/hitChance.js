@@ -61,6 +61,12 @@ function calculateHitChance(status, target, config, skillName, skillLevel, opts 
   if (targetScs.SC_BLIND) mobFlee = Math.floor((mobFlee * 75) / 100);
   let hitrate = 80 + status.hit - mobFlee;
 
+  // The equipped ammo's own bHit, on an ammo-firing attack only: `if (sd && flag.arrow)
+  // hitrate += sd->bonus.arrow_hit;` (battle.c:5277). Like arrow crit it is a flat
+  // addition to the hit RATE here, not to the character's HIT stat — no bundled ammo
+  // carries bHit today, but one added later must not leak onto every attack.
+  if (opts.arrow_hit) hitrate += opts.arrow_hit;
+
   // Accuracy bonuses (% of hitrate), summed and applied before the clamp —
   // matches the battle.c ordering (hitrate += hitrate * pct / 100, then
   // cap_value).

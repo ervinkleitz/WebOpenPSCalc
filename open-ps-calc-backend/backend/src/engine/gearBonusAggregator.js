@@ -231,6 +231,7 @@ function buildAutocastSpec(bonuses, eff) {
 function compute(equipped, refineLevels = null, scriptCtx = null, forceProcs = false) {
   const bonuses = createGearBonuses();
   const cardGb = createGearBonuses();
+  const ammoGb = createGearBonuses();
   let refinedefUnits = 0;
 
   // Every worn item id, cards included, for isequipped() in item scripts. Built once
@@ -299,7 +300,24 @@ function compute(equipped, refineLevels = null, scriptCtx = null, forceProcs = f
     bonuses.all_effects.push(...effects);
 
     const isCard = slot.includes("_card");
-    const targets = isCard ? [bonuses, cardGb] : [bonuses];
+    // AMMO is aggregated into its own pool, not the global one. In Hercules an ammo
+    // script runs with `lr_flag == 2`, which files its bonuses under arrow_addrace /
+    // arrow_addele / arrow_addsize / arrow_cri / arrow_hit — read only on an attack
+    // that actually uses the ammo — and DROPS anything with no arrow_* counterpart
+    // (an ammo's +STR does nothing at all). Aggregating them globally handed a
+    // Hollow-Point Bullet's "+20% vs Demi-Human" to Soul Bullet, which fires no
+    // bullet, and Sharp Arrow's +20 crit to every attack a bow user makes, ammo or
+    // not. Confirmed by a CC: skills that don't use ammo don't get ammo's effects
+    // (PS_SOURCES.md §4). The consumers gate on skillUsesAmmo(): cardFix, critChance,
+    // hitChance.
+    //
+    // bAtkEle is the one exception, and it keeps flowing to the global pool: an
+    // elemental arrow/kunai's element is baked into the weapon by resolveWeapon and
+    // has its OWN arrow gate downstream (battlePipeline's element resolution, which
+    // reverts to the hand's own element when the skill uses no ammo). Routing it here
+    // would silently un-elemental every elemental-ammo attack.
+    const isAmmo = slot === "ammo";
+    const targets = isCard ? [bonuses, cardGb] : isAmmo ? [ammoGb] : [bonuses];
 
     for (const eff of effects) {
       if (eff.bonus_type === "bAtkEle" && slot === "left_hand") {
@@ -315,6 +333,9 @@ function compute(equipped, refineLevels = null, scriptCtx = null, forceProcs = f
         for (const t of targets) {
           t.skill_grants[skName] = Math.max(t.skill_grants[skName] || 0, skLv);
         }
+      } else if (isAmmo && eff.bonus_type === "bAtkEle") {
+        applyEffect(ammoGb, eff);
+        applyEffect(bonuses, eff);   // see the bAtkEle note above
       } else {
         for (const t of targets) applyEffect(t, eff);
       }
@@ -330,6 +351,7 @@ function compute(equipped, refineLevels = null, scriptCtx = null, forceProcs = f
   }
 
   bonuses.from_cards = cardGb;
+  bonuses.from_ammo = ammoGb;
 
   if (scriptCtx != null) {
     bonuses.effective_mastery = { ...scriptCtx.skill_levels };

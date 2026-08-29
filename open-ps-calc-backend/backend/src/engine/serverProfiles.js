@@ -824,6 +824,14 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   aspd_buffs: PS_ASPD_BUFFS,
   ps_attack_interval: PS_ATTACK_INTERVAL,
   ps_skill_delay_fn: PS_SKILL_DELAY_FN,
+  // Skills PS strips the vanilla after-cast delay from, leaving them limited by ASPD
+  // alone (skillTiming drops the delay to the 100ms floor, so the attack motion sets
+  // the period). Back Stab: the Rogue rework PDF says outright "The cooldown, and
+  // aftercast delay is removed", the wiki infobox reads "Cast Delay: aspd" — the same
+  // wording Double Strafing carries — and players tested it in-game with no delay.
+  // Vanilla Hercules' 500ms was capping a fast Rogue at exactly 2.00 casts/s no matter
+  // how much ASPD they stacked, which is how it was spotted.
+  ps_acd_zero: new Set(["RG_BACKSTAP"]),
   proc_rate_overrides: PS_PROC_RATE_OVERRIDES,
   // KN_SPEARMASTERY: [without_peco, with_peco] ATK per level. Vanilla is [4, 5]; PS is [5, 7].
   mastery_per_level: { KN_SPEARMASTERY: [5, 7] },

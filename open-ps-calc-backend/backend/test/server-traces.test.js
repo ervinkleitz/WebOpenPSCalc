@@ -9,10 +9,15 @@
  * perfectly green golden.
  *
  * Worse, a golden only pins the FINAL number. The first trace here is the argument
- * for this file: our total lands within 4.5% of the server's while the intermediate
- * stages are ~46% apart in opposite directions — an inflated base damage cancelling
- * a multiplier we do not model at all. A final-number check sails straight through
- * that, and did, until a player noticed their damage was wrong.
+ * for this file: when it was recorded our total sat within 4.5% of the server's while
+ * the intermediate stages were ~46% apart in opposite directions — an inflated base
+ * damage cancelling a multiplier we do not model at all. A final-number check sails
+ * straight through that, and did, until a player noticed their damage was wrong.
+ *
+ * That is no longer a hypothetical: fixing the base (the ranged min-ATK scaling now
+ * needs an ammo-firing attack, 2026-08-28) moved every stage from +46% to +15% and
+ * turned the "close" final number into -17.6%, exposing the multiplier that had been
+ * hiding behind it. The stage view is what made that legible.
  *
  * So: stage-level, against numbers the SERVER produced.
  *

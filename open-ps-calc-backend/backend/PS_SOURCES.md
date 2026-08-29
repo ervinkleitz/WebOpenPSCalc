@@ -6163,8 +6163,24 @@ DEX 90, Demi-Human target):
 |---|---|
 | Bullet ATK excluded from Soul Bullet | correct - `skillUsesAmmo()` already reads the ammo requirement (`baseDamage.js`) |
 | Bullet element excluded (stays Ghost) | correct |
-| Bullet +x% bonuses excluded | **wrong** - Hollow-Point Bullet's `bAddRace,RC_DemiHuman,20` took Soul Bullet from 481 to 577 avg, because `gearBonusAggregator.js` folds ammo scripts into the one global bonus pool with no arrow gate |
-| Ranged min-ATK scaling excluded | **wrong** - `baseDamage.js` gates that step on `ARROW_BOW_GUN_TYPES.has(weapon.weapon_type)` (the weapon), where Hercules gates it on `flag&2` (the attack) |
+| Bullet +x% bonuses excluded | was **wrong** - Hollow-Point Bullet's `bAddRace,RC_DemiHuman,20` took Soul Bullet from 481 to 577 avg, because `gearBonusAggregator.js` folded ammo scripts into the one global bonus pool with no arrow gate. **Fixed 2026-08-28**: ammo aggregates into its own `from_ammo` pool, read by cardFix / critChance / hitChance only when `skillUsesAmmo()` |
+| Ranged min-ATK scaling excluded | was **wrong** - `baseDamage.js` gated that step on `ARROW_BOW_GUN_TYPES.has(weapon.weapon_type)` (the weapon) where Hercules gates it on `flag&2` (the attack). **Fixed 2026-08-28**: it now takes both, as battle.c:644 does |
+
+**What the fix did to the one trace we have from the server** (`test/server-traces.json`,
+Alardun's Soul Bullet debug output). This is the strongest evidence the ruling is right - nobody
+tuned toward these numbers, and every stage moved the same way:
+
+| stage | server | before | after |
+|---|---|---|---|
+| post ratio (3-hit total) | 4323 | 6315 (+46.1%) | 4976 (+15.1%) |
+| post defense | 3202 | 4694 (+46.6%) | 3690 (+15.2%) |
+| post element fix | 7327 | 10722 (+46.3%) | 8437 (+15.1%) |
+| pre cardfix | 10346 | 10812 (+4.5%) | 8527 (-17.6%) |
+
+The weapon roll behind that: a flat 347 before (the scaling overshot the weapon's own ATK and
+clamped), [183,189] after. The last row got *worse* on purpose - the old +4.5% was two errors
+cancelling, and with the base corrected the server's unmodelled x1.412 between element fix and
+cardfix is finally visible on its own. That multiplier is the next thing to chase.
 
 Neither gap is Soul-Bullet-specific: the same two apply to every attack that does not consume the
 equipped ammo (a bow Rogue's plagiarised Acid Terror, Grimtooth Lv1-2, a bare-handed punch with

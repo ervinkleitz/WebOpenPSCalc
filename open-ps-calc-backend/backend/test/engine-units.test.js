@@ -362,7 +362,8 @@ test("profiles: PS profile is layered on STANDARD without mutating it", () => {
 // ---------------------------------------------------------------------------
 // PS Auto Spell / "Hindsight" (SA_AUTOSPELL) autocast — wiki.payonstories.com/Auto_Spell
 // ---------------------------------------------------------------------------
-const { runScenario } = require("./engineRunner");
+const { runScenario, runScenarioRaw } = require("./engineRunner");
+const { skillUsesAmmo } = require("../src/engine/calculators/modifiers/baseDamage");
 
 const SAGE_HINDSIGHT = (lv, server = "payon_stories", jobId = 16) => ({
   build: {
@@ -1590,7 +1591,15 @@ test("ammo bonuses need a compatible weapon, and arrows still reach bows/instrum
   // Measure the ammo's DELTA, never an absolute: a weapon can carry the same bonus
   // itself (Cleaver has `bAddRace,RC_DemiPlayer,5`, which fans out to RC_DemiHuman),
   // so asserting a bare 0 would fail for reasons that have nothing to do with ammo.
+  // The ammo's bonuses live in their own pool (`from_ammo`) — Hercules' arrow_* arrays,
+  // read only by an attack that fires the ammo — so that is where the delta is measured.
   const delta = (weaponId, ammoId, key) =>
+    (bonusesFor(weaponId, ammoId).from_ammo.add_race[key] || 0)
+    - (bonusesFor(weaponId, null).from_ammo.add_race[key] || 0);
+
+  // ...and it must NOT be in the global pool, or it would apply to every attack whether
+  // or not the ammo is fired — the leak that gave Soul Bullet a bullet's +20%.
+  const globalDelta = (weaponId, ammoId, key) =>
     (bonusesFor(weaponId, ammoId).add_race[key] || 0) - (bonusesFor(weaponId, null).add_race[key] || 0);
 
   // Hollow-Point Bullet (13234) = bonus2 bAddRace,RC_DemiHuman,20 — a GUN bullet.
@@ -1599,6 +1608,8 @@ test("ammo bonuses need a compatible weapon, and arrows still reach bows/instrum
     "a mace cannot fire a bullet, so its bonus must not apply");
   assert.equal(delta(REVOLVER, 13234, "RC_DemiHuman"), 20,
     "a revolver CAN fire it — the bonus must survive");
+  assert.equal(globalDelta(REVOLVER, 13234, "RC_DemiHuman"), 0,
+    "but it must stay OUT of the global pool — only an ammo-firing attack may read it");
 
   // Holy Arrow (1772) = bonus2 bAddRace,RC_Demon,5. Arrows are not bow-only on PS:
   // Musical Strike and Throw Arrow consume them too.
@@ -2175,11 +2186,130 @@ test("Armor Piercing Bullet's crit bonus is bigger out of a Rifle", () => {
     });
     return resolvePlayerState(b, cfg, PS)[3].cri;
   };
+  const ammoCri = (rh, ammo) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 24, base_level: 99, job_level: 50,
+      base_stats: { str: 80, agi: 90, vit: 1, int: 1, dex: 80, luk: 1 },
+      equipped: { right_hand: rh, ammo },
+    });
+    return (resolvePlayerState(b, cfg, PS)[0].from_ammo.cri || 0) * 10;
+  };
   // Wiki Gunslinger#Bullets: "+10 Crit, +20 Crit with Rifle", footnoted as "Both
   // bonuses count for Rifle, making it +30 Crit". `cri` is per-mille, so x10.
-  assert.equal(crit(13150, 13233) - crit(13150, null), 300, "Rifle gets +30 crit");
-  assert.equal(crit(13100, 13233) - crit(13100, null), 100, "Revolver gets only +10");
-  assert.equal(crit(13160, 13233) - crit(13160, null), 100, "Grenade Launcher likewise");
+  //
+  // The bullet's crit is NOT in `status.cri` — an ammo script's bonuses live in the
+  // arrow_* pool and are added at attack time (`if (flag.arrow) cri += arrow_cri`,
+  // battle.c:5172), which is also why the client's status window does not show them.
+  // So the weapon-conditional is measured on the pool, and the end-to-end assertion
+  // below proves it still reaches an attack that actually fires the bullet.
+  assert.equal(crit(13150, 13233), crit(13150, null), "status crit must not carry the bullet's");
+  assert.equal(ammoCri(13150, 13233), 300, "Rifle gets +30 crit");
+  assert.equal(ammoCri(13100, 13233), 100, "Revolver gets only +10");
+  assert.equal(ammoCri(13160, 13233), 100, "Grenade Launcher likewise");
+
+  // End to end: a Rifle auto-attack fires the bullet, so its crit rate does rise 30%.
+  const critChance = (ammo) => runScenario({
+    build: {
+      job_id: 24, base_level: 99, job_level: 50,
+      base_stats: { str: 80, agi: 90, vit: 1, int: 1, dex: 80, luk: 1 },
+      equipped: ammo ? { right_hand: 13150, ammo } : { right_hand: 13150 },
+    },
+    target: 1002,
+  }).result.crit_chance;
+  assert.equal(Math.round((critChance(13233) - critChance(null)) * 10) / 10, 30,
+    "the Rifle's own attack fires the bullet, so it gets the crit");
+});
+
+// ---------------------------------------------------------------------------
+// The arrow gate: what an attack that fires no ammo must NOT get. Hercules hangs
+// all of it on one flag, `flag.arrow` (= sd->state.arrow_atk), set for a skill from
+// the skill's own AmmoTypes requirement. A CC stated the rule for PS in as many
+// words: "skill that don't use ammo (except Phantasm arrow for some reason) don't
+// get the ranged scaling" (PS_SOURCES.md §4). Soul Bullet is the case that surfaced
+// it — "Fires 3 magic shot that does not use any bullets".
+// ---------------------------------------------------------------------------
+const GUNSLINGER_ATK = (skill, ammo) => ({
+  build: {
+    job_id: 24, base_level: 90, job_level: 50,
+    base_stats: { str: 40, agi: 60, vit: 30, int: 20, dex: 90, luk: 20 },
+    equipped: { right_hand: 13155, ...(ammo ? { ammo } : {}) }, // Shotgun, ATK 180
+  },
+  target: { name: "T", race: "Demi-Human", element: "Ele_Neutral", element_level: 1, size: "Medium",
+            def_: 10, def2: 10, mdef_: 5, mdef2: 5, hp: 100000, agi: 30, level: 90 },
+  skill,
+});
+
+test("the ranged min-ATK scaling needs an ammo-FIRING attack, not merely a gun", () => {
+  const atkRange = (skill) => {
+    const raw = runScenarioRaw(GUNSLINGER_ATK(skill)).raw;
+    const note = (raw.normal || raw.skill).steps.find((x) => x.name === "Weapon ATK Range").note;
+    const [, mn, mx] = note.match(/atkmin=(\d+) atkmax=(\d+)/).map(Number);
+    return [mn, mx];
+  };
+  // Triple Action consumes a bullet, so `atkmin = atkmin*atkmax/100` applies and
+  // overshoots atkmax, which then clamps up to it — a flat, maximal roll.
+  const [taMin, taMax] = atkRange({ name: "GS_TRIPLEACTION", level: 1 });
+  assert.equal(taMin, taMax, "an ammo-firing gun skill keeps the scaling (and clamps flat)");
+  assert.equal(taMin, 252, "= floor(140 * 180 / 100)");
+  // Soul Bullet fires nothing, so it keeps the plain DEX-derived floor and a real range.
+  const [sbMin, sbMax] = atkRange({ name: "GS_MAGICALBULLET", level: 1 });
+  assert.equal(sbMax, 180, "unscaled: the weapon's own ATK");
+  assert.equal(sbMin, 140, "unscaled: floor(DEX 90 * (80 + wlv 3*20) / 100), capped at atkmax");
+  assert.ok(sbMin < sbMax, "and it stays a range rather than collapsing to a flat max");
+});
+
+test("Phantasmic Arrow is the exception: no ammo required, still an arrow attack", () => {
+  // battle.c:4908 hard-codes `case HT_PHANTASMIC: flag.arrow = 1;` — "Since these do
+  // not consume ammo, they need to be explicitly set as arrow attacks." That single
+  // exception is what makes the CC's rule of thumb read as odd, and it is why the gate
+  // is skillUsesAmmo() rather than a bare requirement lookup.
+  assert.equal(skillUsesAmmo({ id: 1009, name: "HT_PHANTASMIC" }, false), true);
+  assert.equal(skillUsesAmmo({ id: 507, name: "GS_MAGICALBULLET" }, true), false,
+    "Soul Bullet requires no ammo, so it is not an arrow attack even out of a gun");
+  assert.equal(skillUsesAmmo({ id: 502, name: "GS_TRIPLEACTION" }, false), true,
+    "Triple Action's requirement lists ammo, so it is one even if the weapon says otherwise");
+});
+
+test("an ammo's own +% bonuses reach only the attacks that fire it", () => {
+  const dmg = (skill, ammo) => {
+    const raw = runScenarioRaw(GUNSLINGER_ATK(skill, ammo)).raw;
+    return (raw.normal || raw.skill).avg_damage;
+  };
+  // Hollow-Point Bullet: bonus2 bAddRace,RC_DemiHuman,20, vs a Demi-Human target.
+  const HOLLOW_POINT = 13234;
+  assert.equal(dmg({ name: "GS_MAGICALBULLET", level: 1 }, HOLLOW_POINT),
+               dmg({ name: "GS_MAGICALBULLET", level: 1 }, null),
+               "Soul Bullet fires no bullet, so the bullet's +20% must not reach it");
+  assert.ok(dmg({ name: "GS_TRIPLEACTION", level: 1 }, HOLLOW_POINT)
+            > dmg({ name: "GS_TRIPLEACTION", level: 1 }, null) * 1.2,
+            "Triple Action does fire it, so it takes both the +20% and the bullet's ATK");
+});
+
+// ---------------------------------------------------------------------------
+// Back Stab's after-cast delay. Vanilla Hercules gives RG_BACKSTAP a 500ms
+// after-cast delay; PS removes it ("The cooldown, and aftercast delay is removed",
+// Rogue rework PDF; "Cast Delay: aspd" on the wiki, the same wording Double
+// Strafing carries; and players confirmed no delay in-game). Left in, it pinned a
+// fast Rogue at exactly 2.00 casts/s however much ASPD they stacked.
+// ---------------------------------------------------------------------------
+test("Back Stab is ASPD-limited on PS, with no 500ms after-cast floor", () => {
+  const period = (agi, skill) => runScenarioRaw({
+    build: {
+      job_id: 17, base_level: 99, job_level: 50,
+      base_stats: { str: 70, agi, vit: 30, int: 10, dex: 70, luk: 20 },
+      equipped: { right_hand: 1224 },
+    },
+    target: { name: "T", race: "Brute", element: "Ele_Neutral", element_level: 1, size: "Medium",
+              def_: 20, def2: 20, mdef_: 5, mdef2: 5, hp: 50000, agi: 30, level: 90 },
+    skill,
+  }).raw.period_ms;
+  const BACKSTAB = { name: "RG_BACKSTAP", level: 10 };
+  for (const agi of [90, 150]) {
+    assert.equal(period(agi, BACKSTAB), period(agi, null),
+      `AGI ${agi}: Back Stab must repeat at the attack motion, like an auto-attack`);
+  }
+  assert.ok(period(150, BACKSTAB) < 500,
+    "and above 2 attacks/s it must keep scaling, not stop at the vanilla 500ms delay");
 });
 
 test("isweapontype() resolves rather than falling open", () => {

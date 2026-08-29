@@ -22,6 +22,34 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Back Stab was capped at 2 casts per second, however much ASPD you had.** A fast Rogue's
+  Back Stab sat at exactly 2.00/s while their auto-attack ran at 3.38/s, because the calculator
+  was applying vanilla Hercules' 0.5s after-cast delay. Payon Stories removed it: the Rogue
+  rework says so outright ("The cooldown, and aftercast delay is removed"), the wiki lists
+  "Cast Delay: aspd" — the same thing Double Strafing says — and players confirmed no delay
+  in-game. Back Stab now repeats at your attack motion like an auto-attack, which is worth
+  +20% DPS at AGI 120 and +150% at AGI 190. Below about 2 attacks/s nothing changes, which is
+  why only fast builds ever saw it. Reported in-game by three players comparing it to Double
+  Strafe.
+
+- **Ammo you never fire no longer buffs the attack.** An equipped bullet's or arrow's own
+  bonuses — Hollow-Point's +20% vs Demi-Human, Frostfire's +15% Fire/Water, Sharp Arrow's +20
+  crit — were being counted on every attack, including skills that consume no ammo at all.
+  Soul Bullet, which "does not use any bullets", was collecting a bullet's +20%; a bow user's
+  crit rate rose by 20 points just from having Sharp Arrows in the slot, on every skill.
+  They now apply only to attacks that actually fire the ammo. A side effect you can see: the
+  CRIT stat no longer counts an arrow's crit bonus — it never should have, and the game's own
+  status window doesn't either; the bonus is still there on the attacks that use the arrow.
+
+- **Skills that fire no ammo no longer get the ranged ATK scaling.** A bow or gun rescales its
+  minimum damage by the weapon's own ATK — but only on an attack that actually fires something,
+  Phantasmic Arrow aside. The calculator was granting it on the weapon alone, so Soul Bullet's
+  weapon roll was a flat 347 where it should have been 183–189. Confirmed against the one
+  server debug trace we have (Soul Bullet, from the PS Discord): every stage moved from ~46%
+  above the server's numbers to ~15%. The final stage now reads 17.6% *below* the server —
+  deliberately, because the old near-match was two errors cancelling, and the real remaining
+  gap is a server multiplier we don't model yet. Nothing changes for skills that do use ammo.
+
 - **Throw Kunai wasn't even selectable.** Like Throw Shuriken before it, the skill had no damage
   formula wired up, so the calculator couldn't offer it at all. It's back: a normal attack's
   damage, three times per throw, plus a flat mastery bonus that applies whether or not you're
