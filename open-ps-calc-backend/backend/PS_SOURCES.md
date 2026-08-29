@@ -6212,3 +6212,76 @@ range is the gun's 9 cells, so it is `BF_LONG` and `bLongAtkRate` gear (Archer S
 Captain's Hat, Hawk Eyes) applies to it - as it does in the calculator now (+7% from Captain's Hat:
 481 -> 518). Nothing in either statement touches that, and the PS wiki uses the same range rule
 elsewhere (Grimtooth is ranged from Lv3 with no ammo involved). Ask the CCs before changing it.
+
+
+---
+
+# 5. Open questions put to the CCs
+
+Things we have measured but cannot confirm from any published source. Each entry records what
+was observed, what it implies, and the exact question outstanding — so whoever gets an answer
+knows what to do with it, and nobody re-derives the evidence from scratch.
+
+## OPEN (asked 2026-08-28) — is skill spam capped at a flat ~500ms server-wide?
+
+**The question, in the form a dev can answer in one line:** what is
+`min_skill_delay_limit` set to? Stock Hercules is 100; our measurements say PS behaves like
+**500**. It lives in `conf/map/battle/skill.conf`, can be overridden from
+`conf/import/battle.conf` (so `grep -rn min_skill_delay_limit conf/` is the safe check), and can
+be read live without touching files via the script command
+`getbattleflag("min_skill_delay_limit")`. Worth reading out at the same time: `delay_rate`
+(a global % multiplier on every after-cast delay — if it is not 100, every delay we take from the
+vanilla DB is wrong), `delay_dependon_dex` (we assume false) and `castrate_dex_scale` (we hardcode
+150).
+
+**Where it came from.** Players in the PS Discord, reporting what looked like three separate
+bugs after the Back Stab delay fix shipped:
+
+> Beerbelly Slinger: Backstab is capped at 2 cast per sec ...
+> Gs skills under bragi is also capped at 2. And so is bolt under bragi.
+
+**What was then measured in-game** (bow Rogue, DEX 99+23, AGI 97+21; runs counted by consumed
+items — one arrow per auto-attack, one Acid Bottle per Acid Terror cast, SP for Envenom):
+
+| run | count | per action |
+|---|---|---|
+| Envenom (zero cast, zero after-cast delay) | 20 casts / 10s | **500ms** |
+| Acid Terror, unbuffed | 34 casts / 20s | 588ms |
+| auto-attack, same session, same clock | 30 arrows / 20s | 667ms |
+| Acid Terror, buffed (ASPD 173) | 50 casts / 24s | 480ms |
+
+**What that establishes, regardless of the config answer.** The auto-attack and Acid Terror runs
+are a controlled pair — one character, one clock, both counted by consumed items — and the skill
+came in **13% faster than the auto-attack**. The engine floors every weapon skill at `adelay`
+(= the auto-attack interval, `2 x amotion`), so it cannot produce that at all: our floor is
+wrong. The magic branch is floored at a flat 333ms instead, sourced from the community PS calcs;
+Envenom's 500ms says that is wrong too.
+
+**What it rules out.** A reading of Hercules' own `unit.c:1856`
+(`canact_tick = tick + max(casttime, max(amotion, min_skill_delay_limit))`) suggests the floor
+should be `amotion` — half the auto-attack interval. On this character that predicts 333ms, i.e.
+60 Envenom casts in 20s. The player managed 34. So a straight port of the vanilla rule would have
+been roughly twice too fast, and was not shipped.
+
+**The model the data fits**, to under 1%: `cast + max(after_cast_delay, 500)`.
+Envenom = 0 + 500 = **500** (measured 500). Acid Terror = 93ms DEX-scaled cast + 500 = **593**
+(measured 588). Auto-attacks are unaffected and stay on ASPD (667ms = `adelay`), as they should —
+`min_skill_delay_limit` gates skills only. A second, smaller question rides along: whether the
+500 floors the *delay* (`cast + max(delay, 500)`, which Acid Terror's 588 favours) or the whole
+*period* (`max(cast + delay, 500)`, which would put Acid Terror at 500). One player's stopwatch
+is not enough to call that.
+
+**Why it is worth the wait rather than shipping on the measurement.** It moves 22 of the 91
+golden scenarios: Shadow Slash +86%, Mammonite +84%, Holy Cross +57%, Acid Terror +56%, Bash
++41% (slow builds are no longer throttled to their attack rate), against instant-cast Bragi Fire
+Bolt -33% and Fire Wall -11% (fast builds and magic now meet the real cap). Back Stab lands back
+at 2.00 casts/s — the number the calculator showed before the delay fix, but for the right
+reason this time: no per-skill delay, a global floor.
+
+## OPEN (asked 2026-08-28) — does Soul Bullet also lose `bLongAtkRate`?
+
+Recorded in full in section 4: Laila's ruling and Alardun's rule of thumb both settle that Soul
+Bullet gets no ammo effects and no ranged min-ATK scaling, and both are implemented. Neither
+statement touches the long-range damage bonus, which Hercules decides from the skill's *range*
+and not from ammo, so `bLongAtkRate` gear still applies to it here. If PS means that to be
+stripped too, it is a deviation from Hercules and needs saying explicitly.
