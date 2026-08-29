@@ -5,6 +5,23 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-08-29
+
+### Fixed
+
+- **Frostfire weapons are refinable, and the calculator wouldn't let you say so.** All 14 of them
+  — Dagger, Sword, Claymore, Staff, Axe, Mace, Spear, Fist, Katar, Tome, Bow, Whip, Violin and
+  Huuma Shuriken — were flagged non-refineable in our data, so the equipment panel hid the refine
+  input entirely and a +9 Frostfire Sword simply could not be entered. The live PS item API says
+  `refine: true` for every one of them. Reported by a player who had refined one in game. These
+  are level-4 weapons, so this is worth real damage: a +10 Frostfire Sword now reads about 41%
+  above its unrefined self, and the overrefine roll it was also suppressing is back.
+
+- **Luck o' Pint was refinable too.** Found by sweeping every hand-authored item flagged
+  non-refineable against the live item API, prompted by the Frostfire report. It was the only
+  other genuine miss — the rest (accessories, mid- and low-headgears like Momoe's Hairband,
+  Diving Goggles, Gunner Goggles) are correctly non-refinable, and the API agrees.
+
 ## 2026-08-28
 
 ### Added

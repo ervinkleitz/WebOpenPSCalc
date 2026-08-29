@@ -2312,6 +2312,44 @@ test("Back Stab is ASPD-limited on PS, with no 500ms after-cast floor", () => {
     "and above 2 attacks/s it must keep scaling, not stop at the vanilla 500ms delay");
 });
 
+// ---------------------------------------------------------------------------
+// Frostfire weapons are refinable. Reported by a player who had refined one in
+// game; the live PS item API agrees (`refine: true` on all 14, checked
+// 2026-08-29). They were hand-authored as non-refineable, which hid the refine
+// input in the editor entirely — a +9 weapon could not be entered at all — and
+// suppressed the overrefine roll on the engine side.
+// ---------------------------------------------------------------------------
+test("Frostfire weapons are refinable, and their overrefine is not suppressed", () => {
+  const FROSTFIRE = [8341, 8342, 8343, 8344, 8345, 8346, 8347, 8348, 8349, 8350, 8351, 8352, 8353, 8394];
+  for (const id of FROSTFIRE) {
+    const item = loader.getItem(id);
+    assert.ok(item, `Frostfire item ${id} missing from the DB`);
+    assert.equal(item.refineable, true, `${item.name} (${id}) must be refinable`);
+  }
+  // Luck o' Pint, found by the same sweep of every manual entry flagged non-refineable.
+  assert.equal(loader.getItem(80066).refineable, true, "Luck o' Pint must be refinable");
+  // Genuinely non-refinable neighbours, so the sweep did not just flip everything.
+  assert.equal(loader.getItem(8065).refineable, false, "Momoe's Hairband is not refinable");
+  assert.equal(loader.getItem(13236).refineable, false, "Frostfire Bullet is ammo, not refinable");
+
+  // End to end: refine has to reach the damage, overrefine step included.
+  const run = (refine) => runScenarioRaw({
+    build: {
+      job_id: 7, base_level: 90, job_level: 50,
+      base_stats: { str: 80, agi: 60, vit: 40, int: 10, dex: 60, luk: 20 },
+      equipped: { right_hand: 8342 }, refine: { right_hand: refine },
+    },
+    target: { name: "T", race: "Brute", element: "Ele_Neutral", element_level: 1, size: "Medium",
+              def_: 20, def2: 20, mdef_: 5, mdef2: 5, hp: 100000, agi: 30, level: 90 },
+  }).raw.normal;
+  const plain = run(0), refined = run(10);
+  assert.ok(refined.avg_damage > plain.avg_damage * 1.3,
+    "a +10 Lv4 weapon must be worth well over 30% more than an unrefined one");
+  const step = refined.steps.find((x) => x.name === "Overrefine Bonus");
+  assert.ok(step && !/Suppressed/.test(step.note || ""),
+    "overrefine must no longer be suppressed for a Frostfire weapon");
+});
+
 test("isweapontype() resolves rather than falling open", () => {
   // The condition handler deliberately fails OPEN on an unevaluatable condition, so
   // a predicate that fails to substitute silently grants its bonus to everything —

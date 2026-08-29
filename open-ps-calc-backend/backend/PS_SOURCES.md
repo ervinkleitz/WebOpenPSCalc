@@ -6342,6 +6342,19 @@ Bolt -33% and Fire Wall -11% (fast builds and magic now meet the real cap). Back
 at 2.00 casts/s — the number the calculator showed before the delay fix, but for the right
 reason this time: no per-skill delay, a global floor.
 
+## OPEN (2026-08-29) — is Aquatic Shawl really refinable, and is our head-slot rule too broad?
+
+`dataLoader._normalizeItem` force-flags **every** `EQP_HEAD_MID` / `EQP_HEAD_LOW` item as
+non-refineable, on the vanilla convention that mid- and low-headgears cannot be refined. The live
+PS item API disagrees for one item: **Aquatic Shawl (91135) reports `refine: true`** while every
+other mid/low headgear checked (Momoe's Hairband, Diving Goggles, Gunner Goggles, Aggayu Mask,
+Scouting Scarf) reports false. Found while sweeping the non-refineable flags after the Frostfire
+report, and deliberately NOT acted on: one API row is thin grounds for dropping a slot-wide rule,
+and the rule may exist precisely because scraped data over-reports refinability. **Question: can
+an Aquatic Shawl actually be refined in game?** If yes, the blanket rule should give way to the
+item's own flag — which is the principle the frontend already moved to (2026-06-20: refine input
+per ITEM, not per slot).
+
 ## OPEN (asked 2026-08-28) — does Soul Bullet also lose `bLongAtkRate`?
 
 Recorded in full in section 4: Laila's ruling and Alardun's rule of thumb both settle that Soul

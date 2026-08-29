@@ -869,6 +869,7 @@
   "script": "bonus bInt,1;"
  },
  "8341": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_WEAPON"
@@ -909,10 +910,11 @@
   "atk": 118,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bStr,1; bonus bAgi,2;"
  },
  "8342": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_WEAPON"
@@ -941,10 +943,11 @@
   "atk": 138,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bStr,2; bonus bDex,1;"
  },
  "8343": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_ARMS"
@@ -962,10 +965,11 @@
   "atk": 189,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bStr,2; bonus bAgi,1;"
  },
  "8344": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_ARMS"
@@ -990,10 +994,11 @@
   "atk": 135,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus2 bCastRate,MG_COLDBOLT,-15; bonus2 bCastRate,MG_FIREBOLT,-15; bonus2 bCastRate,AL_INCAGI,-15; bonus2 bCastRate,AL_DECAGI,-15; bonus bInt,2; bonus bMatkRate,20;"
  },
  "8345": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_ARMS"
@@ -1016,10 +1021,11 @@
   "atk": 193,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bStr,1; bonus bAgi,2;"
  },
  "8346": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_WEAPON"
@@ -1048,10 +1054,11 @@
   "atk": 148,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bAgi,1; bonus bDex,2;"
  },
  "8347": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_WEAPON"
@@ -1069,10 +1076,11 @@
   "atk": 95,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bStr,2; bonus bVit,1;"
  },
  "8348": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_WEAPON"
@@ -1087,10 +1095,11 @@
   "atk": 122,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bInt,1; bonus bAgi,2;"
  },
  "8349": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_ARMS"
@@ -1105,10 +1114,11 @@
   "atk": 171,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bAgi,2; bonus bCritical,5;"
  },
  "8350": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_WEAPON"
@@ -1125,10 +1135,11 @@
   "atk": 148,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",10; skill \"MG_FIREBOLT\",10; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bDex,2; bonus bInt,1; bonus bMatkRate,20;"
  },
  "8351": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_ARMS"
@@ -1151,10 +1162,11 @@
   "atk": 115,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bDex,2; bonus bLuk,2;"
  },
  "8352": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_WEAPON"
@@ -1169,10 +1181,11 @@
   "atk": 151,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bDex,1; bonus bInt,2;"
  },
  "8353": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_WEAPON"
@@ -1187,10 +1200,11 @@
   "atk": 151,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bDex,1; bonus bInt,2;"
  },
  "8394": {
+  "_note": "Refinable — confirmed against the live PS item API (`refine: true`, checked 2026-08-29) after a player reported refining one in game. These were hand-authored as non-refineable, which hid the refine input in the editor and cost them the refine ATK on a level-4 weapon.",
   "type": "IT_WEAPON",
   "loc": [
    "EQP_ARMS"
@@ -1204,7 +1218,7 @@
   "atk": 115,
   "weapon_level": 4,
   "equip_level": 30,
-  "refineable": false,
+  "refineable": true,
   "script": "skill \"MG_COLDBOLT\",3; skill \"MG_FIREBOLT\",3; bonus2 bAddEle,Ele_Fire,25; bonus2 bAddEle,Ele_Water,25; bonus bDex,1; bonus bStr,2;"
  },
  "90000": {
@@ -2625,6 +2639,7 @@
   "_note": "Live item API (tools.payonstories.com/api/pc/item?id=13160) reports slots=3; the vanilla item_db has 0, so Destroyer [3] was missing from the item picker entirely while the [1] version (13161, slots=1 in both) was present. Reported by a player."
  },
  "80066": {
+  "_note": "St. Patrick's event headgear. Live item API lists no DEF and no bonuses — it is equippable but changes no damage. Added so a build can represent what is actually worn. Verified 2026-08-23. Refinable — live PS item API says `refine: true` (checked 2026-08-29). Found by sweeping every manual entry flagged non-refineable against the API, prompted by the Frostfire report.",
   "type": "IT_ARMOR",
   "loc": [
    "EQP_HEAD_TOP"
@@ -2634,9 +2649,8 @@
   "weight": 10,
   "aegis_name": "Luck_o_Pint",
   "name": "Luck o' Pint",
-  "refineable": false,
-  "description": "What's St. Patrick's Day without a cool draft beer! Just make sure you're not drunk enough to put the beer on your head!<br/>Class:<font color='#6666CC'> Headgear</font><br/>Location:<font color='#6666CC'> Upper</font><br/>Weight:<font color='#009900'> 10</font><br/>Jobs:<font color='#6666CC'> All Jobs</font>",
-  "_note": "St. Patrick's event headgear. Live item API lists no DEF and no bonuses — it is equippable but changes no damage. Added so a build can represent what is actually worn. Verified 2026-08-23."
+  "refineable": true,
+  "description": "What's St. Patrick's Day without a cool draft beer! Just make sure you're not drunk enough to put the beer on your head!<br/>Class:<font color='#6666CC'> Headgear</font><br/>Location:<font color='#6666CC'> Upper</font><br/>Weight:<font color='#009900'> 10</font><br/>Jobs:<font color='#6666CC'> All Jobs</font>"
  },
  "80067": {
   "type": "IT_ARMOR",
