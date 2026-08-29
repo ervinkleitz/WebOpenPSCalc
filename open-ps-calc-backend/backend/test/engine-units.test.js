@@ -2350,6 +2350,71 @@ test("Frostfire weapons are refinable, and their overrefine is not suppressed", 
     "overrefine must no longer be suppressed for a Frostfire weapon");
 });
 
+// ---------------------------------------------------------------------------
+// Two corrections from a CC (PS_SOURCES.md §4), both about what an equipped
+// arrow does to a MELEE skill cast with a bow — the bow Rogue case:
+//   "they do ignore arrow atk but not their element"
+//   "BB and Triple Attack are strictly melee skills and so Long Range mods
+//    have no effect on their damage"
+// ---------------------------------------------------------------------------
+const BOWGUE = (skill, extra) => ({
+  build: {
+    job_id: 17, base_level: 99, job_level: 50,
+    base_stats: { str: 70, agi: 80, vit: 30, int: 20, dex: 90, luk: 20 },
+    equipped: { right_hand: 1718, ...(extra || {}) }, plagiarized_skill: "KN_BOWLINGBASH",
+  },
+  target: { name: "T", race: "Brute", element: "Ele_Neutral", element_level: 1, size: "Medium",
+            def_: 20, def2: 20, mdef_: 5, mdef2: 5, hp: 500000, agi: 30, level: 90 },
+  skill,
+});
+const bowgueStep = (skill, extra, stepRe) => {
+  const raw = runScenarioRaw(BOWGUE(skill, extra)).raw;
+  const br = raw.normal || raw.skill;
+  return br.steps.find((x) => stepRe.test(x.name));
+};
+
+test("a melee skill stays melee in a bow user's hands — negative range is |range|", () => {
+  const BB = { name: "KN_BOWLINGBASH", level: 10 };
+  // Bowling Bash is range -2 in the skill DB. Hercules reads that as 2 cells, NOT as the
+  // wielder's 9-cell bow, because `skillrange_from_weapon` defaults to nobody (skill.c:1105,
+  // battle.c:7729). PS documents it as "3 Cells" — short either way.
+  assert.match(bowgueStep(BB, {}, /Final Rate Bonus \((Short|Long)\)/).name, /\(Short\)/,
+    "Bowling Bash out of a bow must be classified melee");
+  // ...so Archer Skeleton Card (bLongAtkRate 10) must do nothing to it.
+  const plain = runScenarioRaw(BOWGUE(BB, {})).raw.normal.avg_damage;
+  const carded = runScenarioRaw(BOWGUE(BB, { right_hand_card1: 4094 })).raw.normal.avg_damage;
+  assert.equal(carded, plain, "long-range damage gear must not touch a melee skill");
+  // The same card must still work on the bow's own attacks, or the gate is too wide.
+  const autoPlain = runScenarioRaw(BOWGUE(null, {})).raw.normal.avg_damage;
+  const autoCarded = runScenarioRaw(BOWGUE(null, { right_hand_card1: 4094 })).raw.normal.avg_damage;
+  assert.ok(autoCarded > autoPlain, "a bow's own attack is long-range and keeps the card");
+});
+
+test("an arrow lends its ELEMENT to a bow user's melee skill, but not its ATK", () => {
+  const BB = { name: "KN_BOWLINGBASH", level: 10 };
+  const FIRE_ARROW = 1752;
+  assert.match(bowgueStep(BB, { ammo: FIRE_ARROW }, /^Attr Fix$/).note, /^Fire /,
+    "Bowling Bash must take the Fire Arrow's element");
+  // ...while the arrow's ATK stays out, since Bowling Bash consumes no ammo.
+  const withArrow = runScenarioRaw(BOWGUE(BB, { ammo: FIRE_ARROW })).raw.normal.avg_damage;
+  const without = runScenarioRaw(BOWGUE(BB, {})).raw.normal.avg_damage;
+  assert.equal(withArrow, without, "the arrow's ATK must not reach a skill that fires none");
+  assert.equal(bowgueStep(BB, { ammo: FIRE_ARROW }, /Arrow ATK/), undefined,
+    "and there must be no Arrow ATK step at all");
+  // The counter-case, confirmed in-game earlier: nothing bare-handed fires a Kunai, so a
+  // punch must not borrow its element.
+  const punch = runScenarioRaw({
+    build: {
+      job_id: 17, base_level: 99, job_level: 50,
+      base_stats: { str: 70, agi: 80, vit: 30, int: 20, dex: 90, luk: 20 },
+      equipped: { ammo: 13255 },
+    },
+    target: BOWGUE(null, {}).target,
+  }).raw.normal;
+  assert.ok(!/Fire|Water|Wind|Earth/.test(punch.steps.find((x) => x.name === "Attr Fix").note),
+    "a bare-handed punch must not take an equipped Kunai's element");
+});
+
 test("isweapontype() resolves rather than falling open", () => {
   // The condition handler deliberately fails OPEN on an unevaluatable condition, so
   // a predicate that fails to substitute silently grants its bonus to everything —
@@ -2605,13 +2670,16 @@ test("a skill with no usable range falls back to the weapon, never to Short", ()
   assert.match(rate(1701, "PS_RG_TRICKARROW"), /\(Long\)/, "a bow is ranged");
   assert.match(rate(1201, "PS_RG_TRICKARROW"), /\(Short\)/, "a dagger is not");
 
-  // The synthesized range must stay a NUMERIC sentinel, not prose and not a literal 1.
+  // The synthesized range must stay NULL — "no data, ask the weapon". Not prose, and above
+  // all not a number: a literal 1 forces Short, and so does -1, because Hercules reads a
+  // negative range as its absolute value unless `skillrange_from_weapon` is set (it defaults
+  // to nobody). Both mistakes have shipped here; this pins the third option.
   for (const name of ["PS_RG_TRICKARROW", "PS_RG_QUICKSTEP"]) {
     const sd = loader.getSkillByName(name);
     const r = sd.range;
     const v = Array.isArray(r) ? r[0] : r;
-    assert.ok(typeof v === "number" && v < 0,
-      `${name}: synthesized range must be a negative number (weapon-derived), got ${JSON.stringify(r)}`);
+    assert.equal(v, null,
+      `${name}: synthesized range must be null (weapon-derived), got ${JSON.stringify(r)}`);
   }
 });
 

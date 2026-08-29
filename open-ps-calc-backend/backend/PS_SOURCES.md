@@ -6127,6 +6127,45 @@ so a later reader can tell the CC's words apart from our interpretation of them.
 from someone whose role we have not established, it is attributed by name and treated as
 corroboration, not as a ruling.
 
+## 2026-08-29 - What an arrow does to a bow user's MELEE skills (Laila)
+
+Two corrections raised as fallout from the arrow-gating change above.
+
+> perhaps as a ramification of this, skills like Bowling Bash and Triple Attack are now ignoring
+> Arrows entirely; in truth, they do ignore arrow atk but not their element
+
+> also, according to the calc, Archer Skeleton affects Bowling Bash and Triple Attack when cast by
+> a bowgue; but BB and Triple Attack are strictly melee skills and so Long Range mods have no
+> effect on their damage
+
+**Both were right, and the second one has vanilla Hercules behind it.**
+
+**Ammo element vs ammo ATK are gated differently.** The ATK and the +x% bonuses turn on whether
+THIS attack consumes the ammo (`skillUsesAmmo`, the arrow_* pool). The ELEMENT turns on the looser
+question of whether the EQUIPPED WEAPON fires that ammo at all: a bow with arrows lends its Fire
+Arrow's property to Bowling Bash while lending none of its ATK. The weapon test is what keeps the
+earlier in-game finding intact - a bare-handed punch with a Kunai in the ammo slot does NOT borrow
+its element, and nothing bare-handed fires a Kunai. Thrown ammo (kunai, shuriken, throwing
+daggers) therefore reaches an attack only through the skill that throws it.
+
+**A negative skill range is |range|, not "the wielder's weapon range".** skill.c:1105:
+
+```c
+	if( range < 0 ) {
+		if( battle_config.use_weapon_skill_range&bl->type )
+			return status_get_range(bl);
+		range *=-1;
+	}
+```
+
+The first branch is the `skillrange_from_weapon` setting, and battle.c:7729 registers its default
+as **BL_NUL - nobody**. So Bowling Bash (-2) is 2 cells and Bash (-1) is 1 cell however you are
+armed, and both stay BF_SHORT for a bow user. We were taking the weapon-range branch, which is the
+non-default setting, and it handed a bow Rogue's Bowling Bash the long classification and with it
+Archer Skeleton Card. PS's own skill DB independently documents Bowling Bash at "3 Cells" - short
+either way. Fixed 2026-08-29, with the PS-custom synthesized skill records re-sentinelled from
+`range: [-1]` to `range: null`, since -1 now correctly means "1 cell" rather than "ask the weapon".
+
 ## 2026-08-28 - Soul Bullet ignores ammo entirely (Laila, via the CCs)
 
 > Soul Bullet should ignore ammo completely (i.e. even +x% bonuses shouldn't affect it) and that

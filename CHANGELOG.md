@@ -9,6 +9,22 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **A bow user's melee skills are melee again.** Bowling Bash cast by a bow Rogue was being
+  classified as a long-range attack, so it collected long-range damage gear like Archer Skeleton
+  Card — which does nothing for it in game. The cause was reading a negative skill range as "use
+  the wielder's weapon range"; Hercules only does that when `skillrange_from_weapon` is switched
+  on, and it defaults to off, so Bowling Bash's −2 simply means 2 cells no matter what you are
+  holding. Payon Stories' own skill list documents it as "3 Cells", which agrees. Reported by a
+  CC. Bash, Triple Attack and every other negative-range skill are corrected the same way; the
+  bow's own attacks are unaffected and still take the card.
+
+- **An equipped arrow lends its element to those skills, even though it lends no ATK.** The same
+  CC: "they do ignore arrow atk but not their element". A Fire Arrow now turns a bow Rogue's
+  Bowling Bash Fire, while the arrow's ATK and its +% bonuses stay out — those are still gated on
+  whether the skill actually fires ammo. The distinction is the equipped *weapon*: a bow fires
+  arrows, so its attacks carry the arrow's property; nothing bare-handed fires a Kunai, so a
+  punch with one equipped stays Neutral, which is what was measured in-game earlier.
+
 - **Frostfire weapons are refinable, and the calculator wouldn't let you say so.** All 14 of them
   — Dagger, Sword, Claymore, Staff, Axe, Mace, Spear, Fist, Katar, Tome, Bow, Whip, Violin and
   Huuma Shuriken — were flagged non-refineable in our data, so the equipment panel hid the refine

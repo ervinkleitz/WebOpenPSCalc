@@ -161,14 +161,55 @@ function skillRangeAtLevel(skill) {
   return Number.isFinite(pick) ? pick : null;
 }
 
+// Does the EQUIPPED WEAPON fire the EQUIPPED AMMO? Not "does this skill consume it" — this is
+// the looser question the ammo's ELEMENT turns on. A CC on the element specifically:
+//
+//   "skills like Bowling Bash and Triple Attack are now ignoring Arrows entirely; in truth,
+//    they do ignore arrow atk but not their element"
+//
+// So a bow Rogue's Bowling Bash takes a Fire Arrow's Fire property while still taking none of
+// its ATK — the ATK and the +% bonuses stay gated on the skill's own ammo requirement
+// (skillUsesAmmo), which is what the arrow_* pool models. The gate has to be the WEAPON rather
+// than always-on, because the opposite case was confirmed in-game earlier: a bare-handed punch
+// with a Kunai in the ammo slot does NOT borrow its element, and nothing bare-handed fires a
+// Kunai. Thrown ammo (kunai, shuriken, throwing daggers) has no weapon that fires it, so it
+// reaches an attack only through the skill that throws it.
+const AMMO_FIRED_BY = {
+  A_ARROW: new Set(["Bow", "MusicalInstrument", "Whip"]),
+  A_BULLET: new Set(["Revolver", "Rifle", "Gatling", "Shotgun"]),
+  A_GRENADE: new Set(["Grenade"]),
+};
+
+function weaponFiresAmmo(build) {
+  const equipped = build.equipped || {};
+  if (equipped.ammo == null || equipped.right_hand == null) return false;
+  const ammo = loader.getItem(equipped.ammo);
+  const wpn = loader.getItem(equipped.right_hand);
+  if (!ammo || !wpn || wpn.type !== "IT_WEAPON") return false;
+  const fired = AMMO_FIRED_BY[ammo.subtype];
+  return fired ? fired.has(wpn.weapon_type) : false;
+}
+
 function resolveIsRanged(build, weapon, skill) {
   if (build.is_ranged_override !== null && build.is_ranged_override !== undefined) {
     return build.is_ranged_override;
   }
   const range = skillRangeAtLevel(skill);
-  // No skill (a normal attack), or a negative range meaning "use the weapon's".
-  if (range == null || range < 0) return effectiveIsRanged(build, weapon);
-  return range >= 5;
+  // No skill selected = a normal attack: the weapon decides.
+  if (range == null) return effectiveIsRanged(build, weapon);
+  // A NEGATIVE range is `|range|`, not "the wielder's weapon range" — skill.c:1105:
+  //     if (range < 0) {
+  //         if (battle_config.use_weapon_skill_range & bl->type) return status_get_range(bl);
+  //         range *= -1;
+  //     }
+  // That first branch is the `skillrange_from_weapon` setting, whose default is BL_NUL —
+  // nobody (battle.c:7729). So Bowling Bash (-2) is 2 cells and Bash (-1) is 1 cell no matter
+  // what you are holding, and both stay MELEE for a bow user. Taking the weapon's range here
+  // instead handed a bow Rogue's Bowling Bash the long-range classification and with it
+  // Archer Skeleton Card — reported by a CC: "BB and Triple Attack are strictly melee skills
+  // and so Long Range mods have no effect on their damage" (PS_SOURCES.md §4). PS's own skill
+  // DB agrees on the number: Bowling Bash is documented at "3 Cells", also short.
+  return Math.abs(range) >= 5;
 }
 
 function skillPeriodMs(castMs, delayMs, skillData, skillLv, minPeriodOverride, amotionFloor) {
@@ -1589,7 +1630,7 @@ class BattlePipeline {
     // the left-hand hit must stay Neutral, not borrow the right hand's element).
     let baseWeaponEle = weapon.element;
     const scriptEle = gearBonuses ? (isOffhand ? gearBonuses.script_atk_ele_lh : gearBonuses.script_atk_ele_rh) : null;
-    if (scriptEle != null && !skillUsesAmmo(skill, isRanged)) {
+    if (scriptEle != null && !skillUsesAmmo(skill, isRanged) && !weaponFiresAmmo(build)) {
       const equipped = build.equipped || {};
       const handId = isOffhand ? equipped.left_hand : equipped.right_hand;
       const handItem = handId != null ? loader.getItem(handId) : null;
