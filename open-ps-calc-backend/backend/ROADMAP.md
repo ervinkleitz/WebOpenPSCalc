@@ -1622,7 +1622,11 @@ what the calc showed, while Lv1–2 were over-reported. The ×2 Break-Neck ailme
 unmodeled — it needs the target to already carry that status.
 
 ### Open gaps (verified, prioritised) — punch-list
-- **BLOCKED ON THE CCs — the skill-period floor is wrong, and we know it empirically.**
+- **BLOCKED — the skill-period floor is wrong, and we know it empirically.** *(2026-08-29: PS
+  confirmed `min_skill_delay_limit: 100` and `delay_rate: 100`, both stock, so the flat-500ms
+  reading is out. Stock values mean the floor should be the attack ANIMATION per `unit.c:1856`;
+  the Envenom measurement may have been counted with the wrong SP cost — 8 on PS, not vanilla's
+  12 — which would make it 30 casts/10s = 333ms = exactly that animation. Awaiting a recount.)*
   Every skill's repeat rate is floored at `adelay` (the auto-attack interval) in
   `battlePipeline.js`, and magic at a flat 333ms from the community calcs. A controlled in-game
   pair on one character (30 auto-attacks in 20s = 667ms; 34 Acid Terror casts in 20s = 588ms)

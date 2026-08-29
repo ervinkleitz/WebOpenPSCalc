@@ -6222,7 +6222,32 @@ Things we have measured but cannot confirm from any published source. Each entry
 was observed, what it implies, and the exact question outstanding — so whoever gets an answer
 knows what to do with it, and nobody re-derives the evidence from scratch.
 
-## OPEN (asked 2026-08-28) — is skill spam capped at a flat ~500ms server-wide?
+## PARTLY ANSWERED (2026-08-29) — is skill spam capped at a flat ~500ms server-wide?
+
+**The config answer, from PS: `min_skill_delay_limit: 100` and `delay_rate: 100` — both stock.**
+So there is no server-wide 500ms skill floor, and the flat-500 model below is dead as stated.
+What stock values mean is that Hercules' own rule applies unmodified: a skill can be repeated
+after `max(cast + after_cast_delay, amotion, 100)` (`unit.c:1856`), i.e. the floor is the ATTACK
+ANIMATION — half the auto-attack interval, since `adelay = 2 x amotion` (`status.c:2159`).
+
+**A counting error may explain the whole thing, and it is ours.** The Envenom run below was
+counted from the SP drop, on an instruction that used the VANILLA 12 SP. Envenom costs **8 SP**
+on PS (wiki infobox, and `ps_skill_db.json`). A "20 casts" figure derived as SP/12 is really
+240 SP / 8 = **30 casts in 10s = 333ms each** — and that character's auto-attack measured 667ms,
+so their animation is 333.5ms. That is the vanilla rule landing within 0.15%, and it agrees with
+the stock config. Pending confirmation of how the run was actually counted; if it was counted by
+watching casts rather than by SP, 500ms stands and has no config behind it.
+
+**Still unexplained under either reading:** Acid Terror was counted by CONSUMED BOTTLES (one per
+cast, no SP arithmetic involved) at 34 casts / 20s = 588ms, where the animation floor predicts
+333ms. Its 0.5s cast is the likely reason — but only if that cast is DEX-IMMUNE. We model it as
+DEX-scaled, which at DEX 122 gives 93ms; a fixed 500ms cast would give
+`max(500, 333) = 500ms` against the 588 observed. Worth a separate question: is Acid Terror's
+0.5s cast reduced by DEX on PS?
+
+### The original question and its evidence (kept for the record)
+
+
 
 **The question, in the form a dev can answer in one line:** what is
 `min_skill_delay_limit` set to? Stock Hercules is 100; our measurements say PS behaves like
