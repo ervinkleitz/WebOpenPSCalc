@@ -1622,25 +1622,20 @@ what the calc showed, while Lv1–2 were over-reported. The ×2 Break-Neck ailme
 unmodeled — it needs the target to already carry that status.
 
 ### Open gaps (verified, prioritised) — punch-list
-- **BLOCKED — the skill-period floor is wrong, and we know it empirically.** *(2026-08-29: PS
-  confirmed `min_skill_delay_limit: 100` and `delay_rate: 100`, both stock, so the flat-500ms
-  reading is out. Stock values mean the floor should be the attack ANIMATION per `unit.c:1856`;
-  the Envenom measurement may have been counted with the wrong SP cost — 8 on PS, not vanilla's
-  12 — which would make it 30 casts/10s = 333ms = exactly that animation. Awaiting a recount.)*
-  Every skill's repeat rate is floored at `adelay` (the auto-attack interval) in
-  `battlePipeline.js`, and magic at a flat 333ms from the community calcs. A controlled in-game
-  pair on one character (30 auto-attacks in 20s = 667ms; 34 Acid Terror casts in 20s = 588ms)
-  has a skill beating the auto-attack rate by 13%, which our floor makes impossible. Envenom —
-  zero cast, zero delay, so nothing but the floor can limit it — came in at exactly **500ms**
-  (20 casts / 10s), and `cast + max(delay, 500)` reproduces every measurement to under 1%. That
-  is what `min_skill_delay_limit: 500` looks like (stock Hercules is 100), and it explains all
-  three "capped at 2 casts/sec" reports from the Discord (Back Stab, GS skills under Bragi,
-  bolts under Bragi) as one server setting rather than three bugs.
-  **Not implemented**: it moves 22 of 91 goldens (Shadow Slash +86%, Mammonite +84%, Bash +41%;
-  instant-cast Bragi bolt -33%), so it waits on the CCs reading the config value out. Full
-  evidence, the exact question, and where the setting lives: `PS_SOURCES.md` section 5.
-  A vanilla-Hercules reading (floor = `amotion`, `unit.c:1856`) was measured and **rejected** —
-  it predicts 60 Envenom casts in 20s against the 34 observed.
+- ~~**The skill-period floor is wrong**~~ — **measured and CLOSED 2026-08-29: it is right.**
+  A low-level Blacksmith at ASPD 157 (auto-attack interval 860ms) cast Mammonite — instant, no
+  after-cast delay — **24 times in 20s, the same count as 20s of auto-attacking**, at a rate well
+  below the player's own demonstrated click speed. So a skill repeats on the auto-attack clock,
+  exactly as `battlePipeline.js` already models it. The animation floor (the natural reading of
+  `unit.c:1856`) predicts ~46 casts there and is rejected; a flat 500ms is rejected both by that
+  count and by PS confirming stock `min_skill_delay_limit: 100` and `delay_rate: 100`. Earlier
+  Rogue runs that appeared to contradict this (Envenom at 500ms against a 667ms interval) were
+  measured in different buff states — 500ms is that character's interval at its buffed ASPD.
+  **Remaining, narrower gap:** magic does NOT use this floor here — the magic branch is capped at
+  a flat 333ms (`min_cast_period_ms`, sourced from the community PS calcs). If the one rule holds
+  everywhere, that constant over-reports instant-cast Bragi casters. Unverified; needs a Bragi'd
+  caster spamming bolts at a known ASPD. Full evidence: `PS_SOURCES.md` section 5.
+
 
 - **A test assertion that cannot fail: the PS-only guard on Throw Shuriken's Flee override.**
   From reviewing PR #2 (Mihtsuki), which is correct and worth merging — this is a follow-up on

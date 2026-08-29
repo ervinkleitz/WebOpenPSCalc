@@ -6222,7 +6222,43 @@ Things we have measured but cannot confirm from any published source. Each entry
 was observed, what it implies, and the exact question outstanding — so whoever gets an answer
 knows what to do with it, and nobody re-derives the evidence from scratch.
 
-## PARTLY ANSWERED (2026-08-29) — is skill spam capped at a flat ~500ms server-wide?
+## ANSWERED (2026-08-29) — no. Skills repeat at the AUTO-ATTACK INTERVAL, which is what we do.
+
+**Settled by measurement on a low-level Blacksmith** — deliberately chosen because at low ASPD
+the server's floor is slower than a human can click, which removes the input-rate confound that
+made every earlier run ambiguous. ASPD 157 (animation 430ms, auto-attack interval 860ms):
+
+| run | measured | our model | animation floor | flat 500ms |
+|---|---|---|---|---|
+| auto-attack | 24 / 20s = 833ms | 860ms **fits** | - | - |
+| Mammonite (instant, no delay) | 24 / 20s = 833ms | 860ms **fits** | 430ms -> ~46 casts | 500ms -> 40 casts |
+
+Identical counts at 1.2 casts/s, well under the ~2/s the same player had already demonstrated by
+hand, so the rate was the server's and not their fingers. **The engine's existing `adelay` floor
+is correct and nothing needs changing for weapon skills.**
+
+**Both alternatives are dead, by measurement rather than by argument.** The flat-500 reading was
+already ruled out by PS confirming `min_skill_delay_limit: 100` and `delay_rate: 100` (stock).
+The animation floor - the natural reading of Hercules' `unit.c:1856`
+(`canact_tick = tick + max(casttime, max(amotion, min_skill_delay_limit))`) - predicts twice the
+observed rate here and was wrong on the Rogue runs too. Whatever the mechanism, in practice a
+skill repeats on the same clock as an auto-attack. Worth remembering the next time someone reads
+that line and concludes the calculator is 2x too slow: it has now been measured twice.
+
+**The earlier Rogue numbers reconcile once buff state is accounted for.** Envenom at 500ms is the
+auto-attack interval at ASPD ~175 (buffed); the 667ms control was measured unbuffed at ~167. Two
+states, one rule. Acid Terror's 588ms against a 667ms interval is small-count timing slop.
+
+**Still open, and narrower:** MAGIC does not use this floor in our engine - the magic branch is
+capped at a flat 333ms from the community PS calcs (`min_cast_period_ms`). If magic obeys the
+same auto-attack-interval rule as everything else, that constant is wrong and an instant-cast
+Bragi wizard is over-reported. The one relevant datapoint is a player's "bolt under bragi is also
+capped at 2", which is the auto-attack interval at ASPD 175 - consistent, but unconfirmed. Needs
+a Bragi'd caster spamming bolts at a known ASPD.
+
+### The original question and its evidence (kept for the record)
+
+
 
 **The config answer, from PS: `min_skill_delay_limit: 100` and `delay_rate: 100` — both stock.**
 So there is no server-wide 500ms skill floor, and the flat-500 model below is dead as stated.
