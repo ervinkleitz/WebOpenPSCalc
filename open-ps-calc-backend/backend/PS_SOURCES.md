@@ -6123,7 +6123,9 @@ When they do, **the script is usually the correct one and the description is sta
 
 Behaviour confirmed directly by a Payon Stories CC, relayed to us second-hand. Each entry keeps
 the ruling verbatim, the mechanic we read it onto, and what the calculator was doing at the time -
-so a later reader can tell the CC's words apart from our interpretation of them.
+so a later reader can tell the CC's words apart from our interpretation of them. Where a quote comes
+from someone whose role we have not established, it is attributed by name and treated as
+corroboration, not as a ruling.
 
 ## 2026-08-28 - Soul Bullet ignores ammo entirely (Laila, via the CCs)
 
@@ -6170,13 +6172,27 @@ bullets loaded). Ammo carrying +x% scripts: Hollow-Point (+20% Demi-Human), Heav
 races), Frostfire (+15% Fire/Water), Plated Bullet (+20% Neutral), Holy Arrow (+5% Demon), Sharp
 Arrow (`bCritical,20` - measured at +20 crit-rate points on every attack today, 9.0% -> 29.0%).
 
-**One thing the ruling does not decide.** Long/short *classification* is a separate mechanic from
-the scaling above: for a skill, Hercules takes it from the skill's range
-(`wd.flag |= battle->range_type(...)`, battle.c:4896 - only a **normal** attack uses
-`flag.arrow ? BF_LONG : BF_SHORT`, battle.c:5024). Soul Bullet's range is the gun's 9 cells, so it
-is `BF_LONG` and `bLongAtkRate` gear (Archer Skeleton Card, Captain's Hat, Hawk Eyes) applies to it
-- as it does in the calculator now (+7% from Captain's Hat: 481 -> 518). That is untouched by
-"ignores ammo", and the PS wiki uses the same rule elsewhere (Grimtooth is ranged from Lv3 with no
-ammo involved). **If the ruling was also meant to strip `bLongAtkRate` from Soul Bullet, that is a
-PS deviation from Hercules and needs a follow-up question to the CCs** - it is not implied by
-ammo-independence.
+**Which "ranged scaling" this is - confirmed (2026-08-28, Alardun, same discussion).**
+
+> General rule of thumb is that skill that don't use ammo (except Phantasm arrow for some reason)
+> don't get the ranged scaling
+
+That is the `flag.arrow` gate stated as a rule, and the exception pins it beyond doubt: Phantasmic
+Arrow is the ONE skill Hercules hard-codes as an arrow attack despite requiring no ammo -
+`case HT_PHANTASMIC: flag.arrow = 1;`, battle.c:4908, with the comment *"Since these do not consume
+ammo, they need to be explicitly set as arrow attacks"*. The "some reason" is that line. So "ranged
+scaling" is the arrow-gated base-damage step (battle.c:644), not the long-range damage bonus, and
+Laila's ruling and Hercules agree rather than conflict.
+
+This makes the fix mechanical rather than a judgement call: gate the scaling on the engine's
+existing `skillUsesAmmo()` (`baseDamage.js`) instead of on weapon type. That helper already carries
+the same exception - `FORCED_ARROW_SKILLS = new Set(["HT_PHANTASMIC"])` - so Alardun's rule,
+exception included, falls out of the one-line change.
+
+**What is NOT covered by any of this.** Long/short *classification* is a separate mechanic: for a
+skill, Hercules takes it from the skill's range (`wd.flag |= battle->range_type(...)`, battle.c:4896
+- only a **normal** attack uses `flag.arrow ? BF_LONG : BF_SHORT`, battle.c:5024). Soul Bullet's
+range is the gun's 9 cells, so it is `BF_LONG` and `bLongAtkRate` gear (Archer Skeleton Card,
+Captain's Hat, Hawk Eyes) applies to it - as it does in the calculator now (+7% from Captain's Hat:
+481 -> 518). Nothing in either statement touches that, and the PS wiki uses the same range rule
+elsewhere (Grimtooth is ranged from Lv3 with no ammo involved). Ask the CCs before changing it.
