@@ -1624,8 +1624,9 @@ unmodeled — it needs the target to already carry that status.
 ### Open gaps (verified, prioritised) — punch-list
 - ~~**The skill-period floor is wrong**~~ — **measured and CLOSED 2026-08-29: it is right.**
   A low-level Blacksmith at ASPD 157 (auto-attack interval 860ms) cast Mammonite — instant, no
-  after-cast delay — **24 times in 20s, the same count as 20s of auto-attacking**, at a rate well
-  below the player's own demonstrated click speed. So a skill repeats on the auto-attack clock,
+  after-cast delay — **24 times in 20s, the same count as 20s of auto-attacking**, while
+  spam-pressing the hotkey — so input was never the constraint (the same player had already
+  managed ~2/s by hand elsewhere, against the 1.2/s the server allowed here). So a skill repeats on the auto-attack clock,
   exactly as `battlePipeline.js` already models it. The animation floor (the natural reading of
   `unit.c:1856`) predicts ~46 casts there and is rejected; a flat 500ms is rejected both by that
   count and by PS confirming stock `min_skill_delay_limit: 100` and `delay_rate: 100`. Earlier

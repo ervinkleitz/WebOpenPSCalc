@@ -6233,8 +6233,11 @@ made every earlier run ambiguous. ASPD 157 (animation 430ms, auto-attack interva
 | auto-attack | 24 / 20s = 833ms | 860ms **fits** | - | - |
 | Mammonite (instant, no delay) | 24 / 20s = 833ms | 860ms **fits** | 430ms -> ~46 casts | 500ms -> 40 casts |
 
-Identical counts at 1.2 casts/s, well under the ~2/s the same player had already demonstrated by
-hand, so the rate was the server's and not their fingers. **The engine's existing `adelay` floor
+Identical counts at 1.2 casts/s — and the player was **spam-pressing the hotkey throughout**,
+having already demonstrated ~2/s by hand on another character, so input was never the constraint
+and the rate is the server's. That is the objection this test was designed to close: at low ASPD
+the server's floor sits well outside human clicking range, which is why a slow character is the
+right instrument for it and a fast one is useless. **The engine's existing `adelay` floor
 is correct and nothing needs changing for weapon skills.**
 
 **Both alternatives are dead, by measurement rather than by argument.** The flat-500 reading was
