@@ -2547,6 +2547,65 @@ test("self-buffs reach the INCOMING direction, but only the offensive half", () 
   }
 });
 
+test("Auto Guard blocks a share of your weapon attacks, criticals included", () => {
+  const { applyTargetSelfBuffs, describeSelfBuff } = require("../src/engine/targetSelfBuffs");
+  // val2 accumulates 5,5,4,4,3,3,2,2,1,1 across levels (status.c:8326).
+  for (const [lv, pct] of [[2, 10], [3, 14], [5, 21], [10, 30]]) {
+    assert.match(describeSelfBuff("ML_AUTOGUARD", lv).effect, new RegExp(`blocks ${pct}%`), `Lv${lv}`);
+  }
+  // A block is not a miss: it must scale the WHOLE attack mix, criticals included, which
+  // is why it cannot ride on the hit-chance term (criticals ignore flee and skip it).
+  const dps = (guardLv) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 7, base_level: 90, job_level: 50,
+      base_stats: { str: 80, agi: 60, vit: 40, int: 10, dex: 70, luk: 60 }, // LUK 60 => real crit share
+      equipped: { right_hand: 1129 },
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, createBattleConfig(), PS);
+    const target = loader.getMonster(1040); // Golem — carries ML_AUTOGUARD
+    if (guardLv) applyTargetSelfBuffs(target, { ML_AUTOGUARD: guardLv });
+    const r = new BattlePipeline(createBattleConfig())
+      .calculate(st, w, createSkillInstance({ id: 0, level: 1 }), target, eff, gb);
+    return { dps: r.dps, crit: r.crit_chance, hit: r.hit_chance, block: r.auto_guard_pct };
+  };
+  const plain = dps(0), guarded = dps(10);
+  assert.ok(plain.crit > 5, "precondition: this build really does crit");
+  assert.equal(guarded.block, 30);
+  assert.equal(guarded.hit, plain.hit, "your accuracy is untouched — it is a block, not a miss");
+  const ratio = guarded.dps / plain.dps;
+  assert.ok(Math.abs(ratio - 0.70) < 0.005, `DPS must fall by exactly the block rate, got x${ratio.toFixed(3)}`);
+});
+
+test("Maximize Power, Power Up and Magnum Break change only the incoming direction", () => {
+  const { applySelfBuffsToRawMob, applyTargetSelfBuffs, describeSelfBuff } = require("../src/engine/targetSelfBuffs");
+  const raw = loader.getMonsterData(1040);
+
+  // SC_MAXIMIZEPOWER: every weapon roll comes out maximum.
+  const max = applySelfBuffsToRawMob(raw, { BS_MAXIMIZE: 5 });
+  assert.equal(max.atk_min, raw.atk_max, "its ATK floor rises to its ceiling");
+
+  // NPC_POWERUP starts SC_INCATKRATE at 200 and SC_INCHITRATE at 100 (skill.c:9164).
+  const up = applySelfBuffsToRawMob(raw, { NPC_POWERUP: 5 });
+  assert.equal(up.atk_min, raw.atk_min * 3, "ATK x3");
+  assert.equal(up.atk_max, raw.atk_max * 3);
+  assert.equal(up.hit, (raw.level + raw.stats.dex) * 2, "HIT x2");
+
+  // SM_MAGNUM: 20% of the hit comes back as Fire (skill.c:7414, val1=3 val2=20).
+  const mag = applySelfBuffsToRawMob(raw, { SM_MAGNUM: 10 });
+  assert.deepEqual(mag.sub_weapon_property, { ele: 3, pct: 20 });
+
+  // None of the three may touch the monster as a TARGET — they say nothing about how
+  // hard it is to hit or how much your damage is resisted.
+  for (const buff of [{ BS_MAXIMIZE: 5 }, { NPC_POWERUP: 5 }, { SM_MAGNUM: 10 }]) {
+    const t = loader.getMonster(1040);
+    const before = { flee: t.flee, hit: t.hit, def: t.def_, ele: t.element, guard: t.auto_guard_pct };
+    applyTargetSelfBuffs(t, buff);
+    assert.deepEqual({ flee: t.flee, hit: t.hit, def: t.def_, ele: t.element, guard: t.auto_guard_pct }, before,
+      `${Object.keys(buff)[0]} must be incoming-only`);
+    assert.equal(describeSelfBuff(Object.keys(buff)[0], 5).incoming_only, true, "and must be flagged as such");
+  }
+});
+
 test("isweapontype() resolves rather than falling open", () => {
   // The condition handler deliberately fails OPEN on an unevaluatable condition, so
   // a predicate that fails to substitute silently grants its bonus to everything —

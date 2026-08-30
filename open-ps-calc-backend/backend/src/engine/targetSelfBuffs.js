@@ -35,6 +35,14 @@ function skillElementInt(skillName) {
   return Number.isFinite(v) ? v : null;
 }
 
+// SC_AUTOGUARD's block chance: val2 accumulates 5,5,4,4,3,3,2,2,1,1 over the levels
+// (status.c:8326-8329). Lv2 = 10%, Lv3 = 14%, Lv5 = 21%, Lv10 = 30%.
+function autoGuardPct(lv) {
+  let v = 0;
+  for (let i = 0; i < lv; i++) { const t = 5 - (i >> 1); v += t < 0 ? 1 : t; }
+  return v;
+}
+
 const SELF_BUFFS = {
   // SC_CONCENTRATION, val2 = 2 + lv, applied as a PERCENTAGE of the unit's AGI and DEX
   // (status.c status_calc_agi/dex). A monster has no equipment, so it is the whole stat —
@@ -56,10 +64,10 @@ const SELF_BUFFS = {
     // the one that matters there: a monster's HIT is level + DEX, so Concentration makes
     // it land on you more often. Its damage per hit is unchanged — mob ATK comes from the
     // mob DB, not from its stats.
-    applyRaw(stats, lv) {
+    applyRaw(mob, lv) {
       const pct = 2 + lv;
-      stats.agi += Math.floor(stats.agi * pct / 100);
-      stats.dex += Math.floor(stats.dex * pct / 100);
+      mob.stats.agi += Math.floor(mob.stats.agi * pct / 100);
+      mob.stats.dex += Math.floor(mob.stats.dex * pct / 100);
     },
   },
   // SC_INC_AGI, val2 = 2 + lv, a FLAT AGI gain (status.c:7855, 4091).
@@ -72,7 +80,7 @@ const SELF_BUFFS = {
       target.agi += gain;
       if (target.flee > 0) target.flee += gain;
     },
-    applyRaw(stats, lv) { stats.agi += 2 + lv; },
+    applyRaw(mob, lv) { mob.stats.agi += 2 + lv; },
   },
   // SC_INCFLEERATE at val1 = 100 for every level (skill.c:9170-9173), and
   // status_calc_flee reads it as `flee += flee * val1 / 100` (status.c:5065) — so the
@@ -85,6 +93,53 @@ const SELF_BUFFS = {
     apply(target) {
       if (target.flee > 0) target.flee = Math.floor(target.flee * 2);
     },
+  },
+  // SC_MAXIMIZEPOWER makes every weapon roll come out maximum (battle.c:651 — the base
+  // damage function's `flag&1`). Nothing to do to the monster when YOU are attacking it;
+  // it only matters when it swings at you, so this one is incoming-only.
+  BS_MAXIMIZE: {
+    label: "Maximize Power",
+    modelled: true,
+    incomingOnly: true,
+    describe: () => "always rolls its maximum ATK (raises the damage it does to you)",
+    applyRaw(mob) { mob.atk_min = mob.atk_max ?? mob.atk_min; },
+  },
+  // NPC_POWERUP starts TWO statuses at once (skill.c:9164): SC_INCATKRATE at val1 = 200,
+  // which status_calc reads as `atk_percent += 200` (status.c:4445) — i.e. TRIPLE ATK —
+  // and SC_INCHITRATE at 100, read as `hit += hit * 100/100` (status.c:4972), i.e. double
+  // HIT. Both only matter when the monster is the attacker.
+  NPC_POWERUP: {
+    label: "Power Up",
+    modelled: true,
+    incomingOnly: true,
+    describe: () => "ATK x3 and HIT x2 (it hits you much harder, and far more often)",
+    applyRaw(mob) {
+      if (mob.atk_min != null) mob.atk_min = Math.floor(mob.atk_min * 3);
+      if (mob.atk_max != null) mob.atk_max = Math.floor(mob.atk_max * 3);
+      const baseHit = (mob.level || 0) + ((mob.stats || {}).dex || 0);
+      mob.hit = baseHit * 2;
+    },
+  },
+  // Magnum Break on a monster is a self-buff, not the AoE you know: skill.c:7414 starts
+  // SC_SUB_WEAPONPROPERTY with val1 = ELE_FIRE and val2 = 20, commented "Initiate 20% of
+  // your damage becomes fire element". battle.c:998 then ADDS 20% of the base damage back
+  // as Fire, element-adjusted against the defender, on top of the ordinary Neutral hit —
+  // so it is a damage bonus whose size depends on your armour property.
+  SM_MAGNUM: {
+    label: "Magnum Break",
+    modelled: true,
+    incomingOnly: true,
+    describe: () => "adds 20% of its damage back as Fire (so your armour property decides how much it gains)",
+    applyRaw(mob) { mob.sub_weapon_property = { ele: 3, pct: 20 }; },
+  },
+  // SC_AUTOGUARD blocks a weapon attack outright — `rnd()%100 < val2` (battle.c:3275) —
+  // and val2 is a per-level sum, 5+5+4+4+3+3+2+2+1+1, so Lv2/3/5/10 give 10/14/21/30%.
+  // Skills flagged NK_NO_CARDFIX_ATK bypass it, as does magic (it is BF_WEAPON only).
+  ML_AUTOGUARD: {
+    label: "Auto Guard",
+    modelled: true,
+    describe: (lv) => `blocks ${autoGuardPct(lv)}% of your weapon attacks outright (magic and card-ignoring skills pass through)`,
+    apply(target, lv) { target.auto_guard_pct = autoGuardPct(lv); },
   },
   // NPC_STONESKIN / NPC_ANTIMAGIC share SC_STONESKIN, which Hercules gives a FLAT
   // +-20 x level to DEF and MDEF in opposite directions (status.c:8820-8830, 5176, 5322).
@@ -133,6 +188,9 @@ function describeSelfBuff(skillName, level) {
     modelled: !!spec.modelled,
     effect: spec.modelled ? spec.describe(Number(level) || 1) : null,
     reason: spec.modelled ? null : spec.reason,
+    // True when the buff changes nothing about hitting the monster and only shows up in
+    // the Survivability panel, so the UI can say so instead of looking broken.
+    incoming_only: !!spec.incomingOnly,
   };
 }
 
@@ -146,7 +204,7 @@ function applyTargetSelfBuffs(target, buffs) {
   const applied = [];
   for (const [name, lv] of Object.entries(buffs)) {
     const spec = SELF_BUFFS[name];
-    if (!spec || !spec.modelled || !lv) continue;
+    if (!spec || !spec.modelled || !lv || !spec.apply) continue;
     spec.apply(target, Number(lv) || 1);
     applied.push(name);
   }
@@ -165,14 +223,14 @@ function applyTargetSelfBuffs(target, buffs) {
  */
 function applySelfBuffsToRawMob(mob, buffs) {
   if (!mob || !buffs || typeof buffs !== "object") return mob;
-  let stats = null;
+  let copy = null;
   for (const [name, lv] of Object.entries(buffs)) {
     const spec = SELF_BUFFS[name];
     if (!spec || !spec.modelled || !lv || !spec.applyRaw) continue;
-    if (stats == null) stats = { ...(mob.stats || {}) };
-    spec.applyRaw(stats, Number(lv) || 1);
+    if (copy == null) copy = { ...mob, stats: { ...(mob.stats || {}) } };
+    spec.applyRaw(copy, Number(lv) || 1);
   }
-  return stats == null ? mob : { ...mob, stats };
+  return copy == null ? mob : copy;
 }
 
 module.exports = { SELF_BUFFS, applyTargetSelfBuffs, applySelfBuffsToRawMob, describeSelfBuff };

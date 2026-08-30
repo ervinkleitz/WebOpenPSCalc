@@ -549,6 +549,9 @@ router.post("/incoming", (req: Request, res: Response) => {
     // back in the response, so the damage, the mob-skill pricing and the client's
     // own derived numbers (its HIT, and therefore your dodge %) all agree.
     const mob = applyIncomingTargetMods(rawMob, targetModsInput);
+    // Its effective HIT, computed once here rather than re-derived client-side: Power Up
+    // doubles it outright, so `level + DEX` is no longer the whole story.
+    if (mob && mob.hit == null) mob.hit = (mob.level || 0) + ((mob.stats || {}).dex || 0);
 
     // A specific mob skill cast at the player (survivability "which skill hits me").
     if (mobSkill && mobSkill.id != null) {

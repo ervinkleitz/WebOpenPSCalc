@@ -2239,6 +2239,12 @@ class BattlePipeline {
       dpsValid = true;
     }
 
+    // SC_AUTOGUARD on the monster blocks a weapon attack outright — `rnd()%100 < val2`
+    // (battle.c:3275). Skills the DB flags IgnoreCards bypass it (NK_NO_CARDFIX_ATK), and
+    // it is BF_WEAPON only, so the magic branch never reaches here. It is applied to the
+    // finished attack list below, NOT folded into `h`: a block is not a miss, so it takes
+    // criticals too, and criticals deliberately skip `h` because they ignore flee.
+    const autoGuardPct = skill.nk_ignore_cards ? 0 : Math.max(0, Math.min(100, target.auto_guard_pct || 0));
     const h = hitChance / 100.0;
     const effCrit = critChance / 100.0;
     const normalAvg = normal.avg_damage;
@@ -2455,6 +2461,17 @@ class BattlePipeline {
       if (katarSecondCrit) attacks.push(createAttackDefinition(katarSecondCrit.avg_damage, 0.0, period, kpf * effCrit));
     }
 
+    // Auto Guard: every weapon outcome above — normal, critical, katar second hit, double
+    // attack — has the same chance of being blocked, so scale them all and give the
+    // blocked share its own zero-damage outcome. Applied here, before the autocast/proc
+    // branches are appended, because those are separate casts rather than the weapon hit.
+    if (autoGuardPct > 0) {
+      const blocked = autoGuardPct / 100;
+      const totalChance = attacks.reduce((n, a) => n + a.chance, 0);
+      for (const a of attacks) a.chance *= 1 - blocked;
+      attacks.push(createAttackDefinition(0.0, 0.0, period, totalChance * blocked));
+    }
+
     // PS Auto Spell (Hindsight): flat 30% autocast on this physical attack (hit
     // or miss), Sage/Professor only. The autocast is an independent extra spell
     // that rides on the swing — its expected value folds into DPS with no added
@@ -2525,6 +2542,7 @@ class BattlePipeline {
       crit,
       crit_chance: critChance,
       hit_chance: hitChance,
+      auto_guard_pct: autoGuardPct || undefined,
       perfect_dodge: perfectDodge,
       dps,
       attacks,

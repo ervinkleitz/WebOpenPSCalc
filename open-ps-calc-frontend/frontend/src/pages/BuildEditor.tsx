@@ -870,7 +870,10 @@ export default function BuildEditor() {
       // Present on self-cast, non-damage skills: what the calculator can do about this
       // buff. `modelled: false` carries the reason, which the panel shows instead of a
       // working toggle — see targetSelfBuffs.js.
-      self_buff?: { label: string; modelled: boolean; effect: string | null; reason: string | null } | null }[];
+      self_buff?: { label: string; modelled: boolean; effect: string | null; reason: string | null;
+        // True when the buff changes only what the monster does to YOU, so the damage
+        // panel won't move and the row says where to look instead.
+        incoming_only?: boolean } | null }[];
   } | null>(null);
   const [jobBonusStats, setJobBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [equipBonusStats, setEquipBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
@@ -3368,7 +3371,10 @@ export default function BuildEditor() {
                           </span>
                         </label>
                       </div>
-                      <div className="hint-text">{info.modelled ? info.effect : info.reason}</div>
+                      <div className="hint-text">
+                        {info.modelled ? info.effect : info.reason}
+                        {info.modelled && info.incoming_only && " — shows in Survivability, not in your damage."}
+                      </div>
                     </div>
                   );
                 })}

@@ -93,7 +93,32 @@ function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weap
   const atkEle = eleOverride != null ? eleOverride : 0;
   // build=null: the player's own ground-effect enchant (Volcano/Deluge/etc.)
   // buffs the PLAYER's outgoing element, not a mob's incoming attack element.
-  pmf = calculateAttrFix(weapon, playerTarget, pmf, result, null, atkEle);
+  // SC_SUB_WEAPONPROPERTY (a monster that has used Magnum Break): `damage += attr_fix(base
+  // * val2/100, val1)` — battle.c:998, inside calc_elefix, i.e. RIGHT HERE. Both parts are
+  // functions of the same roll, so they are combined per outcome rather than convolved,
+  // and the defender's card resists that follow are keyed to the primary element for the
+  // whole sum — which is what Hercules does too, since cardfix runs after elefix.
+  const sub = mob.sub_weapon_property;
+  if (sub && sub.pct > 0) {
+    const defName = loader.getElementName(playerTarget.element);
+    const mainMult = loader.getAttrFixMultiplier(loader.getElementName(atkEle), defName, playerTarget.element_level || 1);
+    const subMult = loader.getAttrFixMultiplier(loader.getElementName(sub.ele), defName, playerTarget.element_level || 1);
+    const combined = {};
+    for (const [k, p] of Object.entries(pmf)) {
+      const base = Number(k);
+      const total = Math.floor(base * mainMult / 100) + Math.floor(Math.floor(base * sub.pct / 100) * subMult / 100);
+      combined[total] = (combined[total] || 0) + p;
+    }
+    pmf = combined;
+    const [smn, smx, sav] = pmfStats(pmf);
+    result.add_step({
+      name: "Attr Fix", value: sav, min_value: smn, max_value: smx,
+      note: `${loader.getElementName(atkEle)} vs ${defName} Lv${playerTarget.element_level || 1} (${mainMult}%) + Magnum Break's ${sub.pct}% as ${loader.getElementName(sub.ele)} (${subMult}%)`,
+      formula: `dmg × ${mainMult}% + (dmg × ${sub.pct}%) × ${subMult}%`, hercules_ref: "battle.c:998",
+    });
+  } else {
+    pmf = calculateAttrFix(weapon, playerTarget, pmf, result, null, atkEle);
+  }
 
   // Player is the defender; the "attacker" (mob) has no ignore-DEF gear in
   // this calculator, so pass a zeroed-out GearBonuses rather than the player's own.

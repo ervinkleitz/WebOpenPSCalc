@@ -9,6 +9,23 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Four more monster self-buffs, from a review of all 84 a monster can cast.** On top of the
+  first batch:
+  - **Auto Guard** (36 monsters, the widest coverage of anything left) — blocks 10% / 14% / 21% /
+    30% of your weapon attacks outright at the Lv2/3/5/10 monsters use. It is a block, not a
+    miss, so it takes criticals too and leaves your hit chance alone: against a Golem with Auto
+    Guard Lv10 your DPS falls by exactly 30%. Magic and skills flagged IgnoreCards pass through.
+  - **Power Up** (25 monsters) — the biggest gap the review found. It starts two statuses at
+    once, `SC_INCATKRATE` at 200 and `SC_INCHITRATE` at 100, so the monster hits for **triple
+    damage with double HIT**.
+  - **Magnum Break** (33 monsters) — on a monster it's a self-buff: 20% of its damage comes back
+    as Fire on top of the normal hit, so how much it actually gains depends on your armour
+    property.
+  - **Maximize Power** (19 monsters) — every one of its weapon rolls comes out maximum.
+
+  The last three change only what the monster does to *you*, so they show up in the
+  Survivability panel and the row says so rather than looking broken in the damage numbers.
+
 - **Monster self-buffs, as toggles in the Target panel.** Monsters buff themselves — a Scout
   casts Improve Concentration Lv10 — and until now the only way to price that was to work out
   the stat change by hand and enter it as a custom monster. The panel now lists the buffs the

@@ -168,6 +168,8 @@ function createStatusData(overrides = {}) {
     cri: 0,
     hit: 0,
     flee: 0,
+    // SC_AUTOGUARD on the TARGET: % of your weapon attacks it blocks outright.
+    auto_guard_pct: 0,
     flee2: 0,
     aspd: 0.0,
     max_hp: 0,
