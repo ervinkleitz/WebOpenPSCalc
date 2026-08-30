@@ -9,6 +9,19 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Safety Ring gives no DEF.** It was granting its +3 MDEF but not its +3 DEF, so any build
+  wearing one (or two) read 3–6 DEF light in the survivability panel. Payon Stories zeroed the
+  ring's structured DEF — its tooltip literally says "Defense: 0" — while its description still
+  lists the effects as "Def +3, Mdef +3", so the DEF has to come from the item's script, and only
+  the MDEF half had been written. Reported by a player. Two golden builds move with it: a
+  Blacksmith wearing one ring goes DEF 2 → 5, and the two-ring build 2 → 8.
+
+  Worth recording how the data got that way, since it looks like a scrape bug and isn't: PS has
+  genuinely retuned the DEF on 70 items (Neo Valkyrja's Shield 5 → 80, Puppy Hat 2 → 4, and 30
+  items zeroed), and our scraped values match the in-game tooltip in **all 70** cases. Safety Ring
+  is the only one whose description promises DEF that nothing then delivered — the rest were
+  checked and are correct.
+
 - **Super Novice couldn't take Tool Mastery.** The Merchant line's flat-ATK mastery (+4 ATK per
   level with an Axe or Mace, +40 at Lv10) was offered to Merchants, Blacksmiths, Alchemists and
   their transcendent forms, but not to Super Novice — so an axe or mace Super Novice was reading

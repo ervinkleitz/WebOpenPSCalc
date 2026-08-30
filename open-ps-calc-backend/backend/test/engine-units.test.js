@@ -2441,6 +2441,24 @@ test("Super Novice is offered Tool Mastery, and it reaches the damage", () => {
   }
 });
 
+test("Safety Ring gives DEF as well as MDEF", () => {
+  // PS zeroed the item's structured DEF (its tooltip reads "Defense: 0") but its description
+  // still lists "Def +3" and "Mdef +3", so the DEF has to come from the script. Only the MDEF
+  // half was modelled, and a player noticed the ring adding no DEF.
+  const stat = (acc) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 7, base_level: 90, job_level: 50,
+      base_stats: { str: 60, agi: 40, vit: 50, int: 20, dex: 40, luk: 20 },
+      equipped: acc ? { accessory_left: acc } : {},
+    });
+    const [, , , st] = resolvePlayerState(b, createBattleConfig(), PS);
+    return { def: st.def_, mdef: st.mdef };
+  };
+  const bare = stat(null), ring = stat(2615);
+  assert.equal(ring.def - bare.def, 3, "Safety Ring must add 3 DEF");
+  assert.equal(ring.mdef - bare.mdef, 3, "...and still add 3 MDEF");
+});
+
 test("isweapontype() resolves rather than falling open", () => {
   // The condition handler deliberately fails OPEN on an unevaluatable condition, so
   // a predicate that fails to substitute silently grants its bonus to everything —

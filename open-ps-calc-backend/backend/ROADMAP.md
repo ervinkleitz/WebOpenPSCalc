@@ -1622,6 +1622,19 @@ what the calc showed, while Lv1–2 were over-reported. The ×2 Break-Neck ailme
 unmodeled — it needs the target to already carry that status.
 
 ### Open gaps (verified, prioritised) — punch-list
+- **TODO: a maintenance script that audits every PS-custom skill's job list against the wiki.**
+  `ps_custom_constants.json` carries a hand-written `job` array per PS-custom skill, and it is the
+  ONLY source of truth for who can take that skill — those skills are absent from the vanilla
+  `skill_tree.conf` we scrape, so nothing in the repo can contradict a wrong list. Two have been
+  wrong so far, both for Super Novice (Crazy Uproar, 2026-08-18; Tool Mastery, 2026-08-30), both
+  because the rework PDF frames a skill as belonging to the class it reworks. **Shape:** alongside
+  `scripts/scrape-ps-cooldowns.mjs`, fetch each custom skill's wiki page, read its `Category:` list,
+  and diff the classes found against our `job` array — report both directions (a class the wiki
+  lists that we omit, and one we grant that it doesn't). Re-runnable after every patch, and it
+  covers every class rather than just the one someone happened to report. The cheap manual version
+  in the meantime is the wiki's `Category:Super_Novice` page, which lists all ~100 pages a Super
+  Novice can use; a 2026-08-30 pass against it found nothing else missing.
+
 - ~~**The skill-period floor is wrong**~~ — **measured and CLOSED 2026-08-29: it is right.**
   A low-level Blacksmith at ASPD 157 (auto-attack interval 860ms) cast Mammonite — instant, no
   after-cast delay — **24 times in 20s, the same count as 20s of auto-attacking**, while
