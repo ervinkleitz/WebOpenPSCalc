@@ -87,6 +87,17 @@ instead of release version. Dates are taken from actual git commit history.
   arrows, so its attacks carry the arrow's property; nothing bare-handed fires a Kunai, so a
   punch with one equipped stays Neutral, which is what was measured in-game earlier.
 
+- **Breakpoints now answer for the monster you're actually fighting.** The "+X HIT for 95% /
+  100%" rows are computed from the target's FLEE, but the breakpoints endpoint loaded the monster
+  with no target modifiers at all — so it ignored Quagmire, Blind, and (once they existed) the
+  monster's own self-buffs. Against a Scout that meant the Target panel reading "HIT 100%:
+  161 → 169" while the panel beside it still quoted the HIT for 161. Now a plain Scout needs
+  +53 HIT for 100%, +61 under its own Improve Concentration, and +18 under Quagmire Lv5. Found
+  by reviewing what else the self-buff feature should have touched.
+
+  The target-modifier block is now one function shared by both endpoints instead of living
+  inline in the damage handler, which is what let them drift apart in the first place.
+
 - **Frostfire weapons are refinable, and the calculator wouldn't let you say so.** All 14 of them
   — Dagger, Sword, Claymore, Staff, Axe, Mace, Spear, Fist, Katar, Tome, Bow, Whip, Violin and
   Huuma Shuriken — were flagged non-refineable in our data, so the equipment panel hid the refine
