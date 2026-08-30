@@ -574,6 +574,14 @@ const DEFAULT_CUSTOM_TARGET: CustomTarget = {
   element: 0, element_level: 1, is_boss: false, luk: 0, agi: 0, int_: 0,
 };
 
+// Defensive element each self element-change buff switches the monster to. The backend
+// reads this from the skill DB (targetSelfBuffs.js); mirrored here only so the Target
+// panel's Element chip agrees with the calculation.
+const SELF_BUFF_ELEMENTS: Record<string, number> = {
+  NPC_CHANGEWATER: 1, NPC_CHANGEGROUND: 2, NPC_CHANGEFIRE: 3, NPC_CHANGEWIND: 4,
+  NPC_CHANGEPOISON: 5, NPC_CHANGEHOLY: 6, NPC_CHANGEDARKNESS: 7, NPC_CHANGETELEKINESIS: 8,
+};
+
 const DEFAULT_TARGET_MODS: TargetMods = {
   element_status: "",
   element_change: "",
@@ -966,8 +974,6 @@ export default function BuildEditor() {
   // 80 + mobHIT − FLEE, floored at 5% (→ 95% is the dodge ceiling), and a mob's
   // HIT = base level + DEX. So min FLEE = mobHIT + 75. Soft-flee only (Perfect
   // Dodge is separate; FLEE also drops when several mobs target you at once).
-  const mobDodgeFlee = mobInfo?.stats ? mobInfo.level + mobInfo.stats.dex + 75 : null;
-
   // The monster's own self-cast buffs, from its kit. The backend annotates each with
   // whether it can price it (`self_buff`), so the panel can offer the supported ones and
   // name the rest rather than leaving them out.
@@ -977,23 +983,44 @@ export default function BuildEditor() {
   );
   const activeSelfBuffs = (targetMods.self_buffs ?? {}) as Record<string, number>;
 
+  // The monster's stats WITH its ticked self-buffs folded in. Every readout below reads
+  // from this rather than from mobInfo directly, so the panel can't show one number while
+  // the engine calculates with another. Mirrors targetSelfBuffs.js.
+  const mobBuffed = useMemo(() => {
+    const base = mobInfo?.stats;
+    if (!base) return null;
+    const stats = { ...base };
+    let fleeMult = 1;
+    let element = mobInfo?.element ?? null;
+    for (const [name, lv] of Object.entries(activeSelfBuffs)) {
+      if (!lv) continue;
+      if (name === "AC_CONCENTRATION") {
+        const pct = 2 + Number(lv);
+        stats.agi += Math.floor((base.agi * pct) / 100);
+        stats.dex += Math.floor((base.dex * pct) / 100);
+      } else if (name === "AL_INCAGI") {
+        stats.agi += 2 + Number(lv);
+      } else if (name === "NPC_AGIUP") {
+        fleeMult *= 2; // a flee-RATE buff: AGI is untouched
+      } else if (SELF_BUFF_ELEMENTS[name] != null) {
+        element = SELF_BUFF_ELEMENTS[name];
+      }
+    }
+    return { stats, fleeMult, element };
+  }, [mobInfo, activeSelfBuffs]);
+  const mobStats = mobBuffed?.stats ?? mobInfo?.stats ?? null;
+  const mobBuffedElement = mobBuffed?.element ?? mobInfo?.element ?? null;
+
+  const mobDodgeFlee = mobStats && mobInfo ? mobInfo.level + mobStats.dex + 75 : null;
+
+
   // The mob's own soft FLEE (level + AGI). Quagmire cuts AGI by 10%/lv (boss-immune),
   // which lowers flee by the same amount — computed live so the Target panel shows the
   // drop even before recalculating. Matches the backend's Quagmire math.
   const mobBaseFlee = mobInfo?.stats ? mobInfo.level + mobInfo.stats.agi : null;
-  // Self-buffs raise it, and the chip has to agree with what the engine will use or the
-  // panel and the result contradict each other. Mirrors targetSelfBuffs.js exactly.
-  const mobBuffedFlee = useMemo(() => {
-    if (mobBaseFlee == null || !mobInfo?.stats) return mobBaseFlee;
-    let flee = mobBaseFlee;
-    for (const [name, lv] of Object.entries(activeSelfBuffs)) {
-      if (!lv) continue;
-      if (name === "AC_CONCENTRATION") flee += Math.floor((mobInfo.stats.agi * (2 + Number(lv))) / 100);
-      else if (name === "AL_INCAGI") flee += 2 + Number(lv);
-      else if (name === "NPC_AGIUP") flee = Math.floor(flee * 2);
-    }
-    return flee;
-  }, [mobBaseFlee, mobInfo, activeSelfBuffs]);
+  const mobBuffedFlee = (mobStats && mobInfo && mobBuffed)
+    ? Math.floor((mobInfo.level + mobStats.agi) * mobBuffed.fleeMult)
+    : mobBaseFlee;
   const mobEffFlee = (mobBuffedFlee != null && quagmireLv > 0 && !mobInfo?.is_boss)
     ? mobBuffedFlee - Math.floor((mobInfo!.stats!.agi * 10 * quagmireLv) / 100)
     : mobBuffedFlee;
@@ -3196,19 +3223,19 @@ export default function BuildEditor() {
                       {([
                         { label: "HP",      value: mobInfo.hp?.toLocaleString() },
                         { label: "Race",    value: mobInfo.race },
-                        { label: "Element", value: mobInfo.element != null ? `${ELEMENT_NAMES[mobInfo.element] ?? mobInfo.element} ${mobInfo.element_level ?? 1}` : undefined },
+                        { label: "Element", value: mobInfo.element != null ? (mobBuffedElement !== mobInfo.element ? `${ELEMENT_NAMES[mobInfo.element] ?? mobInfo.element} → ${ELEMENT_NAMES[mobBuffedElement!] ?? mobBuffedElement} ${mobInfo.element_level ?? 1}` : `${ELEMENT_NAMES[mobInfo.element] ?? mobInfo.element} ${mobInfo.element_level ?? 1}`) : undefined, title: mobBuffedElement !== mobInfo.element ? "Changed by a self-buff you have ticked below. The element LEVEL is unchanged." : undefined },
                         { label: "Size",    value: mobInfo.size },
                         { label: "DEF",     value: mobInfo.def_ != null ? String(mobInfo.def_) : undefined },
                         { label: "MDEF",    value: mobInfo.mdef != null ? String(mobInfo.mdef) : undefined },
                         { label: "ATK",     value: (mobInfo.atk_min != null && mobInfo.atk_max != null) ? `${mobInfo.atk_min}–${mobInfo.atk_max}` : undefined },
                         { label: "STR",     value: mobInfo.stats ? String(mobInfo.stats.str) : undefined },
-                        { label: "AGI",     value: mobInfo.stats ? String(mobInfo.stats.agi) : undefined },
+                        { label: "AGI",     value: mobInfo.stats ? (mobStats && mobStats.agi !== mobInfo.stats.agi ? `${mobInfo.stats.agi} → ${mobStats.agi}` : String(mobInfo.stats.agi)) : undefined, title: mobStats && mobInfo.stats && mobStats.agi !== mobInfo.stats.agi ? "Raised by a self-buff you have ticked below." : undefined },
                         { label: "VIT",     value: mobInfo.stats ? String(mobInfo.stats.vit) : undefined },
                         { label: "INT",     value: mobInfo.stats ? String(mobInfo.stats.int) : undefined },
-                        { label: "DEX",     value: mobInfo.stats ? String(mobInfo.stats.dex) : undefined },
+                        { label: "DEX",     value: mobInfo.stats ? (mobStats && mobStats.dex !== mobInfo.stats.dex ? `${mobInfo.stats.dex} → ${mobStats.dex}` : String(mobInfo.stats.dex)) : undefined, title: mobStats && mobInfo.stats && mobStats.dex !== mobInfo.stats.dex ? "Raised by a self-buff you have ticked below." : undefined },
                         { label: "LUK",     value: mobInfo.stats ? String(mobInfo.stats.luk) : undefined },
                         { label: "Flee",    value: mobBaseFlee != null ? (mobEffFlee !== mobBaseFlee ? `${mobBaseFlee} → ${mobEffFlee}` : String(mobBaseFlee)) : undefined, title: `The monster's own soft FLEE (level + AGI). ${mobEffFlee !== mobBaseFlee ? `Quagmire Lv${quagmireLv} lowers it from ${mobBaseFlee} to ${mobEffFlee}, raising your hit chance.` : "Lowered by Quagmire (−AGI)."}` },
-                        { label: "Flee 95%", value: mobDodgeFlee != null ? mobDodgeFlee.toLocaleString() : undefined, title: `FLEE to dodge this monster 95% of the time (mob level + DEX + 75 = ${mobDodgeFlee ?? "?"}). Soft-flee only — Perfect Dodge is separate, and FLEE drops when several mobs attack at once.` },
+                        { label: "Flee 95%", value: mobDodgeFlee != null ? mobDodgeFlee.toLocaleString() : undefined, title: `FLEE to dodge this monster 95% of the time (mob level + DEX + 75 = ${mobDodgeFlee ?? "?"}), using its DEX after any self-buff you have ticked. Soft-flee only — Perfect Dodge is separate, and FLEE drops when several mobs attack at once.` },
                         { label: "HIT 100%", value: mobHit100 != null ? (mobHit100 !== mobBaseHit100 ? `${mobBaseHit100} → ${mobHit100}` : String(mobHit100)) : undefined, title: `HIT to land every attack on this monster (hit% = 80 + HIT − flee → 100% at flee + 20 = ${mobHit100 ?? "?"}).${mobHit100 !== mobBaseHit100 ? ` Quagmire Lv${quagmireLv} lowers it from ${mobBaseHit100} to ${mobHit100}.` : ""} Your HIT is in the Character stats readout.` },
                       ] as { label: string; value?: string; title?: string }[]).map(({ label, value, title }) => (
                         <div key={label} className="sec-stat-card" title={title}>

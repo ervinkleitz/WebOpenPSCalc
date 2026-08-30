@@ -14,7 +14,9 @@ instead of release version. Dates are taken from actual git commit history.
   the stat change by hand and enter it as a custom monster. The panel now lists the buffs the
   selected monster actually has, read from its own skill kit, with the cast chance next to each.
   Ticking one applies it, so a Scout under Concentration goes FLEE 141 → 149 and HIT 146 → 155,
-  and your hit chance falls accordingly.
+  and your hit chance falls accordingly. The monster's stat grid follows it: AGI, DEX, Flee,
+  Flee 95%, HIT 100% and Element all show the buffed value (as "70 → 78" where a buff moved it),
+  so the panel and the calculation can't disagree.
 
   What's priced: Improve Concentration (AGI/DEX +(2+lv)%), Increase AGI (flat +(2+lv) AGI),
   Agi Up (FLEE ×2 — it is a flee-rate buff, so AGI is untouched), and the monster's own element
