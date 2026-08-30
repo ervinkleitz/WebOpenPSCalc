@@ -52,6 +52,15 @@ const SELF_BUFFS = {
       if (target.flee > 0) target.flee += agiGain;
       if (target.hit > 0) target.hit += dexGain;
     },
+    // The same buff on the RAW mob record, for the incoming direction. The DEX half is
+    // the one that matters there: a monster's HIT is level + DEX, so Concentration makes
+    // it land on you more often. Its damage per hit is unchanged — mob ATK comes from the
+    // mob DB, not from its stats.
+    applyRaw(stats, lv) {
+      const pct = 2 + lv;
+      stats.agi += Math.floor(stats.agi * pct / 100);
+      stats.dex += Math.floor(stats.dex * pct / 100);
+    },
   },
   // SC_INC_AGI, val2 = 2 + lv, a FLAT AGI gain (status.c:7855, 4091).
   AL_INCAGI: {
@@ -63,6 +72,7 @@ const SELF_BUFFS = {
       target.agi += gain;
       if (target.flee > 0) target.flee += gain;
     },
+    applyRaw(stats, lv) { stats.agi += 2 + lv; },
   },
   // SC_INCFLEERATE at val1 = 100 for every level (skill.c:9170-9173), and
   // status_calc_flee reads it as `flee += flee * val1 / 100` (status.c:5065) — so the
@@ -143,4 +153,26 @@ function applyTargetSelfBuffs(target, buffs) {
   return applied;
 }
 
-module.exports = { SELF_BUFFS, applyTargetSelfBuffs, describeSelfBuff };
+/**
+ * The same buffs against the RAW mob record (`loader.getMonsterData` shape, stats nested
+ * under `.stats`) for the INCOMING direction, where the monster is the attacker. Returns
+ * a new object, leaving the caller's untouched.
+ *
+ * Only what changes the monster's offence is applied, which is why this is not simply the
+ * same function: its FLEE and its defensive ELEMENT are meaningless when it is the one
+ * swinging (its basic melee is Neutral regardless of its own property — incomingPipeline
+ * documents that), so Agi Up and the element changes deliberately do nothing here.
+ */
+function applySelfBuffsToRawMob(mob, buffs) {
+  if (!mob || !buffs || typeof buffs !== "object") return mob;
+  let stats = null;
+  for (const [name, lv] of Object.entries(buffs)) {
+    const spec = SELF_BUFFS[name];
+    if (!spec || !spec.modelled || !lv || !spec.applyRaw) continue;
+    if (stats == null) stats = { ...(mob.stats || {}) };
+    spec.applyRaw(stats, Number(lv) || 1);
+  }
+  return stats == null ? mob : { ...mob, stats };
+}
+
+module.exports = { SELF_BUFFS, applyTargetSelfBuffs, applySelfBuffsToRawMob, describeSelfBuff };

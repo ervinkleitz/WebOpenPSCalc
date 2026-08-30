@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 const { logCalculate, logFeature, logDonateClick, logPageView } = require("../middleware/statsLogger");
 import { createBattleConfig } from "../engine/config";
-const { applyTargetSelfBuffs } = require("../engine/targetSelfBuffs");
+const { applyTargetSelfBuffs, applySelfBuffsToRawMob } = require("../engine/targetSelfBuffs");
 import { buildFromSaveSchema } from "../engine/buildManager";
 import { createSkillInstance, createTarget, createDamageResult } from "../engine/models";
 import { loader } from "../engine/dataLoader";
@@ -490,6 +490,12 @@ router.post("/", (req: Request, res: Response) => {
 // loader hands out shared, cached mob records, so mutating one would poison every
 // later request for that monster.
 function applyIncomingTargetMods(mob: any, targetModsInput: any): any {
+  // The monster's own buffs first — it buffs itself, then you debuff it. Only the ones
+  // that change its OFFENCE do anything here: Improve Concentration raises its DEX and so
+  // its HIT (level + DEX), which is how often it lands on you. See targetSelfBuffs.js.
+  if (mob && targetModsInput?.self_buffs) {
+    mob = applySelfBuffsToRawMob(mob, targetModsInput.self_buffs);
+  }
   if (!mob || !targetModsInput?.offensive_blessing) return mob;
   const undeadOrDemon = mob.element === 9 || mob.race === "Demon" || mob.race === "Undead";
   if (!undeadOrDemon) return mob;

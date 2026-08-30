@@ -33,9 +33,15 @@ instead of release version. Dates are taken from actual git commit history.
   first) and Attribute Change (it rolls a random element, so there is nothing fixed to apply). A
   buff we quietly ignored would look exactly like a buff that does nothing.
 
-  Not covered: buffs that only change what a monster does *to you* (Two-Hand Quicken, Adrenaline
-  Rush, Power Up). The survivability pipeline takes no target modifiers today, so a toggle for
-  those would move no number.
+  **They carry into the Survivability panel too.** Improve Concentration raises the monster's DEX,
+  which is its HIT, so a buffed Scout lands on a 165-FLEE Hunter 70% of the time instead of 61%.
+  Its damage per hit is unchanged at 717–922 — mob ATK doesn't come from its stats — so what you
+  feel is more hits, not bigger ones. The buffs that mean nothing on the attack (Agi Up is a
+  flee-rate buff; the element changes are defensive, and a monster's melee is Neutral whatever
+  its own property) deliberately do nothing there.
+
+  Not covered: buffs that only raise a monster's ATK or ASPD (Two-Hand Quicken, Adrenaline Rush,
+  Power Up), which are a separate modelling job rather than a plumbing one.
 
 ### Fixed
 

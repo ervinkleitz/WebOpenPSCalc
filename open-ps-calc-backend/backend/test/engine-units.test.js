@@ -2526,6 +2526,27 @@ test("self-buffs we can't price are listed, never silently applied", () => {
   assert.match(conc.effect, /AGI and DEX \+12%/);
 });
 
+test("self-buffs reach the INCOMING direction, but only the offensive half", () => {
+  const { applySelfBuffsToRawMob } = require("../src/engine/targetSelfBuffs");
+  // The incoming path works on the RAW mob record (stats nested), where the monster is
+  // the attacker: its HIT is level + DEX, so Improve Concentration makes it land on you
+  // more often. Its damage per hit is untouched — mob ATK comes from the mob DB.
+  const raw = loader.getMonsterData(25015);
+  const conc = applySelfBuffsToRawMob(raw, { AC_CONCENTRATION: 10 });
+  assert.equal(conc.stats.dex, raw.stats.dex + Math.floor(raw.stats.dex * 12 / 100), "DEX rises");
+  assert.equal(conc.stats.agi, raw.stats.agi + Math.floor(raw.stats.agi * 12 / 100), "AGI rises");
+  assert.equal(conc.atk_min, raw.atk_min, "its ATK is unchanged");
+  assert.equal(raw.stats.dex, 75, "and the caller's own record is not mutated");
+
+  // A flee-rate buff and an element change are meaningless when the monster is the one
+  // swinging (its melee is Neutral whatever its own property), so they must no-op here.
+  for (const buff of [{ NPC_AGIUP: 5 }, { NPC_CHANGEFIRE: 1 }]) {
+    const out = applySelfBuffsToRawMob(raw, buff);
+    assert.deepEqual(out.stats, raw.stats, `${Object.keys(buff)[0]} must not change the monster's offence`);
+    assert.equal(out.element, raw.element, "and must not change the record's element here");
+  }
+});
+
 test("isweapontype() resolves rather than falling open", () => {
   // The condition handler deliberately fails OPEN on an unevaluatable condition, so
   // a predicate that fails to substitute silently grants its bonus to everything —
