@@ -3301,8 +3301,7 @@ export default function BuildEditor() {
                 <div className="buff-section-header" style={{ marginTop: "1rem" }}>
                   Monster self-buffs
                   <InfoTooltip>
-                    Buffs this monster casts on <em>itself</em>. Ticked means{" "}
-                    <strong>always on</strong>.
+                    Buffs this monster casts on itself. Ticked means always on.
                   </InfoTooltip>
                 </div>
                 {mobSelfBuffs.map((sk) => {
