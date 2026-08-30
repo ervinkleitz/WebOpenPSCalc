@@ -1011,7 +1011,10 @@ export default function BuildEditor() {
   const mobStats = mobBuffed?.stats ?? mobInfo?.stats ?? null;
   const mobBuffedElement = mobBuffed?.element ?? mobInfo?.element ?? null;
 
-  const mobDodgeFlee = mobStats && mobInfo ? mobInfo.level + mobStats.dex + 75 : null;
+  const blessingOnMob = !!targetMods.offensive_blessing && offensiveBlessingApplies;
+  const mobEffDex = mobStats ? (blessingOnMob ? Math.floor(mobStats.dex / 2) : mobStats.dex) : null;
+  const mobBaseDodgeFlee = mobInfo?.stats ? mobInfo.level + mobInfo.stats.dex + 75 : null;
+  const mobDodgeFlee = mobEffDex != null && mobInfo ? mobInfo.level + mobEffDex + 75 : null;
 
 
   // The mob's own soft FLEE (level + AGI). Quagmire cuts AGI by 10%/lv (boss-immune),
@@ -3232,10 +3235,10 @@ export default function BuildEditor() {
                         { label: "AGI",     value: mobInfo.stats ? (mobStats && mobStats.agi !== mobInfo.stats.agi ? `${mobInfo.stats.agi} → ${mobStats.agi}` : String(mobInfo.stats.agi)) : undefined, title: mobStats && mobInfo.stats && mobStats.agi !== mobInfo.stats.agi ? "Raised by a self-buff you have ticked below." : undefined },
                         { label: "VIT",     value: mobInfo.stats ? String(mobInfo.stats.vit) : undefined },
                         { label: "INT",     value: mobInfo.stats ? String(mobInfo.stats.int) : undefined },
-                        { label: "DEX",     value: mobInfo.stats ? (mobStats && mobStats.dex !== mobInfo.stats.dex ? `${mobInfo.stats.dex} → ${mobStats.dex}` : String(mobInfo.stats.dex)) : undefined, title: mobStats && mobInfo.stats && mobStats.dex !== mobInfo.stats.dex ? "Raised by a self-buff you have ticked below." : undefined },
+                        { label: "DEX",     value: mobInfo.stats ? (mobEffDex != null && mobEffDex !== mobInfo.stats.dex ? `${mobInfo.stats.dex} → ${mobEffDex}` : String(mobInfo.stats.dex)) : undefined, title: mobEffDex != null && mobInfo.stats && mobEffDex !== mobInfo.stats.dex ? (blessingOnMob ? "Halved by offensive Blessing; a ticked self-buff raises it." : "Raised by a self-buff you have ticked below.") : undefined },
                         { label: "LUK",     value: mobInfo.stats ? String(mobInfo.stats.luk) : undefined },
                         { label: "Flee",    value: mobBaseFlee != null ? (mobEffFlee !== mobBaseFlee ? `${mobBaseFlee} → ${mobEffFlee}` : String(mobBaseFlee)) : undefined, title: `The monster's own soft FLEE (level + AGI). ${mobEffFlee !== mobBaseFlee ? `Quagmire Lv${quagmireLv} lowers it from ${mobBaseFlee} to ${mobEffFlee}, raising your hit chance.` : "Lowered by Quagmire (−AGI)."}` },
-                        { label: "Flee 95%", value: mobDodgeFlee != null ? mobDodgeFlee.toLocaleString() : undefined, title: `FLEE to dodge this monster 95% of the time (mob level + DEX + 75 = ${mobDodgeFlee ?? "?"}), using its DEX after any self-buff you have ticked. Soft-flee only — Perfect Dodge is separate, and FLEE drops when several mobs attack at once.` },
+                        { label: "Flee 95%", value: mobDodgeFlee != null ? (mobDodgeFlee !== mobBaseDodgeFlee ? `${mobBaseDodgeFlee} → ${mobDodgeFlee}` : mobDodgeFlee.toLocaleString()) : undefined, title: `FLEE to dodge this monster 95% of the time (mob level + DEX + 75 = ${mobDodgeFlee ?? "?"}).${mobDodgeFlee !== mobBaseDodgeFlee ? ` Its DEX is ${blessingOnMob ? "halved by offensive Blessing" : "raised by a self-buff you have ticked"}, moving it from ${mobBaseDodgeFlee}.` : ""} Soft-flee only — Perfect Dodge is separate, and FLEE drops when several mobs attack at once.` },
                         { label: "HIT 100%", value: mobHit100 != null ? (mobHit100 !== mobBaseHit100 ? `${mobBaseHit100} → ${mobHit100}` : String(mobHit100)) : undefined, title: `HIT to land every attack on this monster (hit% = 80 + HIT − flee → 100% at flee + 20 = ${mobHit100 ?? "?"}).${mobHit100 !== mobBaseHit100 ? ` Quagmire Lv${quagmireLv} lowers it from ${mobBaseHit100} to ${mobHit100}.` : ""} Your HIT is in the Character stats readout.` },
                       ] as { label: string; value?: string; title?: string }[]).map(({ label, value, title }) => (
                         <div key={label} className="sec-stat-card" title={title}>
