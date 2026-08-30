@@ -6107,6 +6107,18 @@ documents why a script deviates and is stripped at load.
   `BS_TWOHANDSWORD: 0` is how a removed skill disappears from the pickers.
 - **The in-game client tooltip beats the API right after a patch**, and the API beats the
   PDFs a day or two later.
+- **A monster skill that shares a constant with a PLAYER skill inherits that skill's rework.**
+  Monsters cast `SM_MAGNUM`, `CR_REFLECTSHIELD`, `KN_TWOHANDQUICKEN`, `BS_ADRENALINE`,
+  `AC_CONCENTRATION` and a dozen more - the same constants the reworks retune. Magnum Break was
+  modelled here from vanilla Hercules and had to be corrected the same day: PS scopes its
+  semi-endow to auto attacks only (patch notes 2026-08-09, Swordsman), which our PLAYER-side
+  implementation already handled behind `SM_MAGNUM_ENDOW_ATTACK_ONLY`. So before modelling a
+  monster's version of anything: grep this file for the skill, AND read how `battlePipeline.js`
+  models the player's copy. A 2026-08-30 sweep of every self-cast monster buff found three more
+  carrying reworks (Reflect Shield - heavily; Two-Hand Quicken - renamed Sword Quickening;
+  Adrenaline Rush - retuned) and two shipped ones clean (Improve Concentration 3%->12% and
+  Increase AGI +3->+12 both match the wiki, unchanged). The caveats are recorded on the entries
+  themselves in `targetSelfBuffs.js`, where an implementer will actually meet them.
 - **A PS-custom skill's job list must be checked against the wiki's CATEGORIES, not the rework
   PDF.** PS-custom skills do not exist in the vanilla `skill_tree.conf` we scrape, so the
   hand-written `job` array in `ps_custom_constants.json` is the only source of truth for who can

@@ -45,6 +45,8 @@ function autoGuardPct(lv) {
 
 const SELF_BUFFS = {
   // SC_CONCENTRATION, val2 = 2 + lv, applied as a PERCENTAGE of the unit's AGI and DEX
+  // — confirmed unchanged on PS: wiki.payonstories.com/Improve_Concentration lists 3% at
+  // Lv1 rising to 12% at Lv10, and documents no server-specific change (checked 2026-08-30).
   // (status.c status_calc_agi/dex). A monster has no equipment, so it is the whole stat —
   // unlike the player-side copy in statusCalculator.js, which excludes card AGI/DEX.
   AC_CONCENTRATION: {
@@ -70,7 +72,9 @@ const SELF_BUFFS = {
       mob.stats.dex += Math.floor(mob.stats.dex * pct / 100);
     },
   },
-  // SC_INC_AGI, val2 = 2 + lv, a FLAT AGI gain (status.c:7855, 4091).
+  // SC_INC_AGI, val2 = 2 + lv, a FLAT AGI gain (status.c:7855, 4091) — confirmed unchanged
+  // on PS: wiki.payonstories.com/Increase_AGI lists +3 AGI at Lv1 to +12 at Lv10 with no
+  // server-specific note (checked 2026-08-30).
   AL_INCAGI: {
     label: "Increase AGI",
     modelled: true,
@@ -140,6 +144,63 @@ const SELF_BUFFS = {
     modelled: true,
     describe: (lv) => `blocks ${autoGuardPct(lv)}% of your weapon attacks outright (magic and card-ignoring skills pass through)`,
     apply(target, lv) { target.auto_guard_pct = autoGuardPct(lv); },
+  },
+  // ── Listed so you can see the monster has them, but not priced. Each says why. ──────
+  //
+  // A WARNING for whoever implements any of these: a monster skill that shares its
+  // constant with a PLAYER skill inherits that skill's Payon Stories rework. Magnum Break
+  // was modelled from vanilla here and had to be corrected — PS scopes its semi-endow to
+  // auto attacks, which our player-side code already knew. Check PS_SOURCES.md, and check
+  // how battlePipeline.js models the player's copy, BEFORE writing the monster's.
+  CR_REFLECTSHIELD: {
+    label: "Reflect Shield",
+    modelled: false,
+    reason: "not modelled yet — it reflects your melee back at you, and PS reworked it heavily (it now adds damage from the monster's soft DEF, ignores your DEF, and is capped at the lesser of the hit or your max HP), so the vanilla flat-% version would be wrong.",
+  },
+  MG_SAFETYWALL: {
+    label: "Safety Wall",
+    modelled: false,
+    reason: "not modelled yet — it blocks melee outright for a number of hits, which is a duration/charge mechanic the calculator has no concept of; it would need a 'while it lasts' mode rather than a toggle.",
+  },
+  KN_TWOHANDQUICKEN: {
+    label: "Sword Quickening",
+    modelled: false,
+    reason: "not modelled yet — it raises the monster's ASPD, and the incoming pipeline prices damage per hit with no attack-rate of its own, so there is nothing for it to change. NB PS renamed and reworked this skill (Two-Hand Quicken -> Sword Quickening).",
+  },
+  BS_ADRENALINE: {
+    label: "Adrenaline Rush",
+    modelled: false,
+    reason: "not modelled yet — same reason as Sword Quickening: it is an attack-speed buff, and incoming damage has no rate. PS reworked its numbers too (see PS_SOURCES.md, Blacksmith).",
+  },
+  HP_ASSUMPTIO: {
+    label: "Assumptio",
+    modelled: false,
+    reason: "not modelled yet — it cuts the damage the monster takes by a third, which is straightforward, but Assumptio's pre-renewal behaviour differs between servers and PS has not documented its version.",
+  },
+  NPC_MAGICMIRROR: {
+    label: "Magic Mirror",
+    modelled: false,
+    reason: "not modelled yet — it reflects magic back at the caster, so it needs the reflected damage priced against YOU, which the outgoing pipeline has no path for.",
+  },
+  NPC_BARRIER: {
+    label: "Barrier",
+    modelled: false,
+    reason: "not modelled yet — sets the monster's DEF to 100, i.e. immune to physical damage. Same problem as Stone Skin: an extreme that should be seen in game before the calculator asserts it.",
+  },
+  NPC_KEEPING: {
+    label: "Keeping",
+    modelled: false,
+    reason: "not modelled yet — sets the monster's DEF to 90. Same caution as Barrier.",
+  },
+  NPC_INVINCIBLE: {
+    label: "Invincible",
+    modelled: false,
+    reason: "not modelled yet — the monster takes no damage at all while it lasts, so the honest readout is a duration, not a damage number.",
+  },
+  AL_HEAL: {
+    label: "Heal",
+    modelled: false,
+    reason: "not modelled yet — the monster heals itself, which changes how long it takes to kill rather than how hard you hit it. That belongs in time-to-kill, which does not model the monster acting.",
   },
   // NPC_STONESKIN / NPC_ANTIMAGIC share SC_STONESKIN, which Hercules gives a FLAT
   // +-20 x level to DEF and MDEF in opposite directions (status.c:8820-8830, 5176, 5322).
