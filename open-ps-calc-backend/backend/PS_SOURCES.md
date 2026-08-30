@@ -6107,6 +6107,15 @@ documents why a script deviates and is stripped at load.
   `BS_TWOHANDSWORD: 0` is how a removed skill disappears from the pickers.
 - **The in-game client tooltip beats the API right after a patch**, and the API beats the
   PDFs a day or two later.
+- **A PS-custom skill's job list must be checked against the wiki's CATEGORIES, not the rework
+  PDF.** PS-custom skills do not exist in the vanilla `skill_tree.conf` we scrape, so the
+  hand-written `job` array in `ps_custom_constants.json` is the only source of truth for who can
+  take them - nothing in the repo can disagree with it. A class rework PDF frames every skill as
+  belonging to the class it reworks, which is how Tool Mastery shipped as Merchant-line-only when
+  `wiki.payonstories.com/Tool_Mastery` categorises it under **both Merchant and Super Novice**
+  (fixed 2026-08-30, the second instance of this after Crazy Uproar). Super Novice is the usual
+  victim: PS grants it more than the vanilla tree does. `Category:Super_Novice` lists all ~100
+  pages a Super Novice can use and is the cheapest cross-check there is.
 
 ## Descriptions that drift from scripts
 
