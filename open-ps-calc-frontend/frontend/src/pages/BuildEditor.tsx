@@ -915,7 +915,10 @@ export default function BuildEditor() {
     build: sanitizedBuild,
     skill: { id: skill.id, level: skill.level },
     target: targetMode === "monster" ? { mob_id: data.target_mob_id } : customTarget,
-  }), [sanitizedBuild, skill.id, skill.level, targetMode, data.target_mob_id, customTarget]);
+    // The HIT rows are quoted against the target's flee, so they need the same monster
+    // the damage panel is hitting — Quagmired, blinded, or under its own self-buffs.
+    target_mods: targetMods,
+  }), [sanitizedBuild, skill.id, skill.level, targetMode, data.target_mob_id, customTarget, targetMods]);
 
   // Signum Crucis only works on Undead and Demon targets.
   // Rust-Worn Apparatus (81012): "[Base INT >= 70] Freezing Trap applies Slow instead

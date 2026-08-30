@@ -233,6 +233,179 @@ function applyBreakingCloak(br: any, isAutoAttack: boolean, isSonicBlow: boolean
   }
 }
 
+/**
+ * Everything the player does TO the monster before damage is rolled: its own self-buffs
+ * first, then the debuffs. Mutates `target` in place and returns it.
+ *
+ * Shared by /calculate and /breakpoints. It has to be, or the two disagree: the HIT
+ * breakpoints are computed from `target.flee`, so a Quagmired or self-buffed monster
+ * would be quoted a HIT requirement for a flee value the damage panel is not using.
+ * Everything here touches only the target — the player-side skill_params that the same
+ * target_mods can set (Performing, Zeny Pincher, ...) stay in the /calculate handler.
+ */
+function applyOutgoingTargetMods(target: any, targetModsInput: any, build: any, profile: any): any {
+
+  // The monster's OWN self-buffs, before anything the player does to it: it buffs
+  // itself, then you cut it down. Always-on by design (see targetSelfBuffs.js) —
+  // ticking one applies it permanently rather than at the monster's cast rate, which
+  // is an upper bound on the monster and so a floor on your numbers.
+  if (targetModsInput && targetModsInput.self_buffs) {
+    applyTargetSelfBuffs(target, targetModsInput.self_buffs as Record<string, number>);
+  }
+
+  // Apply target debuffs from target_mods
+  if (targetModsInput) {
+    const sc: Record<string, boolean> = { ...(target.target_active_scs || {}) };
+    // Element status: Frozen/Stone override element + apply an SC; Poison is the
+    // real ailment (DEF cut, no element change).
+    if (targetModsInput.element_status === "Poison") {
+      // Poison ailment: reduces the VIT-based soft DEF by 50% on Payon Stories
+      // (25% vanilla) — the wiki: "Defence gained from VIT is reduced by 50%".
+      // Soft DEF derives from the target's VIT (defenseFix: def2 = target.vit),
+      // so scale VIT; hard DEF, element, and auto-hit are untouched. The HP-drain
+      // damage-over-time is surfaced separately (see poison_dot below).
+      const poisonVitCut = build.server === "payon_stories" ? 50 : 25;
+      target.vit = Math.max(0, Math.floor(target.vit * (100 - poisonVitCut) / 100));
+    } else if (targetModsInput.element_status === "Frozen") {
+      target.element = 1;
+      sc.SC_FREEZE = true;
+    } else if (targetModsInput.element_status === "Stone") {
+      target.element = 2;
+      sc.SC_STONE = true;
+    }
+    // Elemental Change (Sage: SA_ELEMENTWATER/GROUND/FIRE/WIND) — overrides the
+    // target's defensive element to Water/Earth/Fire/Wind at LEVEL 1 (per
+    // wiki.payonstories.com/Elemental_Change: "the element level the monster is
+    // changed to ... is 1", e.g. Water 1). Does NOT work on MVP/boss monsters.
+    // Applied after element_status so an explicit element change wins.
+    const ELEMENT_CHANGE_INT: Record<string, number> = { Water: 1, Earth: 2, Fire: 3, Wind: 4 };
+    const ecEle = ELEMENT_CHANGE_INT[targetModsInput.element_change as string];
+    if (ecEle != null && !target.is_boss) {
+      target.element = ecEle;
+      target.element_level = 1;
+    }
+    // Status debuffs
+    if (targetModsInput.sleep)  sc.SC_SLEEP  = true;
+    if (targetModsInput.stun)   sc.SC_STUN   = true;
+    // Blind: −25% of the target's flee (hitChance.js). Unlike sleep/stun it is not
+    // an auto-hit — a blinded monster still evades, just worse. Reachable on a mob
+    // via Grizzly Card's Hammerfall clause, a Priest's Lex Divina, or a Sage's
+    // Blinding Mist, so it is a status a real build can actually set up.
+    if (targetModsInput.blind)  sc.SC_BLIND  = true;
+    target.target_active_scs = sc;
+    // Offensive Blessing (AL_BLESSING). Cast on an Undead-ELEMENT or Demon-RACE
+    // monster, Blessing is a debuff rather than a buff: Hercules sets its val2 to 0
+    // for those targets, and status_calc_str/int/dex then take the `else` branch and
+    // HALVE each of STR, INT and DEX (`str >>= 1`, an integer shift, so odd values
+    // round down). Skill level is irrelevant — the halving is all-or-nothing.
+    //
+    // What that buys you here: the target's soft MDEF is INT + VIT/2
+    // (defenseFix.js), so halving INT is a straight magic-damage increase — the
+    // reason a Priest blesses a Ghoul before opening. The halved STR and DEX are
+    // the monster's own ATK and HIT, which only matter in the incoming direction;
+    // /incoming takes no target_mods today, so they are recorded on the target for
+    // consistency rather than being read there.
+    //
+    // wiki.payonstories.com/Blessing documents only the buff half, so this is the
+    // stock pre-renewal behaviour. Boss immunity is NOT modelled: nothing in the
+    // SC_BLESSING branch blocks MVPs, and it takes no resistance roll, but that
+    // has not been confirmed in-game on PS.
+    if (targetModsInput.offensive_blessing
+        && (target.element === 9 || target.race === "Demon" || target.race === "Undead")) {
+      const dexLost = target.dex - Math.floor(target.dex / 2);
+      target.str = Math.floor(target.str / 2);
+      target.int_ = Math.floor(target.int_ / 2);
+      target.dex = Math.floor(target.dex / 2);
+      // HIT is level + DEX and was computed when the target was built, so it has to
+      // come down by the DEX just lost or the two disagree. Subtracting the loss
+      // (rather than recomputing level + dex) keeps any other HIT the target was
+      // given. FLEE is deliberately untouched: it comes from AGI, which Blessing
+      // does not affect — so a blessed monster is less accurate, not easier to hit.
+      if (target.hit > 0) target.hit = Math.max(0, target.hit - dexLost);
+    }
+    // Burning (PS, Burning 2026-08-09 PDF): a 5-second stacking debuff — the
+    // Alchemist's Remote Detonator applies 5 stacks at once with a Marine Sphere
+    // Bottle. Each stack cuts the target's HARD MDEF by 2 (raising every magic hit
+    // you land while it is up) and ticks 60 Fire magic damage per second. Only the
+    // MDEF cut belongs in the damage pipeline; the tick is reported separately
+    // because it is the Burning's own damage, not the player's attack.
+    const burnStacks = Math.max(0, Math.min(
+      (profile.burning?.max_stacks ?? 5),
+      Number(targetModsInput.burning) || 0,
+    ));
+    if (burnStacks > 0) {
+      const perStack = profile.burning?.mdef_per_stack ?? 2;
+      target.mdef_ = Math.max(0, target.mdef_ - perStack * burnStacks);
+    }
+    // Signum Crucis (PS, AL_CRUCIS): reduces the target's HARD DEF by a
+    // level-scaled %. The PS Priest/Acolyte rework capped it at level 5 with the
+    // table −14/−23/−32/−41/−50% for Lv1–5, i.e. 5 + 9×lv (−50% at Lv5, the max).
+    // Hard-DEF cut only (not def_percent, which would also scale soft DEF); affects
+    // Undead-element or Demon-race monsters only. Stacks with Provoke. The toggle
+    // assumes Lv5 (max), so the reduction is −50% — the same value the pre-rework
+    // Lv10 formula produced, so the checkbox outcome is unchanged.
+    if (targetModsInput.signum_crucis && (target.element === 9 || target.race === "Demon")) {
+      const signumLv = 5;                    // rework cap = max
+      const signumPct = 5 + 9 * signumLv;    // −50% at Lv5
+      target.def_ = Math.max(0, target.def_ - Math.floor(target.def_ * signumPct / 100));
+    }
+    // Provoke cast on the target: DEF −(5 + 5×lv)% (−55% at Lv10), matching
+    // the engine's Provoke convention (def_percent scales both hard and soft
+    // DEF in defenseFix). Boss-protocol monsters are immune. Accepts a level
+    // 1–10; a legacy boolean `true` from older shared links maps to max (10).
+    // Only touches the target — separate from a player's self-cast Provoke /
+    // Auto Berserk, which lives on the player's own status.
+    const provokeLv = targetModsInput.provoke === true ? 10
+      : Math.max(0, Math.min(10, Number(targetModsInput.provoke) || 0));
+    if (provokeLv > 0 && !target.is_boss) {
+      target.def_percent = Math.max(0, (target.def_percent ?? 100) - (5 + 5 * provokeLv));
+    }
+    // Fling (GS_FLING) — a Gunslinger spends coins to cut the target's defence.
+    // wiki.payonstories.com/Fling: "Consumes up to 5 coins", "Reduces targets Hard
+    // Def by 3*coins used" (3/6/9/12/15%), 20 s. PS retuned the rate: Hercules is
+    // `val2 = 5*val1` (status.c:8714), 5% per coin.
+    //
+    // It rides `def_percent`, the same field as Provoke, and that is exactly right
+    // rather than a convenience: Hercules applies def_percent to the SOFT defence
+    // only when the target is a player (battle.c:1494) but to hard AND soft for a
+    // monster (1510-11) — so the wiki's "Only reduces Soft Def against players"
+    // falls straight out of the shared field instead of needing a special case.
+    //
+    // NOT gated on boss, unlike Provoke — and this is now VERIFIED, not assumed.
+    // Hercules gates boss status-immunity two ways: an explicit per-skill guard
+    // (Provoke has one, skill.c:7691 `tstatus->mode&MD_BOSS` -> fail) and the
+    // generic `is_boss_resist_sc()` check in status_change_start, which returns
+    // true only for common ailments or a status flagged `NoBoss` in
+    // db/pre-re/sc_config.conf. GS_FLING has NEITHER: its call site
+    // (skill.c:2032) is a bare `sc_start(..., SC_FLING, 100, ...)` with no mode
+    // check, and its sc_config entry carries no Flags block at all —
+    //     SC_FLING: { CalcFlags: { DefPerc: true }  Skill: "GS_FLING" }
+    // where SC_PROVOKE, by contrast, has `Flags: { Debuff: true  NoBoss: true }`.
+    // 40 statuses do carry NoBoss in pre-re, so the absence is meaningful rather
+    // than an empty file. That entry also confirms the field used here: DefPerc
+    // IS def_percent.
+    const flingCoins = Math.max(0, Math.min(5, Number(targetModsInput.fling) || 0));
+    if (flingCoins > 0) {
+      target.def_percent = Math.max(0, (target.def_percent ?? 100) - 3 * flingCoins);
+    }
+    // Quagmire (PS, WZ_QUAGMIRE): the marshland cuts the target's AGI and DEX
+    // by 10% per level (max 50% at Lv5), which lowers its flee — it does NOT
+    // grant auto-hit. Bosses are immune (only their move speed drops, not
+    // modelled here); the effect is halved vs players (PvP). Accepts a level
+    // 1–5; a legacy boolean `true` from older shared links maps to max (5).
+    const quagLv = targetModsInput.quagmire === true ? 5
+      : Math.max(0, Math.min(5, Number(targetModsInput.quagmire) || 0));
+    if (quagLv > 0 && !target.is_boss) {
+      const pct = target.is_pc ? 5 * quagLv : 10 * quagLv;
+      const agiCut = Math.floor(target.agi * pct / 100);
+      target.agi = Math.max(0, target.agi - agiCut);
+      target.dex = Math.max(0, target.dex - Math.floor(target.dex * pct / 100));
+      target.flee = Math.max(0, target.flee - agiCut); // 1 AGI ≈ 1 Flee (pre-re)
+    }
+  }
+  return target;
+}
+
 router.post("/", (req: Request, res: Response) => {
   try {
     const { build: buildData, skill: skillInput, target: targetInput, target_mods: targetModsInput } = req.body || {};
@@ -252,165 +425,7 @@ router.post("/", (req: Request, res: Response) => {
     } else {
       target = createTarget(targetInput || {});
     }
-
-    // The monster's OWN self-buffs, before anything the player does to it: it buffs
-    // itself, then you cut it down. Always-on by design (see targetSelfBuffs.js) —
-    // ticking one applies it permanently rather than at the monster's cast rate, which
-    // is an upper bound on the monster and so a floor on your numbers.
-    if (targetModsInput && targetModsInput.self_buffs) {
-      applyTargetSelfBuffs(target, targetModsInput.self_buffs as Record<string, number>);
-    }
-
-    // Apply target debuffs from target_mods
-    if (targetModsInput) {
-      const sc: Record<string, boolean> = { ...(target.target_active_scs || {}) };
-      // Element status: Frozen/Stone override element + apply an SC; Poison is the
-      // real ailment (DEF cut, no element change).
-      if (targetModsInput.element_status === "Poison") {
-        // Poison ailment: reduces the VIT-based soft DEF by 50% on Payon Stories
-        // (25% vanilla) — the wiki: "Defence gained from VIT is reduced by 50%".
-        // Soft DEF derives from the target's VIT (defenseFix: def2 = target.vit),
-        // so scale VIT; hard DEF, element, and auto-hit are untouched. The HP-drain
-        // damage-over-time is surfaced separately (see poison_dot below).
-        const poisonVitCut = build.server === "payon_stories" ? 50 : 25;
-        target.vit = Math.max(0, Math.floor(target.vit * (100 - poisonVitCut) / 100));
-      } else if (targetModsInput.element_status === "Frozen") {
-        target.element = 1;
-        sc.SC_FREEZE = true;
-      } else if (targetModsInput.element_status === "Stone") {
-        target.element = 2;
-        sc.SC_STONE = true;
-      }
-      // Elemental Change (Sage: SA_ELEMENTWATER/GROUND/FIRE/WIND) — overrides the
-      // target's defensive element to Water/Earth/Fire/Wind at LEVEL 1 (per
-      // wiki.payonstories.com/Elemental_Change: "the element level the monster is
-      // changed to ... is 1", e.g. Water 1). Does NOT work on MVP/boss monsters.
-      // Applied after element_status so an explicit element change wins.
-      const ELEMENT_CHANGE_INT: Record<string, number> = { Water: 1, Earth: 2, Fire: 3, Wind: 4 };
-      const ecEle = ELEMENT_CHANGE_INT[targetModsInput.element_change as string];
-      if (ecEle != null && !target.is_boss) {
-        target.element = ecEle;
-        target.element_level = 1;
-      }
-      // Status debuffs
-      if (targetModsInput.sleep)  sc.SC_SLEEP  = true;
-      if (targetModsInput.stun)   sc.SC_STUN   = true;
-      // Blind: −25% of the target's flee (hitChance.js). Unlike sleep/stun it is not
-      // an auto-hit — a blinded monster still evades, just worse. Reachable on a mob
-      // via Grizzly Card's Hammerfall clause, a Priest's Lex Divina, or a Sage's
-      // Blinding Mist, so it is a status a real build can actually set up.
-      if (targetModsInput.blind)  sc.SC_BLIND  = true;
-      target.target_active_scs = sc;
-      // Offensive Blessing (AL_BLESSING). Cast on an Undead-ELEMENT or Demon-RACE
-      // monster, Blessing is a debuff rather than a buff: Hercules sets its val2 to 0
-      // for those targets, and status_calc_str/int/dex then take the `else` branch and
-      // HALVE each of STR, INT and DEX (`str >>= 1`, an integer shift, so odd values
-      // round down). Skill level is irrelevant — the halving is all-or-nothing.
-      //
-      // What that buys you here: the target's soft MDEF is INT + VIT/2
-      // (defenseFix.js), so halving INT is a straight magic-damage increase — the
-      // reason a Priest blesses a Ghoul before opening. The halved STR and DEX are
-      // the monster's own ATK and HIT, which only matter in the incoming direction;
-      // /incoming takes no target_mods today, so they are recorded on the target for
-      // consistency rather than being read there.
-      //
-      // wiki.payonstories.com/Blessing documents only the buff half, so this is the
-      // stock pre-renewal behaviour. Boss immunity is NOT modelled: nothing in the
-      // SC_BLESSING branch blocks MVPs, and it takes no resistance roll, but that
-      // has not been confirmed in-game on PS.
-      if (targetModsInput.offensive_blessing
-          && (target.element === 9 || target.race === "Demon" || target.race === "Undead")) {
-        const dexLost = target.dex - Math.floor(target.dex / 2);
-        target.str = Math.floor(target.str / 2);
-        target.int_ = Math.floor(target.int_ / 2);
-        target.dex = Math.floor(target.dex / 2);
-        // HIT is level + DEX and was computed when the target was built, so it has to
-        // come down by the DEX just lost or the two disagree. Subtracting the loss
-        // (rather than recomputing level + dex) keeps any other HIT the target was
-        // given. FLEE is deliberately untouched: it comes from AGI, which Blessing
-        // does not affect — so a blessed monster is less accurate, not easier to hit.
-        if (target.hit > 0) target.hit = Math.max(0, target.hit - dexLost);
-      }
-      // Burning (PS, Burning 2026-08-09 PDF): a 5-second stacking debuff — the
-      // Alchemist's Remote Detonator applies 5 stacks at once with a Marine Sphere
-      // Bottle. Each stack cuts the target's HARD MDEF by 2 (raising every magic hit
-      // you land while it is up) and ticks 60 Fire magic damage per second. Only the
-      // MDEF cut belongs in the damage pipeline; the tick is reported separately
-      // because it is the Burning's own damage, not the player's attack.
-      const burnStacks = Math.max(0, Math.min(
-        (profile.burning?.max_stacks ?? 5),
-        Number(targetModsInput.burning) || 0,
-      ));
-      if (burnStacks > 0) {
-        const perStack = profile.burning?.mdef_per_stack ?? 2;
-        target.mdef_ = Math.max(0, target.mdef_ - perStack * burnStacks);
-      }
-      // Signum Crucis (PS, AL_CRUCIS): reduces the target's HARD DEF by a
-      // level-scaled %. The PS Priest/Acolyte rework capped it at level 5 with the
-      // table −14/−23/−32/−41/−50% for Lv1–5, i.e. 5 + 9×lv (−50% at Lv5, the max).
-      // Hard-DEF cut only (not def_percent, which would also scale soft DEF); affects
-      // Undead-element or Demon-race monsters only. Stacks with Provoke. The toggle
-      // assumes Lv5 (max), so the reduction is −50% — the same value the pre-rework
-      // Lv10 formula produced, so the checkbox outcome is unchanged.
-      if (targetModsInput.signum_crucis && (target.element === 9 || target.race === "Demon")) {
-        const signumLv = 5;                    // rework cap = max
-        const signumPct = 5 + 9 * signumLv;    // −50% at Lv5
-        target.def_ = Math.max(0, target.def_ - Math.floor(target.def_ * signumPct / 100));
-      }
-      // Provoke cast on the target: DEF −(5 + 5×lv)% (−55% at Lv10), matching
-      // the engine's Provoke convention (def_percent scales both hard and soft
-      // DEF in defenseFix). Boss-protocol monsters are immune. Accepts a level
-      // 1–10; a legacy boolean `true` from older shared links maps to max (10).
-      // Only touches the target — separate from a player's self-cast Provoke /
-      // Auto Berserk, which lives on the player's own status.
-      const provokeLv = targetModsInput.provoke === true ? 10
-        : Math.max(0, Math.min(10, Number(targetModsInput.provoke) || 0));
-      if (provokeLv > 0 && !target.is_boss) {
-        target.def_percent = Math.max(0, (target.def_percent ?? 100) - (5 + 5 * provokeLv));
-      }
-      // Fling (GS_FLING) — a Gunslinger spends coins to cut the target's defence.
-      // wiki.payonstories.com/Fling: "Consumes up to 5 coins", "Reduces targets Hard
-      // Def by 3*coins used" (3/6/9/12/15%), 20 s. PS retuned the rate: Hercules is
-      // `val2 = 5*val1` (status.c:8714), 5% per coin.
-      //
-      // It rides `def_percent`, the same field as Provoke, and that is exactly right
-      // rather than a convenience: Hercules applies def_percent to the SOFT defence
-      // only when the target is a player (battle.c:1494) but to hard AND soft for a
-      // monster (1510-11) — so the wiki's "Only reduces Soft Def against players"
-      // falls straight out of the shared field instead of needing a special case.
-      //
-      // NOT gated on boss, unlike Provoke — and this is now VERIFIED, not assumed.
-      // Hercules gates boss status-immunity two ways: an explicit per-skill guard
-      // (Provoke has one, skill.c:7691 `tstatus->mode&MD_BOSS` -> fail) and the
-      // generic `is_boss_resist_sc()` check in status_change_start, which returns
-      // true only for common ailments or a status flagged `NoBoss` in
-      // db/pre-re/sc_config.conf. GS_FLING has NEITHER: its call site
-      // (skill.c:2032) is a bare `sc_start(..., SC_FLING, 100, ...)` with no mode
-      // check, and its sc_config entry carries no Flags block at all —
-      //     SC_FLING: { CalcFlags: { DefPerc: true }  Skill: "GS_FLING" }
-      // where SC_PROVOKE, by contrast, has `Flags: { Debuff: true  NoBoss: true }`.
-      // 40 statuses do carry NoBoss in pre-re, so the absence is meaningful rather
-      // than an empty file. That entry also confirms the field used here: DefPerc
-      // IS def_percent.
-      const flingCoins = Math.max(0, Math.min(5, Number(targetModsInput.fling) || 0));
-      if (flingCoins > 0) {
-        target.def_percent = Math.max(0, (target.def_percent ?? 100) - 3 * flingCoins);
-      }
-      // Quagmire (PS, WZ_QUAGMIRE): the marshland cuts the target's AGI and DEX
-      // by 10% per level (max 50% at Lv5), which lowers its flee — it does NOT
-      // grant auto-hit. Bosses are immune (only their move speed drops, not
-      // modelled here); the effect is halved vs players (PvP). Accepts a level
-      // 1–5; a legacy boolean `true` from older shared links maps to max (5).
-      const quagLv = targetModsInput.quagmire === true ? 5
-        : Math.max(0, Math.min(5, Number(targetModsInput.quagmire) || 0));
-      if (quagLv > 0 && !target.is_boss) {
-        const pct = target.is_pc ? 5 * quagLv : 10 * quagLv;
-        const agiCut = Math.floor(target.agi * pct / 100);
-        target.agi = Math.max(0, target.agi - agiCut);
-        target.dex = Math.max(0, target.dex - Math.floor(target.dex * pct / 100));
-        target.flee = Math.max(0, target.flee - agiCut); // 1 AGI ≈ 1 Flee (pre-re)
-      }
-    }
+    applyOutgoingTargetMods(target, targetModsInput, build, profile);
 
     const skill = createSkillInstance({
       id: skillInput ? Number(skillInput.id) || 0 : 0,
@@ -857,6 +872,11 @@ router.post("/breakpoints", (req: Request, res: Response) => {
     let target: any = null;
     if (targetInput && targetInput.mob_id != null) target = loader.getMonster(Number(targetInput.mob_id));
     else if (targetInput) target = createTarget(targetInput);
+    // Breakpoints are quoted AGAINST this target — the HIT rows come straight from
+    // target.flee — so it has to be the same monster the damage panel is hitting,
+    // debuffs, self-buffs and all. Without this the panel could say "+8 HIT for 100%"
+    // while the target grid next to it showed a flee 8 points higher.
+    if (target) applyOutgoingTargetMods(target, (req.body || {}).target_mods, build, profile);
 
     const skill = createSkillInstance({
       id: skillInput ? Number(skillInput.id) || 0 : 0,
