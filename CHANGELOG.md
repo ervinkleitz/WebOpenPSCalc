@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-08-30
+
+### Fixed
+
+- **Super Novice couldn't take Tool Mastery.** The Merchant line's flat-ATK mastery (+4 ATK per
+  level with an Axe or Mace, +40 at Lv10) was offered to Merchants, Blacksmiths, Alchemists and
+  their transcendent forms, but not to Super Novice — so an axe or mace Super Novice was reading
+  40 ATK light with no way to say otherwise. The wiki categorises Tool Mastery under both Merchant
+  and Super Novice. Reported by a player. Same shape as the Crazy Uproar miss: Payon Stories grants
+  Super Novice more than the vanilla skill tree we scrape says it has, so every PS-custom skill
+  needs its job list checked by hand. The one other first-class custom skill, Scattering, is
+  Archer-only on the wiki and stays that way.
+
 ## 2026-08-29
 
 ### Fixed

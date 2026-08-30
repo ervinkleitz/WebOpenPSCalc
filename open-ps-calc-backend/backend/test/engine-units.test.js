@@ -2415,6 +2415,32 @@ test("an arrow lends its ELEMENT to a bow user's melee skill, but not its ATK", 
     "a bare-handed punch must not take an equipped Kunai's element");
 });
 
+test("Super Novice is offered Tool Mastery, and it reaches the damage", () => {
+  // wiki.payonstories.com/Tool_Mastery categorises it under BOTH Merchant and Super Novice.
+  // Its job list was the Merchant line only, so a Super Novice could not tick it — the same
+  // shape of miss as Crazy Uproar, and for the same reason: PS grants Super Novice more than
+  // the vanilla skill tree we scrape says it has.
+  const offered = (job) => (loader.getPassiveSkillsForJob(job) || [])
+    .some((sk) => (sk.name || sk.mastery_key) === "PS_MC_TOOLMASTERY");
+  assert.ok(offered(23), "Super Novice must be offered Tool Mastery");
+  assert.ok(offered(5), "and the Merchant line keeps it");
+  assert.ok(!offered(11), "while a Hunter does not get it");
+
+  // It is the Merchant line's flat-ATK mastery for Axes AND Maces, so both must gain +40 at Lv10.
+  const dmg = (weapon, lv) => runScenarioRaw({
+    build: {
+      job_id: 23, base_level: 99, job_level: 10,
+      base_stats: { str: 80, agi: 40, vit: 40, int: 20, dex: 60, luk: 20 },
+      equipped: { right_hand: weapon }, mastery_levels: lv ? { PS_MC_TOOLMASTERY: lv } : {},
+    },
+    target: { name: "T", race: "Brute", element: "Ele_Neutral", element_level: 1, size: "Medium",
+              def_: 20, def2: 20, mdef_: 5, mdef2: 5, hp: 100000, agi: 30, level: 90 },
+  }).raw.normal.avg_damage;
+  for (const [label, id] of [["axe", 1305], ["mace", 1504]]) {
+    assert.equal(dmg(id, 10) - dmg(id, 0), 40, `Tool Mastery Lv10 must add +40 ATK with an ${label}`);
+  }
+});
+
 test("isweapontype() resolves rather than falling open", () => {
   // The condition handler deliberately fails OPEN on an unevaluatable condition, so
   // a predicate that fails to substitute silently grants its bonus to everything —

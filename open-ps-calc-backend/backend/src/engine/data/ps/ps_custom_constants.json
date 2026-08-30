@@ -18,5 +18,5 @@
   "2633": {"constant": "PS_RG_QUICKSTEP", "job": [17, 4018]},
   "2635": {"constant": "PS_RG_WEAKNESSEXPLOIT", "job": [17, 4018]},
   "2636": {"constant": "PS_RG_STOLENGOODS", "job": [17, 4018]},
-  "2637": {"constant": "PS_MC_TOOLMASTERY", "job": [5, 10, 18, 4011, 4019]}
+  "2637": {"constant": "PS_MC_TOOLMASTERY", "job": [5, 10, 18, 23, 4011, 4019]}
 }
