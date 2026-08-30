@@ -6390,6 +6390,36 @@ Bolt -33% and Fire Wall -11% (fast builds and magic now meet the real cap). Back
 at 2.00 casts/s — the number the calculator showed before the delay fix, but for the right
 reason this time: no per-skill delay, a global floor.
 
+## OPEN (2026-08-30) — is a monster's Stone Skin a FLAT DEF add, or a DEF percentage?
+
+Blocks modelling `NPC_STONESKIN` and `NPC_ANTIMAGIC` as monster self-buff toggles; every other
+buff in that feature shipped. The two candidate readings differ by an order of magnitude:
+
+- **Flat** — what Hercules actually does: `val2 = 20 * val1` added straight to DEF, with MDEF
+  taking the same figure negated (status.c:8820-8830, applied at 5176 and 5322). Anti-Magic is
+  the same status with the signs swapped.
+- **Percentage** — what Hercules says the OFFICIAL version does, in a comment on that very line:
+  *"[Aegis] Technically this uses MDEFPercent/DEFPercent + sth else"*. That would be +20% of the
+  monster's own DEF per level, which our target model can already express (`def_percent`, the
+  field Provoke and Fling use).
+
+**Why it matters, on the 7 monsters that actually carry these** (all at a 100% cast rate):
+
+| monster | base DEF | lv | flat reading | percentage reading |
+|---|---|---|---|---|
+| Dory | 15 | 1 | 35 DEF, you deal 65% | 18 DEF, you deal 82% |
+| Hardrock Mammoth | 50 | 3 | 110 DEF, **1 damage a hit** | 80 DEF, you deal 20% |
+| Beelzebub | 40 | 4 | 120 DEF, **1 damage a hit** | 72 DEF, you deal 28% |
+| Nidhoggr's Shadow | 60 | 3 | 120 DEF, **1 damage a hit** | 96 DEF, you deal 4% |
+| Miasmus (Anti-Magic) | 40 MDEF | 5 | 140 MDEF, magic does nothing | 80 MDEF, magic does 20% |
+
+The flat reading makes four monsters — including a farmed MVP — permanently immune to physical
+damage, which is not what players report. That is enough to refuse to ship it, but not enough to
+assert the percentage instead. RateMyServer, our usual Aegis cross-check, 403s.
+
+**The cheap in-game test** is Dory (3042): non-boss, DEF 15, casts Stone Skin Lv1. Hit it before
+and after it casts. Damage down ~23% means the flat reading; down ~4% means the percentage.
+
 ## OPEN (2026-08-29) — is Aquatic Shawl really refinable, and is our head-slot rule too broad?
 
 `dataLoader._normalizeItem` force-flags **every** `EQP_HEAD_MID` / `EQP_HEAD_LOW` item as

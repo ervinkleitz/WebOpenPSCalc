@@ -84,12 +84,12 @@ const SELF_BUFFS = {
   NPC_STONESKIN: {
     label: "Stone Skin",
     modelled: false,
-    reason: "not modelled yet — vanilla gives a flat +20 DEF / -20 MDEF per level, which at the levels monsters cast it would make them near-immune. Needs confirming on PS first.",
+    reason: "not modelled yet — two readings of it differ by an order of magnitude. Hercules adds a FLAT +20 DEF per level, which at the levels monsters cast would put Beelzebub and Nidhoggr's Shadow past 100 DEF, i.e. 1 damage a hit; its own code says the official version is a DEF PERCENTAGE instead, which would be +20%/level. Needs one in-game reading before the calculator claims either.",
   },
   NPC_ANTIMAGIC: {
     label: "Anti-Magic",
     modelled: false,
-    reason: "not modelled yet — the same SC as Stone Skin with the signs swapped (+20 MDEF / -20 DEF per level). Same reason: unverified on PS.",
+    reason: "not modelled yet — the same status as Stone Skin with the signs swapped (MDEF up, DEF down), so it carries the same flat-vs-percentage ambiguity.",
   },
   // Random element on cast, so there is no deterministic element to switch to.
   NPC_ATTRICHANGE: {
