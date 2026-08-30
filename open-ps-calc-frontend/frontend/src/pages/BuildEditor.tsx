@@ -3301,13 +3301,8 @@ export default function BuildEditor() {
                 <div className="buff-section-header" style={{ marginTop: "1rem" }}>
                   Monster self-buffs
                   <InfoTooltip>
-                    Buffs this monster casts on <em>itself</em>, taken from its own skill kit.
-                    Ticking one treats it as <strong>always on</strong> — the monster really casts
-                    it now and then (the chance is shown next to each one) and it wears off, so
-                    this is the worst case for you: the toughest version of the monster, and a
-                    floor on your damage rather than an average.
-                    Buffs the calculator can&apos;t price yet are listed with the reason instead
-                    of a toggle, so you can see they exist.
+                    Buffs this monster casts on <em>itself</em>. Ticked means{" "}
+                    <strong>always on</strong>.
                   </InfoTooltip>
                 </div>
                 {mobSelfBuffs.map((sk) => {
