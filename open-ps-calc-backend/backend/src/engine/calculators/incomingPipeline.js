@@ -12,8 +12,9 @@
  * the rest of the chain around them.
  */
 const { loader } = require("../dataLoader");
+const { getProfile } = require("../serverProfiles");
 const { createDamageResult, createGearBonuses } = require("../models");
-const { uniformPmf, scaleFloor, addFlat, pmfStats, floorAt } = require("../pmf");
+const { uniformPmf, scaleFloor, addFlat, convolve, pmfStats, floorAt } = require("../pmf");
 const { calculateAttrFix } = require("./modifiers/attrFix");
 const { calculateDefenseFix, calculateMagicDefenseFix } = require("./modifiers/defenseFix");
 const { calculateIncomingPhysical, calculateCardFixMagic } = require("./modifiers/cardFix");
@@ -93,32 +94,11 @@ function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weap
   const atkEle = eleOverride != null ? eleOverride : 0;
   // build=null: the player's own ground-effect enchant (Volcano/Deluge/etc.)
   // buffs the PLAYER's outgoing element, not a mob's incoming attack element.
-  // SC_SUB_WEAPONPROPERTY (a monster that has used Magnum Break): `damage += attr_fix(base
-  // * val2/100, val1)` — battle.c:998, inside calc_elefix, i.e. RIGHT HERE. Both parts are
-  // functions of the same roll, so they are combined per outcome rather than convolved,
-  // and the defender's card resists that follow are keyed to the primary element for the
-  // whole sum — which is what Hercules does too, since cardfix runs after elefix.
-  const sub = mob.sub_weapon_property;
-  if (sub && sub.pct > 0) {
-    const defName = loader.getElementName(playerTarget.element);
-    const mainMult = loader.getAttrFixMultiplier(loader.getElementName(atkEle), defName, playerTarget.element_level || 1);
-    const subMult = loader.getAttrFixMultiplier(loader.getElementName(sub.ele), defName, playerTarget.element_level || 1);
-    const combined = {};
-    for (const [k, p] of Object.entries(pmf)) {
-      const base = Number(k);
-      const total = Math.floor(base * mainMult / 100) + Math.floor(Math.floor(base * sub.pct / 100) * subMult / 100);
-      combined[total] = (combined[total] || 0) + p;
-    }
-    pmf = combined;
-    const [smn, smx, sav] = pmfStats(pmf);
-    result.add_step({
-      name: "Attr Fix", value: sav, min_value: smn, max_value: smx,
-      note: `${loader.getElementName(atkEle)} vs ${defName} Lv${playerTarget.element_level || 1} (${mainMult}%) + Magnum Break's ${sub.pct}% as ${loader.getElementName(sub.ele)} (${subMult}%)`,
-      formula: `dmg × ${mainMult}% + (dmg × ${sub.pct}%) × ${subMult}%`, hercules_ref: "battle.c:998",
-    });
-  } else {
-    pmf = calculateAttrFix(weapon, playerTarget, pmf, result, null, atkEle);
-  }
+  // Magnum Break's lingering fire, when the MONSTER is the one who used it, is handled
+  // after DEF below — same placement and reasoning as the player-side copy in
+  // battlePipeline.js. Snapshot the pre-element base it is computed from.
+  const preElePmf = pmf;
+  pmf = calculateAttrFix(weapon, playerTarget, pmf, result, null, atkEle);
 
   // Player is the defender; the "attacker" (mob) has no ignore-DEF gear in
   // this calculator, so pass a zeroed-out GearBonuses rather than the player's own.
@@ -130,6 +110,42 @@ function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weap
     playerTarget, { ignore_hard_def: false }, createGearBonuses(), pmf, config, result,
     { is_crit: false, skill: ignoreDef ? { nk_ignore_def: true } : null },
   );
+
+  // Magnum Break's lingering fire on the MONSTER (SC_SUB_WEAPONPROPERTY, val1 = Fire,
+  // val2 = 20). Placed here, after DEF, because pre-re battle.c adds it at the end of
+  // battle_calc_elefix — which runs AFTER battle_calc_defense — so the added chunk
+  // bypasses armour. Computed from the monster's own normal-attack base, not from a
+  // ratio'd skill hit, exactly as the player-side implementation does it.
+  //
+  // PS scopes it to auto attacks (patch notes 2026-08-09, Swordsman: "No longer affects
+  // skills, and only applies its semi-endow to auto attacks"), which is what the
+  // SM_MAGNUM_ENDOW_ATTACK_ONLY flag gates. A mob-skill line carries a ratio override or
+  // a non-Neutral element, and neither is an auto attack.
+  const sub = mob.sub_weapon_property;
+  if (sub && sub.pct > 0) {
+    const psScoped = getProfile(build.server).mechanic_flags.has("SM_MAGNUM_ENDOW_ATTACK_ONLY");
+    const isAutoAttack = ratioOverride == null && (eleOverride == null || eleOverride === 0);
+    if (!psScoped || isAutoAttack) {
+      let add = scaleFloor(preElePmf, sub.pct, 100);
+      add = calculateAttrFix(weapon, playerTarget, add, createDamageResult(), null, sub.ele);
+      pmf = convolve(pmf, add);
+      const [mnM, mxM, avM] = pmfStats(pmf);
+      const [, , addAv] = pmfStats(add);
+      result.add_step({
+        name: "Magnum Break (lingering fire)", value: avM, min_value: mnM, max_value: mxM, multiplier: 1.0,
+        note: `+${sub.pct}% of its normal attack as ${loader.getElementName(sub.ele)} damage (avg +${Math.round(addAv)}) — bypasses your DEF`,
+        formula: `dmg + attr_fix(mob_base × ${sub.pct}%, ${loader.getElementName(sub.ele)})`,
+        hercules_ref: "battle.c battle_calc_elefix (SC_SUB_WEAPONPROPERTY, pre-re)",
+      });
+    } else {
+      const [mnM, mxM, avM] = pmfStats(pmf);
+      result.add_step({
+        name: "Magnum Break (lingering fire)", value: avM, min_value: mnM, max_value: mxM, multiplier: 1.0,
+        note: "BYPASSED — on Payon Stories the lingering fire applies to auto attacks only, not to the monster's skills",
+        formula: "no change", hercules_ref: "PS patch notes 2026-08-09 — Swordsman",
+      });
+    }
+  }
 
   pmf = calculateIncomingPhysical(mob.race, atkEle, mob.size, isRanged, playerTarget, pmf, result);
 

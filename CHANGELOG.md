@@ -20,7 +20,11 @@ instead of release version. Dates are taken from actual git commit history.
     damage with double HIT**.
   - **Magnum Break** (33 monsters) — on a monster it's a self-buff: 20% of its damage comes back
     as Fire on top of the normal hit, so how much it actually gains depends on your armour
-    property.
+    property (a Golden Thief Bug adds +221 against Neutral armour, only +54 against Pasana's
+    Fire). It follows the Payon Stories rework — "no longer affects skills, only applies its
+    semi-endow to auto attacks" — so the monster's skills and its elemental attack lines are
+    exempt, and like the player's version the added chunk lands after DEF and so bypasses your
+    armour.
   - **Maximize Power** (19 monsters) — every one of its weapon rolls comes out maximum.
 
   The last three change only what the monster does to *you*, so they show up in the

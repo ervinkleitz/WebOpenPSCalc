@@ -2606,6 +2606,43 @@ test("Maximize Power, Power Up and Magnum Break change only the incoming directi
   }
 });
 
+test("a monster's Magnum Break follows the PS rework: auto attacks only, and it dodges DEF", () => {
+  const { applySelfBuffsToRawMob } = require("../src/engine/targetSelfBuffs");
+  const { calculateIncomingPhysicalDamage } = require("../src/engine/calculators/incomingPipeline");
+  const cfg = createBattleConfig();
+  const MOB = 1086; // Golden Thief Bug — carries SM_MAGNUM
+  const dmg = (armorCard, buffed, opts) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 7, base_level: 90, job_level: 50,
+      base_stats: { str: 60, agi: 40, vit: 60, int: 10, dex: 40, luk: 10 },
+      equipped: { right_hand: 1129, armor: 2314, ...(armorCard ? { armor_card1: armorCard } : {}) },
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const raw = loader.getMonsterData(MOB);
+    const mob = buffed ? applySelfBuffsToRawMob(raw, { SM_MAGNUM: 10 }) : raw;
+    const r = calculateIncomingPhysicalDamage(MOB, eff, st, gb, w, cfg, { mob_override: mob, ...(opts || {}) });
+    return { avg: r.avg_damage, step: r.steps.find((x) => x.name === "Magnum Break (lingering fire)") };
+  };
+  // On its auto attack the fire share lands...
+  const plain = dmg(null, false), magnum = dmg(null, true);
+  assert.ok(magnum.avg > plain.avg * 1.15, "20% of its base comes back as Fire");
+  assert.match(magnum.step.note, /bypasses your DEF/);
+
+  // ...and how much it gains depends on YOUR armour property: Fire vs Fire is resisted.
+  const fireArmour = dmg(4099, true); // Pasana Card — armour becomes Fire
+  const firePlain = dmg(4099, false);
+  assert.ok(fireArmour.avg - firePlain.avg < (magnum.avg - plain.avg) / 2,
+    "a Fire-armoured player takes far less of the Fire share");
+
+  // PS 2026-08-09: "No longer affects skills, and only applies its semi-endow to auto
+  // attacks" — so a mob-skill line and an elemental attack line must both be exempt.
+  for (const opts of [{ ratio_override: 150 }, { ele_override: 3 }]) {
+    const skillHit = dmg(null, true, opts);
+    assert.match(skillHit.step.note, /BYPASSED/, `${JSON.stringify(opts)} must not get the semi-endow`);
+    assert.equal(skillHit.avg, dmg(null, false, opts).avg, "and must be numerically identical to no buff");
+  }
+});
+
 test("isweapontype() resolves rather than falling open", () => {
   // The condition handler deliberately fails OPEN on an unevaluatable condition, so
   // a predicate that fails to substitute silently grants its bonus to everything —
