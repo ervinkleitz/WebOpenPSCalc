@@ -125,6 +125,13 @@ export interface TargetMods {
   stun: boolean;
   blind: boolean; // SC_BLIND: −25% of the target's flee (not an auto-hit).
   burning: number; // Burning stacks 0–5 (0 = off): −2 hard MDEF per stack, plus 60 Fire magic damage/s per stack.
+  /**
+   * Buffs the MONSTER casts on itself, as { SKILL_CONSTANT: level }. Offered per monster
+   * from its own skill kit (`/data/mobs/:id` annotates each self-cast skill with a
+   * `self_buff` block). Always-on when ticked — the monster really casts them on a rate,
+   * so this is an upper bound on the monster, i.e. a floor on your numbers.
+   */
+  self_buffs?: Record<string, number>;
 }
 
 export interface UrlEditorState {

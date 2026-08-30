@@ -2459,6 +2459,73 @@ test("Safety Ring gives DEF as well as MDEF", () => {
   assert.equal(ring.mdef - bare.mdef, 3, "...and still add 3 MDEF");
 });
 
+// ---------------------------------------------------------------------------
+// Monster self-buffs. A monster's kit already carries what it casts on itself,
+// level and rate included; these turn the supported ones into target toggles so a
+// player need not compute the stat change and enter a custom monster. Always-on
+// when applied — see targetSelfBuffs.js.
+// ---------------------------------------------------------------------------
+test("monster self-buffs apply their Hercules effect to the target", () => {
+  const { applyTargetSelfBuffs } = require("../src/engine/targetSelfBuffs");
+  // The Scout (25015) is the case that prompted this: AC_CONCENTRATION Lv10, self, 20%.
+  const scout = () => loader.getMonster(25015);
+  const base = scout();
+  assert.equal(base.flee, base.level + base.agi, "precondition: flee is level + AGI");
+
+  // SC_CONCENTRATION: AGI and DEX +(2+lv)%, so flee and hit rise by the same amounts.
+  const conc = scout();
+  applyTargetSelfBuffs(conc, { AC_CONCENTRATION: 10 });
+  const pct = 2 + 10;
+  assert.equal(conc.agi - base.agi, Math.floor(base.agi * pct / 100));
+  assert.equal(conc.flee - base.flee, Math.floor(base.agi * pct / 100), "flee follows AGI");
+  assert.equal(conc.hit - base.hit, Math.floor(base.dex * pct / 100), "hit follows DEX");
+
+  // SC_INC_AGI: a FLAT +(2+lv) AGI, not a percentage.
+  const agi = scout();
+  applyTargetSelfBuffs(agi, { AL_INCAGI: 10 });
+  assert.equal(agi.agi - base.agi, 12);
+  assert.equal(agi.flee - base.flee, 12);
+
+  // SC_INCFLEERATE at val1 = 100 for every level: flee doubles, AGI untouched.
+  const up = scout();
+  applyTargetSelfBuffs(up, { NPC_AGIUP: 5 });
+  assert.equal(up.flee, base.flee * 2);
+  assert.equal(up.agi, base.agi, "a flee-rate buff must not move AGI");
+});
+
+test("a monster's self element-change swaps its element but not its element level", () => {
+  const { applyTargetSelfBuffs } = require("../src/engine/targetSelfBuffs");
+  // Bloody Knight (1268) is natively Dark and carries NPC_CHANGEFIRE.
+  const before = loader.getMonster(1268);
+  assert.equal(before.element, 7, "precondition: Dark");
+  const after = loader.getMonster(1268);
+  applyTargetSelfBuffs(after, { NPC_CHANGEFIRE: 1 });
+  assert.equal(after.element, 3, "SC_ARMOR_PROPERTY sets def_ele to the skill's element");
+  assert.equal(after.element_level, before.element_level, "element LEVEL is untouched");
+});
+
+test("self-buffs we can't price are listed, never silently applied", () => {
+  const { applyTargetSelfBuffs, describeSelfBuff } = require("../src/engine/targetSelfBuffs");
+  const before = loader.getMonster(25015);
+  const after = loader.getMonster(25015);
+  // Stone Skin is a real buff we decline to price, Emotion is not a buff at all.
+  const applied = applyTargetSelfBuffs(after, { NPC_STONESKIN: 3, NPC_EMOTION: 1 });
+  assert.deepEqual(applied, [], "neither may be applied");
+  assert.deepEqual(
+    { flee: after.flee, hit: after.hit, def: after.def_, ele: after.element },
+    { flee: before.flee, hit: before.hit, def: before.def_, ele: before.element },
+    "and the target must be untouched");
+
+  // ...but the UI has to be able to SAY the buff exists, with the reason.
+  const stone = describeSelfBuff("NPC_STONESKIN", 3);
+  assert.equal(stone.modelled, false);
+  assert.match(stone.reason, /not modelled yet/);
+  assert.equal(describeSelfBuff("NPC_EMOTION", 1), null, "a non-buff is not listed at all");
+  const conc = describeSelfBuff("AC_CONCENTRATION", 10);
+  assert.equal(conc.modelled, true);
+  assert.match(conc.effect, /AGI and DEX \+12%/);
+});
+
 test("isweapontype() resolves rather than falling open", () => {
   // The condition handler deliberately fails OPEN on an unevaluatable condition, so
   // a predicate that fails to substitute silently grants its bonus to everything —

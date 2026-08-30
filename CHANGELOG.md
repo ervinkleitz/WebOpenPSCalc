@@ -7,6 +7,34 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-08-30
 
+### Added
+
+- **Monster self-buffs, as toggles in the Target panel.** Monsters buff themselves — a Scout
+  casts Improve Concentration Lv10 — and until now the only way to price that was to work out
+  the stat change by hand and enter it as a custom monster. The panel now lists the buffs the
+  selected monster actually has, read from its own skill kit, with the cast chance next to each.
+  Ticking one applies it, so a Scout under Concentration goes FLEE 141 → 149 and HIT 146 → 155,
+  and your hit chance falls accordingly.
+
+  What's priced: Improve Concentration (AGI/DEX +(2+lv)%), Increase AGI (flat +(2+lv) AGI),
+  Agi Up (FLEE ×2 — it is a flee-rate buff, so AGI is untouched), and the monster's own element
+  changes (Fire/Water/Wind/Earth/Poison/Holy/Dark/Ghost), which swap its defensive element while
+  leaving the element level alone. Between them that's 47 monsters.
+
+  **Ticking a buff treats it as always on**, which the panel says: a monster casts these
+  occasionally and they expire, so what you get is the toughest version of that monster — a floor
+  on your damage rather than an average. Same fiction as the "Proc cards: Always" toggle.
+
+  Buffs that exist but the calculator can't price yet are **listed with the reason instead of a
+  working toggle** — Stone Skin and Anti-Magic (vanilla gives them a flat ±20 DEF/MDEF per level,
+  which at the levels monsters cast would make them near-immune; that wants confirming on PS
+  first) and Attribute Change (it rolls a random element, so there is nothing fixed to apply). A
+  buff we quietly ignored would look exactly like a buff that does nothing.
+
+  Not covered: buffs that only change what a monster does *to you* (Two-Hand Quicken, Adrenaline
+  Rush, Power Up). The survivability pipeline takes no target modifiers today, so a toggle for
+  those would move no number.
+
 ### Fixed
 
 - **Safety Ring gives no DEF.** It was granting its +3 MDEF but not its +3 DEF, so any build

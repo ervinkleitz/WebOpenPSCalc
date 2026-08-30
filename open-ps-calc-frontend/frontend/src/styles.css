@@ -121,6 +121,8 @@ label {
 
 .error-text { color: var(--crit); font-size: 0.85rem; margin-top: 0.4rem; }
 .hint-text { color: var(--text-faint); font-size: 0.78rem; margin-top: 0.3rem; }
+/* A toggle that exists but the engine cannot price yet: shown, greyed, not clickable. */
+.field-checkbox--off label { cursor: not-allowed; opacity: 0.55; }
 
 /* ---------------- Layout shells ---------------- */
 .app-shell { min-height: 100%; display: flex; flex-direction: column; }

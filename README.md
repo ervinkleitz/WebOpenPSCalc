@@ -309,6 +309,12 @@ motivated several changes beyond a straight 1:1 port:
   as the kill metrics (best-to-worst damage rolls in the tooltip). The kill
   reward comes straight from the mob DB - the server's EXP rate and the
   level-difference penalty are not applied.
+- **Monster self-buffs** — the Target panel lists the buffs the selected monster casts
+  on itself (from its own skill kit, with the cast chance shown) and prices the supported
+  ones: Improve Concentration, Increase AGI, Agi Up and the self element-changes, across
+  47 monsters. Ticking one treats it as permanently active — the toughest version of that
+  monster, so a floor on your damage. Buffs the engine can't price yet are listed with the
+  reason rather than hidden.
 - **Manual overrides & fuller build UI** — a manual +stat panel (raw
   STR/AGI/VIT/INT/DEX/LUK added on top of the computed totals), one-click
   "max" toggles for passive skills and Bard/Dancer buffs, and the selected

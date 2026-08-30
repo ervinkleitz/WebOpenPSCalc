@@ -3,6 +3,7 @@ import { loader } from "../engine/dataLoader";
 import { getProfile } from "../engine/serverProfiles";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { importJaludev } = require("../engine/jaludevImport");
+const { describeSelfBuff } = require("../engine/targetSelfBuffs");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { TRAP_SKILL_NAMES } = require("../engine/calculators/battlePipeline");
 
@@ -212,7 +213,15 @@ router.get("/mobs/:id", (req: Request, res: Response) => {
   // Use the same disambiguated name as the picker list (so a selected mob keeps its
   // "[Element]" tag). Falls back to the raw name for un-tagged / dropped mobs.
   const label = computeMobLabels(server).labels.get(id);
-  res.json({ ...mob, name: label ?? mob.name, skills: (loader as any).getMobSkills(id) });
+  // Annotate the monster's own self-cast skills with what the calculator can do about
+  // them, so the target panel can offer the supported ones as toggles and SAY SO for the
+  // rest — an unmodelled buff that is silently absent looks the same as one that does
+  // nothing. `self_buff` is null for anything that isn't a buff (summons, emotes, ...).
+  const skills = ((loader as any).getMobSkills(id) || []).map((sk: any) =>
+    sk.target === "self" && !sk.dmg
+      ? { ...sk, self_buff: describeSelfBuff(sk.name, sk.lv) }
+      : sk);
+  res.json({ ...mob, name: label ?? mob.name, skills });
 });
 
 router.get("/skills", (req: Request, res: Response) => {

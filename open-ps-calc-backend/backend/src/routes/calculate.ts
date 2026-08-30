@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 const { logCalculate, logFeature, logDonateClick, logPageView } = require("../middleware/statsLogger");
 import { createBattleConfig } from "../engine/config";
+const { applyTargetSelfBuffs } = require("../engine/targetSelfBuffs");
 import { buildFromSaveSchema } from "../engine/buildManager";
 import { createSkillInstance, createTarget, createDamageResult } from "../engine/models";
 import { loader } from "../engine/dataLoader";
@@ -250,6 +251,14 @@ router.post("/", (req: Request, res: Response) => {
       target = loader.getMonster(Number(targetInput.mob_id));
     } else {
       target = createTarget(targetInput || {});
+    }
+
+    // The monster's OWN self-buffs, before anything the player does to it: it buffs
+    // itself, then you cut it down. Always-on by design (see targetSelfBuffs.js) —
+    // ticking one applies it permanently rather than at the monster's cast rate, which
+    // is an upper bound on the monster and so a floor on your numbers.
+    if (targetModsInput && targetModsInput.self_buffs) {
+      applyTargetSelfBuffs(target, targetModsInput.self_buffs as Record<string, number>);
     }
 
     // Apply target debuffs from target_mods

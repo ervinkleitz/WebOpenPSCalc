@@ -590,6 +590,7 @@ const DEFAULT_TARGET_MODS: TargetMods = {
   stun: false,
   blind: false,
   burning: 0,
+  self_buffs: {},
 };
 
 // PS gives two armour cards a clause that inflicts a status on the TARGET when you
@@ -697,6 +698,7 @@ const Z3_KEYS: string[] = [
   "mailbreaker", // targetMods.mailbreaker — was `venom_dust`, whose code stays above
   "offensive_blessing", // targetMods.offensive_blessing (Blessing cast on Undead/Demon)
   "fling", // targetMods.fling — Gunslinger coins thrown (0-5), each -3% target DEF
+  "self_buffs", // targetMods.self_buffs — { SKILL_CONSTANT: level } the monster casts on itself
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -856,7 +858,11 @@ export default function BuildEditor() {
     hp?: number; exp?: number; jexp?: number; def_?: number; mdef?: number; atk_min?: number; atk_max?: number;
     size?: string; element?: number; element_level?: number; is_boss?: boolean;
     stats?: { str: number; agi: number; vit: number; int: number; dex: number; luk: number };
-    skills?: { id: number; name: string; d: string; lv: number; rate: number; target: string; ele: number | null; dmg?: boolean }[];
+    skills?: { id: number; name: string; d: string; lv: number; rate: number; target: string; ele: number | null; dmg?: boolean;
+      // Present on self-cast, non-damage skills: what the calculator can do about this
+      // buff. `modelled: false` carries the reason, which the panel shows instead of a
+      // working toggle — see targetSelfBuffs.js.
+      self_buff?: { label: string; modelled: boolean; effect: string | null; reason: string | null } | null }[];
   } | null>(null);
   const [jobBonusStats, setJobBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [equipBonusStats, setEquipBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
@@ -962,13 +968,35 @@ export default function BuildEditor() {
   // Dodge is separate; FLEE also drops when several mobs target you at once).
   const mobDodgeFlee = mobInfo?.stats ? mobInfo.level + mobInfo.stats.dex + 75 : null;
 
+  // The monster's own self-cast buffs, from its kit. The backend annotates each with
+  // whether it can price it (`self_buff`), so the panel can offer the supported ones and
+  // name the rest rather than leaving them out.
+  const mobSelfBuffs = useMemo(
+    () => (mobInfo?.skills ?? []).filter((sk) => sk.target === "self" && !sk.dmg && sk.self_buff),
+    [mobInfo],
+  );
+  const activeSelfBuffs = (targetMods.self_buffs ?? {}) as Record<string, number>;
+
   // The mob's own soft FLEE (level + AGI). Quagmire cuts AGI by 10%/lv (boss-immune),
   // which lowers flee by the same amount — computed live so the Target panel shows the
   // drop even before recalculating. Matches the backend's Quagmire math.
   const mobBaseFlee = mobInfo?.stats ? mobInfo.level + mobInfo.stats.agi : null;
-  const mobEffFlee = (mobBaseFlee != null && quagmireLv > 0 && !mobInfo?.is_boss)
-    ? mobBaseFlee - Math.floor((mobInfo!.stats!.agi * 10 * quagmireLv) / 100)
-    : mobBaseFlee;
+  // Self-buffs raise it, and the chip has to agree with what the engine will use or the
+  // panel and the result contradict each other. Mirrors targetSelfBuffs.js exactly.
+  const mobBuffedFlee = useMemo(() => {
+    if (mobBaseFlee == null || !mobInfo?.stats) return mobBaseFlee;
+    let flee = mobBaseFlee;
+    for (const [name, lv] of Object.entries(activeSelfBuffs)) {
+      if (!lv) continue;
+      if (name === "AC_CONCENTRATION") flee += Math.floor((mobInfo.stats.agi * (2 + Number(lv))) / 100);
+      else if (name === "AL_INCAGI") flee += 2 + Number(lv);
+      else if (name === "NPC_AGIUP") flee = Math.floor(flee * 2);
+    }
+    return flee;
+  }, [mobBaseFlee, mobInfo, activeSelfBuffs]);
+  const mobEffFlee = (mobBuffedFlee != null && quagmireLv > 0 && !mobInfo?.is_boss)
+    ? mobBuffedFlee - Math.floor((mobInfo!.stats!.agi * 10 * quagmireLv) / 100)
+    : mobBuffedFlee;
 
   // HIT needed to land every attack on the selected monster. Your hit% =
   // 80 + HIT − mobFLEE (hitChance.js), so 100% is reached at mobFLEE + 20.
@@ -3263,6 +3291,60 @@ export default function BuildEditor() {
                     </select>
                   </div>
                 </div>
+              </>
+            )}
+
+            {/* The monster's own self-buffs — offered only for a monster that actually
+                has them, straight from its skill kit. */}
+            {targetMode === "monster" && mobSelfBuffs.length > 0 && (
+              <>
+                <div className="buff-section-header" style={{ marginTop: "1rem" }}>
+                  Monster self-buffs
+                  <InfoTooltip>
+                    Buffs this monster casts on <em>itself</em>, taken from its own skill kit.
+                    Ticking one treats it as <strong>always on</strong> — the monster really casts
+                    it now and then (the chance is shown next to each one) and it wears off, so
+                    this is the worst case for you: the toughest version of the monster, and a
+                    floor on your damage rather than an average.
+                    Buffs the calculator can&apos;t price yet are listed with the reason instead
+                    of a toggle, so you can see they exist.
+                  </InfoTooltip>
+                </div>
+                {mobSelfBuffs.map((sk) => {
+                  const info = sk.self_buff!;
+                  const on = !!activeSelfBuffs[sk.name];
+                  const rate = `${sk.rate / 100}% cast`;
+                  return (
+                    <div key={sk.name}>
+                      <div className={`field field-checkbox${info.modelled ? "" : " field-checkbox--off"}`}>
+                        <label
+                          title={info.modelled
+                            ? `${info.effect}. The monster casts this at a ${rate} chance per turn; ticking it applies the buff permanently.`
+                            : info.reason ?? undefined}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            disabled={!info.modelled}
+                            onChange={(e) =>
+                              setTargetMods((m) => {
+                                const next = { ...((m.self_buffs ?? {}) as Record<string, number>) };
+                                if (e.target.checked) next[sk.name] = sk.lv;
+                                else delete next[sk.name];
+                                return { ...m, self_buffs: next };
+                              })
+                            }
+                          />
+                          <span>
+                            {info.label} Lv{sk.lv} <span className="unit">({rate})</span>
+                            {!info.modelled && <> — <em>not modelled yet</em></>}
+                          </span>
+                        </label>
+                      </div>
+                      <div className="hint-text">{info.modelled ? info.effect : info.reason}</div>
+                    </div>
+                  );
+                })}
               </>
             )}
 
