@@ -2205,7 +2205,19 @@ export default function BuildEditor() {
                 { label: "Max SP",   value: charStatus?.max_sp?.toLocaleString() },
                 { label: "HP Regen", value: charStatus ? `${charStatus.hp_regen} /tick` : undefined },
                 { label: "SP Regen", value: charStatus ? `${charStatus.sp_regen} /tick` : undefined },
-                { label: "ATK",      value: charStatus ? `${charStatus.batk + charStatus.weapon_atk}${((charStatus.refine_atk || 0) + (charStatus.weapon_atk_flat || 0)) ? `+${(charStatus.refine_atk || 0) + (charStatus.weapon_atk_flat || 0)}` : ""}` : undefined },
+                { label: "ATK",
+                  // The "+N" is everything on top of the weapon's own ATK: its refine, flat
+                  // bAtk gear, and the temporary weapon ATK from buffs (Impositio, Battle
+                  // Theme, Nibelungen, Volcano). Those buffs were missing here while the
+                  // damage roll counted them, so the readout sat still as a player buffed up.
+                  value: charStatus ? `${charStatus.batk + charStatus.weapon_atk}${(() => {
+                    const buffAtk = (charStatus.buff_atk || []).reduce((n: number, b: { atk: number }) => n + b.atk, 0);
+                    const extra = (charStatus.refine_atk || 0) + (charStatus.weapon_atk_flat || 0) + buffAtk;
+                    return extra ? `+${extra}` : "";
+                  })()}` : undefined,
+                  note: charStatus && (charStatus.buff_atk || []).length
+                    ? `Includes ${(charStatus.buff_atk || []).map((b: { label: string; atk: number }) => `${b.label} +${b.atk}`).join(", ")}.`
+                    : undefined },
                 { label: "MATK",     value: charStatus ? `${charStatus.matk_min}–${charStatus.matk_max}` : undefined },
                 { label: "DEF",      value: charStatus ? `${charStatus.hard_def}+${charStatus.soft_def}` : undefined },
                 { label: "MDEF",     value: charStatus ? `${charStatus.hard_mdef}+${charStatus.soft_mdef}` : undefined },

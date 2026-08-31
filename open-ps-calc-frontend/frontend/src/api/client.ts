@@ -64,6 +64,9 @@ export const api = {
     request("/calculate/status", { method: "POST", body: { build } }) as Promise<{
       max_hp: number; max_sp: number; hp_regen: number; sp_regen: number;
       batk: number; weapon_atk: number; matk_min: number; matk_max: number;
+      refine_atk?: number; weapon_atk_flat?: number;
+      /** Temporary weapon ATK from buffs — Impositio, Battle Theme, Nibelungen, Volcano. */
+      buff_atk?: { name: string; label: string; atk: number }[];
       hard_def: number; soft_def: number; hard_mdef: number; soft_mdef: number;
       aspd: number; cri: number; flee: number; flee2: number;
     }>,

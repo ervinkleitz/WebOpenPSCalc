@@ -2643,6 +2643,41 @@ test("a monster's Magnum Break follows the PS rework: auto attacks only, and it 
   }
 });
 
+test("buff weapon ATK is one list, so the ATK readout and the damage cannot disagree", () => {
+  const { weaponAtkBuffs } = require("../src/engine/calculators/modifiers/baseDamage");
+  // Impositio Manus was reported as "not showing on the stat menu" — it was reaching the
+  // damage roll but not the status payload, because each buff was inlined in baseDamage
+  // and nothing else could see them. They now come from one helper both callers use.
+  const build = (support, song) => buildFromSaveSchema({
+    server: "payon_stories", job_id: 7, base_level: 90, job_level: 50,
+    base_stats: { str: 80, agi: 50, vit: 40, int: 10, dex: 60, luk: 20 },
+    equipped: { right_hand: 1129 }, support_buffs: support || {}, song_state: song || {},
+  });
+  const weapon = { level: 4, atk: 150 };
+  const sum = (parts) => parts.reduce((n, p) => n + p.atk, 0);
+
+  assert.deepEqual(weaponAtkBuffs(build({}, {}), weapon), [], "nothing buffed, nothing listed");
+  assert.equal(sum(weaponAtkBuffs(build({ SC_IMPOSITIO: 5 }, {}), weapon)), 25, "Impositio Lv5 = 5 x lv");
+  assert.equal(sum(weaponAtkBuffs(build({}, { SC_DRUMBATTLE: 5 }), weapon)), 150, "Battle Theme Lv5 = (lv+1) x 25");
+  assert.equal(sum(weaponAtkBuffs(build({}, { SC_NIBELUNGEN: 5 }), weapon)), 175, "Nibelungen Lv5 = (lv+2) x 25");
+  assert.equal(sum(weaponAtkBuffs(build({}, { SC_NIBELUNGEN: 5 }), { level: 3, atk: 150 })), 0,
+    "...but only on a level 4 weapon");
+  assert.equal(sum(weaponAtkBuffs(build({ ground_effect: "SC_VOLCANO", ground_effect_lv: 5 }, {}), weapon)), 50,
+    "Volcano Lv5 = lv x 10");
+  // An endow scroll carries Impositio 5 with it.
+  assert.equal(sum(weaponAtkBuffs(build({ endow_lv1: true }, {}), weapon)), 25, "endow scroll implies Impositio 5");
+
+  // ...and the damage really does move by that much.
+  const dmg = (support) => {
+    const b = build(support, {});
+    const [gb, eff, w, st] = resolvePlayerState(b, createBattleConfig(), PS);
+    return new BattlePipeline(createBattleConfig())
+      .calculate(st, w, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1002), eff, gb)
+      .normal.avg_damage;
+  };
+  assert.ok(dmg({ SC_IMPOSITIO: 5 }) > dmg({}), "Impositio has to reach the damage too");
+});
+
 test("isweapontype() resolves rather than falling open", () => {
   // The condition handler deliberately fails OPEN on an unevaluatable condition, so
   // a predicate that fails to substitute silently grants its bonus to everything —

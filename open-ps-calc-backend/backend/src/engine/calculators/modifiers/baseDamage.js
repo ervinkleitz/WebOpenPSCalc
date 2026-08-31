@@ -45,39 +45,47 @@ function skillUsesAmmo(skill, isRanged) {
   return needsAmmo || FORCED_ARROW_SKILLS.has(skillName);
 }
 
+/**
+ * The temporary weapon-ATK a build is carrying: Impositio Manus, Battle Theme, Ring of
+ * Nibelungen and a Volcano ground effect. Hercules adds all four to `watk` in PRE-RENEWAL
+ * (status.c ~4562-4589 — the batk and matk copies of Impositio next to them are inside
+ * `#ifdef RENEWAL` and do not apply here), which is why they belong in the damage roll
+ * below AND in the ATK the status readout shows: the in-game status window reflects watk.
+ * Itemised so both callers can name each source rather than showing a lump sum.
+ */
+function weaponAtkBuffs(build, weapon) {
+  const parts = [];
+  const impLevel = Number(build.support_buffs.SC_IMPOSITIO ?? build.active_status_levels.SC_IMPOSITIO ?? 0);
+  // A level-1 endow scroll carries Impositio 5 alongside the element change.
+  const impEff = build.support_buffs.endow_lv1 ? Math.max(impLevel, 5) : impLevel;
+  if (impEff) parts.push({ name: "SC_IMPOSITIO", label: `SC_IMPOSITIO Lv${impEff}`, atk: impEff * 5, formula: `level * 5 = ${impEff} * 5`, ref: "status.c ~4562" });
+
+  const drum = Number(build.song_state.SC_DRUMBATTLE || 0);
+  if (drum) parts.push({ name: "SC_DRUMBATTLE", label: `Battle Theme Lv${drum}`, atk: (drum + 1) * 25, formula: "(lv+1)*25", ref: "status.c:4564" });
+
+  const nibel = Number(build.song_state.SC_NIBELUNGEN || 0);
+  if (nibel && weapon && weapon.level === 4) parts.push({ name: "SC_NIBELUNGEN", label: `Nibelungen Lv${nibel}`, atk: (nibel + 2) * 25, formula: "(lv+2)*25", ref: "status.c:4589", note: "(wlv 4)" });
+
+  if (build.support_buffs.ground_effect === "SC_VOLCANO") {
+    const vol = Number(build.support_buffs.ground_effect_lv || 1);
+    parts.push({ name: "SC_VOLCANO", label: `Volcano Lv${vol}`, atk: vol * 10, formula: "lv*10", ref: "status.c:4570" });
+  }
+  return parts;
+}
+
 function calculateBaseDamage(status, weapon, build, target, skill, result, opts = {}) {
   const { gear_bonuses: gearBonuses, is_crit: isCrit = false, is_ranged: isRanged = false } = opts;
 
   const wlv = weapon.level;
   let atkmax = weapon.atk;
 
-  const impLv = Number(build.support_buffs.SC_IMPOSITIO ?? build.active_status_levels.SC_IMPOSITIO ?? 0);
-  let impLvEff = impLv;
-  if (build.support_buffs.endow_lv1) impLvEff = Math.max(impLvEff, 5);
-  if (impLvEff) {
-    atkmax += impLvEff * 5;
-    result.add_step({ name: "SC_IMPOSITIO", value: impLvEff * 5, note: `SC_IMPOSITIO Lv${impLvEff}: +${impLvEff * 5} weapon ATK`, formula: `level * 5 = ${impLvEff} * 5`, hercules_ref: "status.c ~4562", info: true });
-  }
-
-  const drumLv = Number(build.song_state.SC_DRUMBATTLE || 0);
-  if (drumLv) {
-    const drumBonus = (drumLv + 1) * 25;
-    atkmax += drumBonus;
-    result.add_step({ name: "SC_DRUMBATTLE", value: drumBonus, note: `Battle Theme Lv${drumLv}: +${drumBonus} weapon ATK`, formula: `(lv+1)*25`, hercules_ref: "status.c:4564", info: true });
-  }
-
-  const nibelLv = Number(build.song_state.SC_NIBELUNGEN || 0);
-  if (nibelLv && weapon.level === 4) {
-    const nibelBonus = (nibelLv + 2) * 25;
-    atkmax += nibelBonus;
-    result.add_step({ name: "SC_NIBELUNGEN", value: nibelBonus, note: `Nibelungen Lv${nibelLv}: +${nibelBonus} weapon ATK (wlv 4)`, formula: `(lv+2)*25`, hercules_ref: "status.c:4589", info: true });
-  }
-
-  if (build.support_buffs.ground_effect === "SC_VOLCANO") {
-    const volLv = Number(build.support_buffs.ground_effect_lv || 1);
-    const volBonus = volLv * 10;
-    atkmax += volBonus;
-    result.add_step({ name: "SC_VOLCANO", value: volBonus, note: `Volcano Lv${volLv}: +${volBonus} weapon ATK`, formula: `lv*10`, hercules_ref: "status.c:4570", info: true });
+  for (const part of weaponAtkBuffs(build, weapon)) {
+    atkmax += part.atk;
+    result.add_step({
+      name: part.name, value: part.atk,
+      note: `${part.label}: +${part.atk} weapon ATK${part.note ? ` ${part.note}` : ""}`,
+      formula: part.formula, hercules_ref: part.ref, info: true,
+    });
   }
 
   if (gearBonuses && gearBonuses.weapon_atk_flat) {
@@ -224,4 +232,4 @@ function calculateBaseDamage(status, weapon, build, target, skill, result, opts 
   return pmf;
 }
 
-module.exports = { calculateBaseDamage, ARROW_BOW_GUN_TYPES, skillUsesAmmo };
+module.exports = { calculateBaseDamage, ARROW_BOW_GUN_TYPES, skillUsesAmmo, weaponAtkBuffs };

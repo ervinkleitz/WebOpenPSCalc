@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 const { logCalculate, logFeature, logDonateClick, logPageView } = require("../middleware/statsLogger");
 import { createBattleConfig } from "../engine/config";
 const { applyTargetSelfBuffs, applySelfBuffsToRawMob } = require("../engine/targetSelfBuffs");
+const { weaponAtkBuffs } = require("../engine/calculators/modifiers/baseDamage");
 import { buildFromSaveSchema } from "../engine/buildManager";
 import { createSkillInstance, createTarget, createDamageResult } from "../engine/models";
 import { loader } from "../engine/dataLoader";
@@ -619,7 +620,7 @@ router.post("/status", (req: Request, res: Response) => {
     loader.setProfile(profile);
 
     const config = createBattleConfig();
-    const [gearBonuses, , weapon, status] = resolvePlayerState(build, config, profile);
+    const [gearBonuses, effBuild, weapon, status] = resolvePlayerState(build, config, profile);
 
     res.json({
       max_hp:    status.max_hp,
@@ -634,6 +635,12 @@ router.post("/status", (req: Request, res: Response) => {
       // Weapon refine bonus (the "atk2" shown as the right-hand number in the
       // in-game status window, e.g. "420 + 35"). Deterministic part only.
       refine_atk: weapon ? loader.getRefineBonus(weapon.level, weapon.refine) : 0,
+      // Temporary weapon ATK from buffs — Impositio Manus, Battle Theme, Nibelungen, a
+      // Volcano ground effect. Hercules adds these to `watk` pre-renewal, so the in-game
+      // status window shows them; ours did not, and a player noticed Impositio moving the
+      // damage but not the ATK readout. Same helper the damage roll uses, so the two
+      // cannot disagree.
+      buff_atk: weaponAtkBuffs(effBuild, weapon).map((p: any) => ({ name: p.name, label: p.label, atk: p.atk })),
       matk_min:  status.matk_min,
       matk_max:  status.matk_max,
       hard_def:  status.def_,
