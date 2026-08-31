@@ -202,6 +202,15 @@ function buildFromSaveSchema(data) {
   });
 }
 
+// PS Run and Gun grants +30% ranged damage resistance flat (no per-level scaling in the
+// patch notes). Vanilla's SC_GS_ADJUSTMENT grants none, so this is profile-gated.
+function runAndGunRangedResist(build) {
+  const active = build.active_status_levels || {};
+  if (!("SC_GS_ADJUSTMENT" in active)) return 0;
+  const { getProfile } = require("./serverProfiles");
+  return getProfile(build.server).mechanic_flags.has("GS_GS_ADJUSTMENT_SKIP_HIT_PENALTY") ? 30 : 0;
+}
+
 function playerBuildToTarget(build, status, gearBonuses, weapon, loader) {
   const playerScs = build.player_active_scs || {};
   const targetScs = {};
@@ -265,7 +274,12 @@ function playerBuildToTarget(build, status, gearBonuses, weapon, loader) {
     // sub_size, it was just always empty.
     sub_size: { ...gearBonuses.sub_size },
     near_attack_def_rate: gearBonuses.near_atk_def_rate,
-    long_attack_def_rate: gearBonuses.long_atk_def_rate,
+    // Run and Gun (SC_GS_ADJUSTMENT) on Payon Stories: "Ranged damage resistance +30%"
+    // (Gunslinger Release Patch Notes — Adjustment Rework). We already modelled its FLEE
+    // and its removed HIT penalty; the resistance itself never reached the incoming
+    // pipeline, so the buff read as pure evasion. Gated on the same PS flag as the rest
+    // of that rework so vanilla keeps the stock buff.
+    long_attack_def_rate: gearBonuses.long_atk_def_rate + runAndGunRangedResist(build),
     magic_def_rate: gearBonuses.magic_def_rate,
     def_percent: status.def_percent,
     target_active_scs: targetScs,

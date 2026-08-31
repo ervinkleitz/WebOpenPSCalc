@@ -897,8 +897,12 @@ test("Smith Weapon skills master at rank 4; Smith Two-Handed Sword is gone", () 
   // Veteran Axe's script can read them), so they must sort BELOW the passives
   // that do — otherwise Hilt Binding gets lost in the middle of them.
   const order = loader.getPassiveSkillsForJob(10).map((s) => s.name);
-  const firstSmith = order.findIndex((n) => n.startsWith("BS_") && n !== "BS_HILTBINDING" && n !== "BS_WEAPONRESEARCH");
-  for (const n of ["BS_HILTBINDING", "BS_WEAPONRESEARCH", "PS_MC_TOOLMASTERY"]) {
+  // Identify the crafting block by NAME, not by a "BS_ prefix minus the exceptions I can
+  // think of" guess — that heuristic broke the moment Skin Tempering (a real passive that
+  // happens to start with BS_) joined the picker.
+  const CRAFTING_ONLY = ["BS_DAGGER", "BS_SWORD", "BS_KNUCKLE", "BS_SPEAR", "BS_AXE", "BS_MACE"];
+  const firstSmith = order.findIndex((n) => CRAFTING_ONLY.includes(n));
+  for (const n of ["BS_HILTBINDING", "BS_WEAPONRESEARCH", "PS_MC_TOOLMASTERY", "BS_SKINTEMPER"]) {
     assert.ok(order.indexOf(n) >= 0 && order.indexOf(n) < firstSmith, `${n} must sort above the Smith skills`);
   }
 });
@@ -2676,6 +2680,64 @@ test("buff weapon ATK is one list, so the ATK readout and the damage cannot disa
       .normal.avg_damage;
   };
   assert.ok(dmg({ SC_IMPOSITIO: 5 }) > dmg({}), "Impositio has to reach the damage too");
+});
+
+test("defensive passives are offered to their jobs and reach incoming damage", () => {
+  const { calculateIncomingPhysicalDamage } = require("../src/engine/calculators/incomingPipeline");
+  // All four were modelled in the engine but missing from the passive picker, because
+  // that list was written for outgoing damage only. A Blacksmith could not tick Skin
+  // Tempering, so its resists never reached the survivability panel.
+  const offers = (job, name) => (loader.getPassiveSkillsForJob(job) || [])
+    .some((sk) => (sk.name || sk.mastery_key) === name);
+  assert.ok(offers(10, "BS_SKINTEMPER"), "Blacksmith must be offered Skin Tempering");
+  assert.ok(offers(8, "AL_DP"), "Priest must be offered Divine Protection");
+  assert.ok(offers(14, "CR_TRUST"), "Crusader must be offered Faith");
+  assert.ok(offers(9, "WZ_ESTIMATION"), "Wizard must be offered Sense");
+  assert.ok(!offers(11, "BS_SKINTEMPER"), "...and a Hunter must not be");
+
+  const taken = (job, mastery, buffs, opts) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: job, base_level: 90, job_level: 50,
+      base_stats: { str: 60, agi: 40, vit: 60, int: 20, dex: 40, luk: 10 },
+      equipped: { right_hand: 1129, armor: 2314 }, mastery_levels: mastery || {}, active_buffs: buffs || {},
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, createBattleConfig(), PS);
+    return calculateIncomingPhysicalDamage(1040, eff, st, gb, w, createBattleConfig(), opts || {}).avg_damage;
+  };
+  // PS Skin Tempering: Fire 6%/lv, Neutral 4%/lv (vanilla is 4%/1%).
+  const fire = { ele_override: 3 }, neutral = { ele_override: 0 };
+  assert.ok(taken(10, { BS_SKINTEMPER: 10 }, {}, fire) < taken(10, {}, {}, fire) * 0.45, "Fire cut ~60%");
+  assert.ok(taken(10, { BS_SKINTEMPER: 10 }, {}, neutral) < taken(10, {}, {}, neutral) * 0.65, "Neutral cut ~40%");
+  // Faith: Holy 5%/lv.
+  const holy = { ele_override: 6 };
+  assert.ok(taken(14, { CR_TRUST: 10 }, {}, holy) < taken(14, {}, {}, holy) * 0.55, "Holy cut ~50%");
+  // Sense on PS: +2% to the four basic elements.
+  assert.ok(taken(9, { WZ_ESTIMATION: 1 }, {}, { ele_override: 4 }) < taken(9, {}, {}, { ele_override: 4 }),
+    "Sense shaves a little off a Wind hit");
+});
+
+test("Run and Gun grants its PS ranged damage resistance, not just FLEE", () => {
+  const { calculateIncomingPhysicalDamage } = require("../src/engine/calculators/incomingPipeline");
+  // Gunslinger Release Patch Notes (Adjustment Rework): "Ranged damage resistance +30%".
+  // We modelled its FLEE and its removed HIT penalty but never the resistance itself.
+  const ranged = (buffs, server) => {
+    const b = buildFromSaveSchema({
+      server, job_id: 24, base_level: 90, job_level: 50,
+      base_stats: { str: 40, agi: 60, vit: 60, int: 20, dex: 70, luk: 10 },
+      equipped: { right_hand: 13104, armor: 2314 }, active_buffs: buffs || {},
+    });
+    const profile = getProfile(server);
+    loader.setProfile(profile);
+    const [gb, eff, w, st] = resolvePlayerState(b, createBattleConfig(), profile);
+    const out = calculateIncomingPhysicalDamage(1189, eff, st, gb, w, createBattleConfig(), { is_ranged: true }).avg_damage;
+    loader.setProfile(PS);
+    return out;
+  };
+  const plain = ranged({}, "payon_stories"), buffed = ranged({ SC_GS_ADJUSTMENT: 5 }, "payon_stories");
+  assert.ok(Math.abs(buffed / plain - 0.7) < 0.02, `ranged damage taken must fall ~30%, got x${(buffed / plain).toFixed(3)}`);
+  // Vanilla's Adjustment grants no such resistance, so the profile must gate it.
+  assert.equal(ranged({ SC_GS_ADJUSTMENT: 5 }, "standard"), ranged({}, "standard"),
+    "the resistance is a PS rework, not stock behaviour");
 });
 
 test("isweapontype() resolves rather than falling open", () => {

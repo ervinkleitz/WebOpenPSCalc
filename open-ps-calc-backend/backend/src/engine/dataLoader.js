@@ -476,6 +476,16 @@ class DataLoader {
       // engine already reads it (statusCalculator TF_MISS), but it wasn't offered
       // in the picker. Surfaces for the Thief line and Super Novice.
       "TF_MISS",
+      // Passives that only change INCOMING damage. They were absent for years because
+      // this list was written for the outgoing direction ("skills that affect ATK, MATK,
+      // hit chance, crit rate or ASPD") and the survivability panel came later — so the
+      // engine modelled all four but nobody could set a level for them. Reported by a
+      // player who could not find Skin Tempering on a Blacksmith.
+      //   BS_SKINTEMPER  — PS: Neutral +4%/lv, Fire +6%/lv resist (buildManager.js)
+      //   AL_DP          — Divine Protection: soft DEF vs Demon/Undead (statusCalculator)
+      //   CR_TRUST       — Faith: Holy resist +5%/lv (gearBonusAggregator)
+      //   WZ_ESTIMATION  — PS: +2% resist to Fire/Water/Wind/Earth (buildManager.js)
+      "BS_SKINTEMPER", "AL_DP", "CR_TRUST", "WZ_ESTIMATION",
       // PS: Free Cast (Sage) grants +4 FLEE/lv (max Lv5). Engine reads it via
       // passive_overrides.SA_FREECAST.flee_per_lv; surface it in the Sage picker.
       "SA_FREECAST",
@@ -523,7 +533,11 @@ class DataLoader {
     // These are active (non-passive) skills, normally excluded by the
     // skill_type check below -- carved out because their level still feeds
     // into a damage formula (see DAMAGE_RELEVANT comment above).
-    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT", "AS_ENCHANTPOISON", "MO_TRIPLEATTACK", "HW_SOULDRAIN", "GS_DUST", "GS_FULLBUSTER", "GS_SPREADATTACK", "AM_PHARMACY"]);
+    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT", "AS_ENCHANTPOISON", "MO_TRIPLEATTACK", "HW_SOULDRAIN", "GS_DUST", "GS_FULLBUSTER", "GS_SPREADATTACK", "AM_PHARMACY",
+      // Sense is an ACTIVE skill whose PS version also grants a passive +2% resist to
+      // Fire/Water/Wind/Earth (buildManager.js reads its level), so it needs a level in
+      // the passive panel like the others here.
+      "WZ_ESTIMATION"]);
 
     try {
       const treeData = this._loadJson("tables/skill_tree.json");

@@ -5,6 +5,27 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-08-31
+
+### Fixed
+
+- **Four defensive passives couldn't be ticked, so their resistances never applied.** Skin
+  Tempering (Blacksmith), Divine Protection (Acolyte line), Faith (Crusader) and Sense (Wizard)
+  were all fully modelled in the engine — with the Payon Stories values, in Skin Tempering's case
+  — but none of them appeared in the passive picker, so there was no way to give them a level.
+  Reported by a player who couldn't find Skin Tempering on a Blacksmith. With it at Lv10 a Fire
+  hit that dealt 71 now deals 28, and a Neutral one 42 (PS gives it 6%/level Fire and 4%/level
+  Neutral, against vanilla's 4% and 1%).
+
+  They were missed as a group because the picker's allow-list was written for the *outgoing*
+  direction — "skills that affect ATK, MATK, hit chance, crit rate or ASPD" — and the
+  survivability panel came later. Nothing about these four is outgoing.
+
+- **Run and Gun was missing its ranged damage resistance.** The Gunslinger rework gives it
+  "Ranged damage resistance +30%" alongside the FLEE and the removed HIT penalty; we modelled the
+  latter two and dropped the resistance, so the buff read as pure evasion. A ranged hit that took
+  283 now takes 197. Gated to Payon Stories — vanilla's Adjustment grants no such resistance.
+
 ## 2026-08-30
 
 ### Added
