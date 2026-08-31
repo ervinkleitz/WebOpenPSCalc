@@ -108,6 +108,20 @@ instead of release version. Dates are taken from actual git commit history.
   arrows, so its attacks carry the arrow's property; nothing bare-handed fires a Kunai, so a
   punch with one equipped stays Neutral, which is what was measured in-game earlier.
 
+- **Impositio Manus (and three other buffs) were missing from the ATK readout.** The damage was
+  right — a Priest's Impositio Lv5 really was adding its +25 weapon ATK to every hit — but the
+  Character stats ATK sat still, so the buff looked like it did nothing. Battle Theme, Ring of
+  Nibelungen and a Volcano ground effect had the same gap. All four are weapon-ATK buffs that
+  Hercules adds to `watk` in pre-renewal, which is exactly what the in-game status window shows.
+  ATK now reads `319+175` with Impositio 5 and Battle Theme 5 up, and hovering it names each
+  source. Reported by a player who suspected it wasn't calculating at all.
+
+  The cause was that each buff was written inline in the damage roll, where nothing else could
+  see it; they now come from one shared list that both the damage and the status readout use.
+  (Checked while fixing: Hercules' *batk* and *matk* copies of Impositio sit inside
+  `#ifdef RENEWAL`, so pre-renewal really is watk-only — the damage side was never
+  under-counting.)
+
 - **Breakpoints now answer for the monster you're actually fighting.** The "+X HIT for 95% /
   100%" rows are computed from the target's FLEE, but the breakpoints endpoint loaded the monster
   with no target modifiers at all — so it ignored Quagmire, Blind, and (once they existed) the
