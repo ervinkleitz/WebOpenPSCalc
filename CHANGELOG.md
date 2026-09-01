@@ -9,6 +9,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Momoe's Hairband missed most of the turtles it's supposed to hit.** Payon Stories describes it
+  as "+20% damage against the turtles of Turtle Island (excluding Turtle General)", but the item
+  script named only four monster IDs — and Turtle Island's roster is larger than that. **Solider
+  was missing outright**, and every turtle also exists under duplicate IDs with identical stat
+  blocks (Permeter 1601, Solider 1602, Heater 1600, Freezer 1594/1823/1887), any of which may be
+  what actually spawns. Hit the wrong copy and the hairband did nothing at all. All eleven are
+  covered now. Turtle General stays excluded per the description, and the *other* Assaulter (1364)
+  stays out too — it shares the name but is a different monster (level 59 Demon against 1315's
+  level 71 Demi-Human). Reported by a player whose hits showed no bonus.
+
 - **Four defensive passives couldn't be ticked, so their resistances never applied.** Skin
   Tempering (Blacksmith), Divine Protection (Acolyte line), Faith (Crusader) and Sense (Wizard)
   were all fully modelled in the engine — with the Payon Stories values, in Skin Tempering's case

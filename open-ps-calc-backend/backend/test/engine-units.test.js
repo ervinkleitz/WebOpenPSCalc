@@ -562,7 +562,9 @@ test("Momoe's Hairband gives +20% vs Turtle Island turtles, nothing vs others", 
     const r = new BattlePipeline(cfg).calculate(status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(mobId), eff, gb);
     return r.normal.avg_damage;
   };
-  // Turtle Island turtles (excluding Turtle General 1312): Permeter/Assaulter/Heater/Freezer.
+  // Turtle Island turtles (excluding Turtle General 1312). NB this list was the whole
+  // item script until 2026-08-31 and it was incomplete — Solider and the duplicate ids
+  // are covered by "Momoe's Hairband covers every Turtle Island turtle" below.
   for (const id of [1314, 1315, 1318, 1319]) {
     const ratio = dmg(true, id) / dmg(false, id);
     assert.ok(ratio > 1.15 && ratio <= 1.20 + 1e-9, `Momoe should add ~+20% vs mob ${id}, got x${ratio.toFixed(3)}`);
@@ -2738,6 +2740,41 @@ test("Run and Gun grants its PS ranged damage resistance, not just FLEE", () => 
   // Vanilla's Adjustment grants no such resistance, so the profile must gate it.
   assert.equal(ranged({ SC_GS_ADJUSTMENT: 5 }, "standard"), ranged({}, "standard"),
     "the resistance is a PS rework, not stock behaviour");
+});
+
+test("Momoe's Hairband covers every Turtle Island turtle, and only those", () => {
+  // PS: "Increases damage against the turtles of Turtle Island (excluding Turtle General)
+  // by 20%". The vanilla script named four mob ids; Solider was missing outright and every
+  // turtle also exists under duplicate ids with identical stats, so a player hitting the
+  // wrong copy saw no bonus at all.
+  const b = buildFromSaveSchema({
+    server: "payon_stories", job_id: 20, base_level: 99, job_level: 70,
+    base_stats: { str: 60, agi: 60, vit: 40, int: 10, dex: 60, luk: 10 },
+    equipped: { right_hand: 81000, head_top: 8065 },
+  });
+  const [gb] = resolvePlayerState(b, createBattleConfig(), PS);
+  const cls = gb.add_damage_class || {};
+  const TURTLES = [1314, 1601, 1315, 1316, 1602, 1318, 1600, 1319, 1594, 1823, 1887];
+  for (const id of TURTLES) {
+    const mob = loader.getMonsterData(id);
+    assert.equal(cls[id] || cls[String(id)], 20, `${id} ${mob ? mob.name : "?"} must take the +20%`);
+  }
+  assert.ok(!cls[1312] && !cls["1312"], "Turtle General is excluded by the description");
+  // Same NAME, different monster: lv59 Demon rather than 1315's lv71 Demi-Human.
+  assert.ok(!cls[1364] && !cls["1364"], "the other Assaulter is not a Turtle Island turtle");
+  assert.notEqual(loader.getMonsterData(1364).level, loader.getMonsterData(1315).level,
+    "...and the two Assaulters really are different monsters");
+
+  // End to end on the one that was missing entirely.
+  const dmg = (hat) => runScenarioRaw({
+    build: {
+      job_id: 20, base_level: 99, job_level: 70,
+      base_stats: { str: 60, agi: 60, vit: 40, int: 10, dex: 60, luk: 10 },
+      equipped: { right_hand: 81000, ...(hat ? { head_top: 8065 } : {}) },
+    },
+    target: 1316,
+  }).raw.normal.avg_damage;
+  assert.ok(dmg(true) > dmg(false), "Solider must now take more damage with the hairband on");
 });
 
 test("isweapontype() resolves rather than falling open", () => {

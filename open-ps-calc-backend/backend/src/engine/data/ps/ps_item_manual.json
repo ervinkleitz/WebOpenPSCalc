@@ -1770,6 +1770,7 @@
   "script": ""
  },
  "8065": {
+  "_note": "Momoe's Hairband: PS describes it as \"Increases damage against the turtles of Turtle Island (excluding Turtle General) by 20%\" (live item API, checked 2026-08-31), but the script named only four mob ids and Turtle Island's roster is bigger. SOLIDER (1316) was missing outright, and every turtle also exists under duplicate ids with identical stat blocks - Permeter 1601, Solider 1602, Heater 1600, Freezer 1594/1823/1887 - any of which may be the one PS actually spawns. All are included now. Turtle General (1312) is excluded per the description, and Assaulter 1364 is excluded because it is a DIFFERENT monster despite the shared name (lv59 Demon vs 1315's lv71 Demi-Human). Reported by a player whose hits on a Turtle Island turtle showed no bonus.",
   "type": "IT_ARMOR",
   "loc": [
    "EQP_HEAD_TOP"
@@ -1780,7 +1781,7 @@
   "job": [],
   "equip_level": 0,
   "refineable": false,
-  "script": "bonus bAgi,1; bonus bFlee,5; bonus2 bAddDamageClass,1314,20; bonus2 bAddDamageClass,1315,20; bonus2 bAddDamageClass,1318,20; bonus2 bAddDamageClass,1319,20;"
+  "script": "bonus bAgi,1; bonus bFlee,5; bonus2 bAddDamageClass,1314,20; bonus2 bAddDamageClass,1601,20; bonus2 bAddDamageClass,1315,20; bonus2 bAddDamageClass,1316,20; bonus2 bAddDamageClass,1602,20; bonus2 bAddDamageClass,1318,20; bonus2 bAddDamageClass,1600,20; bonus2 bAddDamageClass,1319,20; bonus2 bAddDamageClass,1594,20; bonus2 bAddDamageClass,1823,20; bonus2 bAddDamageClass,1887,20;"
  },
  "8122": {
   "type": "IT_ARMOR",
