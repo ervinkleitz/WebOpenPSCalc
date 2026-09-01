@@ -2754,16 +2754,23 @@ test("Momoe's Hairband covers every Turtle Island turtle, and only those", () =>
   });
   const [gb] = resolvePlayerState(b, createBattleConfig(), PS);
   const cls = gb.add_damage_class || {};
-  const TURTLES = [1314, 1601, 1315, 1316, 1602, 1318, 1600, 1319, 1594, 1823, 1887];
+  // The roster is the SPRITE family — PERMETER / ASSULTER / SOLIDER / HEATER / FREEZER —
+  // including the `G_` copies that Turtle General summons. Stats do not identify them:
+  // G_ASSULTER (1364) is lv59 Demon where 1315 is lv71 Demi-Human, and it was wrongly
+  // left out on exactly that reasoning.
+  const TURTLES = [1314, 1601, 1315, 1364, 1316, 1602, 1318, 1600, 1319, 1594, 1823, 1887];
   for (const id of TURTLES) {
     const mob = loader.getMonsterData(id);
     assert.equal(cls[id] || cls[String(id)], 20, `${id} ${mob ? mob.name : "?"} must take the +20%`);
   }
   assert.ok(!cls[1312] && !cls["1312"], "Turtle General is excluded by the description");
-  // Same NAME, different monster: lv59 Demon rather than 1315's lv71 Demi-Human.
-  assert.ok(!cls[1364] && !cls["1364"], "the other Assaulter is not a Turtle Island turtle");
-  assert.notEqual(loader.getMonsterData(1364).level, loader.getMonsterData(1315).level,
-    "...and the two Assaulters really are different monsters");
+  assert.ok(!cls[25556] && !cls["25556"], "Heater Night Light is an event reskin, not an island spawn");
+  // Every included id must really be one of the island's sprites — the guard against
+  // sweeping in a same-named monster from somewhere else.
+  const FAMILY = /(PERMETER|ASSULTER|SOLIDER|HEATER|FREEZER)/i;
+  for (const id of TURTLES) {
+    assert.match(loader.getMonsterData(id).sprite_name, FAMILY, `${id} must be a Turtle Island sprite`);
+  }
 
   // End to end on the one that was missing entirely.
   const dmg = (hat) => runScenarioRaw({

@@ -1770,7 +1770,7 @@
   "script": ""
  },
  "8065": {
-  "_note": "Momoe's Hairband: PS describes it as \"Increases damage against the turtles of Turtle Island (excluding Turtle General) by 20%\" (live item API, checked 2026-08-31), but the script named only four mob ids and Turtle Island's roster is bigger. SOLIDER (1316) was missing outright, and every turtle also exists under duplicate ids with identical stat blocks - Permeter 1601, Solider 1602, Heater 1600, Freezer 1594/1823/1887 - any of which may be the one PS actually spawns. All are included now. Turtle General (1312) is excluded per the description, and Assaulter 1364 is excluded because it is a DIFFERENT monster despite the shared name (lv59 Demon vs 1315's lv71 Demi-Human). Reported by a player whose hits on a Turtle Island turtle showed no bonus.",
+  "_note": "Momoe's Hairband: PS describes it as \"Increases damage against the turtles of Turtle Island (excluding Turtle General) by 20%\" (live item API, checked 2026-08-31), but the script named only four mob ids. The roster is picked by SPRITE family - PERMETER, ASSULTER, SOLIDER, HEATER, FREEZER - which is what makes a monster one of the island's turtles; matching on stats does not, because the `G_` copies (Turtle General's summoned escort, all with jexp 0) carry retuned stats. G_ASSULTER (1364) is lv59 Demon against 1315's lv71 Demi-Human and was excluded on that basis at first, wrongly - it is the same turtle. Included: 1314/1601 Permeter, 1315/1364 Assaulter, 1316/1602 Solider, 1318/1600 Heater, 1319/1594/1823/1887 Freezer. Excluded: Turtle General 1312 per the description, and Heater Night Light 25556, a Christmas event reskin rather than an island spawn. Solider was missing from the script entirely. Reported by a player.",
   "type": "IT_ARMOR",
   "loc": [
    "EQP_HEAD_TOP"
@@ -1781,7 +1781,7 @@
   "job": [],
   "equip_level": 0,
   "refineable": false,
-  "script": "bonus bAgi,1; bonus bFlee,5; bonus2 bAddDamageClass,1314,20; bonus2 bAddDamageClass,1601,20; bonus2 bAddDamageClass,1315,20; bonus2 bAddDamageClass,1316,20; bonus2 bAddDamageClass,1602,20; bonus2 bAddDamageClass,1318,20; bonus2 bAddDamageClass,1600,20; bonus2 bAddDamageClass,1319,20; bonus2 bAddDamageClass,1594,20; bonus2 bAddDamageClass,1823,20; bonus2 bAddDamageClass,1887,20;"
+  "script": "bonus bAgi,1; bonus bFlee,5; bonus2 bAddDamageClass,1314,20; bonus2 bAddDamageClass,1601,20; bonus2 bAddDamageClass,1315,20; bonus2 bAddDamageClass,1364,20; bonus2 bAddDamageClass,1316,20; bonus2 bAddDamageClass,1602,20; bonus2 bAddDamageClass,1318,20; bonus2 bAddDamageClass,1600,20; bonus2 bAddDamageClass,1319,20; bonus2 bAddDamageClass,1594,20; bonus2 bAddDamageClass,1823,20; bonus2 bAddDamageClass,1887,20;"
  },
  "8122": {
   "type": "IT_ARMOR",

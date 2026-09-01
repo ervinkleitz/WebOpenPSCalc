@@ -15,9 +15,13 @@ instead of release version. Dates are taken from actual git commit history.
   was missing outright**, and every turtle also exists under duplicate IDs with identical stat
   blocks (Permeter 1601, Solider 1602, Heater 1600, Freezer 1594/1823/1887), any of which may be
   what actually spawns. Hit the wrong copy and the hairband did nothing at all. All eleven are
-  covered now. Turtle General stays excluded per the description, and the *other* Assaulter (1364)
-  stays out too — it shares the name but is a different monster (level 59 Demon against 1315's
-  level 71 Demi-Human). Reported by a player whose hits showed no bonus.
+  covered now — twelve IDs in total. The right way to identify them turned out to be the *sprite*
+  family (PERMETER / ASSULTER / SOLIDER / HEATER / FREEZER), because the extra copies are Turtle
+  General's summoned escort and carry retuned stats: the escort Assaulter is level 59 Demon where
+  the ordinary one is level 71 Demi-Human, which is emphatically not grounds for calling it a
+  different monster. Turtle General itself stays excluded per the description, as does Heater Night
+  Light — a Christmas event reskin rather than an island spawn. Reported by a player whose hits
+  showed no bonus.
 
 - **Four defensive passives couldn't be ticked, so their resistances never applied.** Skin
   Tempering (Blacksmith), Divine Protection (Acolyte line), Faith (Crusader) and Sense (Wizard)
