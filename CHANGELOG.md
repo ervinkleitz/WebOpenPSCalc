@@ -9,6 +9,31 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Double Attack was wrong in four ways, all reported by one player.** Every fix below
+  comes from the wiki's Class_Rebalance page, which turned out to document rules we had
+  never modelled.
+  - **Sidewinder Card now works on whatever weapon it's compounded in.** It read 19% on a
+    dagger and 5% on everything else — a Monk with the card got almost nothing. The wiki
+    is explicit: it *"adds Double Attack to the weapon that is compounded in"*. It's 14%
+    on a dagger, knuckle, mace or anything else now.
+  - **Double Attack sources no longer stack.** A learned level *replaces* the card's rather
+    than adding to it, so a Thief with Double Attack 10 and a Sidewinder reads 70%, not 75%.
+    Two Sidewinders in one weapon no longer beat one. The old 19% was this same double-count:
+    5% from the card's flat bonus plus 14% from the level it grants, which are two ways of
+    writing the same effect, not two effects.
+  - **Rogues get Double Attack from swords.** *"On rogues, sword mastery provides +7% chance
+    to use double attack with swords per level"* — a maxed Sword Mastery Rogue now procs at
+    70% with a sword, where before swords did nothing. The rate comes off Sword Mastery's
+    level, not Double Attack's. Bow Double Attack was already modelled, which is what made
+    the gap visible.
+  - Not changed: **Double Attack on a dagger and the katar second hit were both already
+    right.** The player's report that DPS *dropped* when adding a Sidewinder was withdrawn
+    and I could not reproduce it either.
+
+  One thing is still open: the live item description says the card grants **Level 2** Double
+  Attack (14%), while the rebalance note says it *"adds 7%"* (Level 1). We model 14%; it's
+  logged as a question for the CCs, and flipping it is a one-character change.
+
 - **Removed the +10% dual-wield damage bonus.** Assassins dual-wielding had a flat +10%
   applied to the combined three-hit total, on top of their mastery percentages. It cited
   the wiki's Class_Rebalance page, but that page documents the Payon Stories dual-wield

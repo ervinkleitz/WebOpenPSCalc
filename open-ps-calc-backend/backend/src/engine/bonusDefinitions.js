@@ -114,7 +114,7 @@ const BONUS1 = {
 
   bMatkRate: def((v) => (v > 0 ? `MATK +${v}%.` : `MATK ${v}%.`), "matk_rate"),
 
-  bDoubleRate: def((v) => `+${v}% chance to deal double damage on a normal attack.`, "double_rate"),
+  bDoubleRate: def((v) => `+${v}% chance to deal double damage on a normal attack.`, "double_rate", "max"),
 
   bAtkEle: def((v) => `Changes weapon element to ${ELEMENT_NAMES[String(v)] ?? String(v)}.`, "script_atk_ele_rh", "assign", { transform: (x) => ELE_STR_TO_INT[x] }),
   bDefEle: def((v) => `Changes armor element to ${ELEMENT_NAMES[String(v)] ?? String(v)}.`, "script_def_ele", "assign", { transform: (x) => ELE_STR_TO_INT[x] }),

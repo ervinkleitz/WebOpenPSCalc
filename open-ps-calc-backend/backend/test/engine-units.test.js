@@ -550,6 +550,84 @@ test("natural SP regen increases with INT", () => {
 // jobs), so ps_item_manual restores the restriction. Guards against a regression
 // back to the empty array (which would let Novice/SN equip them again).
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Double Attack proc rate
+//
+// Reported by a player who worked out most of this from the numbers alone: a
+// Sidewinder Card read 19% on a dagger and 5% on everything else, Double Attack 10
+// plus the card read 75%, two cards in one weapon read more than one, and a Rogue
+// got Double Attack from a bow but not from a sword.
+//
+// The rules, from wiki Class_Rebalance:
+//   Thief - "Sidewinder Card ... adds 7% Double Attack to the weapon that is
+//   compounded in. If the user already knows Double Attack it will use that skill
+//   level chance."  -> the card lifts the dagger restriction, and the character's
+//   own level sets the rate. It is NOT a separate chance added on top: vanilla
+//   pairs every `skill TF_DOUBLE,N` with `bonus bDoubleRate,5*N`, one effect
+//   written twice (skill for daggers, bonus for other weapons).
+//   Rogue - "On rogues, sword mastery provides +7% chance to use double attack
+//   with swords per level."  -> off SWORD MASTERY's level, not Double Attack's.
+// ---------------------------------------------------------------------------
+test("Double Attack: sources take the highest, and a card frees the weapon type", () => {
+  const cfg = createBattleConfig();
+  const SIDEWINDER = 4117, DAGGER = 1224, KNUCKLE = 1801, SWORD = 1101;
+  const proc = (job_id, equipped, mastery_levels) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 90, vit: 1, int: 1, dex: 50, luk: 1 },
+      equipped, mastery_levels,
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
+    return new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1002), eff, gb,
+    ).proc_chance;
+  };
+
+  // The skill on its own: 7%/lv on PS.
+  assert.strictEqual(proc(17, { right_hand: DAGGER }, { TF_DOUBLE: 10 }), 70);
+
+  // The card grants level 2, so 14% — NOT 14 + the script's bDoubleRate 5.
+  assert.strictEqual(proc(17, { right_hand: DAGGER, right_hand_card1: SIDEWINDER }, {}), 14);
+
+  // ...and it works on the weapon it is compounded in, whatever that is. This read
+  // 5% on a knuckle before, because only the flat bonus escaped the dagger check.
+  assert.strictEqual(proc(15, { right_hand: KNUCKLE, right_hand_card1: SIDEWINDER }, {}), 14);
+
+  // A learned level wins over the card's; the two do not add (this was 75).
+  assert.strictEqual(proc(17, { right_hand: DAGGER, right_hand_card1: SIDEWINDER }, { TF_DOUBLE: 10 }), 70);
+
+  // Two cards are not better than one — bDoubleRate takes the highest, not the sum.
+  assert.strictEqual(
+    proc(17, { right_hand: DAGGER, right_hand_card1: SIDEWINDER, right_hand_card2: SIDEWINDER }, { TF_DOUBLE: 10 }),
+    70,
+  );
+
+  // Rogue swords proc off Sword Mastery, and only for a Rogue with the mastery.
+  assert.strictEqual(proc(17, { right_hand: SWORD }, { SM_SWORD: 10 }), 70);
+  assert.strictEqual(proc(17, { right_hand: SWORD }, {}), 0);
+  // A Thief (not a Rogue) gets nothing from a sword, mastery or not.
+  assert.strictEqual(proc(6, { right_hand: SWORD }, { SM_SWORD: 10 }), 0);
+
+  // bDoubleRate itself takes the highest rather than accumulating. The proc chance
+  // above happens to hide this — the skill rate is higher, so the outer max wins
+  // either way — so assert the aggregated bonus directly, or the mode silently
+  // reverts to summing and nothing notices until an item comes along whose flat
+  // rate outweighs its granted level.
+  const doubleRateOf = (equipped) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 17, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 90, vit: 1, int: 1, dex: 50, luk: 1 },
+      equipped, mastery_levels: {},
+    });
+    return resolvePlayerState(b, cfg, getProfile("payon_stories"))[0].double_rate;
+  };
+  assert.strictEqual(doubleRateOf({ right_hand: DAGGER, right_hand_card1: SIDEWINDER }), 5);
+  assert.strictEqual(
+    doubleRateOf({ right_hand: DAGGER, right_hand_card1: SIDEWINDER, right_hand_card2: SIDEWINDER }),
+    5, "two Sidewinder Cards must not add up to 10",
+  );
+});
+
 test("Momoe's Hairband gives +20% vs Turtle Island turtles, nothing vs others", () => {
   const cfg = createBattleConfig();
   const dmg = (hat, mobId) => {

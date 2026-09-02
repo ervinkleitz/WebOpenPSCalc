@@ -455,6 +455,13 @@ const PS_MECHANIC_FLAGS = new Set([
   // Vulture's Eye enables Double Attack when a bow is equipped. Proc chance =
   // doubleRate × min(TF_DOUBLE_lv, AC_VULTURE_lv). Requires both skills to have levels.
   "RG_BOW_DOUBLE_ATTACK",
+  // PS Rogue rework: Sword Mastery grants Double Attack with swords, 7% per SWORD
+  // MASTERY level (not per Double Attack level) — wiki Class_Rebalance, Rogue:
+  // "On rogues, sword mastery provides +7% chance to use double attack with swords
+  // per level. Allows for a new meta without reliance on the Sidewinder card."
+  // The SM_SWORD rate already sat in PS_PROC_RATE_OVERRIDES, unwired, until a player
+  // reported that bow Double Attack worked for a Rogue and sword Double Attack did not.
+  "RG_SWORD_DOUBLE_ATTACK",
   // PS Wizard/High Wizard rework (Wizard_and_High_Wizard_Trans_Class_Changes.pdf)
   // Fire Pillar and Napalm Vulcan each ignore 50% of hard MDEF.
   "WZ_FIREPILLAR_MDEF_IGNORE",

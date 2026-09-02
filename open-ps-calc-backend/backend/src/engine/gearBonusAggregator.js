@@ -154,6 +154,9 @@ function applyEffect(bonuses, eff) {
       const v = typeof p[0] === "number" ? p[0] : 0;
       if (defn.mode === "multi" && defn.fields) {
         for (const f of defn.fields) bonuses[f] += v;
+      } else if (defn.mode === "max" && defn.field != null) {
+        // Highest wins rather than accumulating — see the arity-2 "max" branch below.
+        bonuses[defn.field] = Math.max(bonuses[defn.field] || 0, v);
       } else if (defn.field != null) {
         bonuses[defn.field] += v;
       }
@@ -179,6 +182,14 @@ function applyEffect(bonuses, eff) {
       }
     } else if (defn.mode === "add") {
       bonuses[defn.field] += val;
+    } else if (defn.mode === "max") {
+      // Highest wins rather than accumulating. bDoubleRate needs this: every vanilla
+      // item that grants Double Attack pairs `skill TF_DOUBLE,N` with
+      // `bonus bDoubleRate,5*N` (Nagan 5/25, Thief Manual 3/15, Sidewinder 1/5,
+      // Snake Head 5/25) — one effect written twice, the skill for daggers and the
+      // bonus for every other weapon. Summing them made two Sidewinder Cards in one
+      // weapon read as a bigger proc chance than one, which a player reported.
+      bonuses[defn.field] = Math.max(bonuses[defn.field] || 0, val);
     }
   }
 }

@@ -6155,6 +6155,28 @@ The other tools routes are `/item /map /mob /pc /paporium/items /paporium/recipe
 (`cp.payonstories.com/?module=monster&action=view&id=<id>`) 302s to a login, so it is not usable
 as a source.
 
+## 2026-09-02 - Double Attack on Payon Stories (wiki Class_Rebalance)
+
+Three clauses, all from Class_Rebalance, all reported by a player before we modelled them:
+
+- **Rate.** *"Now adds chance to do double attack at 7% x SkillLV (70% at max level)"* —
+  and it also *"Adds +1 hit per skill level which only applies to double attack procs"*, and
+  *"Increases off-hand damage of katar by 1 + (2 x SkillLV)"*.
+- **Sidewinder Card.** *"It now adds 7% Double Attack to the weapon that is compounded in. If
+  the user already knows Double Attack it will use that skill level chance."* So the card
+  lifts the dagger restriction on the weapon it sits in, and a learned level **replaces** the
+  card's — the two do not add. Magnitude is [an open question](#) — see section 5.
+- **Rogue swords.** *"On rogues, sword mastery provides +7% chance to use double attack with
+  swords per level. Allows for a new meta without reliance on the Sidewinder card by allowing
+  swords to have double attack ability."* The rate comes off **Sword Mastery's** level, not
+  Double Attack's.
+
+A note on the vanilla scripts this replaces: every Hercules item that grants Double Attack
+pairs `skill TF_DOUBLE,N` with `bonus bDoubleRate,5*N` — Nagan 5/25, Thief Manual 3/15,
+Sidewinder 1/5, Snake Head Hat 5/25. The ratio is exact in all four, which only makes sense
+as **one** effect written twice: the skill for daggers, the flat bonus for every other weapon.
+They are alternatives, not cumulative. Adding them made a Sidewinder dagger read 19%.
+
 ## Conventions
 
 - **Provisional ids live in a reserved `95xxx` block** with a `_comment_95xxx` note, for
@@ -6464,6 +6486,30 @@ golden scenarios: Shadow Slash +86%, Mammonite +84%, Holy Cross +57%, Acid Terro
 Bolt -33% and Fire Wall -11% (fast builds and magic now meet the real cap). Back Stab lands back
 at 2.00 casts/s — the number the calculator showed before the delay fix, but for the right
 reason this time: no per-skill delay, a global floor.
+
+## OPEN (2026-09-02) — is Sidewinder Card Double Attack **level 2** or a flat **7%**?
+
+Two PS sources disagree, and they give 14% or 7%:
+
+- **The live item description** (scraped, and still what `tools.payonstories.com/api/pc/item`
+  returns): *"Enables Level 2 Double Attack on compounded weapon. If character has learned
+  Double Attack, that skill's level affects this card's effect."* Level 2 x 7%/lv = **14%**.
+- **wiki Class_Rebalance, Thief section:** *"Sidewinder Card also benefits from this change.
+  It now adds 7% Double Attack to the weapon that is compounded in. If the user already knows
+  Double Attack it will use that skill level chance."* Read literally that is **7%** — level 1
+  at the new rate, i.e. the card's level never changed and only the rate did.
+
+We model **14%** (`ps_item_manual` grants `skill TF_DOUBLE,2`), which matches the live
+description and matches what the reporting player expected. Flip the 2 to a 1 if a CC says
+otherwise — nothing else needs to change, the rate falls out of the granted level.
+
+Both sources agree on everything else, and all of it is now modelled: the card works on
+**whatever weapon it is compounded in** (not daggers only), and a learned Double Attack level
+**replaces** the card's rather than adding to it.
+
+**How to settle it in game:** equip Sidewinder on a character with NO Double Attack learned and
+read the proc rate off the client, or count procs over a few hundred swings. 7 vs 14 is far
+too wide to mistake.
 
 ## OPEN (2026-09-01) — the monster DB's combat half is five months stale
 

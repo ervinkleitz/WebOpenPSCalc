@@ -220,6 +220,8 @@ function skillPeriodMs(castMs, delayMs, skillData, skillLv, minPeriodOverride, a
 
 // Assassin (12) and Assassin Cross (4013) can dual-wield daggers.
 const DUAL_WIELD_JOBS = new Set([12, 4013]);
+// Rogue / Stalker — sword-borne Double Attack is a Rogue-only rework clause.
+const ROGUE_JOBS = new Set([17, 4018]);
 
 // PS Auto Spell / "Hindsight" (SA_AUTOSPELL) — wiki.payonstories.com/Auto_Spell.
 // Unlike vanilla's random pool, the *activated level* selects exactly one spell,
@@ -2297,10 +2299,27 @@ class BattlePipeline {
     // Double-attack proc level + which proc-rate override supplies its per-level
     // rate. Daggers use TF_DOUBLE; PS lets bows (Rogue rework) and revolvers
     // (Gunslinger Chain Action) proc too.
+    // A weapon carrying a Double-Attack card (Sidewinder and friends) can proc
+    // whatever the weapon type: wiki Class_Rebalance, Thief section — "Sidewinder
+    // Card ... adds 7% Double Attack to THE WEAPON THAT IS COMPOUNDED IN. If the user
+    // already knows Double Attack it will use that skill level chance." So the card
+    // lifts the dagger restriction and the character's own level sets the rate; it is
+    // not a separate chance stacked on top. Reported by a player who saw Sidewinder
+    // read 5% on a Monk and 19% on a dagger.
+    const weaponGrantsDouble = (gearBonuses.double_rate || 0) > 0;
     let tfDoubleLv = 0;
     let doubleProcKey = "TF_DOUBLE";
-    if (skill.id === 0 && weapon.weapon_type === "Knife") {
+    if (skill.id === 0 && (weapon.weapon_type === "Knife" || weaponGrantsDouble)) {
       tfDoubleLv = gearBonuses.effective_mastery.TF_DOUBLE || 0;
+    } else if (skill.id === 0 && ROGUE_JOBS.has(build.job_id)
+        && (weapon.weapon_type === "1HSword" || weapon.weapon_type === "2HSword")
+        && profile.mechanic_flags.has("RG_SWORD_DOUBLE_ATTACK")) {
+      // PS Rogue rework (wiki Class_Rebalance, Rogue section): "On rogues, sword
+      // mastery provides +7% chance to use double attack with swords per level."
+      // The rate comes off SWORD MASTERY's level, not Double Attack's — the whole
+      // point being "a new meta without reliance on the Sidewinder card".
+      tfDoubleLv = gearBonuses.effective_mastery.SM_SWORD || 0;
+      doubleProcKey = "SM_SWORD";
     } else if (skill.id === 0 && weapon.weapon_type === "Bow"
         && profile.mechanic_flags.has("RG_BOW_DOUBLE_ATTACK")) {
       // PS Rogue rework: Vulture's Eye enables Double Attack with a bow.
@@ -2317,8 +2336,13 @@ class BattlePipeline {
     }
     const doubleRate = (profile.proc_rate_overrides || {})[doubleProcKey] ?? 5.0;
     const skillProcChance = tfDoubleLv > 0 ? doubleRate * tfDoubleLv : 0;
+    // bDoubleRate is the SAME effect written for non-dagger weapons, not an extra
+    // chance: vanilla pairs every `skill TF_DOUBLE,N` with `bonus bDoubleRate,5*N`.
+    // Take the higher of the two rather than adding them, or a card gets counted
+    // twice — which is what made a Sidewinder dagger read 19% (5 + 2x7) and a Thief
+    // with Double Attack 10 plus the card read 75% instead of 70%.
     const itemDoubleRate = skill.id === 0 ? (gearBonuses.double_rate || 0) : 0;
-    const procChance = Math.min(100, skillProcChance + itemDoubleRate);
+    const procChance = Math.min(100, Math.max(skillProcChance, itemDoubleRate));
     const procFrac = procChance / 100.0;
 
     // MO_TRIPLEATTACK proc — auto-attacks only (Monk/Champion). TA replaces
