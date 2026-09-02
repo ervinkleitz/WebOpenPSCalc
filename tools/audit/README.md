@@ -21,6 +21,7 @@ they always compare against current code. Only `refresh`-style runs touch the
 network:
 
 ```sh
+python fetch_ps_mobs.py                 # monster HP/EXP/DEX vs the live tools site
 python fetch_wiki.py --diff             # what changed on the wiki since last time
 python fetch_wiki.py                    # ...and write the new snapshot
 python audit_items.py --refresh         # re-query the item API (~4 min)
@@ -84,3 +85,10 @@ pinned by tests in `test/engine-units.test.js` against repeating that mistake.
 - **Build Windows paths with `path.join` inside `node -e`.** A `"C:\\..."`
   literal in a shell-quoted script loses its backslashes and silently writes a
   file called `CUserservin...` into the current directory.
+
+`fetch_ps_mobs.py` is the odd one out: there is no monster API, so it resolves the
+tools site's current buildId, finds the webpack chunk carrying the monster blob and
+parses it. It checks HP, EXP, level, element, race, size and AGI/DEX — and nothing
+else, because that is all the site publishes. DEF, MDEF, ATK ranges and skill kits
+have no public source; the report ends by saying so, so a clean run is never read as
+"the monster database is verified".

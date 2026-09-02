@@ -167,6 +167,87 @@ test("CHANGELOG.md is well formed", () => {
 });
 
 // ---------------------------------------------------------------------------
+// CHANGELOG must stay inside what the modal can render
+// ---------------------------------------------------------------------------
+test("CHANGELOG.md uses only markup the changelog modal renders", () => {
+  // The file is prose I edit constantly and the modal is a ~40-line hand-rolled
+  // markdown parser, so the failure mode is not a broken build - it is an entry
+  // that silently renders wrong in the app while every other test passes. It has
+  // happened: a bullet whose trailing paragraph sat after a blank line spilled out
+  // of its own entry and rendered one <p> per source line, hard-wrapped
+  // mid-sentence, across 72 lines and 8 entries before a player screenshotted it.
+  //
+  // So this pins the grammar the modal actually implements. Inside a dated section
+  // every line must be one of:
+  //   ""                      blank
+  //   "### Section"           Added / Changed / Fixed ...
+  //   "- text"                a top-level entry
+  //   "  text"                a continuation, indented in multiples of two
+  // Anything else - a bare paragraph at column 0, a table, a code fence, a deeper
+  // heading - hits the modal's fallback branch and renders outside its entry.
+  const text = fs.readFileSync(path.join(REPO, "CHANGELOG.md"), "utf8");
+  const lines = text.split("\n");
+
+  const firstDate = lines.findIndex((l) => /^## \d{4}-\d{2}-\d{2}$/.test(l));
+  assert.ok(firstDate > 0, "no dated section found");
+
+  const bad = [];
+  for (let i = firstDate; i < lines.length; i++) {
+    const l = lines[i];
+    if (l.trim() === "") continue;
+    if (/^## \d{4}-\d{2}-\d{2}$/.test(l)) continue;
+    if (/^### \S/.test(l)) continue;
+    if (/^- \S/.test(l)) continue;
+    if (/^ +\S/.test(l)) {
+      const indent = l.length - l.trimStart().length;
+      if (indent % 2 !== 0) bad.push([i + 1, l, `indent of ${indent} is not a multiple of two`]);
+      continue;
+    }
+    bad.push([i + 1, l, "renders as a loose paragraph outside its entry"]);
+  }
+  assert.deepEqual(
+    bad.map(([n, l, why]) => `line ${n}: ${why} -> ${l.slice(0, 60)}`), [],
+  );
+
+  // A tab indents by one character as far as slice(2) is concerned, so it
+  // silently eats the first letter of the line.
+  const tabbed = lines.map((l, i) => [i + 1, l]).filter(([, l]) => /^\t/.test(l));
+  assert.deepEqual(tabbed, [], "tab-indented lines - the modal dedents by two spaces");
+
+  // A continuation separated from its bullet by a blank line only stays in the
+  // entry because the modal looks past the blank; a blank line followed by an
+  // UNINDENTED paragraph is the shape that used to spill.
+  for (let i = firstDate; i < lines.length - 2; i++) {
+    if (!/^- \S|^ +\S/.test(lines[i])) continue;
+    if (lines[i + 1].trim() !== "") continue;
+    const after = lines[i + 2];
+    assert.ok(
+      after.trim() === "" || /^#{2,3} |^- \S|^ +\S/.test(after),
+      `line ${i + 3}: paragraph after a blank line inside an entry, unindented -> ${after.slice(0, 60)}`,
+    );
+  }
+});
+
+// ---------------------------------------------------------------------------
+// The modal has to keep implementing that grammar
+// ---------------------------------------------------------------------------
+test("the changelog modal still handles continuations and nested bullets", () => {
+  // The test above says the file stays inside the grammar; this one says the
+  // parser still implements it. Both halves have to hold - the mangling that
+  // prompted these came from the parser lacking the two branches below while the
+  // markdown used them freely.
+  const src = fs.readFileSync(
+    path.join(FRONTEND, "src", "components", "ChangelogModal.tsx"), "utf8");
+
+  assert.ok(/next\.trim\(\) === ""/.test(src),
+    "modal no longer looks past a blank line - trailing paragraphs will spill out of their entry");
+  assert.ok(/kind: "ul"/.test(src),
+    "modal no longer builds nested lists - sub-bullets will flatten into the parent as literal '- ' text");
+  assert.ok(/<em /.test(src),
+    "modal no longer renders italics - *asterisks* will show literally");
+});
+
+// ---------------------------------------------------------------------------
 // Hand-authored items must carry the text that explains them
 // ---------------------------------------------------------------------------
 test("every hand-authored item has a description", () => {

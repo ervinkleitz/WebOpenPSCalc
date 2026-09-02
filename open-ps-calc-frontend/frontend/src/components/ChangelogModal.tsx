@@ -8,15 +8,16 @@ interface Props {
 
 function renderInline(text: string, keyPrefix: string) {
   const nodes: React.ReactNode[] = [];
-  const pattern = /\*\*(.+?)\*\*|`(.+?)`|\[(.+?)\]\((.+?)\)/g;
+  const pattern = /\*\*(.+?)\*\*|\*([^*]+?)\*|`(.+?)`|\[(.+?)\]\((.+?)\)/g;
   let last = 0;
   let match: RegExpExecArray | null;
   let i = 0;
   while ((match = pattern.exec(text))) {
     if (match.index > last) nodes.push(text.slice(last, match.index));
     if (match[1] !== undefined) nodes.push(<strong key={`${keyPrefix}-${i++}`}>{match[1]}</strong>);
-    else if (match[2] !== undefined) nodes.push(<code key={`${keyPrefix}-${i++}`}>{match[2]}</code>);
-    else if (match[3] !== undefined) nodes.push(<a key={`${keyPrefix}-${i++}`} href={match[4]} target="_blank" rel="noreferrer">{match[3]}</a>);
+    else if (match[2] !== undefined) nodes.push(<em key={`${keyPrefix}-${i++}`}>{match[2]}</em>);
+    else if (match[3] !== undefined) nodes.push(<code key={`${keyPrefix}-${i++}`}>{match[3]}</code>);
+    else if (match[4] !== undefined) nodes.push(<a key={`${keyPrefix}-${i++}`} href={match[5]} target="_blank" rel="noreferrer">{match[4]}</a>);
     last = pattern.lastIndex;
   }
   if (last < text.length) nodes.push(text.slice(last));
@@ -27,6 +28,7 @@ function renderInline(text: string, keyPrefix: string) {
 function toPlain(text: string): string {
   return text
     .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*([^*]+?)\*/g, "$1")
     .replace(/`(.+?)`/g, "$1")
     .replace(/\[(.+?)\]\(.+?\)/g, "$1");
 }
@@ -47,10 +49,48 @@ function truncateSummary(text: string): string {
   return plain.slice(0, cut > 0 ? cut : 90).trim() + "…";
 }
 
+// A list item is its "- " line plus every following line indented by two spaces,
+// blank lines included so long as indented content resumes after them. Splitting
+// that into blocks is what keeps a bullet's trailing paragraph inside the bullet.
+// The old parser stopped at the first blank line, so every indented line after it
+// fell through to the bare-paragraph branch at the bottom of renderMarkdown - one
+// <p> per source line, which is why long entries rendered hard-wrapped mid-sentence
+// outside the entry they belong to. Nested bullets were flattened into the parent's
+// body as literal "- " text for the same reason.
+type ItemBlock =
+  | { kind: "p"; text: string }
+  | { kind: "ul"; items: string[] };
+
+function parseItemBlocks(cont: string[]): ItemBlock[] {
+  const blocks: ItemBlock[] = [];
+  let para: string[] = [];
+  let bullets: string[] | null = null;
+  const flushPara = () => {
+    if (para.length) { blocks.push({ kind: "p", text: para.join(" ") }); para = []; }
+  };
+  const flushBullets = () => {
+    if (bullets) { blocks.push({ kind: "ul", items: bullets }); bullets = null; }
+  };
+  for (const line of cont) {
+    if (!line.trim()) { flushPara(); flushBullets(); continue; }
+    const bullet = line.match(/^- (.*)$/);
+    if (bullet) { flushPara(); (bullets ||= []).push(bullet[1]); continue; }
+    // Indented under a nested bullet, so it continues that bullet rather than
+    // starting a paragraph of its own.
+    if (bullets) { bullets[bullets.length - 1] += " " + line.trim(); continue; }
+    para.push(line.trim());
+  }
+  flushPara();
+  flushBullets();
+  return blocks;
+}
+
+interface Item { first: string; cont: string[]; }
+
 function renderMarkdown(src: string) {
   const lines = src.split("\n");
   const blocks: React.ReactNode[] = [];
-  let listBuffer: string[] = [];
+  let listBuffer: Item[] = [];
   let key = 0;
 
   function flushList() {
@@ -60,19 +100,28 @@ function renderMarkdown(src: string) {
     blocks.push(
       <div key={`list-${key++}`} className="cl-list">
         {items.map((item, i) => {
-          const boldMatch = item.match(/^\*\*(.+?)\*\*/);
-          const title = boldMatch
-            ? boldMatch[1]
-            : truncateSummary(item);
-          const body = boldMatch
-            ? item.replace(/^\*\*(.+?)\*\*\s*(?:—\s*)?/, "").trim()
-            : item;
+          const boldMatch = item.first.match(/^\*\*(.+?)\*\*/);
+          const title = boldMatch ? boldMatch[1] : truncateSummary(item.first);
+          const lead = boldMatch
+            ? item.first.replace(/^\*\*(.+?)\*\*\s*(?:—\s*)?/, "").trim()
+            : item.first;
+          const body = parseItemBlocks(lead ? [lead, "", ...item.cont] : item.cont);
           return (
             <details key={i} className="cl-entry">
               <summary className="cl-entry-summary">{title}</summary>
-              {body && (
+              {body.length > 0 && (
                 <div className="cl-entry-body">
-                  {renderInline(body, `body-${key}-${i}`)}
+                  {body.map((b, j) =>
+                    b.kind === "p" ? (
+                      <p key={j}>{renderInline(b.text, `body-${key}-${i}-${j}`)}</p>
+                    ) : (
+                      <ul key={j} className="cl-sublist">
+                        {b.items.map((t, k) => (
+                          <li key={k}>{renderInline(t, `sub-${key}-${i}-${j}-${k}`)}</li>
+                        ))}
+                      </ul>
+                    ),
+                  )}
                 </div>
               )}
             </details>
@@ -85,11 +134,17 @@ function renderMarkdown(src: string) {
   for (let idx = 0; idx < lines.length; idx++) {
     const line = lines[idx];
     if (/^- /.test(line)) {
-      let item = line.slice(2);
-      while (idx + 1 < lines.length && /^\s{2,}\S/.test(lines[idx + 1])) {
-        item += " " + lines[++idx].trim();
+      const cont: string[] = [];
+      while (idx + 1 < lines.length) {
+        const next = lines[idx + 1];
+        if (/^\s{2,}\S/.test(next)) { cont.push(next.slice(2)); idx++; continue; }
+        // A blank line stays inside the item only if the item resumes after it.
+        if (next.trim() === "" && /^\s{2,}\S/.test(lines[idx + 2] ?? "")) {
+          cont.push(""); idx++; continue;
+        }
+        break;
       }
-      listBuffer.push(item);
+      listBuffer.push({ first: line.slice(2), cont });
       continue;
     }
     flushList();

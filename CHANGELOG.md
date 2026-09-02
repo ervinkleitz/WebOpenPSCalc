@@ -7,7 +7,25 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-09-01
 
+### Added
+
+- **The monster database now has a one-command check against the live server.**
+  `tools/audit/fetch_ps_mobs.py` pulls Payon Stories' own monster data and diffs every
+  value against ours, so stale numbers surface on demand instead of waiting for a
+  player to notice. It reports what it cannot check as loudly as what it can — DEF,
+  MDEF, ATK ranges and skill kits have no public source, so a clean run never means
+  the database is verified.
+
 ### Fixed
+
+- **Long changelog entries were rendering mangled in this window.** Any entry with a
+  paragraph after a blank line — and any entry with sub-bullets — broke out of its own
+  collapsible box and rendered as loose text, hard-wrapped mid-sentence at whatever
+  width the source file happened to use. It affected 72 lines across 8 entries, and the
+  bigger the entry the worse it looked. Sub-bullets now render as a proper nested list,
+  trailing paragraphs stay inside the entry they belong to, and *italics* no longer show
+  their asterisks. Two tests now cover it: one pins the markdown to what this window can
+  render, the other pins the window to still rendering it.
 
 - **RSX 0806 had half the HP it should.** A player reported the calculator's RSX stats were out of
   date, and they were: our monster database is generated from a `monsters.json` scrape taken on

@@ -1331,6 +1331,13 @@ label {
   font-size: 0.77rem; color: var(--accent);
 }
 .cl-entry-body a { color: var(--accent); }
+.cl-entry-body p { margin: 0 0 0.55rem; }
+.cl-entry-body p:last-child { margin-bottom: 0; }
+.cl-entry-body em { font-style: italic; color: var(--text); }
+.cl-sublist { margin: 0 0 0.55rem; padding-left: 1.05rem; }
+.cl-sublist:last-child { margin-bottom: 0; }
+.cl-sublist li { margin: 0 0 0.35rem; }
+.cl-sublist li::marker { color: var(--text-dim); }
 
 .cl-entry-plain { padding: 0.4rem 0.5rem; font-size: 0.85rem; color: var(--text-dim); }
 
