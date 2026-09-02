@@ -46,6 +46,11 @@ node wildcard-carryover.mjs https://openpscalc.com/
   person can see — the button acknowledges the click, the editor ends up on screen, and
   it shows the pinned build.
 
+- **double-attack-visible.mjs** — Double Attack must be named on screen with its proc
+  chance. It was modelled and folded into the DPS for as long as the engine has existed,
+  and rendered nowhere, so a player reported it as unimplemented. Covers the dagger skill
+  proc and Sidewinder Card's `bDoubleRate` on a Monk's knuckle.
+
 ## A note on what these are for
 
 Both of these exist because reading the source said everything was fine. Assert what a

@@ -2549,6 +2549,12 @@ class BattlePipeline {
       period_ms: period,
       dps_valid: dpsValid,
       proc_chance: procChance,
+      // What to call this proc on screen. The engine knows which one it resolved
+      // (dagger/bow Double Attack vs a revolver's Chain Action) and the UI should
+      // not have to re-derive that from the weapon type.
+      double_proc_label: procChance > 0
+        ? (doubleProcKey === "GS_CHAINACTION" ? "Chain Action" : "Double Attack")
+        : null,
       double_hit: procFrac > 0 ? normal : null,
       katar_second: katarSecond,
       katar_second_crit: katarSecondCrit,

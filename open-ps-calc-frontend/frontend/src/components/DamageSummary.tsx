@@ -74,6 +74,9 @@ interface SingleResult {
     katar_second?: DamageBranch;
     katar_second_crit?: DamageBranch;
     katar_proc_chance?: number;
+    double_hit?: DamageBranch | null;
+    proc_chance?: number;
+    double_proc_label?: string | null;
     dps_valid: boolean;
     dps: number;
     period_ms?: number;
@@ -416,6 +419,37 @@ function TripleAttackView({ branch, chance, label }: { branch: DamageBranch; cha
   );
 }
 
+// Double Attack (Thief line, dagger) / Chain Action (Gunslinger, revolver) — a
+// per-level chance for a normal attack to land a SECOND hit. Unlike Triple Attack
+// it adds to the swing rather than replacing it. The engine has always modelled it
+// and folded it into the DPS, but nothing on screen said so, so a player with
+// Double Attack 10 saw no evidence it counted and reported it as not implemented.
+// Sidewinder Card feeds the same proc through bDoubleRate, on any weapon.
+function DoubleAttackView({ branch, chance, label }: { branch: DamageBranch; chance: number; label: string }) {
+  const n = (v: number) => Math.round(v).toLocaleString();
+  const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
+    ? `${n(branch.min_damage)}–${n(branch.max_damage)}`
+    : n(branch.avg_damage);
+  return (
+    <div className="breakdown-view">
+      <div className="breakdown-head">
+        <span className="breakdown-title">{label}</span>
+        <span className="breakdown-sub">{chance.toFixed(1)}% per auto-attack</span>
+      </div>
+      <PipelineView steps={branch.steps} hideFinal />
+      <div className="breakdown-total">
+        <span className="breakdown-total-label">Extra hit damage</span>
+        <span className="breakdown-total-val">{range}</span>
+      </div>
+      <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
+        <span className="self-damage-chip muted">adds a second hit</span>
+        <span className="self-damage-chip muted">never crits — a critical swing cannot also proc</span>
+        <span className="self-damage-chip muted">already folded into the DPS above</span>
+      </div>
+    </div>
+  );
+}
+
 // Card autocast on a physical attack (`bonus3 bAutoSpell,...`) — Pirate Skel Card's
 // auto-Mammonite, Rekenber Mercenary Card's auto-Bash. The proc rides on the swing
 // with no extra attack time, so its expected value is already inside the DPS above;
@@ -572,6 +606,17 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         branch: tripleAttackBranch,
         chance: activeResult.result.proc_chances?.triple_attack ?? 0,
         label: activeResult.result.proc_labels?.triple_attack ?? "Triple Attack",
+      }
+    : null;
+  // Double Attack / Chain Action second hit. Only ever procs on a normal attack, so
+  // it is read off the normal-attack result rather than the selected skill's.
+  const doubleHitBranch = normal_attack.result.double_hit ?? null;
+  const doubleHitChance = normal_attack.result.proc_chance ?? 0;
+  const doubleHit = doubleHitBranch && doubleHitChance > 0
+    ? {
+        branch: doubleHitBranch,
+        chance: doubleHitChance,
+        label: normal_attack.result.double_proc_label ?? "Double Attack",
       }
     : null;
   // Card autocasts on a physical attack (Pirate Skel Card → Mammonite, Rekenber
@@ -850,7 +895,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           </div>
         )}
         {activeBranch === "katar" && normal_attack.result.katar_proc_chance != null && (
-          <div className="metric">
+          <div className="metric" title="A katar's second hit IS your Double Attack, at twice the per-level rate — the skill has no separate proc on a katar, so levelling Double Attack raises this number. Capped at 100%.">
             <div className="label">2nd hit proc</div>
             <div className="value">{normal_attack.result.katar_proc_chance.toFixed(1)}<span className="unit">%</span></div>
           </div>
@@ -1016,6 +1061,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
       {autoSpell && <AutoSpellView branch={autoSpell.branch} chance={autoSpell.chance} label={autoSpell.label} />}
 
       {autoBlitz && <AutoBlitzView branch={autoBlitz.branch} chance={autoBlitz.chance} dpsAdded={autoBlitz.dpsAdded} />}
+
+      {doubleHit && <DoubleAttackView branch={doubleHit.branch} chance={doubleHit.chance} label={doubleHit.label} />}
 
       {tripleAttack && <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label} />}
 

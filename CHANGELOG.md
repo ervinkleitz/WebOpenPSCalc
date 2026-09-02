@@ -9,6 +9,22 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Double Attack was being calculated but never shown, so it looked unimplemented.**
+  Reported by a player running maxed Double Attack on a Thief/Rogue/Assassin and a Monk
+  with a Sidewinder Card, seeing no procs anywhere. The engine had it all along and the
+  DPS was right — a Rogue with a dagger and Double Attack 10 reads 70% and 726.9 DPS
+  against 429.9 with the skill at 0 — but nothing on screen named it, so there was no
+  way to tell the number included it. Double Attack now gets its own panel with its
+  proc chance and what the extra hit does, the way Triple Attack always has. Sidewinder
+  Card is covered too: it works on any weapon (the dagger restriction belongs to the
+  skill, not the card), and Payon Stories grants it at level 2, so on a dagger it reads
+  19% — 14% from the granted levels plus its own 5%. A katar's second hit **is** your
+  Double Attack at twice the rate, so the "2nd hit proc" readout now says so instead of
+  leaving Assassins to wonder where their Double Attack went.
+
+  Double Attack still isn't selectable in the skill list, and shouldn't be — it's a
+  passive that procs on normal attacks. Sim it by picking Normal Attack.
+
 - **Loading a pinned build looked like it did nothing.** It was loading — the editor
   updated correctly every time — but the recompute that follows a load ended by pulling
   the results panel back into view, scrolling you straight back to the compare table you
