@@ -77,6 +77,7 @@ interface SingleResult {
     double_hit?: DamageBranch | null;
     proc_chance?: number;
     double_proc_label?: string | null;
+    ta_proc_chance?: number;
     dps_valid: boolean;
     dps: number;
     period_ms?: number;
@@ -425,7 +426,9 @@ function TripleAttackView({ branch, chance, label }: { branch: DamageBranch; cha
 // and folded it into the DPS, but nothing on screen said so, so a player with
 // Double Attack 10 saw no evidence it counted and reported it as not implemented.
 // Sidewinder Card feeds the same proc through bDoubleRate, on any weapon.
-function DoubleAttackView({ branch, chance, label }: { branch: DamageBranch; chance: number; label: string }) {
+function DoubleAttackView({ branch, chance, label, taChance }: {
+  branch: DamageBranch; chance: number; label: string; taChance: number;
+}) {
   const n = (v: number) => Math.round(v).toLocaleString();
   const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
     ? `${n(branch.min_damage)}–${n(branch.max_damage)}`
@@ -434,7 +437,12 @@ function DoubleAttackView({ branch, chance, label }: { branch: DamageBranch; cha
     <div className="breakdown-view">
       <div className="breakdown-head">
         <span className="breakdown-title">{label}</span>
-        <span className="breakdown-sub">{chance.toFixed(1)}% per auto-attack</span>
+        {/* Triple Attack REPLACES the swing, so a swing that became a TA cannot also
+            double. This line says "per auto-attack", so with TA in play it must be the
+            share of swings that actually double, not the skill's own rate. */}
+        <span className="breakdown-sub">
+          {(chance * (1 - taChance / 100)).toFixed(1)}% per auto-attack
+        </span>
       </div>
       <PipelineView steps={branch.steps} hideFinal />
       <div className="breakdown-total">
@@ -443,6 +451,11 @@ function DoubleAttackView({ branch, chance, label }: { branch: DamageBranch; cha
       </div>
       <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
         <span className="self-damage-chip muted">adds a second hit</span>
+        {taChance > 0 && (
+          <span className="self-damage-chip muted">
+            {chance.toFixed(1)}% on its own — Triple Attack replaces {taChance.toFixed(1)}% of swings first
+          </span>
+        )}
         <span className="self-damage-chip muted">never crits — a critical swing cannot also proc</span>
         <span className="self-damage-chip muted">already folded into the DPS above</span>
       </div>
@@ -1062,7 +1075,14 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
 
       {autoBlitz && <AutoBlitzView branch={autoBlitz.branch} chance={autoBlitz.chance} dpsAdded={autoBlitz.dpsAdded} />}
 
-      {doubleHit && <DoubleAttackView branch={doubleHit.branch} chance={doubleHit.chance} label={doubleHit.label} />}
+      {doubleHit && (
+        <DoubleAttackView
+          branch={doubleHit.branch}
+          chance={doubleHit.chance}
+          label={doubleHit.label}
+          taChance={normal_attack.result.ta_proc_chance ?? 0}
+        />
+      )}
 
       {tripleAttack && <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label} />}
 

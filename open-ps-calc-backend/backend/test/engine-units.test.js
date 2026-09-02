@@ -628,6 +628,41 @@ test("Double Attack: sources take the highest, and a card frees the weapon type"
   );
 });
 
+// Triple Attack REPLACES the swing; Double Attack ADDS a hit. A swing that became a
+// TA cannot also double, but the swings TA did not take still can. The attack list
+// assumed the two could never coexist ("Monks don't use Knives"), which stopped being
+// true the moment a Double-Attack card was allowed to work on any weapon: a Monk with
+// Triple Attack and a Sidewinder was shown a 14% proc worth exactly nothing.
+test("Double Attack still applies on the swings Triple Attack did not take", () => {
+  const cfg = createBattleConfig();
+  const dpsOf = (equipped, mastery_levels) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 15, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 90, vit: 1, int: 1, dex: 50, luk: 1 },
+      equipped, mastery_levels,
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
+    const r = new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1002), eff, gb,
+    );
+    // Probability mass must still be exactly one, whatever branches were added.
+    const mass = r.attacks.reduce((n, a) => n + a.chance, 0);
+    assert.ok(Math.abs(mass - 1) < 1e-9, `attack chances sum to ${mass}, not 1`);
+    return r.dps;
+  };
+  const KNUCKLE = { right_hand: 1801 };
+  const KNUCKLE_SW = { right_hand: 1801, right_hand_card1: 4117 };
+  const TA = { MO_TRIPLEATTACK: 5 };
+
+  // With no Triple Attack, the card plainly raises DPS.
+  assert.ok(dpsOf(KNUCKLE_SW, {}) > dpsOf(KNUCKLE, {}), "Sidewinder must raise a Monk's DPS");
+  // ...and it must still raise it when Triple Attack is in play. This was equal.
+  assert.ok(
+    dpsOf(KNUCKLE_SW, TA) > dpsOf(KNUCKLE, TA),
+    "Double Attack contributes nothing once Triple Attack is active",
+  );
+});
+
 test("Momoe's Hairband gives +20% vs Turtle Island turtles, nothing vs others", () => {
   const cfg = createBattleConfig();
   const dmg = (hat, mobId) => {

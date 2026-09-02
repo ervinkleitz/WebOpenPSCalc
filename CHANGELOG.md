@@ -26,6 +26,13 @@ instead of release version. Dates are taken from actual git commit history.
     70% with a sword, where before swords did nothing. The rate comes off Sword Mastery's
     level, not Double Attack's. Bow Double Attack was already modelled, which is what made
     the gap visible.
+  - **Triple Attack no longer swallows Double Attack entirely.** Triple Attack replaces
+    the swing, so a swing that becomes one can't also double — but the swings it *didn't*
+    take still can. The attack list assumed the two could never coexist ("Monks don't use
+    knuckles and daggers at once"), which stopped being true the moment the card was
+    allowed to work on any weapon: a Monk with Triple Attack and a Sidewinder was shown a
+    14% proc worth exactly nothing. It's worth 40 DPS now, and the panel reports the
+    **10.5%** of swings that actually double rather than the skill's own 14%.
   - Not changed: **Double Attack on a dagger and the katar second hit were both already
     right.** The player's report that DPS *dropped* when adding a Sidewinder was withdrawn
     and I could not reproduce it either.

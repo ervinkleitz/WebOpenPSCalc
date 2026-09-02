@@ -2433,8 +2433,14 @@ class BattlePipeline {
       }
     }
 
-    // Build attacks array. TA proc takes priority over TF_DOUBLE (Monks don't
-    // use Knives, so both shouldn't apply simultaneously in practice).
+    // Build attacks array. Triple Attack takes priority over Double Attack: it
+    // REPLACES the swing, so a swing that became a TA cannot also double. Double
+    // Attack still applies to the swings TA did not take, which is (1 - tpf) of them.
+    //
+    // This used to assume the two could never coexist ("Monks don't use Knives"), and
+    // that stopped being true once a Double-Attack card was allowed to work on the
+    // weapon it is compounded in: a Monk with Triple Attack and a Sidewinder was shown
+    // a 14% Double Attack proc that contributed exactly nothing to the DPS.
     let attacks;
     if (dualWield) {
       // Dual-wield: crits auto-hit; hit/miss applies to non-crit swings only.
@@ -2451,7 +2457,8 @@ class BattlePipeline {
           createAttackDefinition(critAvg,     0.0, period, effCrit * (1.0 - tpf)),
           createAttackDefinition(taAvg,       0.0, period, (1.0 - effCrit) * tpf * h),
           createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * tpf * (1.0 - h)),
-          createAttackDefinition(normalAvg,   0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h),
+          createAttackDefinition(normalAvg,     0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h * (1.0 - procFrac)),
+          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h * procFrac),
           createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - h)),
         ];
       } else {
@@ -2460,7 +2467,8 @@ class BattlePipeline {
           createAttackDefinition(critAvg,     0.0, period, effCrit),
           createAttackDefinition(taAvg,       0.0, period, (1.0 - effCrit) * tpf * h),
           createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * tpf * (1.0 - h)),
-          createAttackDefinition(normalAvg,   0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h),
+          createAttackDefinition(normalAvg,     0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h * (1.0 - procFrac)),
+          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h * procFrac),
           createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - h)),
         ];
       }
