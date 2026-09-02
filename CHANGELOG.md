@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **The Double Attack panel no longer repeats the normal attack's breakdown.** It listed
+  the full ten-step calculation, identical row for row to the breakdown directly above it,
+  which read as a display bug and was reported as one. The numbers were right — a Double
+  Attack is two hits of a normal hit's damage, so the extra hit genuinely does match — but
+  restating that in ten identical rows said it badly. The panel now says it in a line and
+  keeps the proc chance, the extra hit's damage and its notes. A katar's second hit keeps
+  its full breakdown, because that one really is different: a fraction of the main hit
+  rather than a copy of it.
+
 - **A weapon could never roll its own ATK.** Every physical hit rolls a weapon damage
   value between a DEX-derived floor and the weapon's ATK — and that top value was
   unreachable, so the roll stopped one point short. The formula is

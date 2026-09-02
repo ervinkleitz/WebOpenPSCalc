@@ -444,7 +444,16 @@ function DoubleAttackView({ branch, chance, label, taChance }: {
           {(chance * (1 - taChance / 100)).toFixed(1)}% per auto-attack
         </span>
       </div>
-      <PipelineView steps={branch.steps} hideFinal />
+      {/* Deliberately NOT a full pipeline. The second hit reruns the normal attack's
+          calculation unchanged, so every row would repeat the breakdown directly above
+          it, number for number — which read as a copy-paste bug and was reported as one
+          ("AA and DA shows the same dmg"). Say the mechanic instead of restating it in
+          ten identical rows. The katar second hit keeps its breakdown, because that one
+          genuinely differs: it is a fraction of the main hit, not a copy of it. */}
+      <div className="dw-same-as-normal">
+        Each hit does what a normal attack does — the second hit runs the same
+        calculation, so its damage is identical to the normal attack's.
+      </div>
       <div className="breakdown-total">
         <span className="breakdown-total-label">Extra hit damage</span>
         <span className="breakdown-total-val">{range}</span>

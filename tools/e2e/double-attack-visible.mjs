@@ -28,9 +28,12 @@ const cases = [
   // Dagger + the skill itself: 7%/lv on PS, so Lv10 is 70%.
   { name: "Rogue, dagger, Double Attack 10", expect: /Double Attack/, chance: "70.0",
     state: build({ equipped: { right_hand: 1224 }, mastery_levels: { TF_DOUBLE: 10 } }) },
-  // Sidewinder Card is bDoubleRate, which Hercules applies on ANY weapon — the dagger
-  // restriction belongs to the skill, not the card. A Monk's knuckle must show 5%.
-  { name: "Monk, knuckle + Sidewinder Card", expect: /Double Attack/, chance: "5.0",
+  // The card works on the weapon it is compounded in, whatever that is (wiki
+  // Class_Rebalance, Thief). It grants Double Attack level 2, so a Monk's knuckle shows
+  // the same 14% a dagger would. This expected 5% until 2026-09-02 — the value from
+  // before the weapon restriction was lifted, which this file went on asserting for
+  // hours because it is deliberately outside `npm test` and nobody re-ran it.
+  { name: "Monk, knuckle + Sidewinder Card", expect: /Double Attack/, chance: "14.0",
     state: build({ job_id: 15, job_name: "Monk", equipped: { right_hand: 1801, right_hand_card1: 4117 } }) },
 ];
 

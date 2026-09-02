@@ -51,6 +51,17 @@ node wildcard-carryover.mjs https://openpscalc.com/
   and rendered nowhere, so a player reported it as unimplemented. Covers the dagger skill
   proc and Sidewinder Card's `bDoubleRate` on a Monk's knuckle.
 
+## These go stale silently
+
+Being outside `npm test` is what makes them cheap to keep, and also what let
+`double-attack-visible.mjs` assert a number that had been wrong for hours: the Sidewinder
+expectation still said 5% after the weapon restriction was lifted, and nothing re-ran it.
+**Run all three whenever you change what they cover**, not just the one you are working on:
+
+```sh
+for f in tools/e2e/*.mjs; do node "$f" || echo "FAILED: $f"; done
+```
+
 ## A note on what these are for
 
 Both of these exist because reading the source said everything was fine. Assert what a
