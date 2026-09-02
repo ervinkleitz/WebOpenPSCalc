@@ -5,6 +5,22 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-02
+
+### Fixed
+
+- **Loading a saved build could blank the page instead of loading it.** Reported as "Load
+  doesn't work anymore". The editor has two places that put a whole build into the form —
+  first page load, and the Load button — and they had drifted apart. Page load filled in a
+  default for all five parts of a build; the Load button filled in a default for only one of
+  them. So a build saved before one of those parts existed came back with a hole in it, and
+  the app reads one of those values on every redraw before it can check whether it is there.
+  It threw, and with nothing to catch it the whole page went blank — which from the outside
+  looks exactly like a button that does nothing. Both paths now go through one shared step,
+  which also back-fills anything added since a build was saved, so old saves keep working
+  instead of breaking the moment the editor gains a field. A test holds the two paths
+  together so they cannot drift again.
+
 ## 2026-09-01
 
 ### Added

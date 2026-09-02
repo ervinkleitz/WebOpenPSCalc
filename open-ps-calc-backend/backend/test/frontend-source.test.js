@@ -167,6 +167,41 @@ test("CHANGELOG.md is well formed", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Every path that hydrates the editor must default the same fields
+// ---------------------------------------------------------------------------
+test("mount and load hydrate editor state through the same helper", () => {
+  // These two paths drifted, and the drift crashed the app. Mount defaulted all
+  // five state fields with ??; onLoadSavedState defaulted only targetMods. A saved
+  // build with no customTarget therefore set it to undefined, and customTarget.element
+  // is read inside a useMemo DEPENDENCY ARRAY (signumApplicable) — evaluated on every
+  // render, before any guard — so React threw. There is no error boundary, so the whole
+  // app unmounted to a blank page and the Load button looked like it did nothing.
+  //
+  // The fix is one shared hydrateState(); this keeps it shared.
+  const src = read("src", "pages", "BuildEditor.tsx");
+
+  const helper = src.match(/function hydrateState\(([^)]*)\)[^{]*{([\s\S]*?)\n}/);
+  assert.ok(helper, "hydrateState() is gone — the two hydration paths can drift again");
+  for (const field of ["build", "skill", "targetMode", "customTarget", "targetMods"]) {
+    assert.ok(helper[2].includes(field + ":"),
+      `hydrateState does not default "${field}"`);
+  }
+
+  // The load path must delegate rather than assign the incoming state directly.
+  const load = src.match(/function onLoadSavedState\([^)]*\)[^{]*{([\s\S]*?)\n  }/);
+  assert.ok(load, "onLoadSavedState not found");
+  assert.ok(/hydrateState\(/.test(load[1]),
+    "onLoadSavedState no longer routes through hydrateState");
+  const raw = load[1].match(/set\w+\(state\.\w+/g) || [];
+  assert.deepEqual(raw, [],
+    "onLoadSavedState assigns saved state straight into React state, skipping the defaults");
+
+  // ...and so must first mount.
+  assert.ok(/const hydrated = hydrateState\(initialState\)/.test(src),
+    "first mount no longer routes through hydrateState");
+});
+
+// ---------------------------------------------------------------------------
 // CHANGELOG must stay inside what the modal can render
 // ---------------------------------------------------------------------------
 test("CHANGELOG.md uses only markup the changelog modal renders", () => {

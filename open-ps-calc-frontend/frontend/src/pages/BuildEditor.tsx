@@ -780,6 +780,26 @@ function decodeState(encoded: string): UrlEditorState | null {
   }
 }
 
+// Every path that puts a whole state into the editor goes through here: first
+// mount, loading a saved build, and a decoded share link. Keeping them on one
+// helper is the point — they had drifted, and the drift was a crash. The mount
+// path defaulted all five fields; onLoadSavedState defaulted only targetMods, so
+// a saved build with no customTarget set it to undefined, and customTarget.element
+// sits inside a useMemo DEPENDENCY ARRAY (signumApplicable), which React evaluates
+// on every render before any guard can run. That throws, and with no error boundary
+// the whole app unmounts to a blank page — the Load button looked like it did
+// nothing. Merging over the defaults also back-fills fields added since a build was
+// saved, which a bare ?? cannot do.
+function hydrateState(state: Partial<UrlEditorState> | null | undefined): UrlEditorState {
+  return {
+    build: { ...DEFAULT_BUILD, ...(state?.build ?? {}) },
+    skill: { ...DEFAULT_SKILL, ...(state?.skill ?? {}) },
+    targetMode: state?.targetMode ?? "monster",
+    customTarget: { ...DEFAULT_CUSTOM_TARGET, ...(state?.customTarget ?? {}) },
+    targetMods: { ...DEFAULT_TARGET_MODS, ...(state?.targetMods ?? {}) },
+  };
+}
+
 // Working-draft autosave (sessionStorage): keeps in-progress edits across a refresh
 // even though the URL only changes on Save/Copy-link. Per-tab; cleared on tab close.
 const DRAFT_KEY = "opscalc.draft";
@@ -812,11 +832,12 @@ export default function BuildEditor() {
     return urlState;
   })();
 
-  const [data, setData] = useState<BuildData>(initialState?.build ?? DEFAULT_BUILD);
-  const [skill, setSkill] = useState<SkillState>({ ...DEFAULT_SKILL, ...(initialState?.skill ?? {}) });
-  const [targetMode, setTargetMode] = useState<TargetMode>(initialState?.targetMode ?? "monster");
-  const [customTarget, setCustomTarget] = useState<CustomTarget>(initialState?.customTarget ?? DEFAULT_CUSTOM_TARGET);
-  const [targetMods, setTargetMods] = useState<TargetMods>(initialState?.targetMods ?? DEFAULT_TARGET_MODS);
+  const hydrated = hydrateState(initialState);
+  const [data, setData] = useState<BuildData>(hydrated.build);
+  const [skill, setSkill] = useState<SkillState>(hydrated.skill);
+  const [targetMode, setTargetMode] = useState<TargetMode>(hydrated.targetMode);
+  const [customTarget, setCustomTarget] = useState<CustomTarget>(hydrated.customTarget);
+  const [targetMods, setTargetMods] = useState<TargetMods>(hydrated.targetMods);
 
   // Short share links (/?s=<id>): resolve the id to the full "z3_…" payload, then
   // reload as /?b=<payload> so the entire existing decode/load path runs unchanged.
@@ -1658,11 +1679,12 @@ export default function BuildEditor() {
   }
 
   function onLoadSavedState(state: UrlEditorState) {
-    setData(state.build);
-    setSkill({ ...DEFAULT_SKILL, ...state.skill });
-    setTargetMode(state.targetMode);
-    setCustomTarget(state.customTarget);
-    setTargetMods(state.targetMods ?? DEFAULT_TARGET_MODS);
+    const next = hydrateState(state);
+    setData(next.build);
+    setSkill(next.skill);
+    setTargetMode(next.targetMode);
+    setCustomTarget(next.customTarget);
+    setTargetMods(next.targetMods);
     setCalcResult(null);
     setCalcError("");
     setResultsOpen(false);
