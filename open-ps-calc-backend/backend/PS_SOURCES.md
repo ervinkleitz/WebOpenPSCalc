@@ -6487,29 +6487,33 @@ Bolt -33% and Fire Wall -11% (fast builds and magic now meet the real cap). Back
 at 2.00 casts/s — the number the calculator showed before the delay fix, but for the right
 reason this time: no per-skill delay, a global floor.
 
-## OPEN (2026-09-02) — is Sidewinder Card Double Attack **level 2** or a flat **7%**?
+## ANSWERED (2026-09-02) — Sidewinder Card is Double Attack **level 2** (14%)
 
-Two PS sources disagree, and they give 14% or 7%:
+Settled by a player's screenshot of the card in game:
 
-- **The live item description** (scraped, and still what `tools.payonstories.com/api/pc/item`
-  returns): *"Enables Level 2 Double Attack on compounded weapon. If character has learned
-  Double Attack, that skill's level affects this card's effect."* Level 2 x 7%/lv = **14%**.
-- **wiki Class_Rebalance, Thief section:** *"Sidewinder Card also benefits from this change.
-  It now adds 7% Double Attack to the weapon that is compounded in. If the user already knows
-  Double Attack it will use that skill level chance."* Read literally that is **7%** — level 1
-  at the new rate, i.e. the card's level never changed and only the rate did.
+> Sidewinder Card — *"Enables Level 2 Double Attack on compounded weapon. If character
+> has learned Double Attack, that skill's level affects this card's effect."*  ItemID 4117
 
-We model **14%** (`ps_item_manual` grants `skill TF_DOUBLE,2`), which matches the live
-description and matches what the reporting player expected. Flip the 2 to a 1 if a CC says
-otherwise — nothing else needs to change, the rate falls out of the granted level.
+So the live client agrees with the scraped description and **the wiki's "adds 7%" is
+stale** — it describes the card before its level went to 2, or was written loosely. We
+model 14% and that is right. Keep `skill TF_DOUBLE,2` in `ps_item_manual`.
 
-Both sources agree on everything else, and all of it is now modelled: the card works on
-**whatever weapon it is compounded in** (not daggers only), and a learned Double Attack level
-**replaces** the card's rather than adding to it.
+The same screenshot carried the skill tooltip, which is the best source we have for
+Double Attack and settled two more things:
 
-**How to settle it in game:** equip Sidewinder on a character with NO Double Attack learned and
-read the proc rate off the client, or count procs over a few hundred swings. 7 vs 14 is far
-too wide to mistake.
+> Double Attack — Max Level 10, **Passive**. *"Allows character to hit twice with dagger
+> class weapons. Also increases Katar damage if a Katar weapon is equipped."*
+> Lv1 7% Chance, +3% Katar Damage ... Lv10 70% Chance, +21% Katar Damage
+> *"Note: Adds Hit equal to the Skill's Level. This Hit is only added in the instance of
+> a Double Attack successfully being triggered and is not a passive bonus."*
+
+- **7% per level confirmed** (7/14/21/…/70), matching `PS_PROC_RATE_OVERRIDES.TF_DOUBLE`.
+- **The Katar damage bonus scales with the level**: 1 + 2 x lv, so +3% at Lv1, not the
+  flat 21% we had hardcoded from the "+21% at max level" line. Fixed 2026-09-02.
+- **The +HIT is conditional**: it lands only on a swing that actually procs, and is not
+  a passive accuracy bonus. Now modelled — the proc's swing rolls to hit with it and
+  every other swing rolls without.
+- **"Passive"** confirms it is not castable, so it is correctly absent from the skill picker.
 
 ## OPEN (2026-09-01) — the monster DB's combat half is five months stale
 

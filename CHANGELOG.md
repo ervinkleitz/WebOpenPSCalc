@@ -9,6 +9,22 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **A katar's off-hand damage no longer assumes maxed Double Attack.** The in-game skill
+  tooltip lists the Katar bonus rising with the level — +3% at Lv1 through +21% at Lv10 —
+  and the calculator had the 21% hardcoded, so an Assassin with Double Attack 5 was shown
+  the off-hand damage of one with Double Attack 10. It scales now: the second hit is
+  roughly seven times bigger at Lv10 than Lv1, as it should be.
+
+- **Double Attack's bonus accuracy is now modelled.** The skill *"adds Hit equal to the
+  Skill's Level"*, but only on a swing that actually procs — it isn't a passive accuracy
+  bonus, and we weren't counting it at all. The proc's swing now rolls to hit with the
+  bonus and every other swing rolls without it, which matters on builds that miss.
+
+- **Sidewinder Card is confirmed Level 2 (14%).** A player's in-game screenshot settled a
+  question the written sources disagreed on: the card reads *"Enables Level 2 Double
+  Attack on compounded weapon"*, so the wiki's "adds 7%" is stale. The calculator was
+  already right; it's now recorded as answered rather than open.
+
 - **Double Attack was wrong in four ways, all reported by one player.** Every fix below
   comes from the wiki's Class_Rebalance page, which turned out to document rules we had
   never modelled.

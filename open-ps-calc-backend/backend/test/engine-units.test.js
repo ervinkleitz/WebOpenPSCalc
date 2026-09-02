@@ -628,6 +628,67 @@ test("Double Attack: sources take the highest, and a card frees the weapon type"
   );
 });
 
+// The in-game Double Attack tooltip (screenshotted by a player 2026-09-02) lists the
+// Katar damage bonus scaling with the skill's level: +3% at Lv1 up to +21% at Lv10,
+// i.e. 1 + 2 x lv. The engine hardcoded 21 — the Lv10 figure — so every Assassin got
+// max off-hand damage regardless of their actual Double Attack level.
+test("Katar second hit scales with Double Attack level, not a flat 21%", () => {
+  const cfg = createBattleConfig();
+  const katarSecondAvg = (daLv) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 12, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 90, vit: 1, int: 1, dex: 50, luk: 1 },
+      equipped: { right_hand: 1250 }, mastery_levels: { TF_DOUBLE: daLv },
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
+    const r = new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1002), eff, gb,
+    );
+    return r.katar_second.avg_damage;
+  };
+  // Lv10 is 21% and Lv1 is 3%, so Lv10 must be 7x Lv1. A flat 21 makes them equal.
+  const lv1 = katarSecondAvg(1), lv10 = katarSecondAvg(10);
+  assert.ok(lv1 > 0 && lv10 > 0);
+  const ratio = lv10 / lv1;
+  assert.ok(Math.abs(ratio - 7) < 0.15, `Lv10 should be ~7x Lv1 (21% vs 3%), got x${ratio.toFixed(2)}`);
+});
+
+// "Adds Hit equal to the Skill's Level. This Hit is only added in the instance of a
+// Double Attack successfully being triggered and is not a passive bonus." — the
+// in-game tooltip. So the proc's swing rolls to hit with the bonus and nothing else does.
+test("Double Attack's +HIT applies only to the swing that procs", () => {
+  const cfg = createBattleConfig();
+  // Low DEX against a high-flee target so hit chance is well under 100 and the bonus shows.
+  const b = buildFromSaveSchema({
+    server: "payon_stories", job_id: 17, base_level: 60, job_level: 40,
+    base_stats: { str: 60, agi: 40, vit: 1, int: 1, dex: 20, luk: 1 },
+    equipped: { right_hand: 1224 }, mastery_levels: { TF_DOUBLE: 10 },
+  });
+  const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
+  const r = new BattlePipeline(cfg).calculate(
+    status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1207), eff, gb,
+  );
+  const h = r.hit_chance / 100, pf = r.proc_chance / 100, c = r.crit_chance / 100;
+  assert.ok(h > 0.2 && h < 0.9, `test needs a middling hit chance, got ${r.hit_chance}%`);
+
+  const mass = r.attacks.reduce((n, a) => n + a.chance, 0);
+  assert.ok(Math.abs(mass - 1) < 1e-9, `attack chances sum to ${mass}, not 1`);
+
+  // The doubled branch is the one paying twice the single-hit damage.
+  const single = r.attacks.find((a) => Math.abs(a.avg_damage - r.normal.avg_damage) < 1e-6);
+  const doubled = r.attacks.find((a) => Math.abs(a.avg_damage - r.normal.avg_damage * 2) < 1e-6);
+  assert.ok(single && doubled, "could not find the single and doubled branches");
+
+  // Single swings roll at the base hit chance...
+  assert.ok(Math.abs(single.chance - (1 - c) * (1 - pf) * h) < 1e-6, "single swing should use the base hit chance");
+  // ...and the proc swing rolls at base + the skill's level, in percentage points.
+  const expected = (1 - c) * pf * (h + 10 / 100);
+  assert.ok(
+    Math.abs(doubled.chance - expected) < 1e-3,
+    `proc swing should roll at +10 HIT (expected ${expected.toFixed(5)}, got ${doubled.chance.toFixed(5)})`,
+  );
+});
+
 // Triple Attack REPLACES the swing; Double Attack ADDS a hit. A swing that became a
 // TA cannot also double, but the swings TA did not take still can. The attack list
 // assumed the two could never coexist ("Monks don't use Knives"), which stopped being

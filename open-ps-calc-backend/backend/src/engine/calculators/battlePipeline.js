@@ -2263,7 +2263,12 @@ class BattlePipeline {
         const katarMasteryLv = gearBonuses.effective_mastery.AS_KATAR || 0;
         const katarDoubleRatePerLv = (profile.proc_rate_overrides || {}).TF_DOUBLE ?? 5.0;
         katarProcChance = Math.min(100, 2 * katarDoubleRatePerLv * katarTFDoubleLv + (gearBonuses.double_rate || 0));
-        const katarScale = (21 + 4 * katarMasteryLv) / 100;
+        // Off-hand share of the main hit. The Double Attack part SCALES WITH ITS LEVEL:
+        // the in-game skill tooltip lists +3% Katar damage at Lv1 rising to +21% at
+        // Lv10, i.e. 1 + 2 x lv (wiki Class_Rebalance says the same, "1 + (2 x SkillLV)").
+        // This used to be hardcoded to 21 — the Lv10 figure — which handed every
+        // Assassin max off-hand damage no matter what their Double Attack level was.
+        const katarScale = (1 + 2 * katarTFDoubleLv + 4 * katarMasteryLv) / 100;
         const scalePct = (katarScale * 100).toFixed(0);
 
         katarSecond = createDamageResult({
@@ -2271,7 +2276,7 @@ class BattlePipeline {
           max_damage: Math.floor(normal.max_damage * katarScale),
           avg_damage: normal.avg_damage * katarScale,
         });
-        katarSecond.add_step({ name: "Katar 2nd hit", value: normal.avg_damage * katarScale, min_value: Math.floor(normal.min_damage * katarScale), max_value: Math.floor(normal.max_damage * katarScale), note: `Proc: ${katarProcChance}% · ${scalePct}% of main hit (21% base + ${4 * katarMasteryLv}% from AS_KATAR Lv${katarMasteryLv})`, formula: `main × ${scalePct} / 100`, hercules_ref: "PS-AssassinRework" });
+        katarSecond.add_step({ name: "Katar 2nd hit", value: normal.avg_damage * katarScale, min_value: Math.floor(normal.min_damage * katarScale), max_value: Math.floor(normal.max_damage * katarScale), note: `Proc: ${katarProcChance}% · ${scalePct}% of main hit (${1 + 2 * katarTFDoubleLv}% from Double Attack Lv${katarTFDoubleLv} + ${4 * katarMasteryLv}% from AS_KATAR Lv${katarMasteryLv})`, formula: `main × ${scalePct} / 100`, hercules_ref: "PS-AssassinRework" });
 
         if (crit) {
           katarSecondCrit = createDamageResult({
@@ -2334,6 +2339,26 @@ class BattlePipeline {
       tfDoubleLv = gearBonuses.effective_mastery.GS_CHAINACTION || 0;
       doubleProcKey = "GS_CHAINACTION";
     }
+    // "Adds Hit equal to the Skill's Level. This Hit is only added in the instance of a
+    // Double Attack successfully being triggered and is not a passive bonus." — the
+    // in-game Double Attack tooltip; wiki Class_Rebalance puts it as "+1 hit per skill
+    // level which only applies to double attack procs". So the swing that procs rolls
+    // to hit with the bonus and every other swing rolls without it. Scoped to
+    // TF_DOUBLE: Chain Action is a different skill and carries no such note.
+    let hDouble = null;
+    if (skill.id === 0 && doubleProcKey === "TF_DOUBLE" && tfDoubleLv > 0 && hitChance < 100) {
+      const [hitChanceDA] = calculateHitChance(
+        { ...status, hit: status.hit + tfDoubleLv }, target, this.config, skillName, skill.level,
+        {
+          mastery: gearBonuses ? gearBonuses.effective_mastery : build.mastery_levels,
+          skill_params: build.skill_params,
+          arrow_hit: usesAmmo && ammoGb ? ammoGb.hit || 0 : 0,
+        },
+      );
+      hDouble = hitChanceDA / 100.0;
+    }
+    const hDA = hDouble != null ? hDouble : h;
+
     const doubleRate = (profile.proc_rate_overrides || {})[doubleProcKey] ?? 5.0;
     const skillProcChance = tfDoubleLv > 0 ? doubleRate * tfDoubleLv : 0;
     // bDoubleRate is the SAME effect written for non-dagger weapons, not an extra
@@ -2457,9 +2482,9 @@ class BattlePipeline {
           createAttackDefinition(critAvg,     0.0, period, effCrit * (1.0 - tpf)),
           createAttackDefinition(taAvg,       0.0, period, (1.0 - effCrit) * tpf * h),
           createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * tpf * (1.0 - h)),
-          createAttackDefinition(normalAvg,     0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h * (1.0 - procFrac)),
-          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h * procFrac),
-          createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - h)),
+          createAttackDefinition(normalAvg,     0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - procFrac) * h),
+          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * procFrac * hDA),
+          createAttackDefinition(0.0,           0.0, period, (1.0 - effCrit) * (1.0 - tpf) * ((1.0 - procFrac) * (1.0 - h) + procFrac * (1.0 - hDA))),
         ];
       } else {
         // No Fury: TA can't crit; crits happen only on non-proc swings
@@ -2467,16 +2492,16 @@ class BattlePipeline {
           createAttackDefinition(critAvg,     0.0, period, effCrit),
           createAttackDefinition(taAvg,       0.0, period, (1.0 - effCrit) * tpf * h),
           createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * tpf * (1.0 - h)),
-          createAttackDefinition(normalAvg,     0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h * (1.0 - procFrac)),
-          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * h * procFrac),
-          createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - h)),
+          createAttackDefinition(normalAvg,     0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - procFrac) * h),
+          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * procFrac * hDA),
+          createAttackDefinition(0.0,           0.0, period, (1.0 - effCrit) * (1.0 - tpf) * ((1.0 - procFrac) * (1.0 - h) + procFrac * (1.0 - hDA))),
         ];
       }
     } else if (procFrac > 0) {
       attacks = [
-        createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * h * (1.0 - procFrac)),
-        createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * h * procFrac),
-        createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * (1.0 - h)),
+        createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * (1.0 - procFrac) * h),
+        createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * procFrac * hDA),
+        createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * ((1.0 - procFrac) * (1.0 - h) + procFrac * (1.0 - hDA))),
         createAttackDefinition(critAvg, 0.0, period, effCrit),
       ];
     } else {
