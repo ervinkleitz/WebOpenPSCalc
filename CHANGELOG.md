@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Loading a pinned build looked like it did nothing.** It was loading — the editor
+  updated correctly every time — but the recompute that follows a load ended by pulling
+  the results panel back into view, scrolling you straight back to the compare table you
+  clicked Load from. The editor sits below that panel, off screen, so the only visible
+  change was the Current column quietly becoming identical to the column you clicked.
+  Clicking Load now says "Loaded ✓" and brings the editor into view with the build in it,
+  and the stale "this is the such-and-such template" note no longer sits above a build
+  that replaced it.
+
 - **A loaded build was priced with the previous build's wildcard card slots.** This is what
   was behind two separate reports — "Load doesn't work" and "loading pinned builds is not
   working" — and it hit both the Load button and the pinned-build Load. Which slots are in

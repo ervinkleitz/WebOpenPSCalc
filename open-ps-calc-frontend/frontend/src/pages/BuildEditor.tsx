@@ -1107,15 +1107,25 @@ export default function BuildEditor() {
     const next = hydrateState({ ...snap, build: snap?.data ?? snap?.build });
     setData(next.build);
     setWildcardMode(deriveWildcardMode(next.build));
+    setTemplateHint(null); // it described the template this build just replaced
     setSkill(next.skill);
     setTargetMode(next.targetMode);
     setCustomTarget(next.customTarget);
     setTargetMods(next.targetMods);
     setLoadTick((t) => t + 1); // triggers a recompute so the loaded build's numbers show as Current
+    // Take the user to the build they just loaded. Without this the click has no
+    // visible effect at all: the only thing that changes on screen is the Current
+    // column quietly becoming identical to the column you clicked. It loaded — it
+    // just looked exactly like a button that does nothing, and got reported as one.
+    //
+    // Scroll to the EDITOR, not to the top: the results panel renders above the
+    // editor, so top of page is still the compare table you clicked Load from.
+    // The 60ms clears the recompute that this same handler kicks off.
+    setTimeout(() => editorGridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
   }, []);
   // Recompute after a pinned build is loaded (state has settled by the time this runs).
   useEffect(() => {
-    if (loadTick > 0) onCalculate();
+    if (loadTick > 0) onCalculate(undefined, false); // keep the user on the build they just loaded
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadTick]);
 
@@ -1186,6 +1196,7 @@ export default function BuildEditor() {
 
   const [resultsOpen, setResultsOpen] = useState(false);
   const resultsPanelRef = useRef<HTMLDivElement>(null);
+  const editorGridRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<"dark" | "light">(() =>
     (localStorage.getItem("theme") as "dark" | "light") || "dark"
   );
@@ -1560,7 +1571,12 @@ export default function BuildEditor() {
     });
   }, []);
 
-  async function onCalculate(fpOverride?: boolean) {
+  // scrollToResults: the results panel pulls itself into view when a calculation
+  // finishes, which is right when the user pressed "Calculate damage" and wrong when
+  // the recompute was a side effect of loading a pinned build — there it dragged the
+  // user back to the compare table they clicked Load from, so the load had no visible
+  // effect and got reported as a button that does nothing.
+  async function onCalculate(fpOverride?: boolean, scrollToResults = true) {
     const fp = fpOverride !== undefined ? fpOverride : forceProcs;
     setCalculating(true);
     setCalcError("");
@@ -1668,7 +1684,9 @@ export default function BuildEditor() {
       setCalcError(e.message);
     } finally {
       setCalculating(false);
-      setTimeout(() => resultsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      if (scrollToResults) {
+        setTimeout(() => resultsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      }
     }
   }
 
@@ -1696,6 +1714,7 @@ export default function BuildEditor() {
     const next = hydrateState(state);
     setData(next.build);
     setWildcardMode(deriveWildcardMode(next.build));
+    setTemplateHint(null); // it described the template this build just replaced
     setSkill(next.skill);
     setTargetMode(next.targetMode);
     setCustomTarget(next.customTarget);
@@ -2020,7 +2039,7 @@ export default function BuildEditor() {
           onOpenTip={() => setTipOpen(true)}
         />
 
-        <div className="editor-grid">
+        <div className="editor-grid" ref={editorGridRef}>
           <Panel eyebrow="00" title="Start from a template">
             <div className="field-row">
               <div className="field" style={{ flex: 1 }}>

@@ -38,3 +38,16 @@ node wildcard-carryover.mjs https://openpscalc.com/
   regression that produced two separate player reports ("Load doesn't work",
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
+
+- **pin-load-visible.mjs** — clicking Load on a pinned build must visibly take you to
+  that build. State assertions all passed while this was broken: the build loaded, and
+  then `onCalculate` pulled the results panel back into view, so the user was scrolled
+  straight back to the compare table and saw nothing change. Asserts the outcome a
+  person can see — the button acknowledges the click, the editor ends up on screen, and
+  it shows the pinned build.
+
+## A note on what these are for
+
+Both of these exist because reading the source said everything was fine. Assert what a
+person would see, not what the state says — the two reports that produced this directory
+were both cases where the state was correct and the screen was not.

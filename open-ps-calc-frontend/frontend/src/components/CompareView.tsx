@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 import InfoTooltip from "./InfoTooltip";
 
@@ -93,6 +94,9 @@ interface Props {
 }
 
 export default function CompareView({ live, pins, canPin, onPin, onRemove, onLoad, onClear }: Props) {
+  // The Load button used to give no acknowledgement of any kind. The editor is off
+  // the top of the screen from here, so "did that work?" had no answer.
+  const [justLoaded, setJustLoaded] = useState<string | null>(null);
   const columns = [
     ...pins.map((p) => ({ key: p.id, metrics: p.metrics, name: p.name, sub: p.metrics.label, isLive: false, pin: p as ComparePin | null })),
     ...(live ? [{ key: "__live", metrics: live, name: "Current", sub: live.label, isLive: true, pin: null as ComparePin | null }] : []),
@@ -148,7 +152,17 @@ export default function CompareView({ live, pins, canPin, onPin, onRemove, onLoa
                           <button className="cmp-btn-mini cmp-btn-pin" onClick={onPin} disabled={!canPin} title="Save the current build as a column">Pin</button>
                         ) : (
                           <>
-                            <button className="cmp-btn-mini" onClick={() => onLoad(c.pin!)} title="Load this build into the editor">Load</button>
+                            <button
+                              className="cmp-btn-mini"
+                              onClick={() => {
+                                onLoad(c.pin!);
+                                setJustLoaded(c.key);
+                                setTimeout(() => setJustLoaded((k) => (k === c.key ? null : k)), 1800);
+                              }}
+                              title="Load this build into the editor"
+                            >
+                              {justLoaded === c.key ? "Loaded ✓" : "Load"}
+                            </button>
                             <button className="cmp-btn-mini cmp-btn-x" onClick={() => onRemove(c.key)} title="Remove">✕</button>
                           </>
                         )}
