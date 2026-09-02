@@ -9,13 +9,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
-- **Loading a pinned build applied the previous build's wildcard card slots.** Which slots
-  are in "custom card mix" mode is worked out from the build when the page opens — but
-  loading a pinned build, or a saved one, swapped the build without working it out again.
-  The old build's wildcard slots stayed switched on, so the damage number priced cards the
-  newly loaded build doesn't have equipped. Loading a pin also applied its snapshot without
-  filling in anything missing, the same gap fixed below. Both now go through the same step
-  as opening the page.
+- **A loaded build was priced with the previous build's wildcard card slots.** This is what
+  was behind two separate reports — "Load doesn't work" and "loading pinned builds is not
+  working" — and it hit both the Load button and the pinned-build Load. Which slots are in
+  "custom card mix" mode is worked out from the build when the page opens, and loading a
+  build swapped the build without working it out again. The old slots stayed switched on,
+  so the build you loaded was costed with cards it doesn't have equipped. Measured in a
+  browser on a test build: **1,937.7 DPS where the build's own figure is 1,211.0, a 60%
+  overstatement**. Nothing looked broken, which is exactly why it read as a button that
+  does nothing. Both load paths now re-derive the slots, and a browser test pins the
+  behaviour — it fails on the old code and passes on the new.
 
 - **A crash inside the calculator no longer leaves a blank page.** There was nothing
   catching an error mid-render, so any one of them took the whole page down to white — no

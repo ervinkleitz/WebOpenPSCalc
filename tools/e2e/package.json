@@ -1,0 +1,7 @@
+{
+  "name": "openpscalc-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Browser regression tests. Not part of npm test or the deploy workflow - see README.",
+  "dependencies": { "playwright-core": "^1.49.0" }
+}
