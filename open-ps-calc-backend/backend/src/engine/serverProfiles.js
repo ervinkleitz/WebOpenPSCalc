@@ -435,8 +435,13 @@ const PS_MECHANIC_FLAGS = new Set([
   // Three-hit model per auto-attack: hit1=RH×rhFactor, hit2=hit1 (same roll), hit3=LH×lhFactor.
   // Remove this flag to revert to single-weapon-only calculation.
   "DUAL_WIELD_PS_THREE_HIT",
-  // +10% bonus applied to the combined three-hit total on PS (Class_Rebalance).
-  "DUAL_WIELD_PS_DAMAGE_BONUS",
+  // NB there is deliberately no DUAL_WIELD_PS_DAMAGE_BONUS here. A +10% bonus on the
+  // combined three-hit total used to be set, citing Class_Rebalance — but that page
+  // documents the PS dual-wield buff entirely in the mastery percentages themselves
+  // (Right-Hand Mastery 80/90/100/110/120%, Left-Hand 60/70/80/90/100%, both of which
+  // are in passive_overrides above), and says nothing about a further 10% on top.
+  // Removed 2026-09-02 at the maintainer's instruction; the engine still reads the
+  // flag, so re-adding the string here is all it takes to restore it.
   // Magnum Break's lingering fire enchantment (Hercules SC_SUB_WEAPONPROPERTY —
   // +20% of a normal attack dealt as Fire, for 10 s). Vanilla grants it on every
   // skill except ASC_METEORASSAULT; PS scopes it to AUTO ATTACKS and MAGNUM BREAK

@@ -1099,7 +1099,7 @@
    "matk_max": 6
   },
   "result": {
-   "dps": 1104.878,
+   "dps": 1004.434,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 14.3,

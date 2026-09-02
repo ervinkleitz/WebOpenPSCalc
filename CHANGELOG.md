@@ -9,6 +9,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Removed the +10% dual-wield damage bonus.** Assassins dual-wielding had a flat +10%
+  applied to the combined three-hit total, on top of their mastery percentages. It cited
+  the wiki's Class_Rebalance page, but that page documents the Payon Stories dual-wield
+  buff entirely in the masteries themselves — Right-Hand Mastery 80/90/100/110/**120%**
+  and Left-Hand 60/70/80/90/**100%**, both of which the calculator already applies — and
+  says nothing about a further 10% on top. A maxed dagger Assassin drops from 1,176.2 to
+  1,069.3 DPS, exactly a tenth; the mastery percentages are untouched.
+
 - **Double Attack was being calculated but never shown, so it looked unimplemented.**
   Reported by a player running maxed Double Attack on a Thief/Rogue/Assassin and a Monk
   with a Sidewinder Card, seeing no procs anywhere. The engine had it all along and the
