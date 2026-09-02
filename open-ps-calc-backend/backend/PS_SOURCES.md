@@ -64,6 +64,7 @@ calculator is an unofficial fan tool.
 | 2026-08-09 | PayonStories Blacksmith 2026-08-09 | Class rework | Blacksmith |
 | 2026-08-09 | PayonStories Alchemist Rework 2026-08-09 | Class rework | Alchemist |
 | 2026-08-09 | PayonStories Burning 2026-08-09 | Mechanic | Burning status |
+| 2026-09-01 | tools.payonstories.com `/mob` dataset (build 2026.08.27) | Live data | Monster HP / EXP / AGI / DEX |
 
 ---
 
@@ -6092,6 +6093,41 @@ for it. These are the layers, in application order, and the decisions taken in t
 `dataLoader._applyPsItemLayers` applies them in that order. A `_note` key on a manual entry
 documents why a script deviates and is stripped at load.
 
+## Monster data sources
+
+`ps/ps_mob_db.json` and `ps/mob_skill_db.json` are both generated from a `PayonStoriesData/monsters.json`
+scrape - the 2026-04-06 snapshot, which is the only source we have for a monster's **DEF, MDEF, ATK
+range, and skill kit**. There is no public endpoint for those fields, so they go stale silently.
+
+There *is* a public endpoint for the rest. The tools site's Monster Database is a static Next.js
+page: `tools.payonstories.com/mob` renders client-side from a JSON blob compiled into a webpack
+chunk. To pull it fresh:
+
+1. `GET https://tools.payonstories.com/mob`, read `buildId` out of the `__NEXT_DATA__` script.
+2. `GET /_next/static/<buildId>/_buildManifest.js` and list the chunk filenames.
+3. The mob blob is the large chunk (~670 KB) - grep the chunks for a known sprite name.
+4. Scan from `"1001":{` back to the enclosing `{` and forward with a string-aware brace counter;
+   replace JS `'` escapes before `json.loads`.
+
+What it carries per mob: `hp`, `lv`, `element` (name + level), `race`, `size`, `type`
+(Normal/MiniBoss/MvP), `sprite`, `exp.base` / `exp.job` / `mvpExp`, `naturalSpawn`, `drops`
+with steal flags, and `stats` - **which is only `Agi` and `Dex`**. No STR/VIT/INT/LUK, no DEF,
+no MDEF, no ATK, no skills, `mode` is always null.
+
+Two gotchas when diffing it against ours:
+
+- **EXP is on a different scale.** Our `exp` and `jexp` are uniformly **1.5x** the tools values
+  (verified across ~700 mobs; the only misses are integer rounding on single-digit values).
+  `mvp_exp` is **1:1**. So multiply base/job exp by 1.5 before comparing or importing.
+- **`Agi: 0` on plants, mushrooms and treasure chests is a representation difference**, not a
+  nerf - we carry 1 there. Ignore it.
+
+The other tools routes are `/item /map /mob /pc /paporium/items /paporium/recipes
+/replay-analyser /skill /steal /timers`. Of the `/api/pc/*` shape only `/api/pc/item` exists;
+`/api/pc/{skill,map,steal,mob,monster,mobs,mvp}` all return the 404 page. The control panel
+(`cp.payonstories.com/?module=monster&action=view&id=<id>`) 302s to a login, so it is not usable
+as a source.
+
 ## Conventions
 
 - **Provisional ids live in a reserved `95xxx` block** with a `_comment_95xxx` note, for
@@ -6401,6 +6437,29 @@ golden scenarios: Shadow Slash +86%, Mammonite +84%, Holy Cross +57%, Acid Terro
 Bolt -33% and Fire Wall -11% (fast builds and magic now meet the real cap). Back Stab lands back
 at 2.00 casts/s — the number the calculator showed before the delay fix, but for the right
 reason this time: no per-skill delay, a global floor.
+
+## OPEN (2026-09-01) — the monster DB's combat half is five months stale
+
+The 2026-09-01 refresh from the tools site fixed everything that site publishes (HP, EXP, AGI/DEX
+— see *Monster data sources*). It publishes nothing about combat, so these remain on the
+2026-04-06 snapshot with no way to check them:
+
+- **DEF, MDEF and the ATK range of every monster.** RSX 0806's HP was doubled at some point
+  between April and August and we never saw it; the same patch could have moved its DEF (39),
+  MDEF (41) or ATK (2740-5620) and nothing in our data would say so.
+- **Every monster's skill kit.** The wiki credits RSX 0806 with Meltdown, Wide Burning and
+  Immolation Aura; our `mob_skill_db.json` still has the vanilla kit (NPC_CALLSLAVE,
+  NPC_SUMMONSLAVE, NPC_AGIUP 5, NPC_POWERUP 5, BS_HAMMERFALL, NPC_CRITICALSLASH,
+  NPC_WEAPONBRAKER, AS_SONICBLOW). The kit is what drives the survivability panel.
+- **17 monsters we do not have at all** — ids 25567-25583: Payon Stories (98), Veles (75),
+  Belladona (39), Trail Keeper (42), Tata (55), Pinguicula (80), Corrupted Pinguicula (83),
+  Amarantis (72), Oak Warden (76), Old Guardian x4 (96), Tangletail (38), Tree Spirit (42),
+  Sunpetal Peco (58), Awakened Sentinel (51). We know their HP/EXP/element/race/size from the
+  tools site but not their DEF/ATK, so adding them would mean inventing the numbers that matter.
+
+**The ask:** a fresh `PayonStoriesData/monsters.json`. One file, and it updates every monster and
+every kit at once. Failing that, per monster: DEF, MDEF, ATK range, and the skill list with level,
+rate and target.
 
 ## OPEN (2026-08-30) — is a monster's Stone Skin a FLAT DEF add, or a DEF percentage?
 

@@ -2,6 +2,7 @@
   "_source": "Generated from PayonStoriesData/monsters.json (PS wiki scrape)",
   "_generated": "2026-04-06T10:13:46.483216+00:00",
   "_note": "Same schema as core/data/pre-re/db/mob_db.json. Covers all vanilla mobs with PS-server values plus PS-custom mobs. _ps_custom=true entries are PS-only (absent from vanilla mob_db). Drops excluded — not used by any pipeline calculator.",
+  "_patched": "2026-09-01: HP/EXP/DEX for 1575, 1579, 1589, 1617, 1622, 1623, 1630 refreshed from the tools.payonstories.com /mob dataset (build 2026.08.27). That dataset carries no DEF/MDEF/ATK/skills, so those fields still date from the 2026-04-06 snapshot.",
   "mobs": {
     "1001": {
       "id": 1001,
@@ -24182,7 +24183,7 @@
         "agi": 26,
         "vit": 35,
         "int": 5,
-        "dex": 43,
+        "dex": 74,
         "luk": 80
       },
       "exp": 0,
@@ -24360,7 +24361,7 @@
         "agi": 14,
         "vit": 14,
         "int": 1,
-        "dex": 40,
+        "dex": 86,
         "luk": 2
       },
       "exp": 0,
@@ -24811,7 +24812,7 @@
         "agi": 12,
         "vit": 24,
         "int": 1,
-        "dex": 36,
+        "dex": 88,
         "luk": 15
       },
       "exp": 0,
@@ -26073,8 +26074,8 @@
         "dex": 59,
         "luk": 77
       },
-      "exp": 6618,
-      "jexp": 1703,
+      "exp": 7200,
+      "jexp": 5000,
       "mvp_exp": 0,
       "attack_range": 1,
       "view_range": 10,
@@ -26280,7 +26281,7 @@
       "name": "Teddy Bear",
       "jname": "",
       "level": 71,
-      "hp": 8109,
+      "hp": 9325,
       "sp": 0,
       "def_": 19,
       "mdef": 32,
@@ -26299,8 +26300,8 @@
         "dex": 121,
         "luk": 26
       },
-      "exp": 8837,
-      "jexp": 5183,
+      "exp": 11000,
+      "jexp": 8000,
       "mvp_exp": 0,
       "attack_range": 1,
       "view_range": 10,
@@ -26326,7 +26327,7 @@
       "name": "RSX 0806",
       "jname": "",
       "level": 86,
-      "hp": 560733,
+      "hp": 1121466,
       "sp": 0,
       "def_": 39,
       "mdef": 41,
@@ -26649,7 +26650,7 @@
       "name": "Bacsojin",
       "jname": "",
       "level": 85,
-      "hp": 253221,
+      "hp": 405154,
       "sp": 0,
       "def_": 20,
       "mdef": 55,

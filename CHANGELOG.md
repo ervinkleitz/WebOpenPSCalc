@@ -5,6 +5,31 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-01
+
+### Fixed
+
+- **RSX 0806 had half the HP it should.** A player reported the calculator's RSX stats were out of
+  date, and they were: our monster database is generated from a `monsters.json` scrape taken on
+  2026-04-06, and RSX's HP was doubled at some point since — 560,733 in the calculator against
+  1,121,466 live. Every "hits to kill" and time-to-kill figure for it was exactly half of what it
+  should have been. Checking the rest of the database against Payon Stories' own tools site turned
+  up two more monsters carrying stale HP (Teddy Bear 8,109 → 9,325, Bacsojin 253,221 → 405,154),
+  two with reworked EXP (Waste Stove and Teddy Bear — Waste Stove's job EXP had roughly tripled),
+  and three whose DEX had been raised a long way (Flora 43 → 74, Hydra 40 → 86, Mandragora
+  36 → 88), which raises their HIT and so their chance to land a hit on you. All ten values now
+  match the live server.
+
+- **What that check could not reach: the monster database's combat half is still five months old.** The tools site publishes HP,
+  EXP, level, element, race, size and a monster's AGI and DEX — and nothing else. It does not
+  publish DEF, MDEF, ATK ranges or skill kits, so those fields still date from the April snapshot
+  and there is no public source to check them against. Concretely: RSX 0806 is credited on the
+  wiki with Meltdown, Wide Burning and Immolation Aura, and the calculator still gives it the
+  vanilla kit; and 17 monsters added since April (Veles, Belladona, Pinguicula, Oak Warden, the
+  Old Guardians and others) are missing entirely, because we know their HP but not the DEF and
+  ATK that any damage number would depend on. A fresh `monsters.json` from staff fixes all of it
+  in one step.
+
 ## 2026-08-31
 
 ### Fixed
