@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import BuildEditor from "./pages/BuildEditor";
+import ErrorBoundary from "./components/ErrorBoundary";
 import StatsPage from "./pages/StatsPage";
 import { statsApi } from "./api/client";
 
@@ -9,11 +10,13 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Routes>
-        <Route path="/" element={<BuildEditor />} />
-        <Route path="/stats" element={<StatsPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<BuildEditor />} />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ErrorBoundary>
     </div>
   );
 }

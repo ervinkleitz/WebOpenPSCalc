@@ -790,6 +790,27 @@ function decodeState(encoded: string): UrlEditorState | null {
 // the whole app unmounts to a blank page — the Load button looked like it did
 // nothing. Merging over the defaults also back-fills fields added since a build was
 // saved, which a bare ?? cannot do.
+// Which slots are in wildcard (custom card mix) mode is DERIVED state, not stored
+// state: it is read off the build at mount. So every path that swaps the build has
+// to re-derive it, or the previous build's wildcard flags keep applying to the new
+// one and the damage number silently prices cards that are not equipped. Mount did
+// this; loading a saved build and loading a pinned build did not.
+function deriveWildcardMode(build: Partial<BuildData> | null | undefined): Record<string, boolean> {
+  const slots = build?.wildcard_slots ?? {};
+  const equipped = build?.equipped ?? {};
+  const init: Record<string, boolean> = {};
+  for (const [k, v] of Object.entries(slots)) {
+    if (!Array.isArray(v) || v.length === 0 || equipped[k] == null) continue;
+    // Don't default to wildcard mode when the slot actually has real cards
+    // selected — the wildcard_slots data is just stale from an earlier toggle.
+    const hasRealCards = Object.keys(equipped).some(
+      (ek) => ek.startsWith(`${k}_card`) && equipped[ek] != null,
+    );
+    if (!hasRealCards) init[k] = true;
+  }
+  return init;
+}
+
 function hydrateState(state: Partial<UrlEditorState> | null | undefined): UrlEditorState {
   return {
     build: { ...DEFAULT_BUILD, ...(state?.build ?? {}) },
@@ -862,21 +883,9 @@ export default function BuildEditor() {
 
   // Which equipment slot groups are in wildcard (custom card mix) mode.
   // Auto-enable only for slots that have both wildcard data AND an item actually equipped there.
-  const [wildcardMode, setWildcardMode] = useState<Record<string, boolean>>(() => {
-    const slots = initialState?.build?.wildcard_slots ?? {};
-    const equipped = initialState?.build?.equipped ?? {};
-    const init: Record<string, boolean> = {};
-    for (const [k, v] of Object.entries(slots)) {
-      if (!Array.isArray(v) || v.length === 0 || equipped[k] == null) continue;
-      // Don't default to wildcard mode when the slot actually has real cards
-      // selected — the wildcard_slots data is just stale from an earlier toggle.
-      const hasRealCards = Object.keys(equipped).some(
-        (ek) => ek.startsWith(`${k}_card`) && equipped[ek] != null,
-      );
-      if (!hasRealCards) init[k] = true;
-    }
-    return init;
-  });
+  const [wildcardMode, setWildcardMode] = useState<Record<string, boolean>>(
+    () => deriveWildcardMode(hydrated.build),
+  );
 
   const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
   const [passiveSkills, setPassiveSkills] = useState<PassiveSkill[]>([]);
@@ -1091,12 +1100,17 @@ export default function BuildEditor() {
   const handleRemovePin = useCallback((id: string) => setPins((prev) => prev.filter((p) => p.id !== id)), []);
   const handleClearPins = useCallback(() => setPins([]), []);
   const handleLoadPin = useCallback((pin: ComparePin) => {
-    const s = pin.snapshot as { data: BuildData; skill: SkillState; targetMode: TargetMode; customTarget: CustomTarget; targetMods: TargetMods };
-    setData(s.data);
-    setSkill(s.skill);
-    setTargetMode(s.targetMode);
-    setCustomTarget(s.customTarget);
-    setTargetMods(s.targetMods);
+    // A pin's snapshot is JSON round-tripped, which drops undefined values, and it
+    // was taken by whichever version of the editor was running when it was pinned —
+    // so it gets the same hydration as every other way a build enters the editor.
+    const snap = pin.snapshot as Partial<{ data: BuildData } & UrlEditorState>;
+    const next = hydrateState({ ...snap, build: snap?.data ?? snap?.build });
+    setData(next.build);
+    setWildcardMode(deriveWildcardMode(next.build));
+    setSkill(next.skill);
+    setTargetMode(next.targetMode);
+    setCustomTarget(next.customTarget);
+    setTargetMods(next.targetMods);
     setLoadTick((t) => t + 1); // triggers a recompute so the loaded build's numbers show as Current
   }, []);
   // Recompute after a pinned build is loaded (state has settled by the time this runs).
@@ -1681,6 +1695,7 @@ export default function BuildEditor() {
   function onLoadSavedState(state: UrlEditorState) {
     const next = hydrateState(state);
     setData(next.build);
+    setWildcardMode(deriveWildcardMode(next.build));
     setSkill(next.skill);
     setTargetMode(next.targetMode);
     setCustomTarget(next.customTarget);

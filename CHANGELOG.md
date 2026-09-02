@@ -9,6 +9,20 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Loading a pinned build applied the previous build's wildcard card slots.** Which slots
+  are in "custom card mix" mode is worked out from the build when the page opens — but
+  loading a pinned build, or a saved one, swapped the build without working it out again.
+  The old build's wildcard slots stayed switched on, so the damage number priced cards the
+  newly loaded build doesn't have equipped. Loading a pin also applied its snapshot without
+  filling in anything missing, the same gap fixed below. Both now go through the same step
+  as opening the page.
+
+- **A crash inside the calculator no longer leaves a blank page.** There was nothing
+  catching an error mid-render, so any one of them took the whole page down to white — no
+  message, no way to tell what happened, and from the outside indistinguishable from a
+  button that does nothing. It now keeps the page, says what broke, and has a button that
+  copies the details so a report carries the actual error instead of a guess.
+
 - **Loading a saved build could blank the page instead of loading it.** Reported as "Load
   doesn't work anymore". The editor has two places that put a whole build into the form —
   first page load, and the Load button — and they had drifted apart. Page load filled in a

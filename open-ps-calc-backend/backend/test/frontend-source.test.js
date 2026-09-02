@@ -196,9 +196,39 @@ test("mount and load hydrate editor state through the same helper", () => {
   assert.deepEqual(raw, [],
     "onLoadSavedState assigns saved state straight into React state, skipping the defaults");
 
-  // ...and so must first mount.
-  assert.ok(/const hydrated = hydrateState\(initialState\)/.test(src),
-    "first mount no longer routes through hydrateState");
+  // ...and so must loading a pinned build. Pins are JSON round-tripped snapshots
+  // taken by whatever version of the editor was running at the time, so they are
+  // exactly as untrustworthy as a saved build.
+  const pin = src.match(/const handleLoadPin = useCallback\(\(pin[^)]*\) => {([\s\S]*?)\n  }, \[\]\);/);
+  assert.ok(pin, "handleLoadPin not found");
+  assert.ok(/hydrateState\(/.test(pin[1]),
+    "handleLoadPin no longer routes through hydrateState");
+
+  // wildcardMode is DERIVED from the build, so every path that swaps the build has
+  // to re-derive it — otherwise the previous build's wildcard flags keep pricing
+  // cards the new build does not have equipped.
+  assert.ok(/function deriveWildcardMode\(/.test(src), "deriveWildcardMode() is gone");
+  for (const [name, body] of [["onLoadSavedState", load[1]], ["handleLoadPin", pin[1]]]) {
+    assert.ok(/setWildcardMode\(deriveWildcardMode\(/.test(body),
+      `${name} does not re-derive wildcardMode — stale wildcard slots will price the new build`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// A render crash must not blank the page
+// ---------------------------------------------------------------------------
+test("the app is wrapped in an error boundary", () => {
+  // Without one, any throw during render unmounts the whole tree to a white page,
+  // which is how a missing field in a saved build reached players as "the Load
+  // button does nothing" - no message, no stack, nothing to report.
+  const boundary = read("src", "components", "ErrorBoundary.tsx");
+  assert.ok(/getDerivedStateFromError/.test(boundary), "no getDerivedStateFromError");
+  assert.ok(/componentDidCatch/.test(boundary), "no componentDidCatch");
+
+  const app = read("src", "App.tsx");
+  assert.ok(/<ErrorBoundary>/.test(app), "App does not mount the ErrorBoundary");
+  const inside = app.slice(app.indexOf("<ErrorBoundary>"), app.indexOf("</ErrorBoundary>"));
+  assert.ok(/<Routes>/.test(inside), "the routes are not inside the boundary");
 });
 
 // ---------------------------------------------------------------------------
