@@ -6094,6 +6094,33 @@ for it. These are the layers, in application order, and the decisions taken in t
 documents why a script deviates and is stripped at load.
 
 ## Monster data sources
+### The in-game monster-info readout is the best source we have
+
+A player's `@mi`-style monster info panel prints, in one block, everything the tools site withholds:
+
+```
+MVP Monster: 'RSX 0806'/'RSX-0806'/'RSX_0806' (1623)
+Lv:86  HP:1121466  Base EXP:46515  Job EXP:48016
+HIT:179  FLEE:137  |  AgainstMonster: -100%  HIT:157  95% FLEE:264
+Current HIT: 79.00%, Current FLEE: 82.90%
+DEF 39  MDEF 41  STR:85 AGI:51 VIT:30 INT:25 DEX:93 LUK:84
+ATK:2740~5620  Range:1~15~18  Size:Large  Race:Formless  Element:Neutral (Lv 3)
+Drops: ...
+```
+
+`Range:a~b~c` is `attack_range ~ view_range ~ chase_range`. It does **not** print the skill kit,
+which stays the one field with no source but a staff `monsters.json`.
+
+It also settles the EXP scale question: the game shows RSX at Base EXP **46,515**, which is our
+value and 1.5x the tools site's 31,010. So **our numbers are the ones players actually receive**
+and the tools site publishes pre-rate values. Ask for this readout whenever a monster's combat
+numbers are in doubt - it is a direct observation and outranks both other sources.
+
+**Verified against it (2026-09-01):** 1623 RSX 0806 - HP, DEF 39, MDEF 41, ATK 2740~5620, all six
+stats, level, size, race and element all confirmed correct. Two fields were wrong and are fixed:
+`jexp` was 48017 against the game's 48016, and view/chase range were the vanilla 10/12 against the
+live 15/18 (both inert for damage - no calculator reads either field).
+
 
 `ps/ps_mob_db.json` and `ps/mob_skill_db.json` are both generated from a `PayonStoriesData/monsters.json`
 scrape - the 2026-04-06 snapshot, which is the only source we have for a monster's **DEF, MDEF, ATK

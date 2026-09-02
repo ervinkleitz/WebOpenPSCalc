@@ -20,15 +20,23 @@ instead of release version. Dates are taken from actual git commit history.
   36 → 88), which raises their HIT and so their chance to land a hit on you. All ten values now
   match the live server.
 
-- **What that check could not reach: the monster database's combat half is still five months old.** The tools site publishes HP,
-  EXP, level, element, race, size and a monster's AGI and DEX — and nothing else. It does not
-  publish DEF, MDEF, ATK ranges or skill kits, so those fields still date from the April snapshot
-  and there is no public source to check them against. Concretely: RSX 0806 is credited on the
-  wiki with Meltdown, Wide Burning and Immolation Aura, and the calculator still gives it the
-  vanilla kit; and 17 monsters added since April (Veles, Belladona, Pinguicula, Oak Warden, the
-  Old Guardians and others) are missing entirely, because we know their HP but not the DEF and
-  ATK that any damage number would depend on. A fresh `monsters.json` from staff fixes all of it
-  in one step.
+- **RSX 0806's DEF, MDEF and ATK are confirmed correct.** A player posted the in-game monster-info
+  readout, which prints the fields the tools site does not publish. Everything the calculator held
+  matches the live server: DEF 39, MDEF 41, ATK 2740~5620, all six stats, level, size, race and
+  element — so the HP change above was the only combat retune RSX received. The readout also
+  confirmed our EXP scale is the one players actually receive (the game shows base EXP 46,515,
+  where the tools site says 31,010). Two minor fields were off and are fixed: job EXP was one
+  point high (48,017 against 48,016), and the view/chase ranges were still the vanilla 10/12
+  against the live 15/18. Neither is read by any calculator.
+
+- **What no source could reach: monster skill kits are still five months old.** Neither the tools
+  site nor the in-game readout prints a monster's skills, so every kit still dates from the April
+  snapshot. RSX 0806 is credited on the wiki with Meltdown, Wide Burning and Immolation Aura, and
+  the calculator still gives it the vanilla one (CALLSLAVE, HAMMERFALL, SONICBLOW and so on) —
+  which is what the survivability panel runs on. Separately, 17 monsters added since April (Veles,
+  Belladona, Pinguicula, Oak Warden, the Old Guardians and others) are still missing entirely;
+  their HP and EXP are public but their DEF and ATK are not, so adding them would mean inventing
+  the numbers that matter. Both are one staff `monsters.json` away from being fixed.
 
 ## 2026-08-31
 
