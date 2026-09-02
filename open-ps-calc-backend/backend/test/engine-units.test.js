@@ -628,6 +628,39 @@ test("Double Attack: sources take the highest, and a card frees the weapon type"
   );
 });
 
+// The weapon damage roll is rnd(min(DEX x (0.8 + 0.2 x WeaponLevel), ATK), ATK) — and
+// that upper bound is INCLUSIVE. Until 2026-09-02 this rolled atkmin..atkmax-1, so a
+// weapon could never hit for its own ATK on a non-crit swing. Nothing job- or
+// weapon-specific about it: every physical attack, skills included.
+test("the weapon damage roll can reach weapon ATK, and a crit is exactly ATK", () => {
+  const cfg = createBattleConfig();
+  const rollOf = (equipped, job_id = 12) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id, base_level: 99, job_level: 50,
+      base_stats: { str: 40, agi: 60, vit: 1, int: 1, dex: 50, luk: 1 },
+      equipped, mastery_levels: {},
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
+    const r = new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1002), eff, gb,
+    );
+    const step = (branch) => branch.steps.find((x) => x.name === "Weapon ATK Range");
+    return { normal: step(r.normal), crit: r.crit ? step(r.crit) : null };
+  };
+
+  // Gladius: weapon level 3, ATK 105. The DEX floor lands below that, so there is a
+  // real range and the top of it must be reachable.
+  const { normal, crit } = rollOf({ right_hand: 1219 });
+  const atkmax = Number(/atkmax=(\d+)/.exec(normal.note)[1]);
+  assert.strictEqual(normal.max_value, atkmax, "the roll must be able to reach weapon ATK");
+  assert.ok(normal.min_value < normal.max_value, "this weapon should have a real range");
+  if (crit) assert.strictEqual(crit.max_value, atkmax, "a critical hit is exactly weapon ATK");
+
+  // When the DEX floor already meets ATK there is no range at all, and that is fine.
+  const flat = rollOf({ right_hand: 1101 }, 7).normal;   // 1H sword, ATK 25
+  assert.strictEqual(flat.min_value, flat.max_value, "a capped floor should give a flat roll");
+});
+
 // The in-game Double Attack tooltip (screenshotted by a player 2026-09-02) lists the
 // Katar damage bonus scaling with the skill's level: +3% at Lv1 up to +21% at Lv10,
 // i.e. 1 + 2 x lv. The engine hardcoded 21 — the Lv10 figure — so every Assassin got

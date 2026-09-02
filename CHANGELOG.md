@@ -9,6 +9,23 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **A weapon could never roll its own ATK.** Every physical hit rolls a weapon damage
+  value between a DEX-derived floor and the weapon's ATK — and that top value was
+  unreachable, so the roll stopped one point short. The formula is
+  `rnd(min(DEX x (0.8 + 0.2 x WeaponLevel), ATK), ATK)`, inclusive of ATK, and every
+  other part of the calculation already matched it: the floor, the cap, each hand of a
+  dual-wield using its own weapon level, and a critical hit being exactly ATK. Only the
+  upper bound was off, and it had been that way since the first commit with nothing
+  recording why.
+
+  It costs a flat half point of weapon ATK, so how much it mattered depended on how
+  small the weapon roll was next to everything else — about **0.4% for a two-handed
+  sword, 0.5% for a dagger, and 6% for a bow**, where the ranged min-ATK scaling
+  squeezes the floor and leaves little else in that term. It applied to every physical
+  attack, skills included; it was spotted on a dual-dagger Assassin, but nothing about
+  it was job- or weapon-specific. Damage numbers move up very slightly across the board
+  — the calculator's own regression figures shifted between 0.02% and 0.91%.
+
 - **A katar's off-hand damage no longer assumes maxed Double Attack.** The in-game skill
   tooltip lists the Katar bonus rising with the level — +3% at Lv1 through +21% at Lv10 —
   and the calculator had the 21% hardcoded, so an Assassin with Double Attack 5 was shown

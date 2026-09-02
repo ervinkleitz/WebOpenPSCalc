@@ -129,16 +129,32 @@ function calculateBaseDamage(status, weapon, build, target, skill, result, opts 
   const maximizeActive = "SC_MAXIMIZEPOWER" in build.active_status_levels;
   if (maximizeActive) atkmin = atkmax;
 
+  // The weapon damage roll is INCLUSIVE of weapon ATK: rnd(min(DEX x (0.8 + 0.2 x
+  // WeaponLevel), ATK), ATK), and a critical hit is flat ATK.
+  //
+  // This used to roll `atkmin .. atkmax - 1`, so weapon ATK itself could never come up
+  // on a non-crit swing. It came in with the initial port and carried no comment or
+  // source, and nothing else in the file justifies it — every other part of this
+  // function matches the formula (the DEX floor, the cap at ATK, each hand using its
+  // own weapon level, crit being flat ATK), which is what makes the excluded top value
+  // read as an off-by-one rather than a modelled quirk.
+  //
+  // It costs a flat half point of weapon ATK on the mean, so the error is proportional
+  // to how small the weapon roll is next to everything else: ~0.4% for a two-handed
+  // sword, ~0.5% for a dagger, but ~6% for a bow, where the ranged min-ATK scaling
+  // crushes atkmin and leaves little else in the term. It applies to every physical
+  // attack, skills included — it was found on a dual-dagger Assassin, but nothing about
+  // it is job- or weapon-specific.
   let pmf;
   if (isCrit) pmf = { [atkmax]: 1.0 };
-  else if (atkmax > atkmin) pmf = uniformPmf(atkmin, atkmax - 1);
+  else if (atkmax > atkmin) pmf = uniformPmf(atkmin, atkmax);
   else pmf = { [atkmin]: 1.0 };
 
   const [wMin, wMax, wAvg] = pmfStats(pmf);
   result.add_step({
     name: "Weapon ATK Range", value: wAvg, min_value: wMin, max_value: wMax,
     note: `atkmin=${atkmin} atkmax=${atkmax}${isCrit ? " (CRIT)" : ""}${maximizeActive ? " (MAXIMIZEPOWER)" : ""}`,
-    formula: isCrit ? `damage = atkmax = ${atkmax}` : `atkmin..atkmax-1`,
+    formula: isCrit ? `damage = atkmax = ${atkmax}` : `rnd(atkmin, atkmax) = ${atkmin}..${atkmax}`,
     hercules_ref: "battle.c battle_calc_base_damage2",
   });
 
