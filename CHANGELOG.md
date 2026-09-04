@@ -9,12 +9,22 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Double Attack no longer counts your weapon masteries twice.** A player checked it in
+  game: masteries are added once per attack, not once per hit, so the extra hit lands
+  below a normal one — and the calculator was giving the second hit a full copy of the
+  first, masteries included. On a Monk with Iron Fist 10 and Demon Bane 10 against an
+  Undead target, the extra hit drops from 354 to 204, which is exactly the two masteries.
+  Everything ahead of that point still applies to both hits, spirit spheres included —
+  the same player noted sphere damage does count twice, and it does here too. Builds with
+  no applicable mastery are unaffected.
+
 - **The Double Attack panel no longer repeats the normal attack's breakdown.** It listed
   the full ten-step calculation, identical row for row to the breakdown directly above it,
   which read as a display bug and was reported as one. The numbers were right — a Double
   Attack is two hits of a normal hit's damage, so the extra hit genuinely does match — but
-  restating that in ten identical rows said it badly. The panel now says it in a line and
-  keeps the proc chance, the extra hit's damage and its notes. A katar's second hit keeps
+  restating that in ten identical rows said it badly. The panel now shows a breakdown only
+  when the extra hit genuinely differs — which, since the mastery fix above, it usually
+  does — and otherwise says so in a line. A katar's second hit keeps
   its full breakdown, because that one really is different: a fraction of the main hit
   rather than a copy of it.
 

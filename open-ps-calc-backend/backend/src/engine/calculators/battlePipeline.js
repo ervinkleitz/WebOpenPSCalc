@@ -1554,7 +1554,8 @@ class BattlePipeline {
   }
 
   _runBranch(status, weapon, skill, target, build, isCrit, opts = {}) {
-    const { profile = STANDARD, gear_bonuses: gearBonuses, is_offhand: isOffhand = false } = opts;
+    const { profile = STANDARD, gear_bonuses: gearBonuses, is_offhand: isOffhand = false,
+      skip_mastery: skipMastery = false } = opts;
     const result = createDamageResult();
     const isRanged = resolveIsRanged(build, weapon, skill);
 
@@ -1615,7 +1616,15 @@ class BattlePipeline {
 
     pmf = calculateRefineFix(weapon, skill, pmf, result);
 
-    pmf = calculateMasteryFix(weapon, build, target, pmf, result, skill, { profile, ctx });
+    // Weapon masteries are added ONCE PER ATTACK, not once per hit — they land after
+    // DEF, on the attack's total, so a two-hit swing does not collect them twice.
+    // Reported from in-game observation (2026-09-02): "DA only counts masteries once,
+    // which means the individual hits from DA are a little bit lower DMG than a regular
+    // AA", alongside the observation that spirit sphere damage IS counted twice, which
+    // fits — sphere ATK rides in the base damage, ahead of the split.
+    if (!skipMastery) {
+      pmf = calculateMasteryFix(weapon, build, target, pmf, result, skill, { profile, ctx });
+    }
 
     const skillData = loader.getSkill(skill.id);
 
@@ -2370,6 +2379,16 @@ class BattlePipeline {
     const procChance = Math.min(100, Math.max(skillProcChance, itemDoubleRate));
     const procFrac = procChance / 100.0;
 
+    // The extra hit is NOT a copy of the first one: masteries are added once per attack
+    // rather than once per hit, so the second hit lands slightly lower. Everything ahead
+    // of that split — the weapon roll, status ATK, refine, spirit spheres — is per hit
+    // and so appears in both. See the note on skip_mastery in _runBranch.
+    const doubleSecond = procFrac > 0
+      ? this._runBranch(status, weapon, skill, target, build, false,
+          { profile, gear_bonuses: gearBonuses, skip_mastery: true })
+      : null;
+    const doubleSecondAvg = doubleSecond ? doubleSecond.avg_damage : 0;
+
     // MO_TRIPLEATTACK proc — auto-attacks only (Monk/Champion). TA replaces
     // the auto-attack on proc (unlike TF_DOUBLE which adds a second hit).
     // PS rework: 5 levels, base rates [28,26,24,22,20]%; Knuckle weapons gain
@@ -2483,7 +2502,7 @@ class BattlePipeline {
           createAttackDefinition(taAvg,       0.0, period, (1.0 - effCrit) * tpf * h),
           createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * tpf * (1.0 - h)),
           createAttackDefinition(normalAvg,     0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - procFrac) * h),
-          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * procFrac * hDA),
+          createAttackDefinition((normalAvg + doubleSecondAvg), 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * procFrac * hDA),
           createAttackDefinition(0.0,           0.0, period, (1.0 - effCrit) * (1.0 - tpf) * ((1.0 - procFrac) * (1.0 - h) + procFrac * (1.0 - hDA))),
         ];
       } else {
@@ -2493,14 +2512,14 @@ class BattlePipeline {
           createAttackDefinition(taAvg,       0.0, period, (1.0 - effCrit) * tpf * h),
           createAttackDefinition(0.0,         0.0, period, (1.0 - effCrit) * tpf * (1.0 - h)),
           createAttackDefinition(normalAvg,     0.0, period, (1.0 - effCrit) * (1.0 - tpf) * (1.0 - procFrac) * h),
-          createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * procFrac * hDA),
+          createAttackDefinition((normalAvg + doubleSecondAvg), 0.0, period, (1.0 - effCrit) * (1.0 - tpf) * procFrac * hDA),
           createAttackDefinition(0.0,           0.0, period, (1.0 - effCrit) * (1.0 - tpf) * ((1.0 - procFrac) * (1.0 - h) + procFrac * (1.0 - hDA))),
         ];
       }
     } else if (procFrac > 0) {
       attacks = [
         createAttackDefinition(normalAvg, 0.0, period, (1.0 - effCrit) * (1.0 - procFrac) * h),
-        createAttackDefinition(normalAvg * 2, 0.0, period, (1.0 - effCrit) * procFrac * hDA),
+        createAttackDefinition((normalAvg + doubleSecondAvg), 0.0, period, (1.0 - effCrit) * procFrac * hDA),
         createAttackDefinition(0.0, 0.0, period, (1.0 - effCrit) * ((1.0 - procFrac) * (1.0 - h) + procFrac * (1.0 - hDA))),
         createAttackDefinition(critAvg, 0.0, period, effCrit),
       ];
@@ -2612,7 +2631,7 @@ class BattlePipeline {
       double_proc_label: procChance > 0
         ? (doubleProcKey === "GS_CHAINACTION" ? "Chain Action" : "Double Attack")
         : null,
-      double_hit: procFrac > 0 ? normal : null,
+      double_hit: doubleSecond,
       katar_second: katarSecond,
       katar_second_crit: katarSecondCrit,
       katar_proc_chance: katarProcChance,

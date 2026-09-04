@@ -722,6 +722,48 @@ test("Double Attack's +HIT applies only to the swing that procs", () => {
   );
 });
 
+// Weapon masteries land ONCE PER ATTACK, not once per hit: they are added after DEF,
+// to the attack's total, so a two-hit swing does not collect them twice. Reported from
+// in-game observation — "DA only counts masteries once, which means the individual hits
+// from DA are a little bit lower DMG than a regular AA" — alongside the observation that
+// spirit sphere damage IS counted twice, which fits, since sphere ATK rides in the base
+// damage ahead of the split. No golden covered this: not one of them has both a double
+// attack proc and a mastery that applies.
+test("Double Attack's extra hit skips masteries, which count once per attack", () => {
+  const cfg = createBattleConfig();
+  // Monk vs Zombie: Iron Fist applies to the knuckle, Demon Bane applies to Undead.
+  const b = buildFromSaveSchema({
+    server: "payon_stories", job_id: 15, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 90, vit: 1, int: 1, dex: 50, luk: 1 },
+    equipped: { right_hand: 1801, right_hand_card1: 4117 },
+    mastery_levels: { MO_IRONHAND: 10, AL_DEMONBANE: 10 },
+  });
+  const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
+  const r = new BattlePipeline(cfg).calculate(
+    status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1015), eff, gb,
+  );
+  assert.ok(r.double_hit, "this build should proc Double Attack");
+
+  // The first hit carries the masteries and the extra hit does not.
+  const masterySteps = (branch) => branch.steps.filter((x) => x.name.startsWith("Mastery Fix"));
+  assert.ok(masterySteps(r.normal).length > 0, "the normal hit should carry masteries");
+  assert.deepEqual(masterySteps(r.double_hit), [], "the extra hit must not re-apply masteries");
+  assert.ok(
+    r.double_hit.avg_damage < r.normal.avg_damage,
+    `extra hit (${r.double_hit.avg_damage}) should land below a normal hit (${r.normal.avg_damage})`,
+  );
+
+  // ...and the doubled swing in the DPS pays first + second, not twice the first.
+  const doubled = r.attacks.find(
+    (a) => Math.abs(a.avg_damage - (r.normal.avg_damage + r.double_hit.avg_damage)) < 1e-6,
+  );
+  assert.ok(doubled, "the doubled swing should pay normal + extra, not normal x 2");
+  assert.ok(
+    !r.attacks.some((a) => Math.abs(a.avg_damage - r.normal.avg_damage * 2) < 1e-6),
+    "no branch should still be paying twice the full normal hit",
+  );
+});
+
 // Triple Attack REPLACES the swing; Double Attack ADDS a hit. A swing that became a
 // TA cannot also double, but the swings TA did not take still can. The attack list
 // assumed the two could never coexist ("Monks don't use Knives"), which stopped being

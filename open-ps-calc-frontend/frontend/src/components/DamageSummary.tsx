@@ -426,9 +426,15 @@ function TripleAttackView({ branch, chance, label }: { branch: DamageBranch; cha
 // and folded it into the DPS, but nothing on screen said so, so a player with
 // Double Attack 10 saw no evidence it counted and reported it as not implemented.
 // Sidewinder Card feeds the same proc through bDoubleRate, on any weapon.
-function DoubleAttackView({ branch, chance, label, taChance }: {
-  branch: DamageBranch; chance: number; label: string; taChance: number;
+function DoubleAttackView({ branch, chance, label, taChance, normalAvg }: {
+  branch: DamageBranch; chance: number; label: string; taChance: number; normalAvg: number;
 }) {
+  // Weapon masteries land once per attack, not once per hit, so the extra hit comes in
+  // below a normal one — by exactly the masteries. When the build has no applicable
+  // mastery the two are identical and a full breakdown would just repeat the one above
+  // it, which is how this panel was first reported as a bug; so show the pipeline only
+  // when it actually says something different.
+  const differs = Math.round(branch.avg_damage) !== Math.round(normalAvg);
   const n = (v: number) => Math.round(v).toLocaleString();
   const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
     ? `${n(branch.min_damage)}–${n(branch.max_damage)}`
@@ -444,22 +450,23 @@ function DoubleAttackView({ branch, chance, label, taChance }: {
           {(chance * (1 - taChance / 100)).toFixed(1)}% per auto-attack
         </span>
       </div>
-      {/* Deliberately NOT a full pipeline. The second hit reruns the normal attack's
-          calculation unchanged, so every row would repeat the breakdown directly above
-          it, number for number — which read as a copy-paste bug and was reported as one
-          ("AA and DA shows the same dmg"). Say the mechanic instead of restating it in
-          ten identical rows. The katar second hit keeps its breakdown, because that one
-          genuinely differs: it is a fraction of the main hit, not a copy of it. */}
-      <div className="dw-same-as-normal">
-        Each hit does what a normal attack does — the second hit runs the same
-        calculation, so its damage is identical to the normal attack's.
-      </div>
+      {differs ? (
+        <PipelineView steps={branch.steps} hideFinal />
+      ) : (
+        <div className="dw-same-as-normal">
+          This build has no mastery that applies here, so the extra hit comes out the same
+          as a normal attack.
+        </div>
+      )}
       <div className="breakdown-total">
         <span className="breakdown-total-label">Extra hit damage</span>
         <span className="breakdown-total-val">{range}</span>
       </div>
       <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
         <span className="self-damage-chip muted">adds a second hit</span>
+        <span className="self-damage-chip muted">
+          weapon masteries count once per attack, so the extra hit skips them
+        </span>
         {taChance > 0 && (
           <span className="self-damage-chip muted">
             {chance.toFixed(1)}% on its own — Triple Attack replaces {taChance.toFixed(1)}% of swings first
@@ -1090,6 +1097,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           chance={doubleHit.chance}
           label={doubleHit.label}
           taChance={normal_attack.result.ta_proc_chance ?? 0}
+          normalAvg={normal_attack.result.normal?.avg_damage ?? 0}
         />
       )}
 
