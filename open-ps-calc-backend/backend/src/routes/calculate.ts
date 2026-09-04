@@ -275,15 +275,27 @@ function applyOutgoingTargetMods(target: any, targetModsInput: any, build: any, 
       sc.SC_STONE = true;
     }
     // Elemental Change (Sage: SA_ELEMENTWATER/GROUND/FIRE/WIND) — overrides the
-    // target's defensive element to Water/Earth/Fire/Wind at LEVEL 1 (per
-    // wiki.payonstories.com/Elemental_Change: "the element level the monster is
-    // changed to ... is 1", e.g. Water 1). Does NOT work on MVP/boss monsters.
-    // Applied after element_status so an explicit element change wins.
+    // target's defensive element to Water/Earth/Fire/Wind, KEEPING its element level.
+    // Does NOT work on MVP/boss monsters. Applied after element_status so an explicit
+    // element change wins.
+    //
+    // The wiki says otherwise — wiki.payonstories.com/Elemental_Change: "The element
+    // level the monster is changed to upon using this skill is '1'. E.g., Water
+    // elemental change will change a target to Water 1" — and we followed it until
+    // 2026-09-02, when a player reported the in-game damage being much higher than the
+    // calculator's and identified why: the level carries over. On a Lunatic (Neutral 3)
+    // with a Water endow that is the difference between Fire 1 (x1.50) and Fire 3
+    // (x2.00), a third more damage.
+    //
+    // Going against the wiki here because it has already proven stale this week on
+    // Sidewinder Card ("adds 7%" against the item's actual Level 2), because the rest of
+    // this function never touches element_level — Frozen and Stone above both swap the
+    // element and leave the level alone — and because a monster's own NPC_CHANGE* element
+    // buffs are modelled the same way in targetSelfBuffs.js. Forcing 1 was the odd one out.
     const ELEMENT_CHANGE_INT: Record<string, number> = { Water: 1, Earth: 2, Fire: 3, Wind: 4 };
     const ecEle = ELEMENT_CHANGE_INT[targetModsInput.element_change as string];
     if (ecEle != null && !target.is_boss) {
       target.element = ecEle;
-      target.element_level = 1;
     }
     // Status debuffs
     if (targetModsInput.sleep)  sc.SC_SLEEP  = true;

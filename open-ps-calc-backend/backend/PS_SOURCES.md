@@ -6177,6 +6177,35 @@ Sidewinder 1/5, Snake Head Hat 5/25. The ratio is exact in all four, which only 
 as **one** effect written twice: the skill for daggers, the flat bonus for every other weapon.
 They are alternatives, not cumulative. Adding them made a Sidewinder dagger read 19%.
 
+## 2026-09-02 - Elemental Change keeps the monster's element LEVEL (in-game, via a player)
+
+The wiki is wrong on this one. wiki.payonstories.com/Elemental_Change says:
+
+> The element level the monster is changed to upon using this skill is "1". E.g., Water
+> elemental change will change a target to Water 1.
+
+A player reported the in-game damage being far higher than the calculator's and named the
+cause: **the level carries over from the monster's original element**. On a Lunatic
+(Neutral 3) with a Water endow that is Fire 1 (x1.50) against Fire 3 (x2.00) - a third of
+the damage. We modelled the wiki's version until 2026-09-02.
+
+Backing the player over the page:
+
+- The wiki had already proven stale that same week, on Sidewinder Card - "adds 7% Double
+  Attack" against the item's own "Enables Level 2 Double Attack", confirmed in game.
+- Nothing else in that code path touches the element level: Frozen and Stone both swap the
+  element and leave the level alone.
+- A monster's own `NPC_CHANGE*` element buffs were already modelled as level-preserving in
+  `targetSelfBuffs.js`. Forcing 1 on the Sage skill was the odd one out, and the two paths
+  disagreed with each other.
+
+Pinned by a test in `protected-values.test.js` precisely because it contradicts the wiki:
+without it, a future reader checking against that page would "fix" it back in one line.
+
+**Still worth a CC ruling** if one is going to hand: the cleanest confirmation is the
+in-game monster info on a changed monster, which prints the element and its level
+outright - the same readout that settled RSX's stats and Double Attack's rates.
+
 ## Conventions
 
 - **Provisional ids live in a reserved `95xxx` block** with a `_comment_95xxx` note, for

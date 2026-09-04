@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Elemental Change no longer drops the monster to element level 1.** Changing a
+  monster's element with the Sage skill kept its element *type* but reset its *level*,
+  which quietly cost you a large slice of damage: a Lunatic is Neutral 3, and turning it
+  Fire made the calculator treat it as Fire 1, so a Water endow read ×1.50 where the game
+  gives ×2.00 — a third of the damage missing. The level carries over now. Reported by a
+  player who noticed their in-game numbers were far higher than the calculator's and
+  worked out exactly why. The wiki says the level becomes 1; it's wrong, the same way it
+  was wrong about Sidewinder Card earlier this week.
+
 - **Double Attack no longer counts your weapon masteries twice.** A player checked it in
   game: masteries are added once per attack, not once per hit, so the extra hit lands
   below a normal one — and the calculator was giving the second hit a full copy of the

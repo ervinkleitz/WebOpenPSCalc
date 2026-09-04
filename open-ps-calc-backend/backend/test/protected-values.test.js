@@ -205,3 +205,37 @@ test("every stats data route goes through the password check", () => {
   assert.equal(new Set(mounts.map((x) => x[2])).size, 1,
     "both stats mounts must use the same router instance");
 });
+
+// ---------------------------------------------------------------------------
+// Elemental Change keeps the monster's element LEVEL
+//
+// This one is pinned because it deliberately contradicts the wiki, which makes it a
+// standing invitation for a future reader to "fix" it back in a one-line diff that
+// looks obviously right. wiki.payonstories.com/Elemental_Change says: "The element
+// level the monster is changed to upon using this skill is '1'. E.g., Water elemental
+// change will change a target to Water 1."
+//
+// We followed that until 2026-09-02, when a player reported the in-game damage being
+// far higher than the calculator's and named the cause: the level carries over. On a
+// Lunatic (Neutral 3) with a Water endow it is the difference between Fire 1 (x1.50)
+// and Fire 3 (x2.00) — a third of the damage.
+//
+// Three things back the player over the page: the wiki had already proven stale that
+// same week on Sidewinder Card ("adds 7%" against the item's actual Level 2); nothing
+// else in that function touches element_level, with Frozen and Stone both swapping the
+// element and leaving the level alone; and a monster's own NPC_CHANGE* element buffs
+// are modelled the same way in targetSelfBuffs.js. Forcing 1 was the odd one out.
+//
+// If a CC ever rules for the wiki, change it here in the same commit.
+// ---------------------------------------------------------------------------
+test("Elemental Change does not reset the target's element level", () => {
+  const src = read(BACKEND, "src", "routes", "calculate.ts");
+
+  const start = src.indexOf("const ELEMENT_CHANGE_INT");
+  assert.ok(start > 0, "the Elemental Change block is gone — did it move?");
+  const block = src.slice(start, src.indexOf("// Status debuffs", start));
+
+  assert.ok(/target\.element = ecEle/.test(block), "Elemental Change no longer sets the element");
+  assert.ok(!/element_level/.test(block),
+    "Elemental Change is resetting element_level again — the level carries over; see the note above");
+});
