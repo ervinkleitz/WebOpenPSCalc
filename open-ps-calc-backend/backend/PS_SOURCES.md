@@ -6206,6 +6206,28 @@ without it, a future reader checking against that page would "fix" it back in on
 in-game monster info on a changed monster, which prints the element and its level
 outright - the same readout that settled RSX's stats and Double Attack's rates.
 
+## 2026-09-02 - Shield weights (Laila, CC) and how weight is stored
+
+Laila reported two: **Herald of God weighs 250** (we had 160, inherited from vanilla
+Sacred Mission) and **Stone Discus weighs 150** (we carried no weight at all). The live
+item API confirmed both independently - its description text states the in-game figure.
+
+**Weight is stored at 10x the displayed value.** `item_db` has Buckler 600 for an in-game
+60, Guard 300 for 30, Shield 1300 for 130. So an in-game 250 is `"weight": 2500` here.
+Getting this backwards would have set Herald of God to 25 in game.
+
+**It is not cosmetic.** `_runShieldBoomerangBranch` adds the shield's displayed weight to
+BATK before the skill ratio, so a wrong or absent weight changes Shield Boomerang's damage
+directly - Herald of God 1445 -> 1796, Stone Discus 572 -> 1022 on the same build. A
+missing weight reads as 0 and silently deletes a term.
+
+Sweeping every shield with no weight found two more, both confirmed against the API:
+Cracked Buckler 100, Carapace of the Damned 120. Neo Valkyrie Shield really does weigh 0.
+
+**To check a weight:** `curl "tools.payonstories.com/api/pc/item?name=<name>"` and read
+`Weight:` out of the description - the API exposes descriptions, not scripts, and this is
+one of the things the description reliably carries. Pinned in `engine-units.test.js`.
+
 ## Conventions
 
 - **Provisional ids live in a reserved `95xxx` block** with a `_comment_95xxx` note, for

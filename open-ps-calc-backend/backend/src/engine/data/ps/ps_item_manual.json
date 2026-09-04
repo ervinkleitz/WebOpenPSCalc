@@ -29,7 +29,9 @@
   "script": "if(Class==10 || Class==4011) { bonus3 bAutoSpell,MC_MAMMONITE,1+9*(getskilllv(MC_MAMMONITE)==10),50; } else { bonus3 bAutoSpell,MC_MAMMONITE,1,50; }"
  },
  "2111": {
-  "script": "bonus bInt,3; bonus bVit,3; bonus bMdef,3; bonus bBaseAtk,20; bonus bUnbreakableShield,0; bonus2 bSkillAtk,CR_SHIELDBOOMERANG,30;"
+  "script": "bonus bInt,3; bonus bVit,3; bonus bMdef,3; bonus bBaseAtk,20; bonus bUnbreakableShield,0; bonus2 bSkillAtk,CR_SHIELDBOOMERANG,30;",
+  "weight": 2500,
+  "_note": "Weight 250 in game (Laila, CC, 2026-09-02); vanilla Sacred Mission is 160. item_db stores weight as 10x the displayed figure (Buckler db 600 = 60 in game), so 250 in game is 2500 here. NOT cosmetic: shield weight feeds Shield Boomerang, which this shield also boosts by 30%."
  },
  "2113": {
   "script": "bonus2 bSubEle,Ele_Water,20; bonus2 bSubEle,Ele_Earth,20; bonus2 bSubEle,Ele_Fire,20; bonus2 bSubEle,Ele_Wind,20; bonus2 bSubEle,Ele_Poison,20; bonus2 bSubEle,Ele_Ghost,20; bonus2 bSubEle,Ele_Undead,20; bonus2 bSubEle,Ele_Holy,20; bonus2 bSubEle,Ele_Dark,20;"
@@ -1960,7 +1962,9 @@
   ],
   "equip_level": 80,
   "refineable": true,
-  "script": "bonus bMdef,2; bonus2 bSubEle,Ele_Dark,5;"
+  "script": "bonus bMdef,2; bonus2 bSubEle,Ele_Dark,5;",
+  "weight": 1200,
+  "_note": "Weight from the live item API description (tools.payonstories.com/api/pc/item), which states it in the in-game figure; item_db stores 10x that (Buckler db 600 = 60 in game). Found by sweeping shields carrying no weight at all after Laila reported two of them: shield weight feeds Shield Boomerang, so a missing value silently removes a term from that skill's damage."
  },
  "8140": {
   "type": "IT_ARMOR",
@@ -2309,7 +2313,8 @@
   ],
   "refineable": true,
   "script": "bonus2 bSkillAtk,\"CR_SHIELDBOOMERANG\",getrefine()*5; bonus2 bSkillAtk,\"CR_SHIELDCHARGE\",getrefine()*5;",
-  "_note": "Live item API: \"Increase damage of Shield Boomerang and Shield Charge by 5% per refine\". The Crusader rework PDF named only Shield Boomerang, but the API is the later source and has precedent for carrying terms the PDFs never mentioned (the Pirate Skel + Flame Beetle combo). Shield Charge added 2026-08-22."
+  "_note": "Live item API: \"Increase damage of Shield Boomerang and Shield Charge by 5% per refine\". The Crusader rework PDF named only Shield Boomerang, but the API is the later source and has precedent for carrying terms the PDFs never mentioned (the Pirate Skel + Flame Beetle combo). Shield Charge added 2026-08-22. Weight 150 in game (Laila, CC, 2026-09-02); we carried no weight at all, so it read as 0. Stored as 10x the displayed figure, so 1500. NOT cosmetic: shield weight feeds Shield Boomerang, which this shield boosts per refine.",
+  "weight": 1500
  },
  "91047": {
   "type": "IT_ARMOR",
@@ -2701,5 +2706,13 @@
  "2615": {
   "_note": "Safety Ring: PS zeroed the item's structured DEF (its tooltip reads \"Defense: 0\", scraped faithfully into ps_item_overrides - all 70 def overrides match their own tooltip line) but its description still lists the effects as \"Def +3\" and \"Mdef +3\". So the DEF lives in the script, not the def field, and only the MDEF half was modelled - a player reported the ring adding no DEF. bDef and equip DEF both feed hard DEF, so +3 here is what the vanilla item's Def: 3 used to give. NB the only mechanical source for the DEF half is the description prose; the item API does not expose scripts.",
   "script": "bonus bDef,3; bonus bMdef,3;"
+ },
+ "2128": {
+  "weight": 2500,
+  "_note": "Weight 250 in game (Laila, CC, 2026-09-02); vanilla Sacred Mission is 160. item_db stores weight as 10x the displayed figure (Buckler db 600 = 60 in game), so 250 in game is 2500 here. NOT cosmetic: shield weight feeds Shield Boomerang, which this shield also boosts by 30%."
+ },
+ "2136": {
+  "weight": 1000,
+  "_note": "Weight from the live item API description (tools.payonstories.com/api/pc/item), which states it in the in-game figure; item_db stores 10x that (Buckler db 600 = 60 in game). Found by sweeping shields carrying no weight at all after Laila reported two of them: shield weight feeds Shield Boomerang, so a missing value silently removes a term from that skill's damage."
  }
 }

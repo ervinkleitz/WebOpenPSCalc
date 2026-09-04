@@ -799,6 +799,29 @@ test("Double Attack still applies on the swings Triple Attack did not take", () 
   );
 });
 
+// Shield weight is not cosmetic: Shield Boomerang adds the shield's displayed weight to
+// BATK before the skill ratio, so a wrong or missing weight silently changes that skill's
+// damage. Two were reported wrong by a CC (Laila, 2026-09-02) and a sweep for shields
+// carrying no weight at all found two more. The live item API states the in-game figure;
+// item_db stores 10x it (Buckler db 600 = 60 in game), so these are the db values.
+test("shield weights match the live item API", () => {
+  loader.setProfile(getProfile("payon_stories"));
+  const expected = {
+    2111: 2500,   // Herald of God — was vanilla Sacred Mission's 160
+    2128: 2500,   // Herald of God, slotted
+    90071: 1500,  // Stone Discus — carried no weight at all, so it read as 0
+    2136: 1000,   // Cracked Buckler — same, found by the sweep
+    8135: 1200,   // Carapace of the Damned — same
+    2137: 0,      // Neo Valkyrie Shield genuinely weighs nothing; the 0 is correct
+  };
+  for (const [id, weight] of Object.entries(expected)) {
+    const item = loader.getItem(Number(id));
+    assert.ok(item, `item ${id} not found`);
+    assert.strictEqual(item.weight ?? 0, weight,
+      `${item.name} (${id}) should weigh ${weight / 10} in game, i.e. ${weight} in item_db`);
+  }
+});
+
 test("Momoe's Hairband gives +20% vs Turtle Island turtles, nothing vs others", () => {
   const cfg = createBattleConfig();
   const dmg = (hat, mobId) => {

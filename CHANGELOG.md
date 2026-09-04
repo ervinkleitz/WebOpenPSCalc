@@ -9,6 +9,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Four shields had the wrong weight, which was costing Shield Boomerang damage.** A CC
+  reported two of them — Herald of God weighs 250, not the 160 we inherited from its
+  vanilla counterpart, and Stone Discus weighs 150 where we carried no weight at all. That
+  is not cosmetic: Shield Boomerang adds the shield's weight to your ATK before the skill
+  ratio, so **Herald of God went from 1,445 to 1,796 damage and Stone Discus from 572 to
+  1,022** on the same build. Sweeping for other shields carrying no weight turned up two
+  more with the same problem, Cracked Buckler (100) and Carapace of the Damned (120); all
+  four now match the values the live item database states. Neo Valkyrie Shield was checked
+  too and genuinely weighs nothing, so it is unchanged.
+
 - **Elemental Change no longer drops the monster to element level 1.** Changing a
   monster's element with the Sage skill kept its element *type* but reset its *level*,
   which quietly cost you a large slice of damage: a Lunatic is Neutral 3, and turning it
