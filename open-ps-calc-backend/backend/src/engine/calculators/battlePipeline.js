@@ -1753,7 +1753,12 @@ class BattlePipeline {
       result.add_step({ name: "Enchant Poison Passive", value: av2, min_value: mn2, max_value: mx2, multiplier: (100 + bonusPct) / 100, note: `AS_ENCHANTPOISON Lv ${enchantPoisonLv}: +${bonusPct}% vs Poison element`, formula: `dmg × ${100 + bonusPct} / 100`, hercules_ref: "PS-AssassinRework" });
     }
 
-    const div = hitCount;
+    // Hercules adds these per hit — `damage += div * sd->spiritball * 3` and
+    // `damage += div * star` (battle.c battle_calc_masteryfix, ~916-921) — so the hit
+    // count must include the doubled swing, not just the skill's own hit count. When
+    // the div-multiplier rework landed these briefly counted once in a Double Attack,
+    // because they sit below the multiply and were still keyed to hitCount alone.
+    const div = hitCount * divMultiplier;
     pmf = calculateForgeBonus(weapon, div, pmf, result);
     pmf = calculateSpiritSphereBonus(build, div, pmf, result);
 

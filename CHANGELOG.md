@@ -5,6 +5,24 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-05
+
+### Fixed
+
+- **Spirit spheres and Star Crumbs count per hit again inside a Double Attack.** The
+  swing rework two days ago made a double attack one calculation instead of two — which
+  fixed masteries and DEF — but left the sphere and forge bonuses keyed to the skill's
+  own hit count, so they briefly counted once across both hits. They're per hit in the
+  server's own code (`div × spheres × 3`, `div × star crumbs`), and now here too: five
+  spheres are +15 on a single hit and +30 across the pair.
+
+- **An odd Double Attack total is real, and the panel now says so.** A player pointed
+  out the bold total (397) can't be the sum of two equal popups — and about the popups
+  they're right: the game shows floor(397 ÷ 2) twice, which adds to 396. But the server
+  deals the full 397; there is no per-hit rounding anywhere in the damage code, only in
+  the display. The panel note now explains that the two numbers on screen can add up to
+  one point less than the damage actually dealt.
+
 ## 2026-09-04
 
 ### Added

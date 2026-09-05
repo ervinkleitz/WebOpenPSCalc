@@ -761,6 +761,33 @@ test("a Double Attack is one roll doubled before DEF, not two separate attacks",
     "no branch should still pay twice the full normal hit");
 });
 
+// Spirit spheres and Star Crumbs are PER HIT even though they land after the multi-hit
+// multiply: Hercules adds `div * sd->spiritball * 3` and `div * star` explicitly
+// (battle.c battle_calc_masteryfix, ~916-921). When the div-multiplier rework landed,
+// these briefly counted once in a Double Attack — the swing became one pipeline run and
+// they were still keyed to the skill's own hit count. Nothing caught it because no test
+// combined a proc with spheres.
+test("spirit spheres count once per hit inside a Double Attack swing", () => {
+  const cfg = createBattleConfig();
+  const q = (spheres) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 17, base_level: 99, job_level: 50,
+      base_stats: { str: 80, agi: 89, vit: 12, int: 10, dex: 53, luk: 1 },
+      equipped: { right_hand: 1202 }, flags: { spirit_spheres: spheres },
+      mastery_levels: { SM_SWORD: 10, TF_DOUBLE: 10 }, clan: "vile_wind_clan",
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
+    const r = new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1063), eff, gb,
+    );
+    return [r.normal.avg_damage, r.double_hit.avg_damage];
+  };
+  const [n0, s0] = q(0);
+  const [n5, s5] = q(5);
+  assert.strictEqual(n5 - n0, 15, "five spheres are +15 on a single hit");
+  assert.strictEqual(s5 - s0, 30, "…and +30 across a two-hit swing — per hit, not per attack");
+});
+
 // Triple Attack REPLACES the swing; Double Attack ADDS a hit. A swing that became a
 // TA cannot also double, but the swings TA did not take still can. The attack list
 // assumed the two could never coexist ("Monks don't use Knives"), which stopped being

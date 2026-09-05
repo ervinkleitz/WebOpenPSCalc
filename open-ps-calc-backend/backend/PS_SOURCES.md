@@ -6177,6 +6177,32 @@ Sidewinder 1/5, Snake Head Hat 5/25. The ratio is exact in all four, which only 
 as **one** effect written twice: the skill for daggers, the flat bonus for every other weapon.
 They are alternatives, not cumulative. Adding them made a Sidewinder dagger read 19%.
 
+## 2026-09-05 - The multi-hit model, now read straight from Hercules battle.c
+
+A local copy of Hercules battle.c (C:/tmp/battlec.txt, stable branch) settles everything
+this week's Double Attack reports were inferring from numbers. Line references from that
+copy:
+
+- **`damage_div_fix(dmg, div)` is `(dmg) *= (div)` and nothing else** (#define, :3994),
+  applied pre-renewal at :5822 - BEFORE `calc_defense` (:5985) and `calc_masteryfix`
+  (:6076). That is the div-before-DEF ordering, from source.
+- **`battle_calc_masteryfix` receives `div` and never uses it** for the mastery itself -
+  `damage = add_mastery(...)` once. Masteries per attack, from source.
+- **Spheres and Star Crumbs are per hit by explicit multiplication**: `damage += div *
+  sd->spiritball * 3` and `damage += div * star` (:916-921, inside masteryfix). This is
+  what makes "masteries once, spheres twice" one rule rather than two special cases.
+- **There is no per-hit re-flooring anywhere** - no `/ div` after the multiply. So an odd
+  two-hit total (e.g. 397) is dealt in full; the client's two popups are each
+  floor(total/2) and their sum under-reports by the remainder. A player argued the total
+  "is not even therefore not correct" - reasonable from the popups, wrong about the server.
+- Bonus confirmations for earlier fixes, all in the DA proc block (:5091-5104):
+  `hitpercbonus += skill_lv` (the conditional +HIT), "Success chance is not added, the
+  higher one is used [Skotlex]" (max, not sum), and `sd->bonus.double_rate > 0 &&
+  sd->weapontype1 != W_FIST` (any weapon but bare fists).
+
+Convention going forward: for engine-mechanics questions, read battle.c first - it is on
+disk and it outranks inference from damage numbers, though not a PS-specific rework note.
+
 ## 2026-09-02 - A Double Attack is ONE attack that lands twice (in-game numbers)
 
 Hercules takes the damage roll once and multiplies it by `div_` **before defense**, so

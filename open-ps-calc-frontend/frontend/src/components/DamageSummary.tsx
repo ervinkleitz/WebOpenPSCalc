@@ -458,8 +458,10 @@ function DoubleAttackView({ branch, chance, label, taChance }: {
         <span className="breakdown-total-val">{range}</span>
       </div>
       <div className="dw-same-as-normal">
-        The game shows this as two hits of about {perHit.toLocaleString()} — it splits the
-        total rather than rolling each hit on its own.
+        The game shows this as two hits of {perHit.toLocaleString()} each — it splits the
+        total and rounds each popup down, so an odd total is real damage even though the
+        two numbers on screen add up to one point less. The server deals the full amount;
+        only the popups are rounded.
       </div>
       <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
         <span className="self-damage-chip muted">one damage roll, landed twice</span>
