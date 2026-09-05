@@ -14,8 +14,9 @@ instead of release version. Dates are taken from actual git commit history.
   deals 396 — the two 198s a player actually sees — and the total is now rounded down to
   a multiple of the hit count after every modifier, for Double Attack, Chain Action and
   multi-hit skills alike. Multi-hit totals drop by a point or two accordingly. Every
-  "total (hits × per-hit)" on screen now multiplies out exactly, including ranges:
-  "396 (2 × 198)", "450–480 (2 × 225–240)".
+  per-hit annotation on screen now adds or multiplies out exactly: a fixed Double Attack
+  reads "396 (198 + 198)" — the two popups, verbatim — and ranges read
+  "450–480 (2 × 225–240)".
 
 - **Fixes now reach you without a hard refresh.** The page itself was served with no
   caching instructions, so browsers held on to an old copy by guesswork — while each
