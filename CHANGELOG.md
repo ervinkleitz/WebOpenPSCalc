@@ -9,6 +9,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Super Novices get a Fury chant toggle — CRIT +50.** The Guardian Angel chant is
+  available at each 10.0% EXP mark, and at base level 99 the bar never moves again, so as
+  a player put it, "SN has fury once they reach MAX 99." It's now a checkbox next to
+  "Never died" instead of the workaround people were using (setting Critical Explosion to
+  level 13, which happens to land on the same +50) — both give identical numbers, so
+  existing builds lose nothing by switching. One honest caveat the calculator will show
+  you: on a Double Attack build, Fury can *lower* DPS — a critical swing can't double, so
+  a ~1.3k crit displaces a 70%-likely ~2.2k double swing. That's the game's rule, not a
+  calculator quirk, and the player's own in-game numbers match it.
+
 - **Spirit spheres now work on any class, not just Monks.** Requested by a player who
   pointed out two ways other classes get them: a Monk can hand spheres over with Ki
   Translation, and the Greatest General Card gains them on a physical attack. Each sphere

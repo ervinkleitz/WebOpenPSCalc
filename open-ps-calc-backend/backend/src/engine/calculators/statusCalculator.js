@@ -241,6 +241,16 @@ class StatusCalculator {
     // === CRITICAL ===
     status.cri = 10 + Math.floor(status.luk * 10 / 3) + build.bonus_cri * 10;
 
+    // Super Novice Fury — the Guardian Angel chant, typed at each 10.0% EXP mark:
+    // "Fury Status (critical rate +50)" (wiki.payonstories.com/Super_Novice). At base
+    // level 99 the EXP bar never moves again, so it is effectively permanent — which is
+    // how a player asked for it ("SN has fury once they reach MAX 99"). A flat +50 CRIT,
+    // nothing else; players had been approximating it by setting Critical Explosion to
+    // level 13, which lands on the same 500 under the PS scaling (175 + 25 x 13).
+    if (build.job_id === 23 && build.sn_fury) {
+      status.cri += 500;
+    }
+
     if ("SC_EXPLOSIONSPIRITS" in activeSc) {
       // Monk Fury is cast at levels 1-5; the Super Novice chant grants it at
       // level 13, which under the PS formula lands on 175 + 25×13 = +50% crit

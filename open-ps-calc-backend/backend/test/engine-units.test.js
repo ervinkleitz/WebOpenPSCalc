@@ -864,6 +864,36 @@ test("spirit spheres apply to any class except Gunslinger, capped at 5 off the M
   assert.strictEqual(dmg(24, { gs_coins: 10 }) - gsBase, 30, "a Gunslinger's coins are still +3 each");
 });
 
+// Super Novice Fury — the Guardian Angel chant: "Fury Status (critical rate +50)"
+// (wiki Super_Novice). Requested by a player who noted that at base 99 the EXP bar
+// never moves, so the chant is effectively permanent; they had been approximating it
+// by setting Critical Explosion to level 13, which lands on the same +50 under the PS
+// scaling (175 + 25 x 13 = 500). The flag must match that workaround to the decimal.
+test("Super Novice Fury chant is a flat +50 CRIT, SN only", () => {
+  const cfg = createBattleConfig();
+  const crit = (job_id, flags = {}, active = {}) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id, base_level: 99, job_level: 70,
+      base_stats: { str: 85, agi: 99, vit: 1, int: 1, dex: 45, luk: 1 },
+      equipped: { right_hand: 1201 }, mastery_levels: {}, flags, active_buffs: active,
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
+    return new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1002), eff, gb,
+    ).crit_chance;
+  };
+
+  const base = crit(23);
+  assert.ok(Math.abs(crit(23, { sn_fury: true }) - base - 50) < 1e-6,
+    "Fury must add exactly +50 CRIT to a Super Novice");
+  // ...identical to the workaround players used, so switching costs them nothing.
+  assert.ok(Math.abs(crit(23, { sn_fury: true }) - crit(23, {}, { SC_EXPLOSIONSPIRITS: 13 })) < 1e-6,
+    "the flag and the Critical Explosion Lv13 workaround must agree");
+  // ...and it is a Super Novice mechanic, not a general one.
+  assert.strictEqual(crit(6, { sn_fury: true }), crit(6),
+    "sn_fury must do nothing for any other job");
+});
+
 test("Momoe's Hairband gives +20% vs Turtle Island turtles, nothing vs others", () => {
   const cfg = createBattleConfig();
   const dmg = (hat, mobId) => {

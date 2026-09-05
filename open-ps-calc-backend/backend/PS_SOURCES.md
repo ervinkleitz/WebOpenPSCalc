@@ -6276,6 +6276,26 @@ Worth noting the cap did not come from the request: the player asked only for th
 and the Gunslinger exception. The 5 came from reading the skill page, and it happens to
 match what the card can produce - two independent sources landing on the same number.
 
+## 2026-09-04 - Super Novice Fury chant (wiki + player)
+
+wiki.payonstories.com/Super_Novice, under "Fury": available "when the Super Novice's EXP
+reaches increments of 10%", type seven lines then the plea, and you get **"the Fury Status
+(critical rate +50)"** - PS even edited one line of the chant (noted on the page, 01/2024).
+A player added the practical half: at base 99 the EXP bar is frozen, so the chant is
+effectively permanent, and players were approximating it in the calculator by setting
+Critical Explosion to level 13 (175 + 25 x 13 = 500 internal = +50.0 under the PS
+scaling - a pre-existing test already pinned that equivalence).
+
+Modelled as `flags.sn_fury`, SN-only, flat +50 CRIT and nothing else. Verified equal to
+the level-13 workaround to the decimal.
+
+Same report, worth keeping: the player thought SN Double Attack damage was wrong (calc
+"1k+" vs in-game "2.1k-2.2k+"). It was not - the calc's DA swing on their exact build is
+2,226, matching the game; the 1k+ figure was the single-hit damage range headline. Their
+in-game numbers also corroborate that a critical swing cannot double-attack even under
+Fury (they see ~2.2k doubles, not ~2.7k crit-doubles), which is why Fury can genuinely
+LOWER a DA build's DPS.
+
 ## Conventions
 
 - **Provisional ids live in a reserved `95xxx` block** with a `_comment_95xxx` note, for

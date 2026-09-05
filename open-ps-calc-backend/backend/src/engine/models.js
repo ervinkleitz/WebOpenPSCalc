@@ -41,6 +41,7 @@ function createPlayerBuild(overrides = {}) {
     no_sizefix: false,
     is_riding_peco: false,
     sn_never_died: false, // Super Novice: no death by job 70+ → +10 all stats
+    sn_fury: false, // Super Novice: Guardian Angel chant → CRIT +50 (wiki Super_Novice, "Fury Status (critical rate +50)")
 
     active_status_levels: {},
     mastery_levels: {},

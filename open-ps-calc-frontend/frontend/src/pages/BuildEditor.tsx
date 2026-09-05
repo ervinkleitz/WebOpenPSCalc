@@ -2909,6 +2909,18 @@ export default function BuildEditor() {
                             </label>
                           </div>
                         )}
+                        {isSuperNovice && (
+                          <div className="field field-checkbox" key="__sn_fury">
+                            <label title="The Guardian Angel chant, available at each 10.0% EXP mark: type the seven lines and the plea, and Fury grants CRIT +50. At base level 99 the EXP bar never moves again, so it is effectively always available.">
+                              <input
+                                type="checkbox"
+                                checked={!!data.flags?.sn_fury}
+                                onChange={(e) => setData((prev) => ({ ...prev, flags: { ...(prev.flags || {}), sn_fury: e.target.checked } }))}
+                              />
+                              <span>Fury chant (CRIT +50)</span>
+                            </label>
+                          </div>
+                        )}
                         {isKnightLine && (
                           <div className="field field-checkbox" key="__riding_peco">
                             <label title="Riding a Peco Peco (Knight/Crusader line): mounting adds an attack-speed penalty, reduced by one rank's worth per level of Cavalier Mastery and fully removed at Cavalier Mastery 5. Also raises Spear Mastery ATK per level (higher while mounted).">
