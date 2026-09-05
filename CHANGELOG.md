@@ -9,11 +9,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
-- **Multi-hit totals now read "total (hits × per-hit)"** — a player's suggestion, adopted
-  as given. The Double Attack panel shows "397 (2 × 198)" and a Double Strafe's final
-  damage shows "433–483 (2 × 228)", so a total is never mistaken for a single hit and the
-  on-screen popups are recognizable at a glance. The note about the rounding quirk now
-  appears only when the total is actually odd, where it earns its space.
+- **Multi-hit totals now read "total (hits × per-hit)" — and never print a multiplication
+  that doesn't hold.** A player suggested the format, and then caught its flaw within the
+  hour: "397 (2 × 198)" asserts an equation that fails, because an odd total doesn't
+  divide — the game deals it whole and draws two rounded-down popups. So the × form now
+  appears only when it's exactly true ("451–481 (2 × 233)"), and totals that don't divide
+  describe the popups instead: "397 — shown in game as 198 + 198". The rounding-quirk
+  note still appears under odd totals, where it earns its space.
 
 - **Dancers couldn't equip their own whips — or Buckler, or 68 other items.** Reported as
   "Buckler can't be equipped on Dancer (and Gypsy)", and the cause ran much deeper: Bard

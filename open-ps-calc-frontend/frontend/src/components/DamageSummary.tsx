@@ -458,7 +458,15 @@ function DoubleAttackView({ branch, chance, label, taChance }: {
         <span className="breakdown-total-label">Both hits together</span>
         <span className="breakdown-total-val">
           {range}
-          <span className="dw-per-hit"> (2 × {perHit.toLocaleString()})</span>
+          {/* Only claim "2 × N" when it is actually true. An odd total does not divide —
+              the game deals it whole and draws two floored popups — so writing
+              "397 (2 × 198)" asserts an equation that fails, which a player rightly
+              called out. Odd totals describe the popups instead of dividing. */}
+          {Math.round(branch.avg_damage) % 2 === 0 ? (
+            <span className="dw-per-hit"> (2 × {perHit.toLocaleString()})</span>
+          ) : (
+            <span className="dw-per-hit"> — shown in game as {perHit.toLocaleString()} + {perHit.toLocaleString()}</span>
+          )}
         </span>
       </div>
       {Math.round(branch.avg_damage) % 2 !== 0 && (
@@ -1068,9 +1076,15 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
                     "total (N x per-hit)" form a player suggested, instead of leaving the
                     total to be mistaken for a single hit. */}
                 {(activeDamage?.num_hits ?? 1) > 1 && (
-                  <span className="dw-per-hit">
-                    {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killAvg / activeDamage!.num_hits))})
-                  </span>
+                  killAvg % activeDamage!.num_hits === 0 ? (
+                    <span className="dw-per-hit">
+                      {" "}({activeDamage!.num_hits} × {nfmt(killAvg / activeDamage!.num_hits)})
+                    </span>
+                  ) : (
+                    <span className="dw-per-hit">
+                      {" "}— shown in game as {activeDamage!.num_hits} hits of {nfmt(Math.floor(killAvg / activeDamage!.num_hits))}
+                    </span>
+                  )
                 )}
               </span>
             </div>
