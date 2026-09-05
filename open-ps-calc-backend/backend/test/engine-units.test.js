@@ -928,6 +928,53 @@ test("Super Novice Fury chant is a flat +50 CRIT, SN only", () => {
 // Bards and not by Dancers. The rule pinned here: a gender-neutral item that lists one
 // half of a pair must list the other; whips are the female pair's weapon and must list
 // neither male id; male-locked items (instruments) stay male.
+// The symmetry test below guards the raw vanilla file. This one guards what the app
+// actually serves — the vanilla data with the PS layers merged over it — and the exact
+// items the report named, so a PS override or a bad manual entry cannot quietly
+// reintroduce the split for the case players actually hit.
+test("a Dancer and a Gypsy can equip Buckler and whips through the merged data", () => {
+  loader.setProfile(getProfile("payon_stories"));
+  const canEquip = (itemId, jobId) => {
+    const it = loader.getItem(itemId);
+    assert.ok(it, `item ${itemId} not found`);
+    // Mirrors the picker's rule (BuildEditor canEquip / invalidSlots): an empty job
+    // list is unrestricted, otherwise the job must be listed.
+    return !Array.isArray(it.job) || it.job.length === 0 || it.job.includes(jobId);
+  };
+
+  // The report: Buckler, both variants, on Dancer and Gypsy.
+  for (const buckler of [2103, 2104]) {
+    for (const job of [20, 4021]) {
+      assert.ok(canEquip(buckler, job), `Buckler ${buckler} must be equippable by job ${job}`);
+    }
+    assert.ok(canEquip(buckler, 19), `Buckler ${buckler} must still be equippable by a Bard`);
+  }
+
+  // The bigger half of the same bug: whips are the Dancer pair's weapon.
+  const whip = loader.getItem(1952);
+  assert.ok(whip.job.includes(20) && whip.job.includes(4021), "a whip must list Dancer and Gypsy");
+  assert.ok(!whip.job.includes(19) && !whip.job.includes(4020), "a whip must not list Bard or Clown");
+
+  // ...and instruments stay on the male side.
+  const violin = loader.getItem(1901);
+  assert.ok(violin.job.includes(19), "an instrument must list Bard");
+  assert.ok(!violin.job.includes(20), "an instrument must not list Dancer");
+
+  // Post-merge sweep: the PS layers must not break pair symmetry for any vanilla item
+  // that shares the bit. PS-custom single-side items (a Dancer weapon and its Bard
+  // counterpart) are deliberate and live outside the vanilla id space checked here.
+  const db = JSON.parse(require("fs").readFileSync(
+    require("path").join(__dirname, "..", "src", "engine", "data", "pre-re", "db", "item_db.json"), "utf8"));
+  for (const raw of Object.values(db.items || db)) {
+    if (!Array.isArray(raw.job) || !(raw.job.includes(19) || raw.job.includes(20))) continue;
+    const merged = loader.getItem(raw.id);
+    if (!merged || !Array.isArray(merged.job) || merged.job.length === 0) continue;
+    if (merged.gender === "SEX_MALE" || merged.weapon_type === "Whip") continue;
+    assert.strictEqual(merged.job.includes(19), merged.job.includes(20),
+      `${raw.id} ${merged.name}: Bard/Dancer split reappeared after the PS layers merged`);
+  }
+});
+
 test("Bard/Dancer job pairs are symmetric in the vanilla item data", () => {
   const db = JSON.parse(require("fs").readFileSync(
     require("path").join(__dirname, "..", "src", "engine", "data", "pre-re", "db", "item_db.json"), "utf8"));
