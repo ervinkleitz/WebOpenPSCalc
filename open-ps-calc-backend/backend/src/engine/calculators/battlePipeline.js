@@ -1611,9 +1611,8 @@ class BattlePipeline {
     }
 
     // Effective hits in this branch: the skill's own count times the proc doubling.
-    // Display-only — the damage math above and below is unchanged; the panel uses it
-    // to render totals as "total (hits x per-hit)", which is how the game's popups
-    // present them.
+    // The panel renders totals as "total (hits x per-hit)", and the per-hit rounding
+    // at the end of this function floors the total to a multiple of it.
     result.num_hits = hitCount * divMultiplier;
 
     // Multi-hit split. Hercules computes ONE damage roll and multiplies it by div_
@@ -1782,6 +1781,35 @@ class BattlePipeline {
     }
 
     pmf = calculateFinalRateBonus(isRanged, pmf, this.config, result);
+
+    // Per-hit rounding on multi-hit swings — MAINTAINER RULING (2026-09-05): the swing
+    // deals what the popups show. A two-hit total of 397 lands as 198 + 198 = 396; the
+    // odd point is dropped, so the total is rounded down to a multiple of the hit count
+    // AFTER every modifier. Note the contrary reading, kept here so it can be flipped
+    // if hard evidence ever arrives: Hercules-stable's battle.c multiplies the roll by
+    // div_ and applies flat modifiers once with no re-flooring anywhere, which would
+    // deal the odd 397 while the client draws floored popups. Popups cannot distinguish
+    // the two; only measured HP loss can. Until someone measures it, the calculator
+    // agrees with what every player can see on screen.
+    const effHits = hitCount * divMultiplier;
+    if (effHits > 1) {
+      const floored = {};
+      for (const [k, v] of Object.entries(pmf)) {
+        const t = Math.floor(Number(k) / effHits) * effHits;
+        floored[t] = (floored[t] || 0) + v;
+      }
+      const changed = Object.keys(floored).length !== Object.keys(pmf).length
+        || Object.keys(pmf).some((k) => !(k in floored));
+      pmf = floored;
+      if (changed) {
+        const [mnR, mxR, avR] = pmfStats(pmf);
+        result.add_step({
+          name: "Per-hit rounding", value: avR, min_value: mnR, max_value: mxR,
+          note: `${effHits} equal popups round down — the total becomes a multiple of ${effHits}`,
+          formula: `floor(damage / ${effHits}) x ${effHits}`, hercules_ref: "maintainer ruling 2026-09-05",
+        });
+      }
+    }
 
     const [mn, mx, av] = pmfStats(pmf);
     result.add_step({ name: "Final Damage", value: av, min_value: mn, max_value: mx, note: isCrit ? "CRIT branch" : "Normal branch", formula: "", hercules_ref: "" });

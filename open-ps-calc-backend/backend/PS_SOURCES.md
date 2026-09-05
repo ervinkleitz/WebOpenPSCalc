@@ -6177,6 +6177,20 @@ Sidewinder 1/5, Snake Head Hat 5/25. The ratio is exact in all four, which only 
 as **one** effect written twice: the skill for daggers, the flat bonus for every other weapon.
 They are alternatives, not cumulative. Adding them made a Sidewinder dagger read 19%.
 
+## 2026-09-05 - RULING: a multi-hit swing deals what its popups show
+
+Maintainer ruling, closing the 396-vs-397 question: **the swing total is floored to a
+multiple of the hit count after every modifier**. A Double Attack whose raw arithmetic
+gives 397 deals 396, as 198 + 198 - exactly the two popups a player can read. Applied at
+the end of _runBranch to every multi-hit branch (Double Attack, Chain Action, multi-hit
+skills), and the displays now always print a "total (hits x per-hit)" that multiplies out.
+
+The contrary reading stays on record (section below): Hercules-stable's battle.c
+multiplies the roll by div_ and re-floors nowhere, which would deal the odd 397 while the
+client draws floored popups. Popups cannot distinguish the two; only measured HP loss can.
+If someone ever measures a monster losing the odd point, the flip is one block in
+_runBranch (grep "Per-hit rounding") plus this note.
+
 ## 2026-09-05 - The multi-hit model, now read straight from Hercules battle.c
 
 A local copy of Hercules battle.c (C:/tmp/battlec.txt, stable branch) settles everything

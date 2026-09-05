@@ -747,8 +747,11 @@ test("a Double Attack is one roll doubled before DEF, not two separate attacks",
 
   assert.strictEqual(r.normal.avg_damage, 217, "single hit should match the game's 217");
   assert.ok(r.double_hit, "this build should proc Double Attack");
-  assert.strictEqual(r.double_hit.avg_damage, 397,
-    "the doubled swing is 2x180 - 3 + 40; 394 means the second hit is being calculated separately again");
+  // 2x180 - 3 + 40 = 397 raw, then the per-hit rounding drops the odd point: the swing
+  // deals what the popups show, 198 + 198 (maintainer ruling, 2026-09-05 — see the note
+  // in _runBranch for the contrary Hercules-stable reading and what would flip this).
+  assert.strictEqual(r.double_hit.avg_damage, 396,
+    "the doubled swing must equal its popups; 394 means a separately calculated second hit, 397 means the per-hit rounding is gone");
 
   // The swing must be under two full normal attacks — DEF and mastery are paid once.
   assert.ok(r.double_hit.avg_damage < r.normal.avg_damage * 2,

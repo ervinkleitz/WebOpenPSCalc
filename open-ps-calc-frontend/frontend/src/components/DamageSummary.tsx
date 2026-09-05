@@ -458,23 +458,17 @@ function DoubleAttackView({ branch, chance, label, taChance }: {
         <span className="breakdown-total-label">Both hits together</span>
         <span className="breakdown-total-val">
           {range}
-          {/* Only claim "2 × N" when it is actually true. An odd total does not divide —
-              the game deals it whole and draws two floored popups — so writing
-              "397 (2 × 198)" asserts an equation that fails, which a player rightly
-              called out. Odd totals describe the popups instead of dividing. */}
-          {Math.round(branch.avg_damage) % 2 === 0 ? (
-            <span className="dw-per-hit"> (2 × {perHit.toLocaleString()})</span>
+          {/* The engine floors the swing to a multiple of the hit count (the swing deals
+              what the popups show), so min and max divide exactly and the "2 × N" claim
+              always holds — as one per-hit value or a per-hit range. */}
+          {Math.round(branch.min_damage) === Math.round(branch.max_damage) ? (
+            <span className="dw-per-hit"> (2 × {(Math.round(branch.min_damage) / 2).toLocaleString()})</span>
           ) : (
-            <span className="dw-per-hit"> — shown in game as {perHit.toLocaleString()} + {perHit.toLocaleString()}</span>
+            <span className="dw-per-hit"> (2 × {Math.floor(branch.min_damage / 2).toLocaleString()}–{Math.floor(branch.max_damage / 2).toLocaleString()})</span>
           )}
         </span>
       </div>
-      {Math.round(branch.avg_damage) % 2 !== 0 && (
-        <div className="dw-same-as-normal">
-          The popups round down, so on screen the two hits add to one point less than the
-          damage actually dealt — the odd point still lands.
-        </div>
-      )}
+
       <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
         <span className="self-damage-chip muted">one damage roll, landed twice</span>
         <span className="self-damage-chip muted">
@@ -1076,13 +1070,13 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
                     "total (N x per-hit)" form a player suggested, instead of leaving the
                     total to be mistaken for a single hit. */}
                 {(activeDamage?.num_hits ?? 1) > 1 && (
-                  killAvg % activeDamage!.num_hits === 0 ? (
+                  finalRange ? (
                     <span className="dw-per-hit">
-                      {" "}({activeDamage!.num_hits} × {nfmt(killAvg / activeDamage!.num_hits)})
+                      {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killMin! / activeDamage!.num_hits))}–{nfmt(Math.floor(killMax! / activeDamage!.num_hits))})
                     </span>
                   ) : (
                     <span className="dw-per-hit">
-                      {" "}— shown in game as {activeDamage!.num_hits} hits of {nfmt(Math.floor(killAvg / activeDamage!.num_hits))}
+                      {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killAvg / activeDamage!.num_hits))})
                     </span>
                   )
                 )}

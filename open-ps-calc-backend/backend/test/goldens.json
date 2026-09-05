@@ -306,15 +306,15 @@
    "matk_max": 6
   },
   "result": {
-   "dps": 1717.224,
+   "dps": 1715.35,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 22,
    "period_ms": 1484,
    "normal": {
-    "min": 2190,
-    "max": 2716,
-    "avg": 2452,
+    "min": 2184,
+    "max": 2712,
+    "avg": 2449,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -332,13 +332,14 @@
      "Card Fix",
      "Final Rate Bonus (Short)",
      "Final Rate Bonus (Weapon)",
+     "Per-hit rounding",
      "Final Damage"
     ]
    },
    "crit": {
-    "min": 2890,
-    "max": 2890,
-    "avg": 2890,
+    "min": 2888,
+    "max": 2888,
+    "avg": 2888,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -358,6 +359,7 @@
      "Card Fix",
      "Final Rate Bonus (Short)",
      "Final Rate Bonus (Weapon)",
+     "Per-hit rounding",
      "Final Damage"
     ]
    }
@@ -384,15 +386,15 @@
    "matk_max": 40
   },
   "result": {
-   "dps": 255.639,
+   "dps": 251.88,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 0,
    "period_ms": 532,
    "normal": {
-    "min": 128,
+    "min": 126,
     "max": 144,
-    "avg": 136,
+    "avg": 134,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -412,6 +414,7 @@
      "Card Fix",
      "Final Rate Bonus (Long)",
      "Final Rate Bonus (Weapon)",
+     "Per-hit rounding",
      "Final Damage"
     ]
    }
@@ -545,15 +548,15 @@
    "matk_max": 6
   },
   "result": {
-   "dps": 726.629,
+   "dps": 725.212,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 0,
    "period_ms": 706,
    "normal": {
     "min": 462,
-    "max": 565,
-    "avg": 513,
+    "max": 564,
+    "avg": 512,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -573,6 +576,7 @@
      "Card Fix",
      "Final Rate Bonus (Long)",
      "Final Rate Bonus (Weapon)",
+     "Per-hit rounding",
      "Final Damage"
     ]
    }
@@ -994,15 +998,15 @@
    "matk_max": 3
   },
   "result": {
-   "dps": 2219.273,
+   "dps": 2218.453,
    "dps_valid": true,
    "hit_chance": 88,
    "crit_chance": 0,
    "period_ms": 1073,
    "normal": {
-    "min": 2706,
-    "max": 2706,
-    "avg": 2706,
+    "min": 2705,
+    "max": 2705,
+    "avg": 2705,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -1021,6 +1025,7 @@
      "Card Fix",
      "Final Rate Bonus (Long)",
      "Final Rate Bonus (Weapon)",
+     "Per-hit rounding",
      "Final Damage"
     ]
    }
@@ -1408,7 +1413,7 @@
    "matk_max": 6
   },
   "result": {
-   "dps": 330.224,
+   "dps": 329.928,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 7.6,
@@ -1465,9 +1470,9 @@
    },
    "proc_branches": {
     "triple_attack": {
-     "min": 481,
-     "max": 481,
-     "avg": 481,
+     "min": 480,
+     "max": 480,
+     "avg": 480,
      "steps": [
       "Status BATK",
       "Weapon ATK",
@@ -1485,6 +1490,7 @@
       "Card Fix",
       "Final Rate Bonus (Short)",
       "Final Rate Bonus (Weapon)",
+      "Per-hit rounding",
       "Final Damage"
      ]
     }
@@ -1849,15 +1855,15 @@
    "matk_max": 106
   },
   "result": {
-   "dps": 212.901,
+   "dps": 212.567,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 0,
    "period_ms": 2992,
    "normal": {
-    "min": 637,
-    "max": 637,
-    "avg": 637,
+    "min": 636,
+    "max": 636,
+    "avg": 636,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -1876,6 +1882,7 @@
      "Card Fix",
      "Final Rate Bonus (Short)",
      "Final Rate Bonus (Weapon)",
+     "Per-hit rounding",
      "Final Damage"
     ]
    }
@@ -2755,15 +2762,15 @@
    "matk_max": 36
   },
   "result": {
-   "dps": 832,
+   "dps": 830,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 0,
    "period_ms": 1000,
    "normal": {
-    "min": 127,
-    "max": 1538,
-    "avg": 832,
+    "min": 126,
+    "max": 1536,
+    "avg": 830,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -2781,6 +2788,7 @@
      "Card Fix",
      "Final Rate Bonus (Short)",
      "Final Rate Bonus (Weapon)",
+     "Per-hit rounding",
      "Final Damage"
     ]
    }
@@ -2885,15 +2893,15 @@
    "matk_max": 1
   },
   "result": {
-   "dps": 3602,
+   "dps": 3598,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 0,
    "period_ms": 1000,
    "normal": {
-    "min": 770,
-    "max": 6719,
-    "avg": 3602,
+    "min": 768,
+    "max": 6714,
+    "avg": 3598,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -2912,6 +2920,7 @@
      "Card Fix",
      "Final Rate Bonus (Short)",
      "Final Rate Bonus (Weapon)",
+     "Per-hit rounding",
      "Final Damage"
     ]
    }
@@ -2938,7 +2947,7 @@
    "matk_max": 1
   },
   "result": {
-   "dps": 460.997,
+   "dps": 459.196,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 3,
@@ -2994,9 +3003,9 @@
     ]
    },
    "double_hit": {
-    "min": 393,
-    "max": 435,
-    "avg": 414,
+    "min": 392,
+    "max": 434,
+    "avg": 412,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -3015,6 +3024,7 @@
      "Card Fix",
      "Final Rate Bonus (Long)",
      "Final Rate Bonus (Weapon)",
+     "Per-hit rounding",
      "Final Damage"
     ]
    }
