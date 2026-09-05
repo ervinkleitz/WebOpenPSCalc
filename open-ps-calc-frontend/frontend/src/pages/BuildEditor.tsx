@@ -2917,9 +2917,11 @@ export default function BuildEditor() {
                             </label>
                           </div>
                         )}
-                        {isMonkLine && (
+                        {!isGunslinger && (
                           <div className="field" key="__spirit_spheres">
-                            <label title="Active spirit spheres: each adds +3 ATK to all Monk/Champion attacks — auto-attacks, combos, and Asura Strike (where it's amplified by ×(8 + SP/10)). Max 5 (Monk) / 15 (Champion).">
+                            <label title={isMonkLine
+                              ? "Active spirit spheres: each adds +3 ATK to every attack — auto-attacks, combos, and Asura Strike (where it's amplified by ×(8 + SP/10)). Max 5 (Monk) / 15 (Champion)."
+                              : "Spirit spheres on a non-Monk: each adds +3 ATK to every hit, ignoring the target's DEF. You can hold up to 5 — a Monk hands them over with Ki Translation (recipients cap at 5), and the Greatest General Card gains them on a physical attack. Gunslingers are the exception: they cannot be given spheres, and use coins instead."}>
                               Spirit spheres (0–{maxSpheres})
                             </label>
                             <input

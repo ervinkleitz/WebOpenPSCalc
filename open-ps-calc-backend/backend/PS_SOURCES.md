@@ -6252,6 +6252,30 @@ Cracked Buckler 100, Carapace of the Damned 120. Neo Valkyrie Shield really does
 `Weight:` out of the description - the API exposes descriptions, not scripts, and this is
 one of the things the description reliably carries. Pinned in `engine-units.test.js`.
 
+## 2026-09-04 - Spirit spheres are not Monk-only (wiki + item API)
+
+A player asked for spheres off the Monk line and named both routes; each checks out.
+
+**Ki Translation** (wiki.payonstories.com/Ki_Translation):
+
+> Transfers one of your existing Spirit Spheres to a neutral or friendly player. The
+> recipient cannot have more than 5 spheres at a time, and if you do not have any spheres
+> yourself, the skill will fail. **Gunslingers cannot be bestowed upon.**
+
+**Greatest General Card** (4283, live item API): *"Add the chance of gaining Spirit Sphere
+**or Coin** when doing Physical Attack. If worn by Acolyte Class character, the chance is
+increased."* Scripted `bonus3 bAutoSpell,MO_CALLSPIRITS,5,2+18*(BaseClass==Job_Acolyte)` -
+Call Spirits **Lv5**, so this route tops out at the same 5.
+
+So: **5 spheres on any class off the Monk line**, the Monk line keeps its own cap, and
+**Gunslingers are excluded outright rather than capped** - they cannot receive spheres at
+all, and the card's own wording hands them a coin where anyone else gets a sphere. Coins
+are already modelled at the same +3 ATK each.
+
+Worth noting the cap did not come from the request: the player asked only for the feature
+and the Gunslinger exception. The 5 came from reading the skill page, and it happens to
+match what the card can produce - two independent sources landing on the same number.
+
 ## Conventions
 
 - **Provisional ids live in a reserved `95xxx` block** with a `_comment_95xxx` note, for

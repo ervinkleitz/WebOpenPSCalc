@@ -819,6 +819,51 @@ test("shield weights match the live item API", () => {
   }
 });
 
+// Spirit spheres are not Monk-only. A player asked for them off the Monk line and named
+// both routes; Payon Stories' own pages confirm each:
+//   Ki Translation — "Transfers one of your existing Spirit Spheres to a neutral or
+//   friendly player. The recipient cannot have more than 5 spheres at a time...
+//   Gunslingers cannot be bestowed upon."
+//   Greatest General Card — "gaining Spirit Sphere or Coin when doing Physical Attack",
+//   scripted as bonus3 bAutoSpell,MO_CALLSPIRITS,5 — Call Spirits Lv5, so also 5.
+// Hence: 5 off the Monk line, and Gunslingers excluded outright rather than capped.
+test("spirit spheres apply to any class except Gunslinger, capped at 5 off the Monk line", () => {
+  const cfg = createBattleConfig();
+  const dmg = (job_id, flags) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 1, int: 1, dex: 60, luk: 1 },
+      equipped: { right_hand: 1101 }, mastery_levels: {}, flags,
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
+    return new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1002), eff, gb,
+    ).normal.avg_damage;
+  };
+
+  // Each sphere is +3 flat, so five is +15 — on the Monk line and off it alike.
+  for (const [job, name] of [[7, "Knight"], [11, "Hunter"], [15, "Monk"], [4016, "Champion"]]) {
+    const gain = dmg(job, { spirit_spheres: 5 }) - dmg(job, { spirit_spheres: 0 });
+    assert.strictEqual(gain, 15, `${name} should gain +15 ATK from 5 spheres, got +${gain}`);
+  }
+
+  // Off the Monk line the cap is 5, so asking for more changes nothing.
+  assert.strictEqual(
+    dmg(7, { spirit_spheres: 10 }), dmg(7, { spirit_spheres: 5 }),
+    "a non-Monk asking for 10 spheres must clamp to 5",
+  );
+  // A Champion really can hold more than 5.
+  assert.ok(
+    dmg(4016, { spirit_spheres: 15 }) > dmg(4016, { spirit_spheres: 5 }),
+    "the Monk line is not capped at 5",
+  );
+
+  // Gunslingers cannot be bestowed upon — spheres do nothing, coins are unaffected.
+  const gsBase = dmg(24, { spirit_spheres: 0, gs_coins: 0 });
+  assert.strictEqual(dmg(24, { spirit_spheres: 5 }), gsBase, "a Gunslinger must not gain from spheres");
+  assert.strictEqual(dmg(24, { gs_coins: 10 }) - gsBase, 30, "a Gunslinger's coins are still +3 each");
+});
+
 test("Momoe's Hairband gives +20% vs Turtle Island turtles, nothing vs others", () => {
   const cfg = createBattleConfig();
   const dmg = (hat, mobId) => {

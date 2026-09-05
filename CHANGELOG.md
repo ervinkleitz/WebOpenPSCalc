@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-04
+
+### Added
+
+- **Spirit spheres now work on any class, not just Monks.** Requested by a player who
+  pointed out two ways other classes get them: a Monk can hand spheres over with Ki
+  Translation, and the Greatest General Card gains them on a physical attack. Each sphere
+  is +3 ATK on every hit, ignoring the target's DEF, the same as it has always been for
+  Monks — five of them is +15. Off the Monk line the cap is **5**, which is what Ki
+  Translation allows a recipient to hold and also what the card's Call Spirits Lv5 can
+  produce. **Gunslingers are the exception** and can't be given spheres at all — the skill
+  page says so outright, and coins are already their equivalent at the same +3 each.
+
 ## 2026-09-02
 
 ### Fixed

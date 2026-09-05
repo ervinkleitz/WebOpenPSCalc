@@ -58,6 +58,20 @@ function calculateForgeBonus(weapon, div, pmf, result) {
  * all: holding 10 was worth +30 ATK per hit and the calculator showed no change.
  * Reported by a player.
  */
+// Spheres are not Monk-only. Two routes put them on any other class, both reported by
+// a player and both confirmed against Payon Stories' own pages:
+//
+//   Ki Translation — "Transfers one of your existing Spirit Spheres to a neutral or
+//   friendly player. The recipient cannot have more than 5 spheres at a time...
+//   Gunslingers cannot be bestowed upon." (wiki.payonstories.com/Ki_Translation)
+//
+//   Greatest General Card — "Add the chance of gaining Spirit Sphere or Coin when doing
+//   Physical Attack", i.e. `bonus3 bAutoSpell,MO_CALLSPIRITS,5,...` on a hit. Call
+//   Spirits Lv5, so it tops out at the same 5.
+//
+// Hence the 5 cap off the Monk line, and hence Gunslingers being excluded rather than
+// merely capped: they cannot receive spheres at all, and coins are their equivalent —
+// the card's own text gives them a coin where it would give anyone else a sphere.
 function ballCount(build) {
   if (MONK_LINE_JOBS.has(build.job_id)) {
     return { n: Math.max(0, Math.min(15, build.spirit_spheres || 0)), label: "sphere" };
@@ -65,7 +79,7 @@ function ballCount(build) {
   if (build.job_id === GUNSLINGER_JOB) {
     return { n: Math.max(0, Math.min(10, build.gs_coins || 0)), label: "coin" };
   }
-  return { n: 0, label: "sphere" };
+  return { n: Math.max(0, Math.min(5, build.spirit_spheres || 0)), label: "sphere" };
 }
 
 function calculateSpiritSphereBonus(build, div, pmf, result) {
