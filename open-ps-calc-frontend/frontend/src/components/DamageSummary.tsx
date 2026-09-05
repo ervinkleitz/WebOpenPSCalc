@@ -426,19 +426,21 @@ function TripleAttackView({ branch, chance, label }: { branch: DamageBranch; cha
 // and folded it into the DPS, but nothing on screen said so, so a player with
 // Double Attack 10 saw no evidence it counted and reported it as not implemented.
 // Sidewinder Card feeds the same proc through bDoubleRate, on any weapon.
-function DoubleAttackView({ branch, chance, label, taChance, normalAvg }: {
-  branch: DamageBranch; chance: number; label: string; taChance: number; normalAvg: number;
+// Double Attack (Thief line, dagger) / Chain Action (Gunslinger, revolver) — a
+// per-level chance for a normal attack to land TWICE. It is one attack that hits twice,
+// not two attacks: the damage roll is taken once and doubled before defense, so the DEF
+// subtraction, the refine bonus and the masteries are each paid once for the pair. That
+// is why two hits come to less than two normal attacks, and why the client's two numbers
+// are each below a normal hit — it splits the total.
+function DoubleAttackView({ branch, chance, label, taChance }: {
+  branch: DamageBranch; chance: number; label: string; taChance: number;
 }) {
-  // Weapon masteries land once per attack, not once per hit, so the extra hit comes in
-  // below a normal one — by exactly the masteries. When the build has no applicable
-  // mastery the two are identical and a full breakdown would just repeat the one above
-  // it, which is how this panel was first reported as a bug; so show the pipeline only
-  // when it actually says something different.
-  const differs = Math.round(branch.avg_damage) !== Math.round(normalAvg);
   const n = (v: number) => Math.round(v).toLocaleString();
   const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
     ? `${n(branch.min_damage)}–${n(branch.max_damage)}`
     : n(branch.avg_damage);
+  // What the game prints per hit: it shows the total split in two, rounded down.
+  const perHit = Math.floor(branch.avg_damage / 2);
   return (
     <div className="breakdown-view">
       <div className="breakdown-head">
@@ -450,22 +452,19 @@ function DoubleAttackView({ branch, chance, label, taChance, normalAvg }: {
           {(chance * (1 - taChance / 100)).toFixed(1)}% per auto-attack
         </span>
       </div>
-      {differs ? (
-        <PipelineView steps={branch.steps} hideFinal />
-      ) : (
-        <div className="dw-same-as-normal">
-          This build has no mastery that applies here, so the extra hit comes out the same
-          as a normal attack.
-        </div>
-      )}
+      <PipelineView steps={branch.steps} hideFinal />
       <div className="breakdown-total">
-        <span className="breakdown-total-label">Extra hit damage</span>
+        <span className="breakdown-total-label">Both hits together</span>
         <span className="breakdown-total-val">{range}</span>
       </div>
+      <div className="dw-same-as-normal">
+        The game shows this as two hits of about {perHit.toLocaleString()} — it splits the
+        total rather than rolling each hit on its own.
+      </div>
       <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
-        <span className="self-damage-chip muted">adds a second hit</span>
+        <span className="self-damage-chip muted">one damage roll, landed twice</span>
         <span className="self-damage-chip muted">
-          weapon masteries count once per attack, so the extra hit skips them
+          DEF, refine and masteries are paid once for the pair
         </span>
         {taChance > 0 && (
           <span className="self-damage-chip muted">
@@ -479,10 +478,6 @@ function DoubleAttackView({ branch, chance, label, taChance, normalAvg }: {
   );
 }
 
-// Card autocast on a physical attack (`bonus3 bAutoSpell,...`) — Pirate Skel Card's
-// auto-Mammonite, Rekenber Mercenary Card's auto-Bash. The proc rides on the swing
-// with no extra attack time, so its expected value is already inside the DPS above;
-// this panel shows what one proc actually hits for, and what it contributes.
 function CardAutocastView({ branch, chance, label, dpsAdded }: {
   branch: DamageBranch; chance: number; label: string; dpsAdded: number | null;
 }) {
@@ -1097,7 +1092,6 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           chance={doubleHit.chance}
           label={doubleHit.label}
           taChance={normal_attack.result.ta_proc_chance ?? 0}
-          normalAvg={normal_attack.result.normal?.avg_damage ?? 0}
         />
       )}
 

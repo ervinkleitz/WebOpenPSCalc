@@ -2938,7 +2938,7 @@
    "matk_max": 1
   },
   "result": {
-   "dps": 459.196,
+   "dps": 460.997,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 3,
@@ -2994,9 +2994,9 @@
     ]
    },
    "double_hit": {
-    "min": 196,
-    "max": 217,
-    "avg": 206,
+    "min": 393,
+    "max": 435,
+    "avg": 414,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -3006,9 +3006,11 @@
      "Overrefine Bonus",
      "Base Damage",
      "Skill Ratio (Normal attack)",
+     "Multi-hit split",
      "Defense Fix",
      "Active Status Bonuses",
      "Refine Bonus",
+     "Mastery Fix",
      "Attr Fix",
      "Card Fix",
      "Final Rate Bonus (Long)",

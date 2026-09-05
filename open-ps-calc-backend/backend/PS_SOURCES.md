@@ -6177,6 +6177,30 @@ Sidewinder 1/5, Snake Head Hat 5/25. The ratio is exact in all four, which only 
 as **one** effect written twice: the skill for daggers, the flat bonus for every other weapon.
 They are alternatives, not cumulative. Adding them made a Sidewinder dagger read 19%.
 
+## 2026-09-02 - A Double Attack is ONE attack that lands twice (in-game numbers)
+
+Hercules takes the damage roll once and multiplies it by `div_` **before defense**, so
+everything below that point is paid once for the whole attack however many hits land: the
+DEF subtraction, the refine bonus, the masteries. Anything above it - the weapon roll,
+status ATK, spirit spheres - is per hit.
+
+A player supplied numbers precise enough to pin it. Rogue, Knife, Sword Mastery 10, vs a
+Lunatic: base 180, soft DEF -3, mastery +40.
+
+| | calculation | result |
+|---|---|---|
+| One hit | 180 - 3 + 40 | **217** - matches the game |
+| Two hits | 2x180 - 3 + 40 | **397**, shown as 198 + 198 - matches the game |
+| What we did before | 217 + (180 - 3) | 394 - short by 3 |
+
+The client prints `total / hits` rounded down, which is why both numbers come in under a
+normal attack and why the player reads 396 for a 397 hit. It also explains the two earlier
+observations from the same player, which we had modelled one at a time: masteries "counted
+once" (they are below the split) and spirit spheres "counted twice" (they are above it).
+
+The lesson for the next multi-hit mechanic: do not compose it out of separately calculated
+attacks. Multiply before defense and let one pipeline run.
+
 ## 2026-09-02 - Elemental Change keeps the monster's element LEVEL (in-game, via a player)
 
 The wiki is wrong on this one. wiki.payonstories.com/Elemental_Change says:

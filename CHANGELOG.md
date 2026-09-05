@@ -9,6 +9,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Double Attack damage was a few points short, because it was being worked out as two
+  separate attacks.** It's one attack that lands twice: the game takes the damage roll
+  once and doubles it *before* defense, so your target's DEF, your refine bonus and your
+  masteries are each paid once for the pair rather than twice. A player gave numbers exact
+  enough to prove it — on their Rogue a single hit is 217 in game and in the calculator,
+  while two hits are 397 in game (shown as 198 + 198) where the calculator said 394. It
+  now follows the same order the game does, and the breakdown shows the doubling as its
+  own step so you can see where it happens. This also supersedes yesterday's separate
+  fixes for masteries counting once and spirit spheres counting twice — both fall out of
+  the same rule, which is that the split happens before defense.
+
 - **Four shields had the wrong weight, which was costing Shield Boomerang damage.** A CC
   reported two of them — Herald of God weighs 250, not the 160 we inherited from its
   vanilla counterpart, and Stone Discus weighs 150 where we carried no weight at all. That

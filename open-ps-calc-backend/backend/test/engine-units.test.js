@@ -709,7 +709,7 @@ test("Double Attack's +HIT applies only to the swing that procs", () => {
 
   // The doubled branch is the one paying twice the single-hit damage.
   const single = r.attacks.find((a) => Math.abs(a.avg_damage - r.normal.avg_damage) < 1e-6);
-  const doubled = r.attacks.find((a) => Math.abs(a.avg_damage - r.normal.avg_damage * 2) < 1e-6);
+  const doubled = r.attacks.find((a) => r.double_hit && Math.abs(a.avg_damage - r.double_hit.avg_damage) < 1e-6);
   assert.ok(single && doubled, "could not find the single and doubled branches");
 
   // Single swings roll at the base hit chance...
@@ -722,46 +722,43 @@ test("Double Attack's +HIT applies only to the swing that procs", () => {
   );
 });
 
-// Weapon masteries land ONCE PER ATTACK, not once per hit: they are added after DEF,
-// to the attack's total, so a two-hit swing does not collect them twice. Reported from
-// in-game observation — "DA only counts masteries once, which means the individual hits
-// from DA are a little bit lower DMG than a regular AA" — alongside the observation that
-// spirit sphere damage IS counted twice, which fits, since sphere ATK rides in the base
-// damage ahead of the split. No golden covered this: not one of them has both a double
-// attack proc and a mastery that applies.
-test("Double Attack's extra hit skips masteries, which count once per attack", () => {
+// A Double Attack is ONE attack that lands twice, not two attacks. Hercules takes the
+// damage roll once and multiplies it by div_ BEFORE defense, so the DEF subtraction, the
+// refine bonus and the masteries are each paid once for the pair — which is why the two
+// displayed hits come in under a normal attack, while spirit spheres (which ride in the
+// base damage, ahead of the split) are counted twice.
+//
+// Pinned against real in-game numbers a player supplied (2026-09-02): base 180, soft DEF
+// -3, Sword Mastery +40. One hit is 217 in game and here. Two hits are 2x180 - 3 + 40 =
+// 397, which the client renders as 198 + 198. Calculating a second hit separately gave
+// 217 + 177 = 394 and was short.
+test("a Double Attack is one roll doubled before DEF, not two separate attacks", () => {
   const cfg = createBattleConfig();
-  // Monk vs Zombie: Iron Fist applies to the knuckle, Demon Bane applies to Undead.
   const b = buildFromSaveSchema({
-    server: "payon_stories", job_id: 15, base_level: 99, job_level: 50,
-    base_stats: { str: 90, agi: 90, vit: 1, int: 1, dex: 50, luk: 1 },
-    equipped: { right_hand: 1801, right_hand_card1: 4117 },
-    mastery_levels: { MO_IRONHAND: 10, AL_DEMONBANE: 10 },
+    server: "payon_stories", job_id: 17, base_level: 99, job_level: 50,
+    base_stats: { str: 80, agi: 89, vit: 12, int: 10, dex: 53, luk: 1 },
+    equipped: { right_hand: 1202 }, clan: "vile_wind_clan",
+    mastery_levels: { SM_SWORD: 10, TF_DOUBLE: 10, TF_MISS: 10 },
   });
   const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, getProfile("payon_stories"));
   const r = new BattlePipeline(cfg).calculate(
-    status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1015), eff, gb,
+    status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1063), eff, gb,
   );
+
+  assert.strictEqual(r.normal.avg_damage, 217, "single hit should match the game's 217");
   assert.ok(r.double_hit, "this build should proc Double Attack");
+  assert.strictEqual(r.double_hit.avg_damage, 397,
+    "the doubled swing is 2x180 - 3 + 40; 394 means the second hit is being calculated separately again");
 
-  // The first hit carries the masteries and the extra hit does not.
-  const masterySteps = (branch) => branch.steps.filter((x) => x.name.startsWith("Mastery Fix"));
-  assert.ok(masterySteps(r.normal).length > 0, "the normal hit should carry masteries");
-  assert.deepEqual(masterySteps(r.double_hit), [], "the extra hit must not re-apply masteries");
-  assert.ok(
-    r.double_hit.avg_damage < r.normal.avg_damage,
-    `extra hit (${r.double_hit.avg_damage}) should land below a normal hit (${r.normal.avg_damage})`,
-  );
+  // The swing must be under two full normal attacks — DEF and mastery are paid once.
+  assert.ok(r.double_hit.avg_damage < r.normal.avg_damage * 2,
+    "two hits must cost less than two whole attacks");
 
-  // ...and the doubled swing in the DPS pays first + second, not twice the first.
-  const doubled = r.attacks.find(
-    (a) => Math.abs(a.avg_damage - (r.normal.avg_damage + r.double_hit.avg_damage)) < 1e-6,
-  );
-  assert.ok(doubled, "the doubled swing should pay normal + extra, not normal x 2");
-  assert.ok(
-    !r.attacks.some((a) => Math.abs(a.avg_damage - r.normal.avg_damage * 2) < 1e-6),
-    "no branch should still be paying twice the full normal hit",
-  );
+  // ...and the DPS pays the swing total, not normal x 2 nor normal + a second branch.
+  assert.ok(r.attacks.some((a) => Math.abs(a.avg_damage - r.double_hit.avg_damage) < 1e-6),
+    "the DPS should pay the doubled swing's own total");
+  assert.ok(!r.attacks.some((a) => Math.abs(a.avg_damage - r.normal.avg_damage * 2) < 1e-6),
+    "no branch should still pay twice the full normal hit");
 });
 
 // Triple Attack REPLACES the swing; Double Attack ADDS a hit. A swing that became a
