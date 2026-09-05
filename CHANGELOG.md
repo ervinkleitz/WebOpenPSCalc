@@ -9,6 +9,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Fixes now reach you without a hard refresh.** The page itself was served with no
+  caching instructions, so browsers held on to an old copy by guesswork — while each
+  deploy deletes the old code files that copy points at. After every update, players
+  could keep seeing the previous version for hours, or a blank page once their cached
+  files expired. This is why several already-fixed bugs got re-reported as still broken
+  minutes after the fix went out. The page now revalidates on every load (a cheap
+  check, not a re-download) and the versioned code files cache for a year, which is
+  the standard arrangement. One last hard refresh (Ctrl+Shift+R) may be needed to pick
+  this change up; after that, none should ever be needed again.
+
 - **Multi-hit totals now read "total (hits × per-hit)" — and never print a multiplication
   that doesn't hold.** A player suggested the format, and then caught its flaw within the
   hour: "397 (2 × 198)" asserts an equation that fails, because an odd total doesn't

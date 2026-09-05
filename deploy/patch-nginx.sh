@@ -114,6 +114,52 @@ else
   echo "nginx: SPA catch-all replaced with real 404s"
 fi
 
+# ---------------------------------------------------------------------------
+# 3. SPA cache headers
+#
+# index.html was served with NO Cache-Control at all, so browsers cached it
+# heuristically - while every deploy DELETES the old hashed bundles it references.
+# Result, after each deploy: players with a stale index.html either kept seeing the
+# previous version for hours (stale JS still in their browser cache) or got a blank
+# page (old bundle evicted, server 404s it). Players repeatedly reported already-fixed
+# bugs as still broken minutes after a deploy because of this.
+#
+# The standard SPA contract: index.html revalidates on every load (no-cache does NOT
+# mean "don't store" - it means "check with the server first", a cheap 304 when
+# unchanged), and the content-hashed /assets/ are immutable for a year.
+# ---------------------------------------------------------------------------
+if grep -q 'SPA-CACHE-HEADERS' "$LIVE"; then
+  echo "nginx: SPA cache headers already present, skipping"
+else
+  sudo awk '
+    /^[[:space:]]*location = \/ \{/ || /^[[:space:]]*location = \/stats \{/ {
+      print
+      if (!announced) {
+        print "        # SPA-CACHE-HEADERS: the entry point must revalidate, its hashed assets never need to."
+        announced = 1
+      }
+      print "        add_header Cache-Control \"no-cache\";"
+      next
+    }
+    { print }
+  ' "$LIVE" | sudo tee "$LIVE.tmp" > /dev/null
+  sudo mv "$LIVE.tmp" "$LIVE"
+
+  # The /assets/ block may not exist yet; add it after the /api/ block if missing.
+  if ! grep -q 'location /assets/' "$LIVE"; then
+    ASSETS_BLOCK='
+    location /assets/ {
+        # Content-hashed filenames: a changed file is a new URL, so cache forever.
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }'
+    sudo awk '/location \/api\//{found=1} found && /^    \}/{print; print BLOCK; found=0; next} 1'       BLOCK="$ASSETS_BLOCK" "$LIVE" | sudo tee "$LIVE.tmp" > /dev/null
+    sudo mv "$LIVE.tmp" "$LIVE"
+  fi
+  CHANGED=1
+  echo "nginx: SPA cache headers added"
+fi
+
 if [ "$CHANGED" -eq 0 ]; then
   echo "nginx: nothing to patch"
   exit 0
