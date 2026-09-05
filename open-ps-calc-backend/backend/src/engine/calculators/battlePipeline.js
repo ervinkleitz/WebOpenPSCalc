@@ -1610,6 +1610,12 @@ class BattlePipeline {
       pmf = calculateCritAtkRate(build, pmf, result, { weapon, profile, skill, gb: gearBonuses });
     }
 
+    // Effective hits in this branch: the skill's own count times the proc doubling.
+    // Display-only — the damage math above and below is unchanged; the panel uses it
+    // to render totals as "total (hits x per-hit)", which is how the game's popups
+    // present them.
+    result.num_hits = hitCount * divMultiplier;
+
     // Multi-hit split. Hercules computes ONE damage roll and multiplies it by div_
     // here — before defense — so everything below applies to the attack's TOTAL rather
     // than to each hit: the DEF subtraction, the refine bonus and the masteries are all

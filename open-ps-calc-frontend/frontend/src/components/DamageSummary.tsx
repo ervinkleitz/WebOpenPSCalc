@@ -37,6 +37,7 @@ interface SelfDamage {
 }
 
 interface DamageBranch {
+  num_hits?: number;
   avg_damage: number;
   min_damage: number;
   max_damage: number;
@@ -455,14 +456,17 @@ function DoubleAttackView({ branch, chance, label, taChance }: {
       <PipelineView steps={branch.steps} hideFinal />
       <div className="breakdown-total">
         <span className="breakdown-total-label">Both hits together</span>
-        <span className="breakdown-total-val">{range}</span>
+        <span className="breakdown-total-val">
+          {range}
+          <span className="dw-per-hit"> (2 × {perHit.toLocaleString()})</span>
+        </span>
       </div>
-      <div className="dw-same-as-normal">
-        The game shows this as two hits of {perHit.toLocaleString()} each — it splits the
-        total and rounds each popup down, so an odd total is real damage even though the
-        two numbers on screen add up to one point less. The server deals the full amount;
-        only the popups are rounded.
-      </div>
+      {Math.round(branch.avg_damage) % 2 !== 0 && (
+        <div className="dw-same-as-normal">
+          The popups round down, so on screen the two hits add to one point less than the
+          damage actually dealt — the odd point still lands.
+        </div>
+      )}
       <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
         <span className="self-damage-chip muted">one damage roll, landed twice</span>
         <span className="self-damage-chip muted">
@@ -1060,6 +1064,14 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
               <span className="breakdown-total-label">Final damage</span>
               <span className="breakdown-total-val">
                 {finalRange ? `${nfmt(killMin!)}–${nfmt(killMax!)}` : nfmt(killAvg)}
+                {/* Multi-hit skills land as N popups of total/N each — say so in the
+                    "total (N x per-hit)" form a player suggested, instead of leaving the
+                    total to be mistaken for a single hit. */}
+                {(activeDamage?.num_hits ?? 1) > 1 && (
+                  <span className="dw-per-hit">
+                    {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killAvg / activeDamage!.num_hits))})
+                  </span>
+                )}
               </span>
             </div>
           )}

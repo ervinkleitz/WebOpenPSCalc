@@ -387,6 +387,7 @@ function createDamageResult(overrides = {}) {
     avg_damage: 0,
     crit_chance: 0.0,
     hit_chance: 0.0,
+    num_hits: 1, // effective hits this branch represents (skill hit count x proc doubling); display-only
     steps: [],
     pmf: {},
     ...overrides,

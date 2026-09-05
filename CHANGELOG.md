@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Multi-hit totals now read "total (hits × per-hit)"** — a player's suggestion, adopted
+  as given. The Double Attack panel shows "397 (2 × 198)" and a Double Strafe's final
+  damage shows "433–483 (2 × 228)", so a total is never mistaken for a single hit and the
+  on-screen popups are recognizable at a glance. The note about the rounding quirk now
+  appears only when the total is actually odd, where it earns its space.
+
 - **Dancers couldn't equip their own whips — or Buckler, or 68 other items.** Reported as
   "Buckler can't be equipped on Dancer (and Gypsy)", and the cause ran much deeper: Bard
   and Dancer (and Clown and Gypsy) share a single job flag in the game's data, split by
