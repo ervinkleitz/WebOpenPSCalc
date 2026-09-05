@@ -9,6 +9,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Dancers couldn't equip their own whips — or Buckler, or 68 other items.** Reported as
+  "Buckler can't be equipped on Dancer (and Gypsy)", and the cause ran much deeper: Bard
+  and Dancer (and Clown and Gypsy) share a single job flag in the game's data, split by
+  character gender, and the conversion to the calculator's format kept only the male half.
+  Seventy gender-neutral items listed Bard but not Dancer — every whip in the game, five
+  bows including Ballista, and thirty-one armors and accessories (Buckler, Helm of Angel,
+  the Diabolus set, Ring of Flame Lord…). All fixed: shared items now list all four
+  classes, whips belong to Dancer and Gypsy alone (Bards wrongly had them before), and
+  instruments stay Bard-only as they were. A test now holds the pairs symmetric so a
+  future data refresh can't quietly split them again.
+
 - **Spirit spheres and Star Crumbs count per hit again inside a Double Attack.** The
   swing rework two days ago made a double attack one calculation instead of two — which
   fixed masteries and DEF — but left the sphere and forge bonuses keyed to the skill's

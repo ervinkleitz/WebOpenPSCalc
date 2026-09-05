@@ -921,6 +921,33 @@ test("Super Novice Fury chant is a flat +50 CRIT, SN only", () => {
     "sn_fury must do nothing for any other job");
 });
 
+// Bard/Dancer (19/20) and Clown/Gypsy (4020/4021) share ONE job bit in Hercules,
+// split by character gender. The bitmask-to-array conversion expanded that bit to the
+// male ids only, so 70 gender-neutral items — Buckler among them, which is how a player
+// found it — listed Bard but not Dancer, and every whip in the game was equippable by
+// Bards and not by Dancers. The rule pinned here: a gender-neutral item that lists one
+// half of a pair must list the other; whips are the female pair's weapon and must list
+// neither male id; male-locked items (instruments) stay male.
+test("Bard/Dancer job pairs are symmetric in the vanilla item data", () => {
+  const db = JSON.parse(require("fs").readFileSync(
+    require("path").join(__dirname, "..", "src", "engine", "data", "pre-re", "db", "item_db.json"), "utf8"));
+  const items = Object.values(db.items || db);
+  const bad = [];
+  for (const it of items) {
+    if (!Array.isArray(it.job) || it.job.length === 0) continue;
+    const j = new Set(it.job);
+    if (it.weapon_type === "Whip") {
+      if (j.has(19) || j.has(4020)) bad.push(`${it.id} ${it.name}: a whip listing Bard/Clown`);
+      if (!j.has(20)) bad.push(`${it.id} ${it.name}: a whip a Dancer cannot equip`);
+      continue;
+    }
+    if (it.gender === "SEX_MALE") continue;
+    if (j.has(19) !== j.has(20)) bad.push(`${it.id} ${it.name}: Bard/Dancer asymmetric`);
+    if (j.has(4020) !== j.has(4021)) bad.push(`${it.id} ${it.name}: Clown/Gypsy asymmetric`);
+  }
+  assert.deepEqual(bad, []);
+});
+
 test("Momoe's Hairband gives +20% vs Turtle Island turtles, nothing vs others", () => {
   const cfg = createBattleConfig();
   const dmg = (hat, mobId) => {
