@@ -3506,6 +3506,29 @@ test("proof potions: +20% resist to their element, -15% to the counter, and they
     "Fireproof + Earthproof must net a 5% cut on a Fire hit");
 });
 
+// A monster casting above the player cap must be priced at ITS level, not clamped
+// to 10 — Mistress's Jupitel Thunder is Lv28 in mob_skill_db, and the clamp priced
+// her 30-hit cast as 12 hits (reported by a player: "I think it might be calculated
+// as lv 10"). Hercules skill_split_atoi extends per-level db arrays past their last
+// row by continuing the last two rows' arithmetic progression — JT's hits 3,4,…,12
+// keep climbing, so Lv28 is 2 + 28 = 30 hits.
+test("a mob's over-cap skill level is honored — Mistress's Jupitel Thunder is Lv28, 30 hits", () => {
+  const { resolveMobSkillDamage } = require("../src/engine/mobSkillRatios");
+  const PSp = getProfile("payon_stories");
+  loader.setProfile(PSp);
+  const mob = loader.getMonsterData(1059); // Mistress
+
+  const s = resolveMobSkillDamage(84, 28, PSp, mob); // WZ_JUPITEL at the db level
+  assert.equal(s.level, 28, "the cast level must survive, not clamp to max_level 10");
+  assert.equal(s.hits, 30, "hits extend the 3..12 progression to 2+28");
+  assert.equal(s.elementInt, 4, "element array extends by repeating the last row (Wind)");
+  assert.ok(s.hasNumber, "still priced");
+
+  // In-range levels read the arrays exactly as before.
+  assert.equal(resolveMobSkillDamage(84, 10, PSp, mob).hits, 12, "lv10 unchanged");
+  assert.equal(resolveMobSkillDamage(84, 5, PSp, mob).hits, 7, "lv5 unchanged");
+});
+
 // Hercules floors a hit at 1 right after DEF/MDEF (battle.c:4270 magic, :6068
 // physical) and never re-floors after the element/card resists that follow — so a
 // hit ground down to 1 that then meets ANY resist mod floors to a genuine 0. The

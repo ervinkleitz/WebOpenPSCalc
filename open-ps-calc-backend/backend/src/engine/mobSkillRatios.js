@@ -200,7 +200,151 @@ const FLAT_UNMODELED_SKILLS = new Set([
   "NPC_SMOKING",          // md.damage = 3 (negligible; also self-targeted)
 ]);
 
+
+// ---------------------------------------------------------------------------
+// resolveMobSkillDamage — moved here from routes/calculate.ts (2026-09-08) so
+// it is unit-testable from the plain-node test suite (the routes are TS).
+// Lazy requires below dodge the require cycle with battlePipeline/skillRatio.
+// ---------------------------------------------------------------------------
+const { loader } = require("./dataLoader");
+
+const ELE_NAME_TO_INT = {
+  Ele_Neutral: 0, Ele_Water: 1, Ele_Earth: 2, Ele_Fire: 3, Ele_Wind: 4,
+  Ele_Poison: 5, Ele_Holy: 6, Ele_Dark: 7, Ele_Ghost: 8, Ele_Undead: 9,
+};
+function resolveMobSkillDamage(skillId, level, profile, mob) {
+  const sk = loader.getSkill(skillId);
+  if (!sk) return null;
+  // Do NOT clamp to the player max_level: monsters routinely cast above it —
+  // Mistress's Jupitel Thunder is Lv28 in mob_skill_db, and clamping to 10 priced
+  // her 30-hit cast as a 12-hit one (reported by a player). Hercules reads
+  // per-level db arrays past their last row via skill_split_atoi semantics: a
+  // higher level continues the arithmetic progression of the last two rows
+  // (numbers) or repeats the last row (strings) — JT's hits 3,4,…,12 extend to
+  // 13,14,… so Lv28 is 2+28 = 30 hits. `atLv` below reproduces exactly that.
+  const lv = Math.max(1, level || 1);
+  const atLv = (arr) => {
+    if (!Array.isArray(arr)) return arr;
+    if (arr.length === 0) return undefined;
+    if (lv <= arr.length) return arr[lv - 1];
+    const last = arr[arr.length - 1];
+    if (typeof last !== "number" || arr.length < 2 || typeof arr[arr.length - 2] !== "number") return last;
+    return last + (last - arr[arr.length - 2]) * (lv - arr.length);
+  };
+  const attackType = sk.attack_type; // "Magic" | "Weapon" | "Misc"
+  const eleName = Array.isArray(sk.element) ? atLv(sk.element) : sk.element;
+  const elementInt = ELE_NAME_TO_INT[eleName] ?? 0;
+  const targetsFoe = Array.isArray(sk.skill_type)
+    ? sk.skill_type.some((t) => t === "Enemy" || t === "Place")
+    : true;
+  const name = sk.name;
+
+  // Monster-clone skills (MS_/ML_/MA_) alias onto the canonical player skill for
+  // ratio/hit lookup; the display name / element / target keep the mob-skill entry.
+  const ratioName = MOB_SKILL_ALIASES[name] || name;
+
+  // The ratio/hit-count fns were written for the outgoing direction (their `tgt`
+  // is the skill's target). Here the mob's target is the player: Medium size,
+  // Neutral, DemiHuman PC — so size/element/race-dependent fns (Pierce's div_,
+  // Magnus's race check) resolve against the player. ctx carries the CASTER
+  // (mob) stats a few ratio fns read (base_level/str/dex for the ATK/base-level
+  // scalers); `skill_levels` is empty because a mob caster's own skill ranks
+  // (e.g. Fire Pillar reading Fire Wall) are unknown, so those secondary bonuses
+  // default to 0.
+  const playerTgt = { size: "Medium", element: 0, race: "DemiHuman", is_pc: true };
+  const mobStats = (mob && mob.stats) || {};
+  const ctx = {
+    skill_levels: {}, skill_params: {},
+    base_level: mob ? mob.level || 0 : 0,
+    base_str: mobStats.str || 0,
+    dex: mobStats.dex || 0,
+  };
+
+  // A number is only meaningful for a foe-targeting physical/magic skill.
+  const isAttack = targetsFoe && (attackType === "Magic" || attackType === "Weapon");
+  let ratio = 100, hasNumber = false, estimated = false;
+  let damageType = isAttack ? "damage" : "status";
+
+  if (NO_HP_DAMAGE_SKILLS.has(name)) {
+    damageType = "status";
+  } else if (isAttack) {
+    const isMagic = attackType === "Magic";
+    const psMap = (isMagic ? profile?.magic_ratios : profile?.weapon_ratios) || {};
+    const { BF_MAGIC_RATIOS } = require("./calculators/battlePipeline");
+      const { BF_WEAPON_RATIOS } = require("./calculators/modifiers/skillRatio");
+      const bfMap = isMagic ? BF_MAGIC_RATIOS : BF_WEAPON_RATIOS;
+    const vanillaOk = (isMagic ? profile?.magic_vanilla_ok : profile?.weapon_vanilla_ok) || new Set();
+    try {
+      if (typeof psMap[ratioName] === "function") {
+        ratio = psMap[ratioName](lv, playerTgt, ctx); hasNumber = true; estimated = false;
+      } else if (typeof bfMap[ratioName] === "function") {
+        ratio = bfMap[ratioName](lv, playerTgt, ctx); hasNumber = true;
+        // Vanilla ratio is only trustworthy where PS is confirmed to match it.
+        estimated = !vanillaOk.has(ratioName);
+      } else if (typeof MOB_SKILL_RATIOS[ratioName] === "function") {
+        ratio = MOB_SKILL_RATIOS[ratioName](lv); hasNumber = true; estimated = true;
+      } else if (FLAT_UNMODELED_SKILLS.has(name)) {
+        damageType = "damage"; // it hurts, we just can't price it as a ratio
+      }
+    } catch { hasNumber = false; }
+    // A ratio fn reading a ctx field we don't supply could yield NaN/Infinity —
+    // never surface that as a number; fall back to element/type only.
+    if (hasNumber && !Number.isFinite(ratio)) { hasNumber = false; ratio = 100; }
+  }
+
+  // Hit count mirrors the outgoing pipeline: a PS profile hit-count fn overrides
+  // the skills.json number_of_hits (which is sometimes wrong for PS multi-hit
+  // reworks and, importantly, encodes size-based counts like Pierce). A NEGATIVE
+  // number_of_hits is a cosmetic multi-hit (damage applied once) -> 1, NOT its
+  // absolute value — the PS "total ratio" skills (Vermilion −10, Fire Pillar −N)
+  // already fold every wave into the ratio, so multiplying would double-count.
+  let hits = 1;
+  const psHitMap = (attackType === "Magic" ? profile?.magic_hit_counts : profile?.weapon_hit_counts) || {};
+  if (typeof psHitMap[ratioName] === "function") {
+    const h = psHitMap[ratioName](lv, playerTgt, ctx);
+    hits = h && typeof h === "object" ? Number(h.max) || 1 : Number(h) || 1;
+  } else {
+    const hitsRaw = Array.isArray(sk.number_of_hits) ? atLv(sk.number_of_hits) : sk.number_of_hits;
+    const n = Number(hitsRaw) || 1;
+    hits = n > 0 ? n : 1; // negative = cosmetic multi-hit -> single damage instance
+  }
+  hits = Math.max(1, hits);
+
+  // Skills the skill DB flags as ignoring DEF (Asura, Earthquake, Clashing Spiral,
+  // Auto Counter…). The outgoing direction already honours this flag; the incoming
+  // one has to as well, or the casts that hurt most get priced as if armour applied.
+  const ignoreDef = Array.isArray(sk.damage_type) && sk.damage_type.includes("IgnoreDefense");
+
+  // Damage read off the PLAYER's stats rather than the caster's ATK (Dark Breath's
+  // % of current HP, Soul Burn's twice-the-SP-burned). No ratio can express these,
+  // so they carry their own spec and the caller prices them from `status`.
+  const targetStat = MOB_SKILL_TARGET_STAT_DAMAGE[name];
+  let targetStatSpec = null;
+  if (targetStat && isAttack) {
+    const pct = targetStat.pctByLevel ? atLv(targetStat.pctByLevel) : null;
+    const mult = targetStat.multiplierByLevel ? atLv(targetStat.multiplierByLevel) : null;
+    // A level that deals no HP damage at all (Soul Burn below Lv5) is a drain, not
+    // a hit — say so rather than printing a 0.
+    if ((pct != null && pct > 0) || (mult != null && mult > 0)) {
+      targetStatSpec = { quantity: targetStat.quantity, pct, mult, chancePct: targetStat.chancePct ?? null, note: targetStat.note };
+      // Sourced from kokotewa, not from PS itself — same standing as the pre-renewal
+      // baseline ratios, so it carries the same "for testing" tag rather than being
+      // presented as a PS-exact figure.
+      estimated = true;
+    } else {
+      damageType = "status";
+    }
+  }
+
+  return {
+    name, desc: sk.description || name, attackType, elementInt, hits, ratio,
+    hasNumber: hasNumber || targetStatSpec != null, estimated, damageType, level: lv,
+    ignoreDef: ignoreDef || targetStatSpec != null, targetStat: targetStatSpec,
+  };
+}
+
 module.exports = {
+  resolveMobSkillDamage,
   MOB_SKILL_RATIOS, NO_HP_DAMAGE_SKILLS, FLAT_UNMODELED_SKILLS, MOB_SKILL_ALIASES,
   MOB_SKILL_TARGET_STAT_DAMAGE,
 };

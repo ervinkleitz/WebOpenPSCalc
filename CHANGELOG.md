@@ -27,6 +27,14 @@ instead of release version. Dates are taken from actual git commit history.
   Kunai) still falls through to whatever the weapon slot would otherwise show, endow
   included.
 
+- **Monsters' over-cap skill casts are priced at their real level.** Mistress casts
+  Jupitel Thunder at level 28 — the survivability view clamped it to the player cap
+  of 10 and priced a 12-hit cast when the real one lands 30 hits (Hercules extends
+  per-level skill tables past their last row by continuing the progression, so JT's
+  hit count keeps climbing with level). A player suspected exactly this ("I think it
+  might be calculated as lv 10"). Every monster cast above level 10 was affected;
+  they now use the mob database's own level throughout — hits, element and ratio.
+
 ## 2026-09-07
 
 ### Added
