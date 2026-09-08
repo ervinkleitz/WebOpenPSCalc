@@ -3518,6 +3518,10 @@ test("Balanced Kunai is a findable neutral kunai, and an endow elements it", () 
   assert.equal(bk.type, "IT_AMMO", "needs a type or the picker filters it out");
   assert.equal(bk.subtype, "A_KUNAI");
   assert.deepEqual(bk.loc, ["EQP_AMMO"]);
+  // wiki Ninja#Kunai table: "Balanced Kunai | 30 | Neutral". The live API's
+  // description omits its Attack line (incomplete for this custom item), which
+  // briefly shipped this as ATK 0 — the wiki table is the confirmed source.
+  assert.equal(bk.atk, 30, "ATK 30 per the wiki's kunai table, same as the elemental five");
 
   const cfg = createBattleConfig();
   const note = (ammo, extra) => {

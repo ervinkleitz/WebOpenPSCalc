@@ -32,8 +32,8 @@ instead of release version. Dates are taken from actual git commit history.
   never find it (the same gap Armor Piercing Bullet had). It now carries its full
   shape and shows up in the Ninja's ammo search. It is the endow-flexibility kunai:
   it has no element of its own, so a weapon endow gives Throw Kunai its element —
-  unlike the elemental kunai, which override an endow outright. ATK 0, matching the
-  item database (every elemental kunai lists "Attack: 30"; this one lists none).
+  unlike the elemental kunai, which override an endow outright. ATK 30, per the
+  wiki's kunai table — same as the elemental five.
 
 - **Monsters' over-cap skill casts are priced at their real level.** Mistress casts
   Jupitel Thunder at level 28 — the survivability view clamped it to the player cap

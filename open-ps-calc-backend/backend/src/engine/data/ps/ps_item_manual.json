@@ -2737,7 +2737,7 @@
   "loc": [
    "EQP_AMMO"
   ],
-  "atk": 0,
+  "atk": 30,
   "weight": 20,
   "slots": 0,
   "job": [
@@ -2745,6 +2745,6 @@
   ],
   "refineable": false,
   "aegis_name": "Balanced_Kunai",
-  "_note": "PS custom (reported unselectable 2026-09-08: the scrape carries only name+slots, so the ammo picker's type filter never found it — same gap as Armor Piercing Bullet 13233). Shape mirrors the elemental kunai (13255-13259, A_KUNAI, Ninja). ATK 0 inferred from the live API: every elemental kunai's description prints \"Attack: 30\", this one prints no Attack line at all — its point is being the NEUTRAL kunai, so an endow can give Throw Kunai an element (the elemental kunai override the endow). No bonuses stated in the description. Weight 2 in game = 20 in item_db units. If someone measures a nonzero ATK in game, set it here."
+  "_note": "PS custom (reported unselectable 2026-09-08: the scrape carries only name+slots, so the ammo picker's type filter never found it — same gap as Armor Piercing Bullet 13233). Shape mirrors the elemental kunai (13255-13259, A_KUNAI, Ninja). ATK 30 per wiki Ninja#Kunai's table (\"Balanced Kunai | 30 | Neutral | 60z from shuriken vendor\") — the live API's description omits its Attack line, which briefly got this shipped as ATK 0 until the wiki table was checked (maintainer: confirm PS customs from the API or wiki). Its role: the NEUTRAL kunai, so an endow elements Throw Kunai through it (wiki Throw_Kunai: \"when Balanced Kunai are equipped, weapon endow effects like Aspersio overwrite its Neutral element\"); the elemental kunai override endows. Weight 2 in game = 20 in item_db units."
  }
 }
