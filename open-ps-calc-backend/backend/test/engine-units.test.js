@@ -4172,3 +4172,68 @@ test("dual-wield off-hand element doesn't borrow the main hand's ammo/script ele
   assert.ok(rhNote.startsWith("Fire vs"), `right hand (Bazerald) must stay Fire, got: ${rhNote}`);
   assert.ok(lhNote.startsWith("Neutral vs"), `left hand (plain Knife) must not borrow Bazerald's Fire, got: ${lhNote}`);
 });
+
+// ---------------------------------------------------------------------------
+// A weapon's OWN bAtkEle script must not shadow an active endow, and an
+// unrelated ammo's script must not leak into a skill that doesn't use it
+// ---------------------------------------------------------------------------
+test("endow beats a weapon's own script element; unrelated ammo doesn't leak into it", () => {
+  const cfg = createBattleConfig();
+  const target = loader.getMonster(1002);
+  const id = loader.getSkillIdByName("NJ_HUUMA");
+  const calc = (buildCfg) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 25, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 1, dex: 60, luk: 20 },
+      ...buildCfg,
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    return new BattlePipeline(cfg).calculate(st, w, createSkillInstance({ id, level: 5 }), target, eff, gb)
+      .normal.steps.find((s) => s.name === "Attr Fix").note;
+  };
+  // Convenience wrapper for the common case (just a weapon, maybe some extra
+  // config). Merges extra.equipped onto { right_hand } rather than spreading extra
+  // wholesale, which used to let extra.equipped silently replace right_hand
+  // entirely. Order-sensitive cases below build `equipped` directly via calc()
+  // instead, since they specifically need control over its literal key order.
+  const run = (rightHand, extra = {}) => {
+    const { equipped: extraEquipped, ...restExtra } = extra;
+    return calc({ equipped: { right_hand: rightHand, ...extraEquipped }, ...restExtra });
+  };
+
+  // Huuma Blaze Shuriken (13303) grants Fire via its own bAtkEle script. An active
+  // Wind endow must still win — resolveWeapon's own precedence (endow > weapon's
+  // script > forge > item field) already gets this right; the bug was a later
+  // fallback discarding that and re-deriving from the weapon's raw (Fire) field.
+  assert.ok(run(13303, { support_buffs: { weapon_endow_sc: "SC_PROPERTYWIND" } }).startsWith("Wind vs"),
+    "an active Wind endow must beat the weapon's own Fire script");
+
+  // A plain Huuma (13301, no script) with an unrelated elemental Kunai (13256,
+  // Earth) sitting in the ammo slot — NJ_HUUMA doesn't use that ammo at all, so
+  // it must not borrow its element.
+  assert.ok(run(13301, { equipped: { ammo: 13256 } }).startsWith("Neutral vs"),
+    "an unrelated ammo's element must not leak into a skill that doesn't use it");
+
+  // Exercises run()'s own merge specifically (not calc()): a scripted weapon's
+  // element must still come through when extra also carries an ammo in `equipped` —
+  // confirming extra.equipped merges onto right_hand instead of replacing it
+  // outright, which would silently drop the weapon to Unarmed.
+  assert.ok(run(13303, { equipped: { ammo: 13256 } }).startsWith("Fire vs"),
+    "run()'s extra.equipped must merge onto right_hand, not silently replace it");
+
+  // Maintainer-flagged: a scripted weapon AND scripted ammo both equipped (Huuma
+  // Blaze Shuriken's Fire + Black Earth Kunai's Earth) — a realistic Ninja loadout
+  // (kunai riding in the ammo slot while throwing Huuma Shuriken). script_atk_ele_rh
+  // is a last-assign scalar both scripts write, so this used to silently pick
+  // whichever was aggregated last — order-dependent on `equipped`'s own key order,
+  // confirmed live both ways. Built via calc() directly (not run()) so the literal
+  // key order below is exactly what's under test.
+  assert.ok(calc({ equipped: { right_hand: 13303, ammo: 13256 } }).startsWith("Fire vs"),
+    "the worn weapon's own Fire must win over unused Earth ammo");
+  assert.ok(calc({ equipped: { ammo: 13256, right_hand: 13303 } }).startsWith("Fire vs"),
+    "...and must not flip when the equipped keys are declared in the other order");
+  assert.ok(calc({
+    equipped: { right_hand: 13303, ammo: 13256 },
+    support_buffs: { weapon_endow_sc: "SC_PROPERTYWIND" },
+  }).startsWith("Wind vs"), "an active endow still beats the weapon's own script with scripted ammo also equipped");
+});
