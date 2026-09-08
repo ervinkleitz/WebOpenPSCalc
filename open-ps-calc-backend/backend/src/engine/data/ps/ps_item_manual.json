@@ -2730,5 +2730,21 @@
  "5742": {
   "script": "bonus bMdef,2; if(getrefine()>=5) { bonus bMdef,2; } if(getrefine()>=7) { bonus bMdef,4; }",
   "_note": "Live API (2026-09-06): \"Mdef +2. If refined to +5 adds a further +2 MDEF. If refined to +7 adds a further +4 MDEF for a total of +8.\" The vanilla script (bLuk,1) was still being applied. The Rudolf Set bonus (attack vs beasts 2%/+5%/+3% by refine, with Rudolf's Nose) is a set effect not yet in ps_item_combo_db — unmodeled, noted here."
+ },
+ "91042": {
+  "type": "IT_AMMO",
+  "subtype": "A_KUNAI",
+  "loc": [
+   "EQP_AMMO"
+  ],
+  "atk": 0,
+  "weight": 20,
+  "slots": 0,
+  "job": [
+   25
+  ],
+  "refineable": false,
+  "aegis_name": "Balanced_Kunai",
+  "_note": "PS custom (reported unselectable 2026-09-08: the scrape carries only name+slots, so the ammo picker's type filter never found it — same gap as Armor Piercing Bullet 13233). Shape mirrors the elemental kunai (13255-13259, A_KUNAI, Ninja). ATK 0 inferred from the live API: every elemental kunai's description prints \"Attack: 30\", this one prints no Attack line at all — its point is being the NEUTRAL kunai, so an endow can give Throw Kunai an element (the elemental kunai override the endow). No bonuses stated in the description. Weight 2 in game = 20 in item_db units. If someone measures a nonzero ATK in game, set it here."
  }
 }

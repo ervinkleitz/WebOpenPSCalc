@@ -3506,6 +3506,38 @@ test("proof potions: +20% resist to their element, -15% to the counter, and they
     "Fireproof + Earthproof must net a 5% cut on a Fire hit");
 });
 
+// Balanced Kunai (91042, PS custom): reported unselectable — the scrape carried only
+// name+slots, so the ammo picker's type filter never found it (Armor Piercing Bullet's
+// exact gap). It is the NEUTRAL kunai: no element script, so unlike the elemental five
+// (which override an endow per battle.c's arrow_ele rule, PR #5) an endow gives Throw
+// Kunai its element through it. ATK 0 per the live API (every elemental kunai prints
+// "Attack: 30"; this one prints no Attack line).
+test("Balanced Kunai is a findable neutral kunai, and an endow elements it", () => {
+  loader.setProfile(getProfile("payon_stories"));
+  const bk = loader.getItem(91042);
+  assert.equal(bk.type, "IT_AMMO", "needs a type or the picker filters it out");
+  assert.equal(bk.subtype, "A_KUNAI");
+  assert.deepEqual(bk.loc, ["EQP_AMMO"]);
+
+  const cfg = createBattleConfig();
+  const note = (ammo, extra) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 25, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 1, dex: 90, luk: 20 },
+      equipped: { ammo }, mastery_levels: { NJ_TOBIDOUGU: 1 }, ...(extra || {}),
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    return new BattlePipeline(cfg).calculate(st, w,
+      createSkillInstance({ id: loader.getSkillIdByName("NJ_KUNAI"), level: 5 }),
+      loader.getMonster(1170), eff, gb).normal.steps.find((s) => s.name === "Attr Fix").note;
+  };
+  const wind = { support_buffs: { weapon_endow_sc: "SC_PROPERTYWIND" } };
+  assert.ok(note(91042, wind).startsWith("Wind vs"),
+    "a Wind endow must element a Balanced Kunai throw (no ammo element to override it)");
+  assert.ok(note(13258, wind).startsWith("Fire vs"),
+    "…while an elemental kunai still overrides the endow (PR #5's rule)");
+});
+
 // A monster casting above the player cap must be priced at ITS level, not clamped
 // to 10 — Mistress's Jupitel Thunder is Lv28 in mob_skill_db, and the clamp priced
 // her 30-hit cast as 12 hits (reported by a player: "I think it might be calculated
