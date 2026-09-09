@@ -75,9 +75,16 @@ function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf,
 
   const [mn, mx, av] = pmfStats(pmf);
   const multiplier = avIn ? av / avIn : 1.0;
+  // "Card Fix" is the Hercules function name (battle_calc_cardfix), not a statement
+  // about where the bonuses came from: cards, gear AND pets all write into the same
+  // add_race/add_ele/add_size buckets, and this step multiplies the total once. A
+  // player asked why their pet's +2% showed up on the card line (2026-09-08), so say
+  // so in the note whenever anything is actually being applied.
+  const anyBonus = raceBonus || bossBonus || eleBonus || sizeBonus
+    || (isRanged && longBonus) || typeBonus || race2Bonus || classBonus;
   result.add_step({
     name: "Card Fix", value: av, min_value: mn, max_value: mx, multiplier,
-    note: `Race ${raceRc}+${raceBonus}%  ${target.is_boss ? "Boss" : "NonBoss"}+${bossBonus}%  Ele+${eleBonus}%  Size+${sizeBonus}%${isRanged ? `  LongAtk+${longBonus}%` : ""}${typeBonus ? `  Type+${typeBonus}%` : ""}${race2Bonus ? `  Family(${(target.race2 || []).join(",")})+${race2Bonus}%` : ""}${classBonus ? `  Mob#${target.mob_id}+${classBonus}%` : ""}`,
+    note: `Race ${raceRc}+${raceBonus}%  ${target.is_boss ? "Boss" : "NonBoss"}+${bossBonus}%  Ele+${eleBonus}%  Size+${sizeBonus}%${isRanged ? `  LongAtk+${longBonus}%` : ""}${typeBonus ? `  Type+${typeBonus}%` : ""}${race2Bonus ? `  Family(${(target.race2 || []).join(",")})+${race2Bonus}%` : ""}${classBonus ? `  Mob#${target.mob_id}+${classBonus}%` : ""}${anyBonus ? "  (from cards, gear & pets)" : ""}`,
     formula: `dmg × multiple race/ele/size/boss/long/atk-ele factors`,
     hercules_ref: "battle.c:1183-1198",
   });
@@ -141,7 +148,7 @@ function calculateCardFixMagic(target, magicEleName, pmf, result, gearBonuses = 
 
   [mn, mx, av] = pmfStats(pmf);
   const multiplier = avIn ? av / avIn : 1.0;
-  result.add_step({ name: "Card Fix (Magic)", value: av, min_value: mn, max_value: mx, multiplier, note: `MagicRace+${raceBonus}%  MagicEle ${targetEleKey}+${eleBonus}%  Ele-${tEle}%  Size-${tSize}%  Race-${tRace}%  Boss-${tBoss}%  Ranged-${tLong}%  MagicDef-${tMagicDef}%`, formula: "dmg × ele/size/race/boss/ranged/magicdef reductions", hercules_ref: "battle.c:1132-1156" });
+  result.add_step({ name: "Card Fix (Magic)", value: av, min_value: mn, max_value: mx, multiplier, note: `MagicRace+${raceBonus}%  MagicEle ${targetEleKey}+${eleBonus}%  Ele-${tEle}%  Size-${tSize}%  Race-${tRace}%  Boss-${tBoss}%  Ranged-${tLong}%  MagicDef-${tMagicDef}%${(tEle || tSize || tRace || tBoss || tLong || tMagicDef) ? "  (from cards, gear & pets)" : ""}`, formula: "dmg × ele/size/race/boss/ranged/magicdef reductions", hercules_ref: "battle.c:1132-1156" });
   return pmf;
 }
 
@@ -166,7 +173,7 @@ function calculateIncomingPhysical(mobRace, mobElement, mobSize, isRanged, playe
   }
   [mn, mx, av] = pmfStats(pmf);
   const multiplier = avIn ? av / avIn : 1.0;
-  result.add_step({ name: "Card Fix (Incoming Physical)", value: av, min_value: mn, max_value: mx, multiplier, note: `Ele-${tEle}% Size-${tSize}% Race-${tRace}% Def-${tNearLong}%`, formula: "dmg × resist factors", hercules_ref: "battle.c:1269-1341" });
+  result.add_step({ name: "Card Fix (Incoming Physical)", value: av, min_value: mn, max_value: mx, multiplier, note: `Ele-${tEle}% Size-${tSize}% Race-${tRace}% Def-${tNearLong}%${(tEle || tSize || tRace || tNearLong) ? "  (from cards, gear & pets)" : ""}`, formula: "dmg × resist factors", hercules_ref: "battle.c:1269-1341" });
   return pmf;
 }
 

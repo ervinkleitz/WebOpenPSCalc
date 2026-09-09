@@ -27,6 +27,15 @@ instead of release version. Dates are taken from actual git commit history.
   Kunai) still falls through to whatever the weapon slot would otherwise show, endow
   included.
 
+- **The Card Fix line now says where its bonuses came from.** "Card Fix" is the name
+  of the step in the damage formula that applies every race, element and size
+  multiplier at once — and cards aren't its only source: gear and pets feed the exact
+  same totals (a Zealotus pet, a Zealotus Mask and a Hydra Card all stack into one
+  "Race Demi-Human +27%"). Anyone whose bonus came from a pet or a hat reasonably
+  wondered why it appeared on a line labelled "Card". The line now spells it out —
+  "(from cards, gear & pets)" — whenever a bonus is actually being applied, on both
+  the damage and survivability breakdowns.
+
 - **Three more pet bonuses now actually do something.** A full audit of every pet
   against the item database (prompted by the Zealotus fix) found three that were
   marked "not modelled" only because the pet code never forwarded two bonus types the
