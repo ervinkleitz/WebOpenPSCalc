@@ -1127,6 +1127,50 @@ test("Zealotus pet is Demi-Human-scoped, and Demi-Human bonuses work on both pro
   assert.equal(PS_PET.magic_add_race.RC_DemiHuman, 2, "magic half unchanged");
 });
 
+// 2026-09-08 pet audit (every pet's modelled bonus vs the live item API, prompted by
+// the Zealotus mis-scope). Three bonuses were listed as "not modelled" purely because
+// applyPetBonuses never forwarded the two fields the engine already has:
+//   Gyokuto  "Healing Power +3%"        -> heal_power, scales the offensive Heal
+//   Puck     "Magical Damage Taken -1%" -> magic_def_rate, cuts incoming magic
+//   Onigiring "Resist Poison Damage 2%" -> sub_ele, the same KIND as Poporing's 10%
+//                                          (which was modelled) — "Damage", not status
+test("pet audit: Gyokuto, Puck and Onigiring bonuses actually reach the damage", () => {
+  const { calculateIncomingMagicDamage } = require("../src/engine/calculators/incomingPipeline");
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const state = (pet, job, equipped, stats) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: job, base_level: 99, job_level: 50,
+      base_stats: stats, equipped, selected_pet: pet || undefined,
+    });
+    return resolvePlayerState(b, cfg, PS);
+  };
+
+  // Gyokuto: +3% heal power reaches the offensive Heal (heal bomb) vs an Undead.
+  const heal = (pet) => {
+    const [gb, eff, w, st] = state(pet, 8, { right_hand: 1601 }, { str: 1, agi: 1, vit: 60, int: 99, dex: 60, luk: 1 });
+    return new BattlePipeline(cfg).calculate(st, w, createSkillInstance({ id: 28, level: 10 }),
+      loader.getMonster(1036), eff, gb).normal.avg_damage;
+  };
+  const h0 = heal(null);
+  assert.ok(heal("gyokuto") > h0, "Gyokuto must raise the heal bomb");
+  assert.ok(Math.abs(heal("gyokuto") / h0 - 1.03) < 0.005, `Gyokuto is +3% heal power (${h0} -> ${heal("gyokuto")})`);
+
+  // Puck / Onigiring: incoming magic from a high-INT caster (Mistress).
+  const taken = (pet, ele) => {
+    const [gb, eff, w, st] = state(pet, 7, { armor: 2314 }, { str: 90, agi: 40, vit: 40, int: 1, dex: 40, luk: 1 });
+    return calculateIncomingMagicDamage(1059, eff, st, gb, w, { ratio_override: 1000, ele_override: ele }).avg_damage;
+  };
+  const DARK = 7, POISON = 5;
+  const base = taken(null, DARK);
+  assert.ok(Math.abs(taken("puck", DARK) / base - 0.99) < 0.005,
+    `Puck cuts ALL incoming magic by 1% (${base} -> ${taken("puck", DARK)})`);
+  const poisonBase = taken(null, POISON);
+  assert.ok(Math.abs(taken("onigiring", POISON) / poisonBase - 0.98) < 0.005,
+    `Onigiring cuts POISON magic by 2% (${poisonBase} -> ${taken("onigiring", POISON)})`);
+  assert.equal(taken("onigiring", DARK), base, "…and nothing off a non-Poison hit");
+});
+
 test("Momoe's Hairband gives +20% vs Turtle Island turtles, nothing vs others", () => {
   const cfg = createBattleConfig();
   const dmg = (hat, mobId) => {

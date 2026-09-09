@@ -808,9 +808,12 @@ const PS_PET_BONUSES = {
   imp:             { sub_ele: { Ele_Fire: 2 }, add_ele: { Ele_Fire: 1 } },
   hunter_fly:      { flee: -5, flee2: 20 },                // Perfect Dodge +2% (20 = 2%)
   dullahan:        { crit_atk_rate: 4, luk: -1 },
+  // Egg text: "Def -2, MDef -2, Aspd -1% (after-attack delay)". The parenthetical
+  // is the key: it is the DELAY that drops 1%, i.e. +1% ASPD rate — the pet trades
+  // defence for speed. Re-checked against the API in the 2026-09-08 pet audit.
   earth_petite:    { def_: -2, mdef_: -2, aspd_percent: 1 },
   santa_goblin:    { maxhp: 30, sub_ele: { Ele_Water: 1 } },
-  succubus:        {},                                     // 2% HP drain proc not modelled
+  succubus:        {},                                     // 5% HP drain on attack — a heal, not damage, so unmodelled
   goblin:          {},                                     // +2% to/from Goblins — monster-type, not modelled
   // "increases Atk and Matk against Demihuman monsters by 2%" (live item API,
   // egg 9026 — Cordial/Loyal bonus). BOTH halves are race-scoped: the physical
@@ -822,11 +825,13 @@ const PS_PET_BONUSES = {
   // into DemiHuman); same shape as Alice / Green Maiden's defensive version.
   zealotus:        { add_race: { RC_DemiHuman: 2, RC_Player: 2 }, magic_add_race: { RC_DemiHuman: 2, RC_Player: 2 } },
   // ── Payon Stories custom pets ────────────────────────────────────────────
-  puck:            { vit: 1 },                             // −1% magic dmg received not modelled
+  puck:            { vit: 1, magic_def_rate: 1 },          // "Magical Damage Taken -1%" 
   kalec:           { matk_rate: 1, mdef_: 2 },
   yser:            { hit: 4, aspd_percent: 1 },
-  gyokuto:         { maxsp: 20 },                          // +3% heal power not modelled
-  onigiring:       { maxhp: 50 },                          // poison status resist not modelled
+  gyokuto:         { maxsp: 20, heal_power: 3 },           // "Healing Power +3%" — scales offensive Heal
+  // "Resist Poison Damage by 2%" — DAMAGE, not the status, so it is the same
+  // kind of bonus as Poporing's above and reaches incoming damage the same way.
+  onigiring:       { maxhp: 50, sub_ele: { Ele_Poison: 2 } },
 };
 
 const PAYON_STORIES = emptyProfile("payon_stories", {

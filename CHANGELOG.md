@@ -27,6 +27,16 @@ instead of release version. Dates are taken from actual git commit history.
   Kunai) still falls through to whatever the weapon slot would otherwise show, endow
   included.
 
+- **Three more pet bonuses now actually do something.** A full audit of every pet
+  against the item database (prompted by the Zealotus fix) found three that were
+  marked "not modelled" only because the pet code never forwarded two bonus types the
+  engine already understands: **Gyokuto**'s Healing Power +3% now boosts offensive
+  Heal, **Puck**'s −1% magical damage taken now shows in the survivability numbers,
+  and **Onigiring**'s poison resistance now reduces poison damage by 2% — the same
+  kind of bonus Poporing's already had. Every other pet checked out; Succubus's HP
+  drain label was corrected from 2% to the real 5% (still not modelled — it heals,
+  it doesn't add damage).
+
 - **Zealotus pet's +2% is now a Demi-Human bonus, not a blanket one.** The egg's
   bonus is "increases Atk and Matk against Demihuman monsters by 2%", but the
   physical half was applied as a flat +2% ATK against everything — so it quietly

@@ -168,6 +168,13 @@ function applyPetBonuses(gb, petKey, profile) {
   gb.maxhp_rate += bonus.maxhp_rate || 0;
   gb.maxsp_rate += bonus.maxsp_rate || 0;
   gb.castrate += bonus.castrate || 0;
+  // Both of these are live engine fields that no pet could reach until the
+  // 2026-09-08 pet audit: heal_power scales the offensive Heal / heal bomb
+  // (battlePipeline), magic_def_rate cuts incoming magic (cardFix, via the
+  // player target). Gyokuto's "+3% Healing Power" and Puck's "Magical Damage
+  // Taken -1%" were both listed as "not modelled" only because of this gap.
+  gb.heal_power += bonus.heal_power || 0;
+  gb.magic_def_rate += bonus.magic_def_rate || 0;
   for (const [k, v] of Object.entries(bonus.sub_ele || {})) gb.sub_ele[k] = (gb.sub_ele[k] || 0) + v;
   for (const [k, v] of Object.entries(bonus.add_ele || {})) gb.add_ele[k] = (gb.add_ele[k] || 0) + v;
   for (const [k, v] of Object.entries(bonus.sub_race || {})) gb.sub_race[k] = (gb.sub_race[k] || 0) + v;

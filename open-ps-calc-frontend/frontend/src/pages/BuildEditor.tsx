@@ -254,9 +254,9 @@ const GUIDE_SLUG_TO_LABEL: Record<string, string> = Object.fromEntries(
 // pet_bonuses:{} makes applyPetBonuses a no-op.
 const PS_PETS: { key: string; label: string; psCustom?: true }[] = [
   // ── Payon Stories custom pets ──────────────────────────────────────────
-  { key: "gyokuto",    label: "Gyokuto — MaxSP +20, Heal +3%",        psCustom: true },
+  { key: "gyokuto",    label: "Gyokuto — MaxSP +20, Heal power +3%",  psCustom: true },
   { key: "kalec",      label: "Kalec — MATK +1%, MDEF +2",            psCustom: true },
-  { key: "onigiring",  label: "Onigiring — MaxHP +50, Poison resist",  psCustom: true },
+  { key: "onigiring",  label: "Onigiring — MaxHP +50, Poison dmg −2%", psCustom: true },
   { key: "puck",       label: "Puck — VIT +1, Magic Dmg Rcvd −1%",    psCustom: true },
   { key: "yser",       label: "Yser — HIT +4, ASPD +1%",              psCustom: true },
   // ── Standard pets (alphabetical) ────────────────────────────────────
@@ -289,7 +289,7 @@ const PS_PETS: { key: string; label: string; psCustom?: true }[] = [
   { key: "sohee",           label: "Sohee — STR +1, DEX +1" },
   { key: "spore",           label: "Spore — HIT +5, ATK −2" },
   { key: "steel_chonchon",  label: "Steel Chonchon — FLEE +6, AGI −1" },
-  { key: "succubus",        label: "Succubus — 2% HP drain on attack (proc not modelled)" },
+  { key: "succubus",        label: "Succubus — 5% HP drain on attack (not modelled)" },
   { key: "yoyo",            label: "Yoyo — CRIT +3, LUK −1" },
   { key: "zealotus",        label: "Zealotus — ATK/MATK vs Demi-Human +2%" },
 ];
