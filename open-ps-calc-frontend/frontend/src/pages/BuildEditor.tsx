@@ -291,7 +291,7 @@ const PS_PETS: { key: string; label: string; psCustom?: true }[] = [
   { key: "steel_chonchon",  label: "Steel Chonchon — FLEE +6, AGI −1" },
   { key: "succubus",        label: "Succubus — 2% HP drain on attack (proc not modelled)" },
   { key: "yoyo",            label: "Yoyo — CRIT +3, LUK −1" },
-  { key: "zealotus",        label: "Zealotus — ATK +2%, MATK vs Demi-Human +2%" },
+  { key: "zealotus",        label: "Zealotus — ATK/MATK vs Demi-Human +2%" },
 ];
 
 const ASPD_POTION_LABELS = [

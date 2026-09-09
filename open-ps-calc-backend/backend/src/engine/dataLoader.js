@@ -23,6 +23,20 @@ const ELEMENT_NAMES = {
   5: "Poison", 6: "Holy", 7: "Dark", 8: "Ghost", 9: "Undead",
 };
 
+// The two mob layers spell one race differently: vanilla mob_db.json says
+// "DemiHuman" (176 mobs), the PS layer says "Demi-Human" (199). Every race
+// consumer (cardFix, critChance, defenseFix, Bull's Eye's ratio) maps only the
+// hyphenated form, so on the vanilla profile EVERY Demi-Human bonus silently did
+// nothing — a Hydra Card read +0% instead of +20% against an Orc Warrior. Found
+// while checking a player's Zealotus report (2026-09-08). Normalize on the way out
+// of the loader so all consumers, outgoing and incoming, see one canonical form.
+const MOB_RACE_ALIASES = { DemiHuman: "Demi-Human" };
+function normalizeMobRace(entry) {
+  if (entry == null) return entry;
+  const canonical = MOB_RACE_ALIASES[entry.race];
+  return canonical ? { ...entry, race: canonical } : entry;
+}
+
 function readJsonSafe(filePath, fallback) {
   try {
     if (!fs.existsSync(filePath)) return fallback;
@@ -250,11 +264,11 @@ class DataLoader {
 
   getMonsterData(mobId) {
     if (this._usePsData) {
-      return this._loadPsMobDb()[String(mobId)] || null;
+      return normalizeMobRace(this._loadPsMobDb()[String(mobId)] || null);
     }
     try {
       const data = this._loadJson("db/mob_db.json");
-      return (data.mobs || {})[String(mobId)] || null;
+      return normalizeMobRace((data.mobs || {})[String(mobId)] || null);
     } catch {
       return null;
     }

@@ -812,7 +812,15 @@ const PS_PET_BONUSES = {
   santa_goblin:    { maxhp: 30, sub_ele: { Ele_Water: 1 } },
   succubus:        {},                                     // 2% HP drain proc not modelled
   goblin:          {},                                     // +2% to/from Goblins — monster-type, not modelled
-  zealotus:        { atk_rate: 2, magic_add_race: { RC_DemiHuman: 2, RC_Player: 2 } },
+  // "increases Atk and Matk against Demihuman monsters by 2%" (live item API,
+  // egg 9026 — Cordial/Loyal bonus). BOTH halves are race-scoped: the physical
+  // one was entered as a GLOBAL atk_rate, so the pet added 2% against every race
+  // (a Poring took it too) and showed up as a "bAtkRate +2%" step instead of a
+  // Demi-Human line — the Card Fix row still read "Race +0%". Reported by a
+  // player who could not find it in the formula breakdown (2026-09-08).
+  // RC_Player pairs with RC_DemiHuman as everywhere else here (pre-re lumps PCs
+  // into DemiHuman); same shape as Alice / Green Maiden's defensive version.
+  zealotus:        { add_race: { RC_DemiHuman: 2, RC_Player: 2 }, magic_add_race: { RC_DemiHuman: 2, RC_Player: 2 } },
   // ── Payon Stories custom pets ────────────────────────────────────────────
   puck:            { vit: 1 },                             // −1% magic dmg received not modelled
   kalec:           { matk_rate: 1, mdef_: 2 },

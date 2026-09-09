@@ -27,6 +27,22 @@ instead of release version. Dates are taken from actual git commit history.
   Kunai) still falls through to whatever the weapon slot would otherwise show, endow
   included.
 
+- **Zealotus pet's +2% is now a Demi-Human bonus, not a blanket one.** The egg's
+  bonus is "increases Atk and Matk against Demihuman monsters by 2%", but the
+  physical half was applied as a flat +2% ATK against everything — so it quietly
+  boosted damage to Porings, and it showed up in the breakdown as a generic ATK-rate
+  line rather than a Demi-Human one, which is why a player couldn't find it in the
+  formula. It now applies only against Demi-Humans (the magic half already did), and
+  the Card Fix row names it: "Race RC_DemiHuman+2%".
+
+- **Every Demi-Human damage bonus works on the vanilla server profile again.** Found
+  while checking the above: the two monster databases spell that race differently
+  ("DemiHuman" vs "Demi-Human") and the damage code only recognised one spelling, so
+  on the vanilla (non-Payon-Stories) profile every Demi-Human bonus was silently
+  worth nothing — a Hydra Card read +0% instead of +20%. This also covered
+  Demi-Human crit bonuses, DEF-ignore effects and Bull's Eye's damage against them.
+  Payon Stories builds were never affected.
+
 - **Balanced Kunai can be selected as ammo.** The PS-custom neutral kunai (91042)
   existed in our data only as a name, with no item type — so the ammo picker could
   never find it (the same gap Armor Piercing Bullet had). It now carries its full

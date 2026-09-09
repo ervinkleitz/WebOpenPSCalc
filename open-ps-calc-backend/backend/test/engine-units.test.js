@@ -1073,6 +1073,60 @@ test("Bard/Dancer job pairs are symmetric in the vanilla item data", () => {
   assert.deepEqual(bad, []);
 });
 
+// Two bugs from one player report ("not sure if zealotus' egg +2% dmg to demihuman
+// is implemented... it's not written in the formula part"):
+//   1. The pet's PHYSICAL half was entered as a global atk_rate, so it hit every race
+//      and surfaced as a "bAtkRate +2%" step instead of a Demi-Human line. The live
+//      item API (egg 9026) says "increases Atk and Matk against Demihuman monsters
+//      by 2%" — both halves are race-scoped.
+//   2. Found while verifying it: vanilla mob_db.json spells the race "DemiHuman"
+//      while the PS layer spells it "Demi-Human", and every race consumer maps only
+//      the hyphenated form — so on the STANDARD profile every Demi-Human bonus was
+//      silently dead (a Hydra Card read +0%). The loader now normalizes the race.
+test("Zealotus pet is Demi-Human-scoped, and Demi-Human bonuses work on both profiles", () => {
+  const cfg = createBattleConfig();
+  const dmg = (server, over, mobId) => {
+    const P = getProfile(server);
+    loader.setProfile(P);
+    const b = buildFromSaveSchema({
+      server, job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 1, dex: 60, luk: 1 },
+      equipped: { right_hand: 1119, ...(over.equipped || {}) }, selected_pet: over.pet,
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, P);
+    return new BattlePipeline(cfg).calculate(st, w, createSkillInstance({ id: 0, level: 1 }),
+      loader.getMonster(mobId), eff, gb).normal.avg_damage;
+  };
+  const ORC = 1023;    // Orc Warrior — Demi-Human
+  const PORING = 1002; // Plant
+
+  // The race string must be canonical on BOTH mob layers, or the maps miss it.
+  loader.setProfile(getProfile("standard"));
+  assert.equal(loader.getMonster(ORC).race, "Demi-Human", "vanilla mob_db's 'DemiHuman' must normalize");
+  loader.setProfile(getProfile("payon_stories"));
+  assert.equal(loader.getMonster(ORC).race, "Demi-Human");
+
+  // Hydra Card (+20% vs Demi-Human) has to land on both profiles.
+  for (const server of ["payon_stories", "standard"]) {
+    const base = dmg(server, {}, ORC);
+    const hydra = dmg(server, { equipped: { right_hand_card1: 4035 } }, ORC);
+    assert.ok(hydra > base * 1.15, `${server}: Hydra must add ~20% vs a Demi-Human (${base} -> ${hydra})`);
+  }
+
+  // The pet: +2% vs Demi-Human only, and NOT the old global ATK rate.
+  loader.setProfile(getProfile("payon_stories"));
+  const demiBase = dmg("payon_stories", {}, ORC);
+  assert.equal(dmg("payon_stories", { pet: "zealotus" }, ORC), Math.floor(demiBase * 1.02),
+    "Zealotus adds exactly 2% against a Demi-Human");
+  assert.equal(dmg("payon_stories", { pet: "zealotus" }, PORING), dmg("payon_stories", {}, PORING),
+    "…and nothing at all against a Plant (it was a global atk_rate)");
+
+  const PS_PET = getProfile("payon_stories").pet_bonuses.zealotus;
+  assert.ok(!PS_PET.atk_rate, "no global ATK rate — the bonus is race-scoped");
+  assert.equal(PS_PET.add_race.RC_DemiHuman, 2, "physical half is add_race");
+  assert.equal(PS_PET.magic_add_race.RC_DemiHuman, 2, "magic half unchanged");
+});
+
 test("Momoe's Hairband gives +20% vs Turtle Island turtles, nothing vs others", () => {
   const cfg = createBattleConfig();
   const dmg = (hat, mobId) => {
