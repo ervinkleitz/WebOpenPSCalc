@@ -1,7 +1,7 @@
 [
   {
     "items": ["Ancient_Mummy_Card", "Mummy_Card"],
-    "script": "bonus bHolyStrikeChance,5;"
+    "script": "bonus bHolyStrikeChance,7;"
   },
   {
     "items": ["Purifying_Ring", "Rosary"],

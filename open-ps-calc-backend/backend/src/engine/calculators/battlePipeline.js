@@ -2764,6 +2764,40 @@ class BattlePipeline {
       }
     }
 
+    // PS Holy Strike (PS_PR_HOLYSTRIKE, quest passive, Priest line): "Melee Attacks
+    // sometimes call a Holy Property attack to vanquish your foes. The skill does
+    // [101 + BaseSTR + BaseLevel]% ATK." wiki Holy_Strike: "Activation rate is 20%
+    // and is increased by 1% for every 10 LUK", and it "deals damage on Undead,
+    // Shadow, and Ghost element monsters, and Demon/Undead race only" — outside that
+    // list the proc simply does not fire, so there is no branch to show. The Mummy /
+    // Ancient Mummy combo adds a further 7% (Priest rework PDF; our combo script had
+    // the pre-rework 5%). bHolyStrikeChance existed as a parsed bonus with NO consumer
+    // anywhere, so the whole proc was worth zero until the 2026-09-09 audit.
+    let holyStrikeBranch = null, holyStrikeChance = 0;
+    const holyStrikeLv = skill.id === 0 ? (gearBonuses.effective_mastery.PS_PR_HOLYSTRIKE || 0) : 0;
+    if (holyStrikeLv > 0 && !resolveIsRanged(build, weapon, null)) {
+      const tgtEle = target.element;
+      const validEle = tgtEle === 9 || tgtEle === 7 || tgtEle === 8; // Undead / Dark(Shadow) / Ghost
+      const validRace = target.race === "Demon" || target.race === "Undead";
+      if (validEle || validRace) {
+        holyStrikeChance = Math.min(100, 20 + Math.floor(status.luk / 10)
+          + (gearBonuses.holy_strike_bonus_chance || 0));
+        const hsSkill = { id: loader.getSkillIdByName("PS_PR_HOLYSTRIKE") || 0, name: "PS_PR_HOLYSTRIKE", level: 1, nk_ignore_flee: false };
+        holyStrikeBranch = this._runBranch(status, weapon, hsSkill, target, build, false,
+          { profile, gear_bonuses: gearBonuses });
+        holyStrikeBranch.add_step({
+          name: "Holy Strike proc", value: holyStrikeBranch.avg_damage,
+          min_value: holyStrikeBranch.min_damage, max_value: holyStrikeBranch.max_damage, multiplier: 1.0,
+          note: `${holyStrikeChance}% per melee attack — 20% base + ⌊LUK ${status.luk}/10⌋`
+            + ((gearBonuses.holy_strike_bonus_chance || 0) ? ` + ${gearBonuses.holy_strike_bonus_chance}% (card combo)` : "")
+            + `; Holy, vs ${validEle ? "an Undead/Shadow/Ghost-element" : "a Demon/Undead-race"} target`,
+          formula: "(101 + BaseSTR + BaseLevel)% ATK, Holy",
+          hercules_ref: "wiki.payonstories.com/Holy_Strike",
+        });
+        attacks.push(createAttackDefinition(holyStrikeBranch.avg_damage, 0.0, 0.0, holyStrikeChance / 100.0));
+      }
+    }
+
     // Card autocasts on a physical attack (Pirate Skel → Mammonite, Rekenber
     // Mercenary → Bash). Like the two procs above, the expected value rides on the
     // swing with no added attack time, and each proc surfaces its own branch.
@@ -2813,9 +2847,9 @@ class BattlePipeline {
       // so the breakdown can SHOW what one proc hits for — it is the only source of
       // damage a plagiarising Rogue has while auto-attacking, and Monks never had a
       // readout for it either. `ta_proc` stays as-is for existing consumers.
-      proc_branches: { ...(autoSpellBranch ? { autospell: autoSpellBranch } : {}), ...(autoBlitzBranch ? { auto_blitz: autoBlitzBranch } : {}), ...(taProc ? { triple_attack: taProc } : {}), ...cardAutocastBranches },
-      proc_chances: { ...(autoSpellBranch ? { autospell: autoSpellChance } : {}), ...(autoBlitzBranch ? { auto_blitz: autoBlitzChance } : {}), ...(taProc ? { triple_attack: taProcChance } : {}), ...cardAutocastChances },
-      proc_labels: { ...(autoSpellBranch ? { autospell: autoSpellLabel } : {}), ...(autoBlitzBranch ? { auto_blitz: "Auto Blitz Beat" } : {}), ...(taProc ? { triple_attack: `Triple Attack Lv${taLv}` } : {}), ...cardAutocastLabels },
+      proc_branches: { ...(holyStrikeBranch ? { holy_strike: holyStrikeBranch } : {}), ...(autoSpellBranch ? { autospell: autoSpellBranch } : {}), ...(autoBlitzBranch ? { auto_blitz: autoBlitzBranch } : {}), ...(taProc ? { triple_attack: taProc } : {}), ...cardAutocastBranches },
+      proc_chances: { ...(holyStrikeBranch ? { holy_strike: holyStrikeChance } : {}), ...(autoSpellBranch ? { autospell: autoSpellChance } : {}), ...(autoBlitzBranch ? { auto_blitz: autoBlitzChance } : {}), ...(taProc ? { triple_attack: taProcChance } : {}), ...cardAutocastChances },
+      proc_labels: { ...(holyStrikeBranch ? { holy_strike: "Holy Strike" } : {}), ...(autoSpellBranch ? { autospell: autoSpellLabel } : {}), ...(autoBlitzBranch ? { auto_blitz: "Auto Blitz Beat" } : {}), ...(taProc ? { triple_attack: `Triple Attack Lv${taLv}` } : {}), ...cardAutocastLabels },
       dw_lh_normal:    dualWield ? dualWield.lhNormal        : null,
       dw_lh_crit:      dualWield ? dualWield.lhCrit          : null,
       dw_rh_factor:    dualWield ? dualWield.rhFactor         : null,

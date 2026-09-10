@@ -366,6 +366,10 @@ const PS_WEAPON_HIT_COUNTS = {
 // Per-level hit counts for PS-reworked MAGIC spells where skills.json is wrong.
 // Same fn signature as PS_WEAPON_HIT_COUNTS; consumed in _runMagicBranch.
 const PS_MAGIC_HIT_COUNTS = {
+  // Fire Pillar: "New hit formula is [(2 + (2xSkill Level)] hits" (Wizard rework
+  // PDF), each hit 70% MATK +2% per Fire Wall level. Declared here so soft MDEF is
+  // subtracted per hit, like every other multi-hit spell.
+  WZ_FIREPILLAR: (lv) => 2 + 2 * lv,
   // Blaze Shield (NJ_KAENSIN): single-target hits scale by level — 3 (Lv1-4),
   // 6 (Lv5-8), 9 (Lv9-10) — each at 50% MATK. wiki.payonstories.com/Blaze_Shield.
   NJ_KAENSIN: (lv) => (lv <= 4 ? 3 : lv <= 8 ? 6 : 9),
@@ -751,9 +755,14 @@ const PS_BF_MAGIC_RATIOS = {
   // wiki.payonstories.com/Fire_Pillar: each hit's MATK% scales with the
   // caster's own Fire Wall rank (+2% MATK per hit per Fire Wall level) --
   // same pattern as Frost Nova/Frost Diver above.
+  // PER HIT, with the hit count declared in PS_MAGIC_HIT_COUNTS below. It used to
+  // return hits x per-hit as ONE lump, which subtracts the target's soft MDEF once
+  // instead of once per hit and so overstated the spell against high-MDEF targets —
+  // exactly the bug already fixed for Lord of Vermilion and Meteor Storm. Found in
+  // the 2026-09-09 patch-note audit.
   WZ_FIREPILLAR: (lv, tgt, ctx) => {
     const firewallLv = ctx ? (ctx.skill_levels.MG_FIREWALL ?? 0) : 0;
-    return (2 + 2 * lv) * (70 + 2 * firewallLv);
+    return 70 + 2 * firewallLv;
   },
   WZ_SIGHTRASHER: (lv) => 100 + 75 * lv,
   // wiki.payonstories.com/Napalm_Vulcan: "1*MATK per hit", hits = skill level
@@ -927,7 +936,10 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
     SA_ABRACADABRA: 5,
   },
   // HW_NAPALMVULCAN uses Shadow (Dark) element on PS instead of Ghost
-  skill_elements: { HW_NAPALMVULCAN: 7 },
+  // PS_PR_HOLYSTRIKE is a Holy-property proc (wiki Holy_Strike: "Melee Attacks
+  // sometimes call a Holy Property attack"), so its branch must not inherit the
+  // weapon's element.
+  skill_elements: { HW_NAPALMVULCAN: 7, PS_PR_HOLYSTRIKE: 6 },
   steelbody_override: PS_STEELBODY_OVERRIDE,
   sn_hp_bonus: PS_SN_HP_BONUS,
   sn_sp_bonus: PS_SN_SP_BONUS,

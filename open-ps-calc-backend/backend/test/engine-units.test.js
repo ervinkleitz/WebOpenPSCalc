@@ -1942,6 +1942,48 @@ test("Corrupting Drain follows the card's stat formula and heals 75%", () => {
   assert.ok(res.dps > noCard, "the proc must now reach the DPS");
 });
 
+// Holy Strike (PS_PR_HOLYSTRIKE, quest passive on the Priest line) was completely
+// unpriced: bHolyStrikeChance parsed into gearBonuses.holy_strike_bonus_chance and
+// NOTHING read it, and the proc itself had no branch. wiki Holy_Strike: "Activation
+// rate is 20% and is increased by 1% for every 10 LUK", "[101 + BaseSTR +
+// BaseLevel]% ATK", Holy property, and it "deals damage on Undead, Shadow, and Ghost
+// element monsters, and Demon/Undead race only". The Mummy/Ancient Mummy combo adds
+// 7% (Priest rework PDF; our combo script still had the pre-rework 5%).
+// Found in the 2026-09-09 patch-note audit.
+test("Holy Strike procs on melee vs valid targets, at 20% + LUK/10 (+7% combo)", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const run = (mobId, mastery, equipped) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 8, base_level: 99, job_level: 50,
+      base_stats: { str: 80, agi: 40, vit: 40, int: 40, dex: 60, luk: 50 },
+      equipped: { right_hand: 1522, ...(equipped || {}) }, mastery_levels: mastery || {},
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(st, w, createSkillInstance({ id: 0, level: 1 }),
+      loader.getMonster(mobId), eff, gb);
+    return { dps: r.dps, chance: (r.proc_chances || {}).holy_strike, branch: (r.proc_branches || {}).holy_strike };
+  };
+  const HS = { PS_PR_HOLYSTRIKE: 1 };
+  const TAMRUAN = 1584; // Demon race, Dark element — valid
+  const PORING = 1002;  // Plant, Neutral — not valid
+
+  const off = run(TAMRUAN, {}), on = run(TAMRUAN, HS);
+  assert.ok(!off.branch, "no skill, no branch");
+  assert.ok(on.branch && on.branch.avg_damage > 0, "the proc must be priced");
+  assert.equal(on.chance, 25, "20% base + ⌊LUK 50/10⌋");
+  assert.ok(on.dps > off.dps, `and it must raise DPS (${off.dps} -> ${on.dps})`);
+
+  // Target gate: element Undead/Shadow/Ghost OR race Demon/Undead, nothing else.
+  assert.ok(!run(PORING, HS).branch, "must not proc on a Neutral Plant");
+
+  // Mummy (weapon) + Ancient Mummy (shield) combo: +7%, not the pre-rework 5%.
+  const combo = run(TAMRUAN, HS, { right_hand_card1: 4106, left_hand: 2104, left_hand_card1: 4248 });
+  assert.equal(combo.chance, 32, "25% + 7% from the Mummy card combo");
+  // One card alone is not the combo.
+  assert.equal(run(TAMRUAN, HS, { right_hand_card1: 4106 }).chance, 25, "half the combo does nothing");
+});
+
 test("Corruptor Card's proc is surfaced at the right rate", () => {
   const ROGUE = {
     job_id: 17, base_level: 99, job_level: 50,
@@ -2998,6 +3040,37 @@ test("item tooltips prefer the PS scrape over vanilla text, and the manual layer
 // ---------------------------------------------------------------------------
 // Multi-hit magic: the hit COUNT is where these two used to go wrong
 // ---------------------------------------------------------------------------
+// Fire Pillar declared hits x per-hit as ONE lump ratio, so the target's soft MDEF
+// was subtracted once instead of once per hit — overstating it against high-MDEF
+// targets. That is the same bug already fixed for Lord of Vermilion and Meteor
+// Storm; Fire Pillar was simply left folded. Wizard PDF: "70% MATK per hit",
+// "[(2 + (2xSkill Level)] hits". Found in the 2026-09-09 patch-note audit.
+test("Fire Pillar's hits are per-hit, so soft MDEF is subtracted per hit", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  assert.equal(PS.magic_hit_counts.WZ_FIREPILLAR(5), 12, "Lv5 = 2 + 2×5 hits");
+  assert.equal(PS.magic_ratios.WZ_FIREPILLAR(5, null, { skill_levels: {} }), 70,
+    "the ratio is now PER HIT (70%), not hits × per-hit");
+  assert.equal(PS.magic_ratios.WZ_FIREPILLAR(5, null, { skill_levels: { MG_FIREWALL: 10 } }), 90,
+    "+2% per Fire Wall level, still per hit");
+
+  const dmg = (vit, int_) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 9, base_level: 99, job_level: 50,
+      base_stats: { str: 1, agi: 1, vit: 1, int: 99, dex: 60, luk: 1 },
+      equipped: { right_hand: 1601 }, mastery_levels: { MG_FIREWALL: 10 },
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const tgt = createTarget({ def_: 0, mdef_: 0, vit, int_, size: 1, race: 0, element: 0, element_level: 1 });
+    return new BattlePipeline(cfg).calculate(st, w,
+      createSkillInstance({ id: loader.getSkillIdByName("WZ_FIREPILLAR"), level: 5 }), tgt, eff, gb).normal.avg_damage;
+  };
+  // A soft-MDEF-less target is unaffected by the split; a beefy one takes the
+  // subtraction twelve times, which is a large, one-directional correction.
+  const soft = dmg(120, 120), none = dmg(0, 0);
+  assert.ok(soft < none * 0.86, `high soft MDEF must cut it hard now (${none} -> ${soft})`);
+});
+
 test("Meteor Storm counts meteors as well as hits per meteor", () => {
   // skills.json number_of_hits is only the hits-per-meteor column; the meteor
   // count scales too, and ignoring it priced Lv10 at 5 hits instead of 35.

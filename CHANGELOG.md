@@ -9,6 +9,21 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Holy Strike is finally worth something.** The Priest line's quest passive — a Holy
+  proc on melee attacks — was never priced at all: the card bonus that boosts it was
+  read from your gear and then quietly discarded, and the proc itself had no damage
+  behind it. It now fires at 20% plus 1% per 10 LUK against the targets it actually
+  works on (Undead, Shadow and Ghost element, or Demon and Undead race), for
+  (101 + base STR + base level)% ATK as Holy damage, and it can crit. On a Battle
+  Priest hitting a Tamruan that's a jump from 248 to 557 DPS. The Mummy card combo
+  that raises the chance was also still at its pre-rework 5% — it's 7% now.
+
+- **Fire Pillar was too strong against high-MDEF targets.** Its twelve hits were being
+  priced as one big hit, so the target's soft magic defence was subtracted once
+  instead of once per hit — the same mistake already fixed for Lord of Vermilion and
+  Meteor Storm. Against a heavily-MDEF'd target it drops about 17%; against a soft
+  one, nothing changes.
+
 - **Hindsight's bolts are priced properly now.** Two rules from the Sage rework had
   never been implemented. Its bolt ranks aren't an even spread — Payon Stories rolls
   50% Level 2, 35% Level 3, 15% Level 4, where the calculator assumed all three
