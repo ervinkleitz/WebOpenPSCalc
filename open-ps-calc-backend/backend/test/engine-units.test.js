@@ -2205,6 +2205,31 @@ test("Tracking's cast time is FIXED — no DEX, no gear castrate, no Bragi, no S
   assert.ok(meteor(50) < meteor(0), "Meteor Storm must still bend to Bragi");
 });
 
+// Venom Splasher had NO cooldown modelled, so the DPS model spammed it at the
+// engine's floor (~0.44s/cast) when every source says it has a multi-second re-use
+// delay — a ~14x overstatement. Sources DISAGREE on the value: the live wiki says
+// "6 seconds re-use delay", the Assassin rework PDF proposed 3s, and this repo's own
+// cooldown sweep had recorded "none" (a false negative: the wiki words it "re-use
+// delay", not the "Cooldown" the sweep grepped for). We take the LIVE wiki. If an
+// in-game timing shows 3s, change the value in ps_skill_cooldowns.json — nothing
+// else needs touching. Found in the 2026-09-09 patch-note audit.
+test("Venom Splasher is gated by its re-use delay, not spammable", () => {
+  const { calculateSkillTiming } = require("../src/engine/calculators/skillTiming");
+  loader.setProfile(PS);
+  const sd = loader.getSkill(loader.getSkillIdByName("AS_SPLASHER"));
+  const gb = { castrate: 0, skill_castrate: {}, delayrate: 0, skill_delayrate: {}, skill_cooldown: {} };
+  const [cast, delay, cooldown] = calculateSkillTiming("AS_SPLASHER", 10, sd,
+    { dex: 99, agi: 99 }, gb, {}, "payon_stories", null);
+
+  assert.equal(cooldown, 6000, "6s re-use delay (live wiki)");
+  assert.equal(delay, 6000, "the cooldown floors the wait between casts");
+  assert.ok(cast + delay > 6000, `a cast cycle is over 6s, not the old ~0.4s (${cast + delay}ms)`);
+  // A cooldown is fixed: Bragi and delayrate gear must not shorten it.
+  const bragi = calculateSkillTiming("AS_SPLASHER", 10, sd,
+    { dex: 99, agi: 99, after_cast_delay_reduction_pct: 50 }, gb, {}, "payon_stories", null);
+  assert.equal(bragi[1], 6000, "Bragi does not shorten a cooldown");
+});
+
 test("per-skill cooldowns floor the cast interval, resist Bragi, and bend to bSkillCooldown", () => {
   const cfg = createBattleConfig();
   const PS = getProfile("payon_stories");

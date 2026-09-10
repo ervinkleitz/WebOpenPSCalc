@@ -47,7 +47,7 @@
   "AS_SONICBLOW": "none",
   "AS_GRIMTOOTH": "none",
   "AS_VENOMDUST": "none",
-  "AS_SPLASHER": "none",
+  "AS_SPLASHER": "6000ms (re-use delay) - re-checked 2026-09-09; the earlier 'none' was a false negative, the wiki words it 're-use delay' not 'Cooldown'",
   "AC_CHARGEARROW": "no wiki page",
   "TF_SPRINKLESAND": "none",
   "TF_THROWSTONE": "none",
@@ -143,5 +143,6 @@
  "AM_SPHEREMINE": 500,
  "BA_MUSICALSTRIKE": 300,
  "DC_THROWARROW": 300,
- "KN_CHARGEATK": 3000
+ "KN_CHARGEATK": 3000,
+ "AS_SPLASHER": 6000
 }

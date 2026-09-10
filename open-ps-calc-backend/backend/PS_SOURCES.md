@@ -6206,6 +6206,25 @@ Decisions behind the Turn Undead branch, requested by a CC (Laila) who wanted a
   OPEN: that page does not restate the fail-damage magnitude; the branch assumes full
   delegation (same formula at the Res level). Worth confirming with Laila in game.
 
+## 2026-09-09 - OPEN: Venom Splasher's re-use delay, 3s vs 6s
+
+Three sources, three answers, and the engine had a fourth (nothing at all - it was
+spammable at the ~0.44s floor, roughly 14x overstated):
+
+- LIVE wiki Venom_Splasher: "6 seconds re-use delay between uses" (cast delay: ASPD).
+- Assassin rework PDF: "Faster Recast Time - the recast time of this skill is reduced
+  to 3 seconds", plus "Instant Cast - this skill no longer has a cast bar".
+- This repo's own cooldown sweep recorded AS_SPLASHER as "none" - a FALSE NEGATIVE:
+  the sweep grepped for the wiki's usual "Cooldown" wording and this page says
+  "re-use delay". Worth remembering for any future sweep.
+
+SHIPPED the live wiki's 6000 ms, on the grounds that the wiki documents the server as
+it runs while the PDF is the proposal (the same call the Ground Drift ratio already
+follows, where the PDF is stale and the wiki current). NOT confident enough to close
+this: if someone times it in game at 3s, change AS_SPLASHER in
+ps_skill_cooldowns.json - nothing else needs touching. The PDF's "instant cast" is
+also unimplemented; the vanilla 1s cast still applies, DEX-reduced.
+
 ## 2026-09-09 - Patch-note audit: skill TIMING is where the gaps are
 
 Swept every rework section for stated rules the engine did not implement (prompted by

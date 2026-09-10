@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Venom Splasher is no longer spammable.** It had no re-use delay modelled at all,
+  so the calculator assumed you could recast it several times a second — overstating
+  its damage per second roughly fourteen-fold. It now respects the 6-second re-use
+  delay the wiki documents. (The rework notes proposed 3 seconds, so this one is
+  flagged for an in-game timing; if it turns out to be 3, it's a one-number change.)
+
 - **Decrease AGI can be applied to the target.** The Acolyte debuff cuts a monster's
   AGI by a flat 3 per level (−15 at Level 5), which lowers its flee and raises your
   hit chance — Quagmire's percentage version was already there, but this one had no
