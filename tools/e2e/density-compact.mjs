@@ -3,6 +3,10 @@ const URL = process.argv[2] || "http://localhost:5173/";
 const b = await chromium.launch({ channel: "chrome", headless: true });
 const page = await b.newPage({ viewport: { width: 1440, height: 900 } });
 await page.goto(URL, { waitUntil: "networkidle" });
+// Manual stat bonuses is a collapsed section by default; open it so its grid is
+// actually laid out and can be measured.
+await page.evaluate(() => { try { localStorage.setItem("manualStatsOpen", "1"); } catch (e) {} });
+await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(2000);
 
 const measure = async (label) => {
@@ -33,6 +37,13 @@ const measure = async (label) => {
       })(),
       statCardsOverflow: [...document.querySelectorAll(".ro-stat-grid .ro-stat-card")]
         .some((c) => c.scrollWidth > c.clientWidth + 1),
+      // Manual stat bonuses: same one-row treatment as the base stats. Count
+      // distinct field tops rather than trusting the column count.
+      manualRows: (() => {
+        const f = [...document.querySelectorAll(".manual-stat-grid .field")];
+        return f.length ? new Set(f.map((x) => Math.round(x.getBoundingClientRect().top))).size : null;
+      })(),
+      manualFields: document.querySelectorAll(".manual-stat-grid .field").length,
       smallestText: Math.min(...[...document.querySelectorAll("body *")]
         .map((el) => parseFloat(getComputedStyle(el).fontSize)).filter((n) => n > 0)),
     };
@@ -65,7 +76,10 @@ if (!(after.inputH <= before.inputH * 0.8)) { console.error(`FAIL: inputs barely
 if (!(after.statCardH <= before.statCardH * 0.8)) { console.error(`FAIL: base-stat cards barely shrank (${before.statCardH} -> ${after.statCardH}px)`); ok = false; }
 if (after.statRows !== 1) { console.error(`FAIL: base stats should sit on one row, got ${after.statRows}`); ok = false; }
 if (after.statCardsOverflow) { console.error("FAIL: a base-stat card overflows its own box"); ok = false; }
-console.log(`input ${before.inputH} -> ${after.inputH}px, stat card ${before.statCardH} -> ${after.statCardH}px, stat rows ${before.statRows} -> ${after.statRows}`);
+if (after.manualFields !== 6) { console.error(`FAIL: manual stat bonuses not rendered (${after.manualFields} fields) — section collapsed?`); ok = false; }
+if (after.manualRows !== 1) { console.error(`FAIL: manual stat bonuses should sit on one row, got ${after.manualRows}`); ok = false; }
+console.log(`input ${before.inputH} -> ${after.inputH}px, stat card ${before.statCardH} -> ${after.statCardH}px, ` +
+            `stat rows ${before.statRows} -> ${after.statRows}, manual-bonus rows ${before.manualRows} -> ${after.manualRows}`);
 console.log(`\nheight ${before.docHeight} -> ${after.docHeight} (${Math.round((1 - after.docHeight / before.docHeight) * 100)}% shorter), ` +
             `panels visible on first screen ${before.panelsInFirstScreen} -> ${after.panelsInFirstScreen}`);
 
@@ -81,7 +95,9 @@ if (persisted.d !== "compact" || persisted.f !== "14px") { console.error("FAIL: 
 for (const [w, h, label] of [[390, 844, "iPhone"], [820, 1180, "tablet"]]) {
   const page = await b.newPage({ viewport: { width: w, height: h } });
   await page.goto("http://localhost:5173/", { waitUntil: "networkidle" });
-  await page.evaluate(() => { try { localStorage.setItem("density", "compact"); } catch (e) {} });
+  // Each newPage gets its own context, so the collapsed sections have to be
+  // opened again here.
+  await page.evaluate(() => { try { localStorage.setItem("manualStatsOpen", "1"); localStorage.setItem("density", "compact"); } catch (e) {} });
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForTimeout(1800);
   // Measure comfortable first, then compact, and compare: the page already
@@ -97,11 +113,17 @@ for (const [w, h, label] of [[390, 844, "iPhone"], [820, 1180, "tablet"]]) {
     comfortW: cw, compactWorse: document.documentElement.scrollWidth > cw,
     statRows: (() => { const c = [...document.querySelectorAll(".ro-stat-grid .ro-stat-card")];
       return c.length ? new Set(c.map((x) => Math.round(x.getBoundingClientRect().top))).size : null; })(),
+    manualRows: (() => { const f = [...document.querySelectorAll(".manual-stat-grid .field")];
+      return f.length ? new Set(f.map((x) => Math.round(x.getBoundingClientRect().top))).size : null; })(),
+    manualClipped: [...document.querySelectorAll(".manual-stat-grid .field")]
+      .some((x) => x.scrollWidth > x.clientWidth + 1),
     font: getComputedStyle(document.documentElement).fontSize,
   }), comfortW);
   console.log(label.padEnd(8), JSON.stringify(m));
   if (m.compactWorse) { console.error(`FAIL: compact widened the page at ${w}px (${m.comfortW} -> ${m.scrollW})`); ok = false; }
   if (m.statRows !== 1) { console.error(`FAIL: base stats wrapped to ${m.statRows} rows at ${w}px`); ok = false; }
+  if (m.manualRows !== 1) { console.error(`FAIL: manual stat bonuses wrapped to ${m.manualRows} rows at ${w}px`); ok = false; }
+  if (m.manualClipped) { console.error(`FAIL: a manual-bonus field is clipped at ${w}px`); ok = false; }
   await page.close();
 }
 
