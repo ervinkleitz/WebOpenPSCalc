@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-09
+
+### Fixed
+
+- **Gunslingers can no longer be endowed in the calculator.** Payon Stories' Gunslinger
+  release notes are explicit — "Gunslingers are no longer able to be endowed, nor can
+  they gain the effect of element converters" — but the calculator happily applied a
+  Priest endow or Aspersio to one, inflating damage by up to 75% against a weak
+  element. Reported by a player. Endows, converters and Aspersio are now all refused
+  for Gunslingers, and the endow selector is greyed out with "Not available to
+  Gunslingers" rather than silently doing nothing. Their attack element still comes
+  from their ammunition, which is unchanged — a Purifying Bullet still hits Holy.
+
 ## 2026-09-08
 
 ### Fixed

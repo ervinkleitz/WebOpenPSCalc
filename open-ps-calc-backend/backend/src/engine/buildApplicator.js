@@ -64,7 +64,20 @@ const ENDOW_SC_ELEMENT = {
   SC_ENCHANTARMS: 7,
 };
 
+const GUNSLINGER_JOB = 24;
+
 function applyWeaponEndow(effBuild) {
+  // PS Gunslinger release notes, Core Changes: "Gunslingers are no longer able to
+  // be endowed, nor can they gain the effect of element converters." Converters
+  // apply the same SC_PROPERTYxxx statuses as a Priest endow, so both arrive
+  // through this one field and both are refused together — as is Aspersio. Their
+  // damage element comes from their AMMO instead, which is untouched here.
+  // Reported by a player who could endow one in the calc (2026-09-09).
+  // Gated on the PS flag: on the vanilla profile a Gunslinger endows normally.
+  if (effBuild.job_id === GUNSLINGER_JOB) {
+    const { getProfile } = require("./serverProfiles");
+    if (getProfile(effBuild.server).mechanic_flags.has("GS_CANNOT_BE_ENDOWED")) return;
+  }
   if ("SC_ENCHANTPOISON" in effBuild.active_status_levels) {
     effBuild.weapon_element = 5; // Poison
   } else {

@@ -2934,6 +2934,9 @@ export default function BuildEditor() {
               // and PS_ENCHANT_EFF both being 3-element arrays.
               const groundEffectMax = data.server === "payon_stories" ? 3 : 5;
               const endowValue = supportBuffs.SC_ASPERSIO ? "SC_ASPERSIO" : (supportBuffs.weapon_endow_sc as string) || "";
+              // Gunslingers can be neither endowed nor converted on Payon Stories
+              // (release patch notes) — the engine ignores it, so grey the control out.
+              const gsNoEndow = data.server === "payon_stories" && data.job_id === 24;
               // Auto Spell (Hindsight) is a Sage/Professor skill; the engine only
               // computes it for those jobs, so gate the selector to match.
               const isSageLine = [16, 4017].includes(data.job_id);
@@ -3104,10 +3107,16 @@ export default function BuildEditor() {
                           </div>
                         );
                       })}
+                      {/* PS Gunslinger release notes: "Gunslingers are no longer able to be
+                          endowed, nor can they gain the effect of element converters." The
+                          engine refuses it either way; disabling the control says why instead
+                          of silently ignoring the pick. Their element comes from ammunition. */}
                       <div className="field">
-                        <label title="Priest weapon endow / Aspersio, plus Enchant Poison and Cursed Water">Weapon endow</label>
-                        <select value={endowValue} onChange={(e) => updateWeaponEndow(e.target.value)}>
-                          <option value="">None</option>
+                        <label title={gsNoEndow
+                          ? "Gunslingers cannot be endowed on Payon Stories, and element converters do not work on them either — their attack element comes from their ammunition."
+                          : "Priest weapon endow / Aspersio, plus Enchant Poison and Cursed Water"}>Weapon endow</label>
+                        <select value={gsNoEndow ? "" : endowValue} disabled={gsNoEndow} onChange={(e) => updateWeaponEndow(e.target.value)}>
+                          <option value="">{gsNoEndow ? "Not available to Gunslingers" : "None"}</option>
                           <option value="SC_ASPERSIO">Aspersio (Holy)</option>
                           <option value="SC_PROPERTYFIRE">Endow Fire</option>
                           <option value="SC_PROPERTYWATER">Endow Water</option>

@@ -3687,6 +3687,42 @@ test("a resist mod can take a 1-damage incoming hit to a real 0", () => {
   assert.equal(taken({}, { armor_card1: 4105 }), 0, "so does a Marc's +5% water resist");
 });
 
+// Gunslinger Release Patch Notes, Core Changes: "Gunslingers are no longer able to
+// be endowed, nor can they gain the effect of element converters." Converters apply
+// the same SC_PROPERTYxxx statuses a Priest endow does, so both arrive through the
+// one endow field and both are refused; Aspersio too. Their element comes from
+// AMMUNITION instead, which must keep working. Reported by a player (2026-09-09).
+test("a PS Gunslinger cannot be endowed, but their ammo element still applies", () => {
+  const cfg = createBattleConfig();
+  const ele = (server, job, equipped, extra) => {
+    const P = getProfile(server);
+    loader.setProfile(P);
+    const b = buildFromSaveSchema({
+      server, job_id: job, base_level: 99, job_level: 50,
+      base_stats: { str: 40, agi: 90, vit: 1, int: 1, dex: 90, luk: 30 },
+      equipped, mastery_levels: {}, ...(extra || {}),
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, P);
+    return new BattlePipeline(cfg).calculate(st, w, createSkillInstance({ id: 0, level: 1 }),
+      loader.getMonster(1170), eff, gb).normal.steps.find((s) => s.name === "Attr Fix").note;
+  };
+  const WIND = { support_buffs: { weapon_endow_sc: "SC_PROPERTYWIND" } };
+  const GUN = { right_hand: 13100, ammo: 13200 }; // Revolver + plain (Neutral) Bullet
+
+  assert.ok(ele("payon_stories", 24, GUN, WIND).startsWith("Neutral vs"),
+    "an endow must not reach a PS Gunslinger");
+  assert.ok(ele("payon_stories", 24, GUN, { support_buffs: { SC_ASPERSIO: 1 } }).startsWith("Neutral vs"),
+    "…nor Aspersio");
+  // The ammo is where their element legitimately comes from.
+  assert.ok(ele("payon_stories", 24, { right_hand: 13100, ammo: 13220 }, WIND).startsWith("Holy vs"),
+    "a Purifying (Holy) Bullet still sets the element, endow or not");
+  // Scope: other jobs, and the vanilla profile, are untouched.
+  assert.ok(ele("payon_stories", 7, { right_hand: 1119 }, WIND).startsWith("Wind vs"),
+    "a Knight still endows normally");
+  assert.ok(ele("standard", 24, GUN, WIND).startsWith("Wind vs"),
+    "and a vanilla-profile Gunslinger still endows — this is a PS change");
+});
+
 test("Run and Gun grants its PS ranged damage resistance, not just FLEE", () => {
   const { calculateIncomingPhysicalDamage } = require("../src/engine/calculators/incomingPipeline");
   // Gunslinger Release Patch Notes (Adjustment Rework): "Ranged damage resistance +30%".

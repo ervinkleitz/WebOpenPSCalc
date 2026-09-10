@@ -398,6 +398,11 @@ const PS_MECHANIC_FLAGS = new Set([
   "GROUND_EFFECT_PS_VALUES",
   "GS_GS_ADJUSTMENT_SKIP_HIT_PENALTY",
   "GS_INCREASING_REMOVED",   // Increasing Accuracy removed on PS (folded into Single Action)
+  // Gunslinger Release Patch Notes, Core Changes: "Gunslingers are no longer able
+  // to be endowed, nor can they gain the effect of element converters." Their
+  // attack element comes from ammunition instead. Consumed by buildApplicator's
+  // applyWeaponEndow, which refuses endows/converters/Aspersio for job 24.
+  "GS_CANNOT_BE_ENDOWED",
   // PS Throw Shuriken does not ignore flee
   "NJ_SYURIKEN_FLEE_IGNORE_DISABLED",
   "PR_MACEMASTERY_EXPANDED_WEAPON_TYPES",
