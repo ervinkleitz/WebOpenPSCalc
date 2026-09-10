@@ -9,6 +9,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Hindsight's bolts are priced properly now.** Two rules from the Sage rework had
+  never been implemented. Its bolt ranks aren't an even spread — Payon Stories rolls
+  50% Level 2, 35% Level 3, 15% Level 4, where the calculator assumed all three
+  equally likely and ran about 13% hot. And Double Bolt is deliberately weaker through
+  Hindsight ("only half of the bolts it usually does, rounded up"), which the
+  calculator missed entirely: a Double Bolt Sage's procs were priced as if the buff
+  did nothing. A Level 5 Soul Strike proc is now 5 volleys' worth rather than 3 or 6.
+
 - **Your soft DEF finally reduces the damage you take.** A player reported Divine
   Protection doing nothing against Tamruan — and it wasn't just that skill. The
   survivability panel worked out your soft DEF from raw VIT alone, which is right for

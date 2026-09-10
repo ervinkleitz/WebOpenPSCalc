@@ -233,9 +233,14 @@ const ROGUE_JOBS = new Set([17, 4018]);
 const AUTO_SPELL_PROC_CHANCE = 30; // flat %, all ranks
 const AUTO_SPELL_MAP = {
   1:  { label: "Soul Strike Lv5",     casts: [{ name: "MG_SOULSTRIKE",    level: 5 }] },
-  2:  { label: "Fire Bolt Lv2–4",     casts: [{ name: "MG_FIREBOLT", level: 2 }, { name: "MG_FIREBOLT", level: 3 }, { name: "MG_FIREBOLT", level: 4 }] },
-  3:  { label: "Cold Bolt Lv2–4",     casts: [{ name: "MG_COLDBOLT", level: 2 }, { name: "MG_COLDBOLT", level: 3 }, { name: "MG_COLDBOLT", level: 4 }] },
-  4:  { label: "Lightning Bolt Lv2–4", casts: [{ name: "MG_LIGHTNINGBOLT", level: 2 }, { name: "MG_LIGHTNINGBOLT", level: 3 }, { name: "MG_LIGHTNINGBOLT", level: 4 }] },
+  // The three bolt ranks are NOT an even mix: "For Fire Bolt, Cold Bolt, and
+  // Lightning Bolt, there is a 50% chance of using level 2 of the spell, 35% chance
+  // of using level 3, and 15% chance of using level 4" (Sage rework PDF). The wiki
+  // only says "Level 2-4", which is why this was modelled uniform and ran ~13% hot
+  // (expected rank 3.00 vs the real 2.65). Weights must sum to 1.
+  2:  { label: "Fire Bolt Lv2–4",     casts: [{ name: "MG_FIREBOLT", level: 2, weight: 0.50 }, { name: "MG_FIREBOLT", level: 3, weight: 0.35 }, { name: "MG_FIREBOLT", level: 4, weight: 0.15 }] },
+  3:  { label: "Cold Bolt Lv2–4",     casts: [{ name: "MG_COLDBOLT", level: 2, weight: 0.50 }, { name: "MG_COLDBOLT", level: 3, weight: 0.35 }, { name: "MG_COLDBOLT", level: 4, weight: 0.15 }] },
+  4:  { label: "Lightning Bolt Lv2–4", casts: [{ name: "MG_LIGHTNINGBOLT", level: 2, weight: 0.50 }, { name: "MG_LIGHTNINGBOLT", level: 3, weight: 0.35 }, { name: "MG_LIGHTNINGBOLT", level: 4, weight: 0.15 }] },
   5:  { label: "Earth Spike Lv2",     casts: [{ name: "WZ_EARTHSPIKE",    level: 2 }] },
   6:  { label: "Fire Ball Lv10",      casts: [{ name: "MG_FIREBALL",      level: 10 }] },
   7:  { label: "Thunderstorm Lv3",    casts: [{ name: "MG_THUNDERSTORM",  level: 3 }] },
@@ -527,6 +532,7 @@ class BattlePipeline {
     if (!entry || !entry.casts.length) return null;
 
     const perCast = [];
+    const castWeights = [];
     for (const c of entry.casts) {
       const id = loader.getSkillIdByName(c.name);
       if (!id) continue;
@@ -539,18 +545,45 @@ class BattlePipeline {
         nk_ignore_ele: dt.includes("IgnoreElement"),
         nk_ignore_cards: dt.includes("IgnoreCards"),
       };
-      perCast.push(this._runMagicBranch(status, weapon, spellSkill, target, build, opts));
+      const castResult = this._runMagicBranch(status, weapon, spellSkill, target, build, opts);
+      // Double Bolt (SC_DOUBLECASTING) fires a bolt volley twice on a MANUAL cast,
+      // but only half of it through Hindsight: "The double cast will only do half of
+      // the bolts it usually does, rounded up" (Sage PDF), and wiki Auto_Spell says
+      // the same. So an N-bolt volley becomes N + ceil(N/2), not 2N — e.g. Lv3 Fire
+      // Bolt is 3 + 2 = 5 volleys' worth, ×1.667 rather than ×2. This path never
+      // consulted SC_DOUBLECASTING at all, so a Sage's proc branch was ×1.0.
+      const dcLv = Number((build.active_status_levels || {}).SC_DOUBLECASTING || 0);
+      if (dcLv > 0 && DOUBLECASTING_SKILLS.has(c.name)) {
+        const hitsArr = (sd && sd.number_of_hits) || [];
+        const bolts = Math.max(1, Number(hitsArr[c.level - 1]) || 1);
+        const withExtra = bolts + Math.ceil(bolts / 2);
+        castResult.pmf = scaleFloor(castResult.pmf, withExtra, bolts);
+        const [dmn, dmx, dav] = pmfStats(castResult.pmf);
+        castResult.min_damage = dmn; castResult.max_damage = dmx; castResult.avg_damage = dav;
+        castResult.add_step({
+          name: "Double Bolt (Hindsight)", value: dav, min_value: dmn, max_value: dmx,
+          multiplier: withExtra / bolts,
+          note: `Half effect through Hindsight: ${bolts} bolts + ceil(${bolts}/2) = ${withExtra} (a manual cast would be ${bolts * 2})`,
+          formula: `damage × ${withExtra}/${bolts}`,
+          hercules_ref: "wiki.payonstories.com/Auto_Spell; Sage rework PDF",
+        });
+      }
+      perCast.push(castResult);
+      castWeights.push(typeof c.weight === "number" ? c.weight : null);
     }
     if (!perCast.length) return null;
 
-    // Uniform mixture of the per-cast pmfs — every listed cast is equiprobable.
-    const w = 1 / perCast.length;
+    // Mixture of the per-cast pmfs. Weights come from the map when the ranks are not
+    // equiprobable (the 50/35/15 bolt mix); otherwise fall back to uniform.
+    const totalW = castWeights.reduce((n, x) => n + (x || 0), 0);
+    const useWeights = castWeights.every((x) => x != null) && Math.abs(totalW - 1) < 1e-9;
     const mixed = {};
-    for (const r of perCast) {
+    perCast.forEach((r, i) => {
+      const w = useWeights ? castWeights[i] : 1 / perCast.length;
       for (const [dmg, prob] of Object.entries(r.pmf || {})) {
         mixed[dmg] = (mixed[dmg] || 0) + prob * w;
       }
-    }
+    });
     const [mn, mx, av] = pmfStats(mixed);
 
     // Reuse the representative (middle) cast's step log so the breakdown stays
@@ -565,7 +598,7 @@ class BattlePipeline {
       const hiLv = entry.casts[entry.casts.length - 1].level;
       result.add_step({
         name: "Auto Spell level mix", value: av, min_value: mn, max_value: mx,
-        note: `${entry.label}: random cast level ${loLv}–${hiLv} (uniform); steps above shown for Lv${entry.casts[repIdx].level}`,
+        note: `${entry.label}: random cast level ${loLv}–${hiLv} (${useWeights ? entry.casts.map((c) => `Lv${c.level} ${Math.round(c.weight * 100)}%`).join(", ") : "uniform"}); steps above shown for Lv${entry.casts[repIdx].level}`,
         formula: "", hercules_ref: "wiki.payonstories.com/Auto_Spell",
       });
     }

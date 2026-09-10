@@ -387,6 +387,52 @@ test("Hindsight: proc adds damage — DPS with it exceeds the same build without
   assert.ok(withAS > without, `autocast should raise DPS (${withAS} !> ${without})`);
 });
 
+// Two Hindsight rules from the Sage rework PDF that were never ported (2026-09-09
+// patch-note audit):
+//   "For Fire Bolt, Cold Bolt, and Lightning Bolt, there is a 50% chance of using
+//    level 2 of the spell, 35% chance of using level 3, and 15% chance of using
+//    level 4."  -> the engine mixed the three ranks UNIFORMLY (~13% hot).
+//   "Double Cast ... will only do half of the bolts it usually does, rounded up"
+//    (wiki Auto_Spell says the same) -> the Hindsight path never read
+//    SC_DOUBLECASTING at all, so a Double Bolt Sage's proc branch was x1.0.
+test("Hindsight: bolt ranks mix 50/35/15, and Double Bolt is halved through it", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const proc = (autoLv, doubleCasting) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 16, base_level: 99, job_level: 50,
+      base_stats: { str: 40, agi: 40, vit: 40, int: 90, dex: 60, luk: 1 },
+      equipped: { right_hand: 1601 }, mastery_levels: {},
+      support_buffs: { auto_spell_lv: autoLv },
+      active_buffs: doubleCasting ? { SC_DOUBLECASTING: 5 } : {},
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(st, w, createSkillInstance({ id: 0, level: 1 }),
+      loader.getMonster(1002), eff, gb);
+    return (r.proc_branches || {}).autospell;
+  };
+
+  // Weighted mix: the branch must be strictly cheaper than a uniform Lv2/3/4 mix,
+  // whose expected rank is 3.00 against the real 2.65 — and it must sit between the
+  // pure-Lv2 and pure-Lv4 extremes.
+  const mixed = proc(2, false);
+  assert.ok(mixed && mixed.avg_damage > 0, "rank 2 must produce a Fire Bolt branch");
+  const note = mixed.steps.find((s) => s.name === "Auto Spell level mix").note;
+  assert.ok(/Lv2 50%/.test(note) && /Lv3 35%/.test(note) && /Lv4 15%/.test(note),
+    `the mix must be stated in the breakdown, got: ${note}`);
+  assert.ok(!/uniform/.test(note), "and must no longer claim it is uniform");
+
+  // Double Bolt through Hindsight: half the extra bolts, rounded up. Soul Strike Lv5
+  // is 3 bolts -> 3 + ceil(3/2) = 5, i.e. exactly x5/3, never x2.
+  const ss = proc(1, false), ssDouble = proc(1, true);
+  const ratio = ssDouble.avg_damage / ss.avg_damage;
+  assert.ok(Math.abs(ratio - 5 / 3) < 0.01,
+    `Soul Strike Lv5 (3 bolts) must be x5/3 through Hindsight, got x${ratio.toFixed(3)}`);
+  assert.ok(ratio < 2, "never the full x2 a manual cast gets");
+  assert.ok(ssDouble.steps.some((s) => s.name === "Double Bolt (Hindsight)"),
+    "the halved Double Bolt must be named in the breakdown");
+});
+
 test("Hindsight: no-damage ranks (9 Stone Curse / 10 Safety Wall) produce no branch", () => {
   assert.strictEqual(runScenario(SAGE_HINDSIGHT(9)).result.proc_branches, undefined);
   assert.strictEqual(runScenario(SAGE_HINDSIGHT(10)).result.proc_branches, undefined);

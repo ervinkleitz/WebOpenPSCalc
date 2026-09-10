@@ -3318,7 +3318,7 @@
    "matk_max": 349
   },
   "result": {
-   "dps": 247.655,
+   "dps": 232.4,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 8.6,
@@ -3377,7 +3377,7 @@
     "autospell": {
      "min": 216,
      "max": 660,
-     "avg": 409,
+     "avg": 361,
      "steps": [
       "Base MATK",
       "Skill Ratio (ID 19 Lv 3)",
