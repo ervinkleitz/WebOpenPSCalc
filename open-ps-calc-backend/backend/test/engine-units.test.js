@@ -2820,6 +2820,60 @@ test("cards are ignored in slots they cannot compound into", () => {
 // must contribute NOTHING: a card whose host slot is empty (dormant between items),
 // and a card index beyond the new host's slot count (a bigger weapon's extras after
 // swapping onto a smaller one — the UI hides those rows, the engine must not price them).
+// The one card case the engine deliberately does NOT gate, pinned so nobody closes
+// it by accident — or leaves it closed by accident.
+//
+// A card sitting on a host with ZERO declared slots still applies. That looks wrong,
+// and via the editor it IS wrong (swapping a carded [1] item for an unslotted one
+// used to keep the bonus while showing no card row — reported by a CC 2026-09-10),
+// but the editor now drops those cards at the swap and tools/e2e/card-unslotted.mjs
+// guards it. The ENGINE stays permissive because the identical data shape is what the
+// jaludev importer legitimately produces for a genuinely carded item whose NAME maps
+// to a base, slotless id — demonstrated below rather than asserted. The engine cannot
+// tell the two apart, and silently deleting an imported player's cards is the worse
+// failure, so the fix lives where intent is known (the swap), not here.
+//
+// If the importer is ever taught to resolve slotted variants, tighten the gate in
+// gearBonusAggregator (grep "beyond the host's slot count") to drop the `slots > 0`
+// condition, and this test should flip to expecting 0.
+test("a card on a 0-slot host still applies — the importer produces exactly that shape", () => {
+  const profile = getProfile("payon_stories");
+  loader.setProfile(profile);
+  const config = createBattleConfig();
+  const maxhp = (equipped) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 60, agi: 40, vit: 60, int: 1, dex: 40, luk: 1 }, equipped,
+    });
+    return resolvePlayerState(b, config, profile)[0].maxhp;
+  };
+  // Pupa Card (4003) = +700 MaxHP. Jacket (2303) has 0 slots; Cotton Shirt (2302) has 1.
+  assert.equal(loader.getItem(2303).slots || 0, 0, "fixture: Jacket is unslotted");
+  assert.equal(maxhp({ armor: 2302, armor_card1: 4003 }), 700, "a properly slotted host applies it");
+  assert.equal(maxhp({ armor: 2303, armor_card1: 4003 }), 700,
+    "and a 0-slot host STILL applies it — deliberate, see the comment above");
+  // The half that is genuinely gated: no host at all.
+  assert.equal(maxhp({ armor_card1: 4003 }), 0, "an empty slot contributes nothing");
+
+  // WHY the 0-slot case is left open: the importer really does emit it. jaludev's
+  // item tables are keyed by NAME, so a carded item whose name has no slotted variant
+  // in our DB resolves to a slotless id while its card comes across separately.
+  const ALPHA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const nToS = (v, len) => { let s = ""; for (let i = 0; i < len; i++) { s = ALPHA[v % 62] + s; v = Math.floor(v / 62); } return s; };
+  const hash = (fields) => {
+    const h = Array(91).fill("a");
+    for (const [off, len, val] of fields) { const s = nToS(val, len); for (let i = 0; i < len; i++) h[off + i] = s[i]; }
+    return h.join("");
+  };
+  // offset 55 = armor item, offset 57 = its card (jaludevImport.js).
+  const { build } = importJaludev(`https://payonrocalc.jaludev.com/#${hash([[1, 2, 16], [3, 2, 99], [55, 2, 143], [57, 2, 4]])}`);
+  const hostId = build.equipped.armor;
+  assert.ok(hostId != null && build.equipped.armor_card1 != null,
+    "the importer produced a host AND a card");
+  assert.equal(loader.getItem(hostId).slots || 0, 0,
+    "…and the host it chose has zero slots — the shape the engine must not punish");
+});
+
 test("kept cards are dormant on an empty host slot and beyond the host's slot count", () => {
   const profile = getProfile("payon_stories");
   loader.setProfile(profile);
