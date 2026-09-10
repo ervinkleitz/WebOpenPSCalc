@@ -19,48 +19,6 @@
   --radius: 6px;
 }
 
-/* ---------------------------------------------------------------------------
-   Compact density — "fit more on one screen".
-
-   Two knobs, deliberately pulled by different amounts:
-
-   1. The root font-size scales EVERYTHING at once, because this stylesheet is
-      almost entirely rem-based (218 font-sizes, 122 paddings, 95 gaps, and
-      essentially no px equivalents). It is pulled only to 14px (87.5%) — a
-      harder pull is tempting, but 53 rules here are already under 0.75rem and
-      the smallest is 0.62rem, so 13px drove real text to 8.4px. Legibility is
-      the constraint on this knob, not taste.
-
-   2. Spacing is then squeezed FURTHER on the few containers that own most of
-      the empty space — the page frame, panels, and the gaps between fields.
-      Padding can take a cut that text cannot, and this is where most of the
-      extra content per screen actually comes from.
-
-   What deliberately does NOT scale, and why that is what makes this work:
-     - every @media breakpoint is in px, so the responsive column counts do not
-       shift as the text shrinks;
-     - .page's max-width is in px, so the container stays exactly as wide while
-       its contents get smaller — that gap is the extra content per screen;
-     - 1px borders stay 1px and stay crisp.
-   --radius is nudged down so corners keep their proportion to the smaller
-   boxes; it is redefined here rather than in :root because this selector
-   (0,1,1) outranks :root (0,1,0).
---------------------------------------------------------------------------- */
-html[data-density="compact"] {
-  font-size: 14px;
-  --radius: 5px;
-}
-
-html[data-density="compact"] .page { padding: 0.6rem 1rem 1rem; }
-html[data-density="compact"] .panel { padding: 0.85rem; margin-bottom: 0.7rem; }
-html[data-density="compact"] .field { margin-bottom: 0.55rem; }
-html[data-density="compact"] .editor-grid { column-gap: 0.85rem; }
-/* The results side carries the longest lists, so its rows gain the most from a
-   tighter line-height — text size is untouched here, only the leading. */
-html[data-density="compact"] .breakdown-view,
-html[data-density="compact"] .surv-line,
-html[data-density="compact"] .step-row { line-height: 1.35; }
-
 [data-theme="light"] {
   --bg: #f0ebe0;
   --bg-panel: #e8e2d4;
@@ -1726,3 +1684,92 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 .tu-hp-note.hp-high { color: var(--good); }
 .tu-hp-note.hp-mid  { color: #d9a05b; }
 .tu-hp-note.hp-low  { color: var(--crit); }
+
+
+/* ===========================================================================
+   COMPACT DENSITY — must stay LAST in this file.
+
+   "Fit more on one screen": text, padding and gaps all shrink together.
+
+   WHY IT LIVES AT THE END. Several component rules style their own controls at
+   the same specificity as a generic override — `.ro-stat-detail input` and
+   `.perf-stat-card input[type="number"]` are the ones that bit. An earlier
+   `html[data-density="compact"] input` ties with the first on specificity and
+   LOSES on source order, and loses outright to the second, which is exactly why
+   the base-stat cards appeared not to shrink at all while everything around them
+   did. Keeping this block last makes source order work for us instead of against
+   us; the few component rules that still out-specify it are overridden by name
+   below.
+
+   TWO KNOBS, PULLED BY DIFFERENT AMOUNTS, because they have different limits:
+
+   1. Root font-size 16px -> 14px scales everything at once, since this
+      stylesheet is almost entirely rem-based (218 font-sizes, 122 paddings,
+      95 gaps, essentially no px equivalents). It stops at 87.5% because 53
+      rules here are already under 0.75rem and the smallest is 0.62rem — a 13px
+      root drove real text to 8.4px, which measured well and read badly.
+
+   2. Padding and gaps are then squeezed FURTHER on the elements that own most
+      of the empty space. Padding tolerates a cut that text does not, and this
+      is where most of the gain actually comes from: an input is 37px tall by
+      default and 25px here, against 32px from the proportional scale alone.
+
+   WHAT DELIBERATELY DOES NOT SCALE, and why that is what makes this work:
+     - every @media breakpoint is in px, so the responsive column counts do not
+       shift as the text shrinks;
+     - .page's max-width is in px, so the container stays exactly as wide while
+       its contents get smaller — that gap is the extra content per screen;
+     - 1px borders stay 1px and stay crisp.
+   =========================================================================== */
+html[data-density="compact"] {
+  font-size: 14px;
+  --radius: 5px;
+}
+
+/* Frame and panels: the biggest single blocks of dead space. */
+html[data-density="compact"] .page { padding: 0.6rem 1rem 1rem; }
+html[data-density="compact"] .panel { padding: 0.85rem; margin-bottom: 0.7rem; }
+html[data-density="compact"] .field { margin-bottom: 0.55rem; }
+html[data-density="compact"] .editor-grid { column-gap: 0.85rem; }
+html[data-density="compact"] label { margin-bottom: 0.15rem; }
+
+/* Form controls — the most repeated element on the page, so their height drives
+   the whole layout. */
+html[data-density="compact"] input,
+html[data-density="compact"] select,
+html[data-density="compact"] textarea { padding: 0.25rem 0.45rem; }
+html[data-density="compact"] button { padding: 0.3rem 0.65rem; }
+
+/* Base-stat cards: a tall component (the big value, its input and the cost line
+   stack vertically) repeated six times, so it is worth its own pass. The value
+   keeps its emphasis, just not a whole line of air around it. */
+/* All six base stats on ONE row (the default grid is 3 columns, so they wrap to
+   two). This is the single biggest vertical saving in the Character panel, and it
+   is what compact is for. The cards carry a fixed-width input, so this is checked
+   for overflow at narrow widths by tools/e2e/density-compact.mjs rather than
+   assumed — the input keeps min-width:0 so the grid can squeeze it. */
+html[data-density="compact"] .ro-stat-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+html[data-density="compact"] .ro-stat-detail input { width: 100%; }
+html[data-density="compact"] .ro-stat-card { padding: 0.3rem 0.3rem; }
+html[data-density="compact"] .ro-stat-total { font-size: 1.15rem; margin: 0 0 0.15rem; }
+html[data-density="compact"] .ro-stat-detail { gap: 0.2rem 0.3rem; }
+html[data-density="compact"] .ro-stat-detail input { padding: 0.15rem 0.25rem; }
+html[data-density="compact"] .ro-stat-cost { margin-top: 0.1rem; }
+
+/* Performer/secondary stat cards share the shape; their grid floor is in px, so
+   it has to be restated or the columns refuse to narrow. */
+html[data-density="compact"] .perf-stat-grid {
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 0.3rem;
+}
+html[data-density="compact"] .perf-stat-card { padding: 0.25rem 0.25rem; }
+html[data-density="compact"] .perf-stat-card input[type="number"] { padding: 0.15rem 0.2rem; }
+
+/* The results side carries the longest lists, so its rows gain most from tighter
+   leading — text size is untouched here, only the line-height. */
+html[data-density="compact"] .breakdown-view,
+html[data-density="compact"] .surv-line,
+html[data-density="compact"] .step-row { line-height: 1.35; }
