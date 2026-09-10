@@ -710,6 +710,8 @@ const Z3_KEYS: string[] = [
   // Elemental proof potions (consumable_buffs.proof_*)
   "proof_fire", "proof_water", "proof_earth", "proof_wind",
   "decrease_agi", // targetMods.decrease_agi — AL_DECAGI level 0-5
+  // Rogue Strips (targetMods.strip_*) — booleans
+  "strip_shield", "strip_armor", "strip_weapon", "strip_helm",
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -3656,6 +3658,27 @@ export default function BuildEditor() {
                 </div>
               )}
             </div>
+            {/* Rogue Strips. Flat percentages per skill (ranks change only duration
+                and success rate), so these are toggles. Shield/Armor make YOUR hits
+                land harder; Weapon/Helm cut what the monster brings, so they show up
+                in the survivability numbers. None work on MvPs. */}
+            {([
+              ["strip_shield", "Strip Shield (−30% target hard DEF)", "RG_STRIPSHIELD: decreases the target's hard DEF by 30%. Raises your physical damage. Cannot be used on MvPs."],
+              ["strip_armor", "Strip Armor (−30% target hard MDEF)", "RG_STRIPARMOR: decreases the target's hard MDEF by 30%. Raises your magic damage. Cannot be used on MvPs."],
+              ["strip_weapon", "Strip Weapon (−40% monster ATK)", "RG_STRIPWEAPON: cuts the monster's ATK by 40% — shows in the damage-taken numbers. Cannot be used on MvPs."],
+              ["strip_helm", "Strip Helm (−40% monster INT)", "RG_STRIPHELM: cuts the monster's INT by 40%, lowering its MATK — shows in the damage-taken numbers. Cannot be used on MvPs."],
+            ] as const).map(([key, label, tip]) => (
+              <div className="field field-checkbox" key={key}>
+                <label title={tip}>
+                  <input
+                    type="checkbox"
+                    checked={!!targetMods[key]}
+                    onChange={(e) => setTargetMods((m) => ({ ...m, [key]: e.target.checked }))}
+                  />
+                  <span>{label}</span>
+                </label>
+              </div>
+            ))}
             {/* Decrease AGI: a FLAT −3 AGI per level (PS condensed it to 5 ranks),
                 where Quagmire is a percentage. Same effect on flee, so it helps only
                 when you are actually missing. */}

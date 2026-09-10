@@ -371,3 +371,34 @@ test("Decrease AGI is applied as a target debuff: flat 3/level, flee 1:1, no bos
   assert.ok(/decrease_agi: Number\(e\.target\.value\)/.test(editor), "a control must set it");
   assert.ok(/"decrease_agi"/.test(editor), "and its key must be in the share dictionary");
 });
+
+
+// Rogue Strip debuffs (2026-09-09 patch-note audit). PS Rogue notes: "Strip Weapon:
+// -40% ATK; Strip Shield: -30% Hard Defense; Strip Armor: -30% Hard Magic Defense;
+// Strip Helm: -40% of Base Intelligence Attribute", with "Individual Strips no
+// longer affect Boss-type monsters" (wiki Strip_Shield: "Decreases the hard DEF of a
+// target by 30%", "Cannot be used on MvPs"). All four were entirely unmodelled —
+// Strip Shield alone is a large physical-damage swing on a DEF-heavy target.
+test("Rogue Strips are modelled: DEF/MDEF outgoing, ATK/INT incoming, never on bosses", () => {
+  const route = readBackend("src", "routes", "calculate.ts");
+
+  // Offensive pair: they cut what the TARGET resists with.
+  const out = route.slice(route.indexOf("targetModsInput.strip_shield"));
+  assert.ok(/def_percent[^;]*- 30/.test(out.slice(0, 400)), "Strip Shield: -30% hard DEF");
+  assert.ok(/mdef_percent[^;]*- 30/.test(out.slice(0, 600)), "Strip Armor: -30% hard MDEF");
+  const guard = route.slice(Math.max(0, route.indexOf("targetModsInput.strip_shield") - 300),
+    route.indexOf("targetModsInput.strip_shield"));
+  assert.ok(/!target\.is_boss/.test(guard), "and both are gated on the target not being a boss");
+
+  // Defensive pair: they cut what the MONSTER brings, so they ride the incoming opts.
+  const inc = route.slice(route.indexOf("stripOpts"));
+  assert.ok(/mob_atk_bonus_rate = -40/.test(inc.slice(0, 600)), "Strip Weapon: -40% monster ATK");
+  assert.ok(/mob_int_bonus_rate = -40/.test(inc.slice(0, 600)), "Strip Helm: -40% monster INT");
+  assert.ok(/is_boss/.test(inc.slice(0, 600)), "and these are boss-gated too");
+
+  // Reachable from the UI, and shareable.
+  const editor = read("src", "pages", "BuildEditor.tsx");
+  for (const key of ["strip_shield", "strip_armor", "strip_weapon", "strip_helm"]) {
+    assert.ok(new RegExp(`"${key}"`).test(editor), `${key} must be offered and in the share dictionary`);
+  }
+});

@@ -301,6 +301,24 @@ function applyOutgoingTargetMods(target: any, targetModsInput: any, build: any, 
       target.flee = Math.max(0, target.flee - agiCut); // 1 AGI ≈ 1 Flee (pre-re)
     }
 
+    // Rogue Strip skills (PS Rogue patch notes): "Strip Weapon: -40% ATK; Strip
+    // Shield: -30% Hard Defense; Strip Armor: -30% Hard Magic Defense; Strip Helm:
+    // -40% of Base Intelligence Attribute", and "Individual Strips no longer affect
+    // Boss-type monsters" (wiki Strip_Shield agrees: "Decreases the hard DEF of a
+    // target by 30%", "Cannot be used on MvPs"). The percentages are FLAT per skill,
+    // not per level — the ranks only change duration and success rate, so this is a
+    // toggle, not a level. None of the four existed before the 2026-09-09 audit.
+    // Shield/Armor are handled here (they change what YOU do to the monster); Weapon
+    // and Helm cut the monster's own ATK/INT and so ride the incoming pipeline.
+    if (!target.is_boss) {
+      if (targetModsInput.strip_shield) {
+        target.def_percent = Math.max(0, (target.def_percent ?? 100) - 30);
+      }
+      if (targetModsInput.strip_armor) {
+        target.mdef_percent = Math.max(0, (target.mdef_percent ?? 100) - 30);
+      }
+    }
+
     // Decrease AGI (AL_DECAGI). PS Acolyte rework condensed it to 5 ranks and
     // raised the cut: -3 AGI per level, so -15 at Lv5 (wiki Decrease_Agi table,
     // and the rework PDF's own table). A FLAT stat cut, unlike Quagmire's
@@ -519,9 +537,17 @@ router.post("/incoming", (req: Request, res: Response) => {
       return res.json({ status, mob, skill: spec, result, modeled: true });
     }
 
+    // Strip Weapon (-40% ATK) and Strip Helm (-40% base INT) cut what the MONSTER
+    // brings, so they belong to the incoming direction — the mirror of Strip
+    // Shield/Armor above. Boss-immune like the rest. See the Strip comment there.
+    const stripOpts: Record<string, number> = {};
+    if (!(mob && mob.is_boss)) {
+      if (targetModsInput && targetModsInput.strip_weapon) stripOpts.mob_atk_bonus_rate = -40;
+      if (targetModsInput && targetModsInput.strip_helm) stripOpts.mob_int_bonus_rate = -40;
+    }
     const result = direction === "magic"
-      ? calculateIncomingMagicDamage(mobId, effBuild, status, gearBonuses, weapon, { ...(opts || {}), mob_override: mob })
-      : calculateIncomingPhysicalDamage(mobId, effBuild, status, gearBonuses, weapon, config, { ...(opts || {}), mob_override: mob });
+      ? calculateIncomingMagicDamage(mobId, effBuild, status, gearBonuses, weapon, { ...(opts || {}), ...stripOpts, mob_override: mob })
+      : calculateIncomingPhysicalDamage(mobId, effBuild, status, gearBonuses, weapon, config, { ...(opts || {}), ...stripOpts, mob_override: mob });
 
     res.json({ status, weapon, mob, result });
   } catch (err: any) {

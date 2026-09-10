@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **The Rogue's Strip skills can now be applied to the target.** All four were
+  missing, including the Rogue's signature setup move: **Strip Shield** takes 30% off
+  the target's hard defence (a large physical damage gain against armoured monsters),
+  **Strip Armor** takes 30% off its hard magic defence, and — on the survivability
+  side — **Strip Weapon** cuts the monster's attack by 40% and **Strip Helm** cuts its
+  INT by 40%, both of which noticeably reduce the damage you take. None of them work
+  on MvPs, matching the server. They're toggles rather than levels, because the skill
+  ranks only change duration and success rate, not the percentages.
+
 - **Venom Splasher is no longer spammable.** It had no re-use delay modelled at all,
   so the calculator assumed you could recast it several times a second — overstating
   its damage per second roughly fourteen-fold. It now respects the 6-second re-use
