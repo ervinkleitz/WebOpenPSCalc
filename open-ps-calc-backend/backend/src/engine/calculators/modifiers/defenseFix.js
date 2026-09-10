@@ -56,7 +56,13 @@ function calculateDefenseFix(target, build, gearBonuses, pmf, config, result, op
     noteDef = "Hard DEF forced 0 (AM_ACIDTERROR)";
   }
 
-  let def2 = Math.max(1, target.vit);
+  // A monster's soft DEF is its VIT; a PLAYER's is status.def2, which also carries
+  // gear bVitDef (Mineral Card +30), Angelus (+3/lv), Crazy Uproar and Divine
+  // Protection (+lv*(3+(BaseLv+1)*4/100) vs Demon/Undead), and the def_percent
+  // scaling. Deriving it from VIT silently threw all of that away on the incoming
+  // side: a player reported Divine Protection doing nothing against Tamruan
+  // (Demon) — it was raising def2 correctly, but nothing downstream read it.
+  let def2 = Math.max(1, target.def2 != null ? target.def2 : target.vit);
   if (targetScs.SC_ETERNALCHAOS) def2 = 0;
 
   if (config.vit_penalty_type !== 0 && (config.vit_penalty_target & (target.is_pc ? 1 : 2)) !== 0) {

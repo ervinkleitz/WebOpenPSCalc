@@ -3774,6 +3774,44 @@ test("a PS Gunslinger cannot be endowed, but their ammo element still applies", 
     "and a vanilla-profile Gunslinger still endows — this is a PS change");
 });
 
+// A player reported Divine Protection doing nothing against Tamruan (Demon race, so
+// it should apply). It was raising the player's soft DEF correctly — but the INCOMING
+// pipeline derived the defender's soft DEF from raw VIT (`def2 = max(1, target.vit)`),
+// which is right for a monster (its VIT is its soft DEF) and wrong for a player, whose
+// soft DEF also carries gear bVitDef, Angelus, Crazy Uproar and Divine Protection.
+// Every one of those was silently worth zero on the survivability side.
+test("a player's real soft DEF reaches incoming damage (Divine Protection, Angelus, gear)", () => {
+  const { calculateIncomingPhysicalDamage } = require("../src/engine/calculators/incomingPipeline");
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const taken = (over, mobId) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 8, base_level: 90, job_level: 50,
+      base_stats: { str: 20, agi: 40, vit: 60, int: 60, dex: 40, luk: 10 },
+      equipped: { armor: 2314, ...(over.equipped || {}) }, mastery_levels: over.mastery || {},
+      support_buffs: over.support || {}, target_mob_id: mobId,
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    return { dmg: calculateIncomingPhysicalDamage(mobId, eff, st, gb, w, cfg, {}).avg_damage, def2: st.def2 };
+  };
+  const TAMRUAN = 1584; // Demon — what the player was hit by
+  const ORC = 1023;     // Demi-Human — Divine Protection must NOT apply
+
+  const base = taken({}, TAMRUAN);
+  const dp = taken({ mastery: { AL_DP: 10 } }, TAMRUAN);
+  assert.ok(dp.def2 > base.def2, "Divine Protection raises soft DEF (this part always worked)");
+  assert.ok(dp.dmg < base.dmg, `…and now REDUCES the damage taken (${base.dmg} -> ${dp.dmg})`);
+
+  // Race-scoped: Demon/Undead only.
+  const oBase = taken({}, ORC), oDp = taken({ mastery: { AL_DP: 10 } }, ORC);
+  assert.equal(oDp.dmg, oBase.dmg, "Divine Protection must not apply to a Demi-Human attacker");
+
+  // The same plumbing carries every other soft-DEF source.
+  assert.ok(taken({ support: { SC_ANGELUS: 5 } }, TAMRUAN).dmg < base.dmg, "Angelus reduces damage taken");
+  assert.ok(taken({ equipped: { armor: 2316, armor_card1: 4339 } }, TAMRUAN).dmg < base.dmg,
+    "gear soft DEF (Mineral Card bVitDef +30) reduces damage taken");
+});
+
 test("Run and Gun grants its PS ranged damage resistance, not just FLEE", () => {
   const { calculateIncomingPhysicalDamage } = require("../src/engine/calculators/incomingPipeline");
   // Gunslinger Release Patch Notes (Adjustment Rework): "Ranged damage resistance +30%".

@@ -9,6 +9,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Your soft DEF finally reduces the damage you take.** A player reported Divine
+  Protection doing nothing against Tamruan — and it wasn't just that skill. The
+  survivability panel worked out your soft DEF from raw VIT alone, which is right for
+  a monster but wrong for a player: everything that *adds* soft DEF was being thrown
+  away. Divine Protection, Angelus, Crazy Uproar and gear soft DEF (a Mineral Card's
+  +30) now all reduce incoming damage as they should. On the reported build, Divine
+  Protection Level 10 takes a Tamruan hit from 560 to 495; a Mineral Card takes it
+  from 63 to 28 against an Orc Warrior. Divine Protection stays correctly limited to
+  Demon and Undead attackers.
+
 - **Finger Offensive's cast time was five times too fast.** Payon Stories' Monk rework
   set it to 1 + 0.8 seconds per sphere thrown (5 seconds at Level 5); the calculator
   was still using a flat 1 second at every rank, which overstated spirit-Monk DPS by

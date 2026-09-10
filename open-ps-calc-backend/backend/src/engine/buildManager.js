@@ -278,6 +278,8 @@ function playerBuildToTarget(build, status, gearBonuses, weapon, loader) {
   return createTarget({
     def_: status.def_,
     vit: status.vit,
+    // The player's REAL soft DEF, not just VIT — see createTarget/def2.
+    def2: status.def2,
     level: build.base_level,
     is_pc: true,
     size: "Medium",

@@ -120,6 +120,11 @@ function createTarget(overrides = {}) {
   return {
     def_: 0,
     vit: 0,
+    // Soft DEF. null = derive it from `vit` (what a monster does: its VIT IS its
+    // soft DEF). A PLAYER defender must pass its real value, because a player's
+    // soft DEF is VIT plus gear bVitDef, Angelus, Crazy Uproar and Divine
+    // Protection — see playerBuildToTarget.
+    def2: null,
     size: "Medium",
     race: "Formless",
     element: 0,
