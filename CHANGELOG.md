@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-10
+
+### Fixed
+
+- **Swapping a carded item for an unslotted one no longer keeps the card.** Cards stay
+  with a slot when you change gear — that's deliberate — but they were staying even
+  when the new item had nowhere to put them. Because the editor only draws as many
+  card rows as the item has slots, an unslotted replacement showed no card at all
+  while its bonus was still being counted: invisible, and wrong. Reported by a CC.
+  Swapping to an item with fewer slots now drops the cards that no longer fit (a
+  Pupa Card's +700 HP correctly disappears when you move it to an unslotted armour),
+  while a build imported from another calculator keeps its cards untouched.
+
 ## 2026-09-09
 
 ### Fixed

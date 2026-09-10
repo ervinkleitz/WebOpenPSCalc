@@ -2436,6 +2436,29 @@ export default function BuildEditor() {
                           api.getItem(r.id, data.server)
                             .then((full) => {
                               setItemCache((prev) => ({ ...prev, [r.id]: full }));
+                              // Cards persist across a gear swap by design — but only as far
+                              // as the NEW item has room for them. Swapping a carded [1] item
+                              // for an UNSLOTTED one used to keep the card applied while the
+                              // editor showed no card row at all (it renders `item.slots`
+                              // rows), so the bonus was invisible but live. Reported by a CC
+                              // (Laila, 2026-09-10). Dropped here, at the swap, rather than in
+                              // the engine: a 0-slot host carrying a card is ALSO what the
+                              // jaludev importer produces for a genuinely carded item whose
+                              // name maps to the base id, and the engine cannot tell the two
+                              // apart — but at this point we know the user just chose an
+                              // unslotted item, so intent is unambiguous.
+                              const newSlots = Number((full as any).slots) || 0;
+                              const overflow = [1, 2, 3, 4]
+                                .filter((i) => i > newSlots)
+                                .map((i) => `${slot.key}_card${i}`)
+                                .filter((k) => data.equipped[k] != null);
+                              if (overflow.length) {
+                                setData((prev) => {
+                                  const next = { ...prev, equipped: { ...prev.equipped } };
+                                  for (const k of overflow) delete (next.equipped as any)[k];
+                                  return next;
+                                });
+                              }
                               // left_hand is the one slot whose CARD universe depends on the
                               // item (a shield takes shield cards, an off-hand weapon takes
                               // weapon cards), so the cards kept from the previous item are
