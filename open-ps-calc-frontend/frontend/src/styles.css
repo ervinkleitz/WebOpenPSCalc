@@ -19,6 +19,48 @@
   --radius: 6px;
 }
 
+/* ---------------------------------------------------------------------------
+   Compact density — "fit more on one screen".
+
+   Two knobs, deliberately pulled by different amounts:
+
+   1. The root font-size scales EVERYTHING at once, because this stylesheet is
+      almost entirely rem-based (218 font-sizes, 122 paddings, 95 gaps, and
+      essentially no px equivalents). It is pulled only to 14px (87.5%) — a
+      harder pull is tempting, but 53 rules here are already under 0.75rem and
+      the smallest is 0.62rem, so 13px drove real text to 8.4px. Legibility is
+      the constraint on this knob, not taste.
+
+   2. Spacing is then squeezed FURTHER on the few containers that own most of
+      the empty space — the page frame, panels, and the gaps between fields.
+      Padding can take a cut that text cannot, and this is where most of the
+      extra content per screen actually comes from.
+
+   What deliberately does NOT scale, and why that is what makes this work:
+     - every @media breakpoint is in px, so the responsive column counts do not
+       shift as the text shrinks;
+     - .page's max-width is in px, so the container stays exactly as wide while
+       its contents get smaller — that gap is the extra content per screen;
+     - 1px borders stay 1px and stay crisp.
+   --radius is nudged down so corners keep their proportion to the smaller
+   boxes; it is redefined here rather than in :root because this selector
+   (0,1,1) outranks :root (0,1,0).
+--------------------------------------------------------------------------- */
+html[data-density="compact"] {
+  font-size: 14px;
+  --radius: 5px;
+}
+
+html[data-density="compact"] .page { padding: 0.6rem 1rem 1rem; }
+html[data-density="compact"] .panel { padding: 0.85rem; margin-bottom: 0.7rem; }
+html[data-density="compact"] .field { margin-bottom: 0.55rem; }
+html[data-density="compact"] .editor-grid { column-gap: 0.85rem; }
+/* The results side carries the longest lists, so its rows gain the most from a
+   tighter line-height — text size is untouched here, only the leading. */
+html[data-density="compact"] .breakdown-view,
+html[data-density="compact"] .surv-line,
+html[data-density="compact"] .step-row { line-height: 1.35; }
+
 [data-theme="light"] {
   --bg: #f0ebe0;
   --bg-panel: #e8e2d4;

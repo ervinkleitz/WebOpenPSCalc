@@ -1229,6 +1229,13 @@ export default function BuildEditor() {
     (localStorage.getItem("theme") as "dark" | "light") || "dark"
   );
   const [themeHintSeen, setThemeHintSeen] = useState(() => localStorage.getItem("themeHintSeen") === "1");
+  // UI density. "compact" shrinks the whole app proportionally (see the
+  // html[data-density="compact"] rule in styles.css) so more of a build and its
+  // breakdown fit on one screen. Applied to <html> like the theme, and mirrored
+  // by the pre-paint script in index.html so switching does not flash a reflow.
+  const [density, setDensity] = useState<"comfortable" | "compact">(() =>
+    (localStorage.getItem("density") as "comfortable" | "compact") || "comfortable"
+  );
   // Features banner: expanded by default (collapsed only if the user explicitly collapsed it).
   const [featuresBannerCollapsed, setFeaturesBannerCollapsed] = useState(() => localStorage.getItem("featuresBannerCollapsed") === "1");
   // The per-class PS rework detail is collapsed under the "class reworks" feature line.
@@ -1245,6 +1252,11 @@ export default function BuildEditor() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.dataset.density = density;
+    localStorage.setItem("density", density);
+  }, [density]);
 
   useEffect(() => { api.listJobs().then(setJobs).catch(() => {}); }, []);
 
@@ -1914,6 +1926,18 @@ export default function BuildEditor() {
             <option value="payon_stories">Payon Stories</option>
             <option value="standard">Standard pre-renewal</option>
           </select>
+
+          <button
+            className="ghost theme-toggle"
+            onClick={() => setDensity((d) => (d === "compact" ? "comfortable" : "compact"))}
+            aria-label={density === "compact" ? "Switch to comfortable layout" : "Switch to compact layout"}
+            aria-pressed={density === "compact"}
+            title={density === "compact"
+              ? "Comfortable layout — roomier spacing and larger text"
+              : "Compact layout — smaller text and spacing, so more fits on screen"}
+          >
+            {density === "compact" ? "⤢" : "⤡"}
+          </button>
 
           <div style={{ position: "relative" }}>
             <button

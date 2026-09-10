@@ -7,6 +7,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-09-10
 
+### Added
+
+- **A compact layout toggle.** The button beside the light/dark switch shrinks the
+  whole calculator — text, padding and the gaps between everything — so noticeably
+  more of a build and its damage breakdown fit on one screen (the page gets about a
+  fifth shorter). Text is shrunk gently and spacing firmly, because a lot of the
+  labels here are already small; the result stays readable rather than squinty. Your
+  choice is remembered, and applies before the page draws so switching never flashes.
+
+
+
 ### Fixed
 
 - **Swapping a carded item for an unslotted one no longer keeps the card.** Cards stay
