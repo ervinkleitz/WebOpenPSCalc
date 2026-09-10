@@ -998,11 +998,11 @@
    "matk_max": 3
   },
   "result": {
-   "dps": 2218.453,
+   "dps": 707.19,
    "dps_valid": true,
    "hit_chance": 88,
    "crit_chance": 0,
-   "period_ms": 1073,
+   "period_ms": 3366,
    "normal": {
     "min": 2705,
     "max": 2705,

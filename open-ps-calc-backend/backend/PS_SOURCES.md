@@ -6206,6 +6206,34 @@ Decisions behind the Turn Undead branch, requested by a CC (Laila) who wanted a
   OPEN: that page does not restate the fail-damage magnitude; the branch assumes full
   delegation (same formula at the Res level). Worth confirming with Laila in game.
 
+## 2026-09-09 - Patch-note audit: skill TIMING is where the gaps are
+
+Swept every rework section for stated rules the engine did not implement (prompted by
+the Gunslinger endow miss). The damage FORMULAS are in good shape - the sweep confirmed
+dozens of them - but skill TIMING turned out to be a systematic blind spot: cast/ACD
+values are read from the vanilla skills.json unless something overrides them, and the
+reworks changed many of them. Fixed here:
+
+- MO_FINGEROFFENSIVE cast: vanilla flat 1000 ms -> PS "1 + 0.8s per sphere THROWN"
+  (Monk PDF; wiki table 1.8s..5.0s). ~3x DPS overstatement at Lv5. Scales with spheres
+  thrown, mirroring skillRatio.js's hit-count rule so the two cannot disagree.
+- PR_MAGNUS cast: vanilla flat 15000 ms -> wiki "9+(0.6xSkillLevel) Seconds" (only
+  Lv10 was right); ACD 4000 -> 3500 ms (rework PDF AND live wiki).
+
+NOTE for future audits: `ps_skill_db.json` is a WIKI SCRAPE and it is stale for
+reworked skills - it still reports Magnus as "15 Second"/"4 Seconds". Fetch the live
+wiki page, per the standing rule at the top of this file. `calculateSkillTiming` now
+also takes the build, so a cast time can depend on build state (spheres held).
+
+Remaining candidates from the same sweep, NOT yet actioned (evidence gathered, each
+needs a decision or a bigger lift): Hindsight + Double Bolt interaction (half the
+bolts, rounded up); Hindsight's bolt-rank mix (PDF says 50/35/15, engine uses uniform);
+Rogue Strip debuffs (-30% hard DEF etc., needs a target-debuff toggle that does not
+exist yet); Venom Splasher recast/instant-cast; Holy Strike combo still 5% (PS says 7%)
+and its bonus field has no consumer; Decrease AGI as a target debuff; Fire Pillar's
+hits folded into one lump so soft MDEF subtracts once; removed GS ammo (Silver/Bloody
+Bullet, elemental spheres) still selectable.
+
 ## 2026-09-07 - Blade Mastery (Knight rework) reaches the panel
 
 The Knight rework PDF (above): Sword Mastery "Removed from the skill tree. Any

@@ -13,7 +13,30 @@ const PS_CAST_TIME_OVERRIDES = {
   WZ_METEOR: 10000,
   GS_TRACKING: (lv) => 1000 + 100 * lv,
   GS_PIERCINGSHOT: 3000,
+  // PS Monk rework: "Cast time reduced from 1+1*SkillLv seconds -> 1+0.8*SkillLv"
+  // (PS_SOURCES, Monk PDF), and wiki Finger_Offensive: "(1 + (Used Spheres*0.8))
+  // seconds", table 1.8s at Lv1 up to 5.0s at Lv5. The vanilla skill DB has a FLAT
+  // 1000 ms at every rank, so the engine was pricing a Lv5 TSS cast at 1.0s instead
+  // of 5.0s and overstating spirit-Monk DPS several-fold. It scales with the spheres
+  // actually THROWN, not the rank, so this mirrors skillRatio.js's hit-count rule
+  // exactly (skill level, capped by spheres held, with the skill_param override
+  // winning) - a Monk holding 2 spheres casting Lv5 throws 2 and casts 2.6s.
+  MO_FINGEROFFENSIVE: (lv, build) => 1000 + 800 * fingerOffensiveSpheres(lv, build),
+  // wiki Magnus_Exorcismus: "9+(0.6xSkillLevel) Seconds". Our vanilla DB has a FLAT
+  // 15000 ms, which is right only at Lv10 and overstates the cast at every lower
+  // rank (Lv1 is 9.6s, not 15s). The local ps_skill_db scrape still says "15 Second"
+  // /"4 Seconds" — it predates the Priest rework; the LIVE wiki and the rework PDF
+  // both carry the new values. Found in the 2026-09-09 patch-note audit.
+  PR_MAGNUS: (lv) => 9000 + 600 * lv,
 };
+
+function fingerOffensiveSpheres(lv, build) {
+  if (!build) return lv;
+  const held = build.spirit_spheres || 0;
+  const fromBuild = held > 0 ? Math.min(lv, held) : lv;
+  const params = build.skill_params || {};
+  return Math.max(1, params.MO_FINGEROFFENSIVE_spheres || fromBuild);
+}
 
 // PS FIXED casts — taken exactly as written: no DEX scale, no castrate gear, no
 // Bragi / Suffragium, no cast penalties. wiki Tracking: "fixed 1+0.1*SkillLvl
@@ -23,7 +46,7 @@ const PS_CAST_TIME_OVERRIDES = {
 // release notes don't say "fixed", so it stays reducible until someone checks).
 const PS_FIXED_CAST = new Set(["GS_TRACKING"]);
 
-function calculateSkillTiming(skillName, skillLv, skillData, status, gearBonuses, supportBuffs, server = "standard") {
+function calculateSkillTiming(skillName, skillLv, skillData, status, gearBonuses, supportBuffs, server = "standard", build = null) {
   const lvIdx = skillLv - 1;
   const profile = getProfile(server);
 
@@ -32,7 +55,7 @@ function calculateSkillTiming(skillName, skillLv, skillData, status, gearBonuses
 
   if (server === "payon_stories" && skillName in PS_CAST_TIME_OVERRIDES) {
     const override = PS_CAST_TIME_OVERRIDES[skillName];
-    baseCast = typeof override === "function" ? override(skillLv) : override;
+    baseCast = typeof override === "function" ? override(skillLv, build) : override;
   }
 
   const castTimeOptions = skillData.cast_time_options || [];

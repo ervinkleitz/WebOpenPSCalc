@@ -2002,7 +2002,7 @@ class BattlePipeline {
     if (skillName === "MO_EXTREMITYFIST") {
       const asuraResult = this._runAsuraStrikeBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
       let castMs = 0, delayMs = 0;
-      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       const asuraPeriod = Math.max(castMs + delayMs, 100);
       const attacks = [createAttackDefinition(asuraResult.avg_damage, 0.0, asuraPeriod, 1.0)];
       return createBattleResult({
@@ -2042,7 +2042,7 @@ class BattlePipeline {
       const sbResult = this._runShieldBoomerangBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
       let castMs = 0, delayMs = 0;
       if (skillData) {
-        [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+        [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       }
       const sbPeriod = Math.max(castMs + delayMs, 100);
       const attacks = [
@@ -2067,7 +2067,7 @@ class BattlePipeline {
 
       let castMs = 0, delayMs = 0;
       if (skillData) {
-        [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+        [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       }
       const gcPeriod = Math.max(castMs + delayMs, 100);
       const attacks = [createAttackDefinition(gcResult.avg_damage, 0.0, gcPeriod, 1.0)];
@@ -2088,7 +2088,7 @@ class BattlePipeline {
     if (skillName === "PR_TURNUNDEAD" || skillName === "ALL_RESURRECTION") {
       const tuResult = this._runTurnUndeadBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
       let castMs = 0, delayMs = 0;
-      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       const tuPeriod = Math.max(castMs + delayMs, 100);
       const attacks = [createAttackDefinition(tuResult.avg_damage, 0.0, tuPeriod, 1.0)];
       return createBattleResult({
@@ -2104,7 +2104,7 @@ class BattlePipeline {
     if (skillName === "AL_HEAL") {
       const healResult = this._runHealBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
       let castMs = 0, delayMs = 0;
-      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       const healPeriod = Math.max(castMs + delayMs, 100);
       const attacks = [createAttackDefinition(healResult.avg_damage, 0.0, healPeriod, 1.0)];
       return createBattleResult({
@@ -2116,7 +2116,7 @@ class BattlePipeline {
     if (skillName === "NJ_ISSEN") {
       const ksResult = this._runKillingStrokeBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
       let castMs = 0, delayMs = 0;
-      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       // No DPS. NJ_ISSEN has every timing array zeroed in the skill DB, so
       // cast + delay came to 0 and the shared max(...,100) floor turned that into
       // a 100 ms period — the calculator was advertising ten Killing Strokes a
@@ -2136,7 +2136,7 @@ class BattlePipeline {
     if (skillName === "GS_FLING" && profile.mechanic_flags.has("GS_FLING_PS_FORMULA")) {
       const flResult = this._runFlingBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
       let castMs = 0, delayMs = 0;
-      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       const flPeriod = Math.max(castMs + delayMs, profile.min_cast_period_ms || 100);
       const flAttacks = [createAttackDefinition(flResult.avg_damage, 0.0, flPeriod, 1.0)];
       return createBattleResult({
@@ -2155,7 +2155,7 @@ class BattlePipeline {
     if (skillName === "AM_SPHEREMINE" && profile.mechanic_flags.has("AM_SPHEREMINE_PS_FORMULA")) {
       const smResult = this._runSphereMineBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
       let castMs = 0, delayMs = 0;
-      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       const smPeriod = Math.max(castMs + delayMs, profile.min_cast_period_ms || 100);
       const smAttacks = [createAttackDefinition(smResult.avg_damage, 0.0, smPeriod, 1.0)];
       return createBattleResult({
@@ -2191,7 +2191,7 @@ class BattlePipeline {
     if (skillName === "WZ_VERMILION") {
       const lovResult = this._runVermilionBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
       let castMs = 0, delayMs = 0;
-      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       const lovPeriod = Math.max(castMs + delayMs, 100);
       const lovAttacks = [createAttackDefinition(lovResult.avg_damage, 0.0, lovPeriod, 1.0)];
       return createBattleResult({
@@ -2205,7 +2205,7 @@ class BattlePipeline {
 
       let castMs = 0, delayMs = 0;
       if (skillData) {
-        [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+        [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       }
       // Spam cap: a cast skill can't be repeated faster than the profile floor
       // (PS = 333ms / 3-per-sec).
@@ -2275,7 +2275,7 @@ class BattlePipeline {
       if (profile.mechanic_flags.has("HT_TRAP_PS_FORMULA")) {
         const trapResult = this._runTrapBranch(status, weapon, skill, target, build, { profile, gear_bonuses: gearBonuses });
         let castMs = 0, delayMs = 0;
-        if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+        if (skillData) [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
         const trapPeriod = Math.max(castMs + delayMs, profile.min_cast_period_ms || 100);
         const trapAttacks = [createAttackDefinition(trapResult.avg_damage, 0.0, trapPeriod, 1.0)];
         return createBattleResult({
@@ -2365,7 +2365,7 @@ class BattlePipeline {
       period = adelay;
       dpsValid = true;
     } else if (skillData) {
-      const [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server);
+      const [castMs, delayMs] = calculateSkillTiming(skillName, skill.level, skillData, status, gearBonuses, build.support_buffs, build.server, build);
       period = skillPeriodMs(castMs, delayMs, skillData, skill.level, (profile.skill_min_period_ms || {})[skillName], adelay);
       if ((profile.ps_attack_interval || {})[skillName]) period = profile.ps_attack_interval[skillName](status, amotion);
       dpsValid = true; // NOT YET PORTED: IMPLEMENTED_BF_WEAPON_SKILLS allow-list from upstream

@@ -389,7 +389,7 @@ router.post("/", (req: Request, res: Response) => {
     const skillDataForTiming = skill.id !== 0 ? loader.getSkill(skill.id) : null;
     const [castMsOut, , cooldownMsOut, afterCastMsOut] = skillDataForTiming
       ? calculateSkillTiming(skillDataForTiming.name, skill.level, skillDataForTiming, status,
-          gearBonuses, effBuild.support_buffs, effBuild.server)
+          gearBonuses, effBuild.support_buffs, effBuild.server, effBuild)
       : [0, 0, 0, 0];
     const timing = {
       cast_ms: castMsOut,
@@ -670,7 +670,7 @@ function computeBreakpoints(eff: any, weapon: any, gb: any, status: any, config:
     | null = null;
   if (skill && skill.id && skillData) {
     const skillName = skillData.name;
-    const castOf = (dDex: number) => calculateSkillTiming(skillName, skill.level, skillData, statusWith(0, dDex), gb, eff.support_buffs, eff.server)[0];
+    const castOf = (dDex: number) => calculateSkillTiming(skillName, skill.level, skillData, statusWith(0, dDex), gb, eff.support_buffs, eff.server, eff)[0];
     const currentMs = castOf(0);
     if (currentMs > 0) {
       // Smallest +DEX (within +200, the practical ceiling) for cast ≤ target ms.

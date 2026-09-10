@@ -2039,6 +2039,57 @@ test("Pirate Skel + Flame Beetle exempts the AUTOCAST Mammonite from Zeny Pinche
 // IgnoreStatusEffect (Hercules castnodex bit 2 — no Bragi/Suffragium/penalties)
 // all along and the engine never read the flag; and on PS the wiki's "fixed"
 // goes further (no gear cast reduction either), via PS_FIXED_CAST.
+// PS Monk rework: "Cast time reduced from 1+1*SkillLv seconds -> 1+0.8*SkillLv"
+// (Monk PDF), and wiki Finger_Offensive: "(1 + (Used Spheres*0.8)) seconds", with a
+// per-level table running 1.8s (Lv1) to 5.0s (Lv5). The vanilla skill DB has a FLAT
+// 1000ms at every rank and nothing overrode it, so a Lv5 TSS was priced at a 1.0s
+// base cast instead of 5.0s — several-fold overstated spirit-Monk DPS. Found in the
+// 2026-09-09 patch-note audit. Scales with spheres THROWN, not rank.
+test("Finger Offensive's cast time is 1 + 0.8s per sphere thrown, not a flat 1s", () => {
+  const { calculateSkillTiming } = require("../src/engine/calculators/skillTiming");
+  const skillData = { cast_time: [1000, 1000, 1000, 1000, 1000], after_cast_act_delay: [500, 500, 500, 500, 500], cast_time_options: [] };
+  // DEX 0 means no DEX reduction at all (150 DEX is instant cast pre-re), so the
+  // numbers below are the raw base cast the override produces.
+  const cast = (lv, build) => calculateSkillTiming("MO_FINGEROFFENSIVE", lv, skillData,
+    { dex: 0, agi: 60 }, { castrate: 0, skill_castrate: {}, delayrate: 0, skill_delayrate: {} }, {}, "payon_stories", build)[0];
+
+  const plenty = { spirit_spheres: 5, skill_params: {} };
+  assert.equal(cast(1, plenty), 1800, "Lv1 = 1 + 0.8×1 s");
+  assert.equal(cast(3, plenty), 3400, "Lv3 = 1 + 0.8×3 s");
+  assert.equal(cast(5, plenty), 5000, "Lv5 = 1 + 0.8×5 s — the wiki table's endpoint");
+  // Spheres THROWN drive it: holding 2 while casting Lv5 throws 2, so 2.6s — the
+  // same rule skillRatio.js uses for the hit count, so cast and hits can't disagree.
+  assert.equal(cast(5, { spirit_spheres: 2, skill_params: {} }), 2600, "capped by spheres held");
+  assert.equal(cast(5, { spirit_spheres: 0, skill_params: {} }), 5000, "unset spheres assume enough for the rank");
+  assert.equal(cast(5, { spirit_spheres: 5, skill_params: { MO_FINGEROFFENSIVE_spheres: 3 } }), 3400,
+    "an explicit skill_param override wins, as it does for the hit count");
+  // Another PS skill on the same path keeps its own override (no blanket change).
+  assert.equal(calculateSkillTiming("GS_TRACKING", 10, skillData, { dex: 0, agi: 60 },
+    { castrate: 0, skill_castrate: {}, delayrate: 0, skill_delayrate: {} }, {}, "payon_stories", plenty)[0], 2000);
+});
+
+// PSRO Priest rework + live wiki Magnus_Exorcismus: cast "9+(0.6xSkillLevel)
+// Seconds" and cast delay "3.5 seconds". Our vanilla DB had a flat 15000 ms cast
+// (right only at Lv10) and a 4000 ms ACD, and the local ps_skill_db scrape still
+// carries those pre-rework values — the LIVE wiki is the one that moved. Found in
+// the 2026-09-09 patch-note audit.
+test("Magnus Exorcismus uses the PS cast (9+0.6/lv s) and 3.5s aftercast delay", () => {
+  const { calculateSkillTiming } = require("../src/engine/calculators/skillTiming");
+  loader.setProfile(getProfile("payon_stories"));
+  const sd = loader.getSkill(loader.getSkillIdByName("PR_MAGNUS"));
+  const gb = { castrate: 0, skill_castrate: {}, delayrate: 0, skill_delayrate: {} };
+  const t = (lv) => calculateSkillTiming("PR_MAGNUS", lv, sd, { dex: 0, agi: 1 }, gb, {}, "payon_stories", null);
+
+  assert.equal(t(1)[0], 9600, "Lv1 cast is 9.6s, not the vanilla flat 15s");
+  assert.equal(t(5)[0], 12000, "Lv5 cast is 12s");
+  assert.equal(t(10)[0], 15000, "Lv10 cast is 15s — the one rank vanilla had right");
+  for (const lv of [1, 5, 10]) assert.equal(t(lv)[1], 3500, `Lv${lv} ACD is 3.5s, not 4s`);
+  // The vanilla profile keeps the vanilla numbers — this is a PS rework.
+  const v = calculateSkillTiming("PR_MAGNUS", 1, sd, { dex: 0, agi: 1 }, gb, {}, "standard", null);
+  assert.equal(v[0], 15000, "vanilla cast unchanged");
+  assert.equal(v[1], 4000, "vanilla ACD unchanged");
+});
+
 test("Tracking's cast time is FIXED — no DEX, no gear castrate, no Bragi, no Suffragium", () => {
   const { calculateSkillTiming } = require("../src/engine/calculators/skillTiming");
   const skillData = { cast_time: [], after_cast_act_delay: [] };

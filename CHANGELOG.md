@@ -9,6 +9,18 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Finger Offensive's cast time was five times too fast.** Payon Stories' Monk rework
+  set it to 1 + 0.8 seconds per sphere thrown (5 seconds at Level 5); the calculator
+  was still using a flat 1 second at every rank, which overstated spirit-Monk DPS by
+  around 3x. It now scales with the spheres you actually throw, so casting Level 5
+  while holding only two spheres is a 2.6-second cast, matching the hit count.
+
+- **Magnus Exorcismus was slower than it should be, at every rank but the last.** Its
+  cast is 9 + 0.6 seconds per level (9.6s at Level 1), not the flat 15 seconds we had,
+  and the Priest rework cut its aftercast delay from 4 seconds to 3.5. Both were
+  missed because our local copy of the skill database still holds the pre-rework
+  values — the live wiki has the new ones.
+
 - **Gunslingers can no longer be endowed in the calculator.** Payon Stories' Gunslinger
   release notes are explicit — "Gunslingers are no longer able to be endowed, nor can
   they gain the effect of element converters" — but the calculator happily applied a

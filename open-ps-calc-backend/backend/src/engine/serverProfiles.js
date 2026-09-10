@@ -293,6 +293,10 @@ const agiDexDelay = (base) => (status) =>
   Math.max(0, base - (4 * status.agi + 2 * status.dex));
 
 const PS_SKILL_DELAY_FN = {
+  // PSRO Priest/Acolyte Rework: "Magnus Exorcismus — Aftercast delay changed from
+  // 4s -> 3.5s", and the live wiki agrees ("Cast Delay: 3.5 seconds"). The vanilla
+  // DB's 4000 ms was still in force. Constant, so it ignores `status`.
+  PR_MAGNUS: () => 3500,
   // wiki.payonstories.com/Sonic_Blow — "delay = 2000 - (AGI*4 + DEX*2) ms"
   AS_SONICBLOW: agiDexDelay(2000),
   // wiki.payonstories.com/Throw_Kunai — "The delay is reduced based on the formula:
