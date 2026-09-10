@@ -24,6 +24,8 @@ const path = require("path");
 const REPO = path.join(__dirname, "..", "..", "..");
 const FRONTEND = path.join(REPO, "open-ps-calc-frontend", "frontend");
 const read = (...p) => fs.readFileSync(path.join(FRONTEND, ...p), "utf8");
+const BACKEND = path.join(REPO, "open-ps-calc-backend", "backend");
+const readBackend = (...p) => fs.readFileSync(path.join(BACKEND, ...p), "utf8");
 
 // ---------------------------------------------------------------------------
 // Per-slot state that must not outlive the item it belongs to
@@ -344,4 +346,28 @@ test("every hand-authored item has a description", () => {
 
   assert.deepEqual(missing, [],
     "hand-authored items with no tooltip text — copy it from tools.payonstories.com/api/pc/item?id=<id>");
+});
+
+
+// Decrease AGI as a target debuff (2026-09-09 patch-note audit). The mechanism to
+// carry it — cut the target's AGI, drop its flee 1:1 — already existed for Quagmire;
+// the Acolyte's own version simply had no entry. PS condensed the skill to 5 ranks
+// and set the cut to a FLAT 3 per level (wiki Decrease_Agi table: 3/6/9/12/15, and
+// the rework PDF agrees). It lives in the TS route with the other target mods, which
+// the plain-node engine suite cannot import — hence a source-level assertion, the
+// same approach the rest of this file uses.
+test("Decrease AGI is applied as a target debuff: flat 3/level, flee 1:1, no bosses", () => {
+  const route = readBackend("src", "routes", "calculate.ts");
+  const block = route.slice(route.indexOf("targetModsInput.decrease_agi"));
+  assert.ok(block.length > 0, "the route must read target_mods.decrease_agi");
+  assert.ok(/Math\.min\(5,/.test(block.slice(0, 400)), "capped at the PS max of 5 ranks");
+  assert.ok(/3 \* decAgiLv/.test(block.slice(0, 700)), "flat 3 AGI per level");
+  assert.ok(/!target\.is_boss/.test(block.slice(0, 700)), "bosses are immune");
+  assert.ok(/target\.flee = Math\.max\(0, target\.flee - agiCut\)/.test(block.slice(0, 900)),
+    "and the AGI cut must lower flee 1:1, as Quagmire's does");
+
+  // The UI must offer it, or the engine support is unreachable.
+  const editor = read("src", "pages", "BuildEditor.tsx");
+  assert.ok(/decrease_agi: Number\(e\.target\.value\)/.test(editor), "a control must set it");
+  assert.ok(/"decrease_agi"/.test(editor), "and its key must be in the share dictionary");
 });

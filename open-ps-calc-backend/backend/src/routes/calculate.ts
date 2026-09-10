@@ -300,6 +300,21 @@ function applyOutgoingTargetMods(target: any, targetModsInput: any, build: any, 
       target.dex = Math.max(0, target.dex - Math.floor(target.dex * pct / 100));
       target.flee = Math.max(0, target.flee - agiCut); // 1 AGI ≈ 1 Flee (pre-re)
     }
+
+    // Decrease AGI (AL_DECAGI). PS Acolyte rework condensed it to 5 ranks and
+    // raised the cut: -3 AGI per level, so -15 at Lv5 (wiki Decrease_Agi table,
+    // and the rework PDF's own table). A FLAT stat cut, unlike Quagmire's
+    // percentage — and like Quagmire it lowers flee 1:1 (pre-re) and does not
+    // grant auto-hit. Bosses are immune to the AGI loss. It had no target-mod at
+    // all until the 2026-09-09 patch-note audit, even though the mechanism to
+    // carry it (above) already existed.
+    const decAgiLv = targetModsInput.decrease_agi === true ? 5
+      : Math.max(0, Math.min(5, Number(targetModsInput.decrease_agi) || 0));
+    if (decAgiLv > 0 && !target.is_boss) {
+      const agiCut = Math.min(target.agi, 3 * decAgiLv);
+      target.agi = Math.max(0, target.agi - agiCut);
+      target.flee = Math.max(0, target.flee - agiCut);
+    }
   }
   return target;
 }

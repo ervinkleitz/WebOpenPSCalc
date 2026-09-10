@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Decrease AGI can be applied to the target.** The Acolyte debuff cuts a monster's
+  AGI by a flat 3 per level (−15 at Level 5), which lowers its flee and raises your
+  hit chance — Quagmire's percentage version was already there, but this one had no
+  toggle at all. It's now in the target debuffs list. On a Knight struggling to hit a
+  high-flee monster, Level 5 takes hit chance from 58% to 73%. No effect on bosses.
+
 - **Holy Strike is finally worth something.** The Priest line's quest passive — a Holy
   proc on melee attacks — was never priced at all: the card bonus that boosts it was
   read from your gear and then quietly discarded, and the proc itself had no damage

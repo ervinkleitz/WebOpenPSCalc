@@ -709,6 +709,7 @@ const Z3_KEYS: string[] = [
   "self_buffs", // targetMods.self_buffs — { SKILL_CONSTANT: level } the monster casts on itself
   // Elemental proof potions (consumable_buffs.proof_*)
   "proof_fire", "proof_water", "proof_earth", "proof_wind",
+  "decrease_agi", // targetMods.decrease_agi — AL_DECAGI level 0-5
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -995,6 +996,7 @@ export default function BuildEditor() {
 
   // Quagmire level (0–5). Tolerant of the legacy boolean shape from older shared URLs (true → max 5).
   const quagmireLv = (targetMods.quagmire as unknown) === true ? 5 : (Number(targetMods.quagmire) || 0);
+  const decreaseAgiLv = (targetMods.decrease_agi as unknown) === true ? 5 : (Number(targetMods.decrease_agi) || 0);
   // Provoke level (0–10). Legacy boolean from older shared URLs maps true → max 10.
   const provokeLv = (targetMods.provoke as unknown) === true ? 10 : (Number(targetMods.provoke) || 0);
   // Burning stacks (0–5). Absent in shared URLs made before Burning existed.
@@ -1067,8 +1069,9 @@ export default function BuildEditor() {
   const mobBuffedFlee = (mobStats && mobInfo && mobBuffed)
     ? Math.floor((mobInfo.level + mobStats.agi) * mobBuffed.fleeMult)
     : mobBaseFlee;
-  const mobEffFlee = (mobBuffedFlee != null && quagmireLv > 0 && !mobInfo?.is_boss)
+  const mobEffFlee = (mobBuffedFlee != null && (quagmireLv > 0 || decreaseAgiLv > 0) && !mobInfo?.is_boss)
     ? mobBuffedFlee - Math.floor((mobInfo!.stats!.agi * 10 * quagmireLv) / 100)
+        - Math.min(mobInfo?.stats?.agi ?? 0, 3 * decreaseAgiLv)
     : mobBuffedFlee;
 
   // HIT needed to land every attack on the selected monster. Your hit% =
@@ -3652,6 +3655,23 @@ export default function BuildEditor() {
                   (it lowers flee, not damage).
                 </div>
               )}
+            </div>
+            {/* Decrease AGI: a FLAT −3 AGI per level (PS condensed it to 5 ranks),
+                where Quagmire is a percentage. Same effect on flee, so it helps only
+                when you are actually missing. */}
+            <div className="field debuff-field">
+              <label title="AL_DECAGI: cuts the target's AGI by a flat 3 per level (−15 at Lv5), lowering its flee. Does NOT guarantee a hit; no effect on bosses.">
+                Decrease AGI (−AGI → lower flee)
+              </label>
+              <select
+                value={decreaseAgiLv}
+                onChange={(e) => setTargetMods((m) => ({ ...m, decrease_agi: Number(e.target.value) }))}
+              >
+                <option value={0}>Off</option>
+                {[1, 2, 3, 4, 5].map((lv) => (
+                  <option key={lv} value={lv}>Lv {lv}{lv === 5 ? " (max)" : ""}</option>
+                ))}
+              </select>
             </div>
             <div className="field field-checkbox">
               <label title={signumApplicable ? "AL_CRUCIS Lv10 (PS): hard DEF −50% (10 + 4×lv). Undead-element or Demon-race only." : "Signum Crucis only affects Undead-element or Demon-race targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>
