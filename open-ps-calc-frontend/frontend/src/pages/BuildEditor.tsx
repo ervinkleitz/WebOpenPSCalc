@@ -1229,6 +1229,13 @@ export default function BuildEditor() {
     (localStorage.getItem("theme") as "dark" | "light") || "dark"
   );
   const [themeHintSeen, setThemeHintSeen] = useState(() => localStorage.getItem("themeHintSeen") === "1");
+  // Same one-time nudge as the theme toggle, for the compact-layout button.
+  // Deliberately queued BEHIND the theme hint rather than shown alongside it:
+  // the two buttons sit ~34px apart and both bubbles are far wider than that,
+  // so a first-time visitor would get two overlapping gold labels. Anyone who
+  // has already dismissed the theme hint (i.e. every returning user) sees this
+  // one straight away.
+  const [densityHintSeen, setDensityHintSeen] = useState(() => localStorage.getItem("densityHintSeen") === "1");
   // UI density. "compact" shrinks the whole app proportionally (see the
   // html[data-density="compact"] rule in styles.css) so more of a build and its
   // breakdown fit on one screen. Applied to <html> like the theme, and mirrored
@@ -1943,17 +1950,28 @@ export default function BuildEditor() {
             </button>
           )}
 
-          <button
-            className="ghost theme-toggle"
-            onClick={() => setDensity((d) => (d === "compact" ? "comfortable" : "compact"))}
-            aria-label={density === "compact" ? "Switch to comfortable layout" : "Switch to compact layout"}
-            aria-pressed={density === "compact"}
-            title={density === "compact"
-              ? "Comfortable layout — roomier spacing and larger text"
-              : "Compact layout — smaller text and spacing, so more fits on screen"}
-          >
-            {density === "compact" ? "⤢" : "⤡"}
-          </button>
+          <div style={{ position: "relative" }}>
+            <button
+              className="ghost theme-toggle"
+              onClick={() => {
+                setDensity((d) => (d === "compact" ? "comfortable" : "compact"));
+                if (!densityHintSeen) {
+                  setDensityHintSeen(true);
+                  localStorage.setItem("densityHintSeen", "1");
+                }
+              }}
+              aria-label={density === "compact" ? "Switch to comfortable layout" : "Switch to compact layout"}
+              aria-pressed={density === "compact"}
+              title={density === "compact"
+                ? "Comfortable layout — roomier spacing and larger text"
+                : "Compact layout — smaller text and spacing, so more fits on screen"}
+            >
+              {density === "compact" ? "⤢" : "⤡"}
+            </button>
+            {themeHintSeen && !densityHintSeen && (
+              <div className="theme-hint">{density === "compact" ? "Try the roomier layout" : "Try compact layout"}</div>
+            )}
+          </div>
 
           <div style={{ position: "relative" }}>
             <button
