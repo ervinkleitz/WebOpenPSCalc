@@ -74,6 +74,21 @@ const measure = async (label) => {
       // shared input padding, so the generic control override missed it.
       pillH: (() => { const el = document.querySelector(".selected-pill");
         return el ? Math.round(el.getBoundingClientRect().height) : null; })(),
+      // The three Character-panel section headings must be typographically
+      // identical. Two are <label>s and inherit the small-caps from the element
+      // rule; "Manual stat bonuses" is a <div> wrapping a collapse <button>
+      // (a <label> must not contain one), so it has to be styled deliberately.
+      // Compared to each other rather than to hardcoded values.
+      sectionHeadings: [...document.querySelectorAll(".section-label")].map((el) => {
+        const t = el.querySelector("button.reworks-detail-toggle") || el;
+        const cs = getComputedStyle(t);
+        return { text: (el.textContent || "").trim().slice(0, 18),
+                 sig: [cs.fontSize, cs.textTransform, cs.letterSpacing, cs.color].join("|") };
+      }),
+      // ...while the same toggle class inside the Features banner must stay
+      // sentence case: the fix has to be scoped, not global.
+      bannerToggleTransform: (() => { const el = document.querySelector(".reworks-banner .reworks-detail-toggle");
+        return el ? getComputedStyle(el).textTransform : null; })(),
       smallestText: Math.min(...[...document.querySelectorAll("body *")]
         .map((el) => parseFloat(getComputedStyle(el).fontSize)).filter((n) => n > 0)),
     };
@@ -114,6 +129,16 @@ if (!(after.buffRowPitch <= before.buffRowPitch * 0.8)) { console.error(`FAIL: b
 if (!(after.checkboxPx < before.checkboxPx)) { console.error(`FAIL: checkbox is fixed-px and did not shrink (${before.checkboxPx} -> ${after.checkboxPx}px)`); ok = false; }
 if (after.buffLabelFs !== after.fieldLabelFs) { console.error(`FAIL: buff names (${after.buffLabelFs}) do not match the other small labels (${after.fieldLabelFs})`); ok = false; }
 if (!(after.pillH <= before.pillH * 0.8)) { console.error(`FAIL: the selected-skill box barely shrank (${before.pillH} -> ${after.pillH}px)`); ok = false; }
+for (const m of [before, after]) {
+  if (m.sectionHeadings.length < 3) { console.error(`FAIL: expected 3 section headings, found ${m.sectionHeadings.length}`); ok = false; continue; }
+  const sigs = new Set(m.sectionHeadings.map((h) => h.sig));
+  if (sigs.size !== 1) {
+    console.error(`FAIL: section headings are not typographically identical at ${m.density}:`);
+    for (const h of m.sectionHeadings) console.error(`       ${h.text.padEnd(20)} ${h.sig}`);
+    ok = false;
+  }
+}
+if (after.bannerToggleTransform !== "none") { console.error(`FAIL: the heading fix leaked into the Features banner (text-transform: ${after.bannerToggleTransform})`); ok = false; }
 console.log(`input ${before.inputH} -> ${after.inputH}px, stat card ${before.statCardH} -> ${after.statCardH}px, ` +
             `stat rows ${before.statRows} -> ${after.statRows}, manual-bonus rows ${before.manualRows} -> ${after.manualRows}`);
 console.log(`panel padding ${before.panelPadY} -> ${after.panelPadY}px, first panel ${before.panelH} -> ${after.panelH}px`);

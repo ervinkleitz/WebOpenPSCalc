@@ -698,7 +698,25 @@ label {
    match their label size to the sibling checkbox-debuff rows (0.85rem). */
 .debuff-field label { font-size: 0.85rem; }
 
-.section-label { display: flex; align-items: center; flex-wrap: wrap; row-gap: 0.3rem; }
+/* Carries the small-caps section typography itself rather than relying on the
+   element being a <label>. Two of the three section headings are <label>s and
+   picked it up from the element rule; the third is a <div> (it wraps a
+   collapse <button>, which a <label> must not contain) and so rendered in the
+   body font, mixed case, a size and a half larger than its neighbours. Values
+   are identical to the `label` rule, so this is a no-op for the two that were
+   already correct. */
+.section-label {
+  display: flex; align-items: center; flex-wrap: wrap; row-gap: 0.3rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+/* The UA stylesheet sets text-transform:none and letter-spacing:normal on
+   <button>, and `font: inherit` does not cover either, so the heading's
+   small-caps would stop at the button. Scoped to .section-label because the
+   same toggle class is used for sentence-case rows in the Features banner. */
+.section-label .reworks-detail-toggle { text-transform: inherit; letter-spacing: inherit; }
 .stat-collapse-toggle {
   margin-left: 0.55rem;
   font-size: 0.72rem;

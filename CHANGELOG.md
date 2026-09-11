@@ -32,6 +32,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **The "Manual stat bonuses" heading now matches the headings around it.** It sat in
+  the body font, mixed case and a size and a half larger than "Base stats" and
+  "Combat stats" directly above and below it. Its two neighbours are plain labels and
+  picked up the small-caps styling automatically; this one has a collapse arrow, so it
+  could not be a label and was quietly falling back to the page default. Affects both
+  layouts, not just compact.
+
 - **Swapping a carded item for an unslotted one no longer keeps the card.** Cards stay
   with a slot when you change gear — that's deliberate — but they were staying even
   when the new item had nowhere to put them. Because the editor only draws as many
