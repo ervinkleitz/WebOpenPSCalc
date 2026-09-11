@@ -44,6 +44,36 @@ const measure = async (label) => {
         return f.length ? new Set(f.map((x) => Math.round(x.getBoundingClientRect().top))).size : null;
       })(),
       manualFields: document.querySelectorAll(".manual-stat-grid .field").length,
+      // Panel chrome: ~20 panels on the page, so this is where most of the
+      // reclaimed height comes from. Measured, because the inner h2/content
+      // margins have to come down with the box or the box only looks smaller.
+      panelPadY: (() => { const el = document.querySelector(".panel");
+        return el ? parseFloat(getComputedStyle(el).paddingTop) : null; })(),
+      panelH: (() => { const el = document.querySelector(".panel");
+        return el ? Math.round(el.getBoundingClientRect().height) : null; })(),
+      // Buffs: ~60 checkbox rows, the densest list on the page. Row pitch is
+      // measured from actual row tops, not from the CSS gap, because the label
+      // wrapping to two lines changes the real spacing.
+      buffRowPitch: (() => {
+        const tops = [...new Set([...document.querySelectorAll(".field-checkbox")]
+          .map((e) => Math.round(e.getBoundingClientRect().top)))].sort((a, b) => a - b);
+        const d = tops.slice(1).map((t, i) => t - tops[i]).filter((x) => x > 0 && x < 80).sort((a, b) => a - b);
+        return d.length ? d[Math.floor(d.length / 2)] : null;
+      })(),
+      // The checkbox is a fixed 16px, so it does NOT follow the root font and
+      // has to be shrunk by hand or it stays put while its label shrinks.
+      checkboxPx: (() => { const el = document.querySelector('.field-checkbox input[type="checkbox"]');
+        return el ? Math.round(el.getBoundingClientRect().height) : null; })(),
+      // Buff names live at 0.85rem while every other small label is 0.72rem.
+      // Compact brings them into line — compared, not hardcoded.
+      buffLabelFs: (() => { const el = document.querySelector(".field-checkbox label");
+        return el ? getComputedStyle(el).fontSize : null; })(),
+      fieldLabelFs: (() => { const el = document.querySelector(".field label");
+        return el ? getComputedStyle(el).fontSize : null; })(),
+      // Tallest control on the page before this: its padding is its own, not the
+      // shared input padding, so the generic control override missed it.
+      pillH: (() => { const el = document.querySelector(".selected-pill");
+        return el ? Math.round(el.getBoundingClientRect().height) : null; })(),
       smallestText: Math.min(...[...document.querySelectorAll("body *")]
         .map((el) => parseFloat(getComputedStyle(el).fontSize)).filter((n) => n > 0)),
     };
@@ -78,8 +108,17 @@ if (after.statRows !== 1) { console.error(`FAIL: base stats should sit on one ro
 if (after.statCardsOverflow) { console.error("FAIL: a base-stat card overflows its own box"); ok = false; }
 if (after.manualFields !== 6) { console.error(`FAIL: manual stat bonuses not rendered (${after.manualFields} fields) — section collapsed?`); ok = false; }
 if (after.manualRows !== 1) { console.error(`FAIL: manual stat bonuses should sit on one row, got ${after.manualRows}`); ok = false; }
+if (!(after.panelPadY <= before.panelPadY * 0.45)) { console.error(`FAIL: panel padding barely shrank (${before.panelPadY} -> ${after.panelPadY}px)`); ok = false; }
+if (!(after.panelH < before.panelH * 0.8)) { console.error(`FAIL: panels barely got shorter (${before.panelH} -> ${after.panelH}px)`); ok = false; }
+if (!(after.buffRowPitch <= before.buffRowPitch * 0.8)) { console.error(`FAIL: buff rows barely tightened (${before.buffRowPitch} -> ${after.buffRowPitch}px pitch)`); ok = false; }
+if (!(after.checkboxPx < before.checkboxPx)) { console.error(`FAIL: checkbox is fixed-px and did not shrink (${before.checkboxPx} -> ${after.checkboxPx}px)`); ok = false; }
+if (after.buffLabelFs !== after.fieldLabelFs) { console.error(`FAIL: buff names (${after.buffLabelFs}) do not match the other small labels (${after.fieldLabelFs})`); ok = false; }
+if (!(after.pillH <= before.pillH * 0.8)) { console.error(`FAIL: the selected-skill box barely shrank (${before.pillH} -> ${after.pillH}px)`); ok = false; }
 console.log(`input ${before.inputH} -> ${after.inputH}px, stat card ${before.statCardH} -> ${after.statCardH}px, ` +
             `stat rows ${before.statRows} -> ${after.statRows}, manual-bonus rows ${before.manualRows} -> ${after.manualRows}`);
+console.log(`panel padding ${before.panelPadY} -> ${after.panelPadY}px, first panel ${before.panelH} -> ${after.panelH}px`);
+console.log(`buff row pitch ${before.buffRowPitch} -> ${after.buffRowPitch}px, checkbox ${before.checkboxPx} -> ${after.checkboxPx}px, ` +
+            `buff label ${before.buffLabelFs} -> ${after.buffLabelFs} (other labels ${after.fieldLabelFs}), skill box ${before.pillH} -> ${after.pillH}px`);
 console.log(`\nheight ${before.docHeight} -> ${after.docHeight} (${Math.round((1 - after.docHeight / before.docHeight) * 100)}% shorter), ` +
             `panels visible on first screen ${before.panelsInFirstScreen} -> ${after.panelsInFirstScreen}`);
 

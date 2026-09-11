@@ -14,9 +14,14 @@ instead of release version. Dates are taken from actual git commit history.
   more of a build and its damage breakdown fit on one screen (the page gets about a
   quarter shorter). Text is shrunk gently and spacing firmly, because a lot of the
   labels here are already small; the result stays readable rather than squinty. Input
-  boxes, buttons and the base-stat cards all tighten up, and both the base stats and
-  the manual stat bonuses sit on a single row instead of wrapping onto two. Your
-  choice is remembered, and applies before the page draws so switching never flashes.
+  boxes, buttons, panels and the base-stat cards all tighten up, and both the base
+  stats and the manual stat bonuses sit on a single row instead of wrapping onto two.
+  The buff lists — easily the longest thing on the page — lose most of the air
+  between their rows and between class groups, their checkboxes shrink with
+  everything else, and buff names drop to the same size as every other label in the
+  app instead of standing out a size larger. The selected-skill box comes down from
+  being the tallest control on screen. Your choice is remembered, and applies before
+  the page draws so switching never flashes.
 
 - **The features panel can be dismissed.** The gold "Features" panel at the top now has
   an × beside its collapse arrow. Hiding it is remembered between visits, and a ★

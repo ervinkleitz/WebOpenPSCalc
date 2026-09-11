@@ -1742,7 +1742,14 @@ html[data-density="compact"] {
 
 /* Frame and panels: the biggest single blocks of dead space. */
 html[data-density="compact"] .page { padding: 0.6rem 1rem 1rem; }
-html[data-density="compact"] .panel { padding: 0.85rem; margin-bottom: 0.7rem; }
+/* Panel chrome is the biggest single source of wasted vertical space — there are
+   ~20 panels on the page, so every rem trimmed here compounds. The inner
+   header/content margins count as panel padding to the eye, so they come down
+   with it; without that the box shrinks but the gap under each title does not. */
+html[data-density="compact"] .panel { padding: 0.5rem 0.6rem; margin-bottom: 0.45rem; }
+html[data-density="compact"] .panel h2 { margin-bottom: 0.45rem; }
+html[data-density="compact"] .panel h2.panel-header { margin-bottom: 0; }
+html[data-density="compact"] .panel-content { margin-top: 0.45rem; }
 html[data-density="compact"] .field { margin-bottom: 0.55rem; }
 html[data-density="compact"] .editor-grid { column-gap: 0.85rem; }
 html[data-density="compact"] label { margin-bottom: 0.15rem; }
@@ -1757,6 +1764,33 @@ html[data-density="compact"] button { padding: 0.3rem 0.65rem; }
 /* Base-stat cards: a tall component (the big value, its input and the cost line
    stack vertically) repeated six times, so it is worth its own pass. The value
    keeps its emphasis, just not a whole line of air around it. */
+/* Buffs are the densest list in the app (~60 checkbox rows across a dozen class
+   groups), so they dominate the page height. Three things had to move together:
+   the row gap, the fixed-px checkbox (16px never scales with the root font, so
+   it stays put while its label shrinks), and the label size — buff names sit at
+   0.85rem while every other small label here (field labels, stat labels) is
+   0.72rem, which is the inconsistency you see once everything else tightens.
+   .debuff-field labels are deliberately matched to the checkbox rows upstream,
+   so they move with them.
+   This block must precede .manual-stat-grid below: both resolve to the same
+   specificity on that element, so source order decides its gap. */
+html[data-density="compact"] .passive-grid { gap: 0.3rem 0.6rem; }
+html[data-density="compact"] .field-checkbox { margin-top: 0.1rem; }
+html[data-density="compact"] .field-checkbox label { font-size: 0.72rem; gap: 0.32rem; line-height: 1.25; }
+html[data-density="compact"] .field-checkbox input[type="checkbox"] { width: 13px; height: 13px; }
+html[data-density="compact"] .debuff-field label { font-size: 0.72rem; }
+/* Class-group separators: 1rem between groups plus a 1rem section header margin
+   adds up to a lot of empty rule-line across a dozen jobs. */
+html[data-density="compact"] .buff-section-header { margin-top: 0.55rem; margin-bottom: 0.3rem; padding-bottom: 0.2rem; }
+html[data-density="compact"] .buff-group { margin-top: 0.35rem; }
+html[data-density="compact"] .buff-group + .buff-group { margin-top: 0.55rem; }
+html[data-density="compact"] .buff-group-label { margin-bottom: 0.2rem; padding-left: 0.4rem; }
+/* Skill panel: the selected-skill box was the tallest control on the page (31px
+   against 24px controls beside it) because its padding is its own, not the
+   shared input padding. The picker's result rows carry the same padding. */
+html[data-density="compact"] .selected-pill { padding: 0.22rem 0.45rem; font-size: 0.78rem; }
+html[data-density="compact"] .search-result-item { padding: 0.25rem 0.45rem; font-size: 0.78rem; }
+
 /* All six base stats on ONE row (the default grid is 3 columns, so they wrap to
    two). This is the single biggest vertical saving in the Character panel, and it
    is what compact is for. The cards carry a fixed-width input, so this is checked
