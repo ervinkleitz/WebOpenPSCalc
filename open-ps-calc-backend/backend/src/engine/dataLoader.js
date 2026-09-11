@@ -558,6 +558,12 @@ class DataLoader {
       // but this list gates the panel, so no real build could ever SET them
       // and every autocast priced at Lv1. (A Rogue's plagiarised Bash stays
       // out of reach: SM_BASH is not in the Rogue skill tree this panel walks.)
+      // Mutant Dragonoid Card casts Fire Ball Lv3, or Lv10 with
+      // getskilllv(MG_FIREBALL)==10 (reported 2026-09-11: "can't be toggled to
+      // lv 10"). Same gap as Mammonite/Bash above -- the script read the level
+      // all along, but with MG_FIREBALL absent from this list no build could
+      // set it, so the card was permanently priced at Lv3.
+      "MG_FIREBALL",
       "MC_MAMMONITE", "SM_BASH",
     ]);
     // PS-custom passives (constants that exist only on Payon Stories, so they are
@@ -574,7 +580,7 @@ class DataLoader {
       // the passive panel like the others here.
       "WZ_ESTIMATION",
       // Mastery feeds an autocast card's cast level — see DAMAGE_RELEVANT above.
-      "MC_MAMMONITE", "SM_BASH"]);
+      "MC_MAMMONITE", "SM_BASH", "MG_FIREBALL"]);
 
     try {
       const treeData = this._loadJson("tables/skill_tree.json");

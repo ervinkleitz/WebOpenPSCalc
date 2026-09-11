@@ -1666,6 +1666,34 @@ test("auto-Mammonite casts Lv10 only for the Blacksmith line", () => {
   assert.equal(castLv(18, 10), 1, "Alchemist with Mammonite 10 still casts Lv1");
 });
 
+// Mutant Dragonoid Card (4203), reported 2026-09-11: "the autocast for fireball
+// can't be toggled to lv 10". TWO defects, and either one alone pins it at Lv3.
+//   1. MG_FIREBALL was missing from the masteries panel allowlist, so no build
+//      could state that it had mastered Fire Ball (covered in the panel test below).
+//   2. The vanilla Hercules script encodes the upgrade as 3+2*(...), landing on
+//      Lv5 -- while the kRO client text AND the live PS item API both say "it will
+//      cast Level 10 Fire Ball". Its structural twin Wind Ghost Card uses 3+7*(...)
+//      for the identical "Level 3 ... Level 10" wording, so 3+2* is a typo in the
+//      Hercules data. Pinned to 3+7* for the PS profile in ps_item_manual.json.
+test("Mutant Dragonoid Card casts Fire Ball Lv10 once Fire Ball is mastered", () => {
+  const cfg = createBattleConfig();
+  const castLv = (fireballLv) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 9, base_level: 95, job_level: 50,
+      base_stats: { str: 30, agi: 40, vit: 40, int: 95, dex: 70, luk: 20 },
+      equipped: { right_hand: 1604, right_hand_card1: 4203 },
+      mastery_levels: { MG_FIREBALL: fireballLv },
+    });
+    const spec = resolvePlayerState(b, cfg, PS)[0].autocast_on_attack
+      .find((s) => s.skill_name === "MG_FIREBALL" || s.skill_id === 19);
+    assert.ok(spec, "the card should grant a Fire Ball autocast at all");
+    return spec.skill_level;
+  };
+  assert.equal(castLv(10), 10, "mastered Fire Ball upgrades the autocast to Lv10");
+  assert.equal(castLv(0), 3, "unmastered stays at the card's base Lv3");
+  assert.equal(castLv(9), 3, "the card checks for ==10, so Lv9 is not mastery");
+});
+
 // The engine above always read getskilllv() from mastery_levels — but the masteries
 // panel is gated by getPassiveSkillsForJob's allowlist, and MC_MAMMONITE / SM_BASH
 // were not on it, so no real build could ever SET them: every Pirate Skel autocast
@@ -1685,6 +1713,12 @@ test("the masteries panel offers the skills that upgrade autocast cards", () => 
     "Super Novice learns both and can set both");
   assert.ok(!names(2).includes("SM_BASH") && !names(2).includes("MC_MAMMONITE"),
     "a Mage can learn neither and is offered neither");
+
+  // Mutant Dragonoid Card checks getskilllv(MG_FIREBALL)==10 (reported 2026-09-11).
+  assert.ok(names(9).includes("MG_FIREBALL"), "Wizard can set Fire Ball (Mutant Dragonoid Card)");
+  assert.equal(entry(9, "MG_FIREBALL").max_level, 10, "…up to the mastery the card checks for");
+  assert.ok(names(2).includes("MG_FIREBALL"), "a Mage learns Fire Ball and is offered it");
+  assert.ok(!names(10).includes("MG_FIREBALL"), "a Blacksmith cannot learn Fire Ball and is not offered it");
 });
 
 test("Crescent Scythe heals 0.1% of crit damage PER REFINE, and never counts as damage", () => {

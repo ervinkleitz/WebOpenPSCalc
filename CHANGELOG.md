@@ -5,6 +5,24 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-11
+
+### Fixed
+
+- **Mutant Dragonoid Card's Fire Ball autocast can now reach Level 10.** The card casts
+  Fire Ball Lv3, or Lv10 once you have mastered Fire Ball — but there was no way to
+  tell the calculator you had. Fire Ball is now offered in the Passive skills panel for
+  the classes that learn it, the same way Mammonite and Bash already were for the other
+  two autocast cards. Reported by a player.
+
+  Setting it also had to actually do something: the card's script caps the upgrade at
+  Lv5, while its description — both in game and on the item database — says Level 10.
+  Every comparable card lands on the level its own description promises (Wind Ghost Card
+  has the identical "Level 3 … Level 10" wording and does reach 10), so the Lv5 is a
+  typo in the underlying data rather than a real cap. Corrected for Payon Stories; the
+  standard pre-renewal profile keeps the buggy value, because a stock server really does
+  run it.
+
 ## 2026-09-10
 
 ### Added

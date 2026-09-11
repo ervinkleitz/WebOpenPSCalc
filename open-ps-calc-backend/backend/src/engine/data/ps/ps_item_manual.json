@@ -1,4 +1,8 @@
 {
+  "4203": {
+    "_note": "Mutant Dragonoid Card: the vanilla Hercules item_db encodes the mastery upgrade as 3+2*(getskilllv(MG_FIREBALL)==10), i.e. Lv3 normally and Lv5 once mastered -- but BOTH descriptions that ship alongside it (the kRO client text in item_descriptions.json and the live PS item API, checked 2026-09-11) read \"If the user has mastered the skill at level 10, it will cast Level 10 Fire Ball.\" Every structural twin in the same DB lands the coefficient on 10 to match its own description -- Wind Ghost Card is the exact parallel (\"Level 3 ... Level 10\", script 3+7*(getskilllv(WZ_JUPITEL)==10)), and Enchanted Peach Tree uses 1+9*(...) for \"Level 1 ... Level 10\". 3+2* is the odd one out and lands on 5, so it is a typo in the Hercules data, not an intended nerf. Pinned to 3+7* here (PS profile only: a stock pre-renewal server really does run the buggy script, so the standard profile keeps it). Reported by a player 2026-09-11 as the Fire Ball autocast not reaching Lv10; the other half of that report was that MG_FIREBALL was not settable in the passive panel at all -- see dataLoader.js DAMAGE_RELEVANT.",
+    "script": "bonus bBaseAtk,15; bonus3 bAutoSpell,MG_FIREBALL,3+7*(getskilllv(MG_FIREBALL)==10),50;"
+  },
  "4162": {},
  "4261": {
   "_note": "PS patch notes 2026-08-09 (Item Changes): Wootan Fighter Card raises Magnum Break's lingering fire effect from 20% to 30%. bMagnumLinger is a PS-specific bonus consumed by the lingering-fire step in _runBranch. DEF +1 unchanged.",
