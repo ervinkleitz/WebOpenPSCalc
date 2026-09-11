@@ -1268,6 +1268,18 @@ export default function BuildEditor() {
     localStorage.setItem("density", density);
   }, [density]);
 
+  // Which density a session actually RUNS in, recorded once on mount. This is the
+  // number that answers "do people use compact?" — a click counter cannot, because
+  // someone who switched to compact months ago and never touched the button again
+  // is a compact user who registers zero clicks forever. Deliberately mount-only
+  // (empty deps, reading the initial value): re-firing on toggle would count one
+  // session under both densities and make the split meaningless. Switches are
+  // tracked separately on the button itself.
+  useEffect(() => {
+    statsApi.trackFeatureOnce(density === "compact" ? "density_active_compact" : "density_active_comfortable");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => { api.listJobs().then(setJobs).catch(() => {}); }, []);
 
   // Keep skill.max_level in sync whenever the selected skill changes
@@ -1954,7 +1966,13 @@ export default function BuildEditor() {
             <button
               className="ghost theme-toggle"
               onClick={() => {
-                setDensity((d) => (d === "compact" ? "comfortable" : "compact"));
+                // Computed outside the updater on purpose: React double-invokes
+                // state updaters under StrictMode, which would fire the beacon twice.
+                const next = density === "compact" ? "comfortable" : "compact";
+                // Every switch counts (unlike the once-per-session signal above):
+                // this is the churn/discovery measure, not the population split.
+                statsApi.trackFeature(next === "compact" ? "density_switch_to_compact" : "density_switch_to_comfortable");
+                setDensity(next);
                 if (!densityHintSeen) {
                   setDensityHintSeen(true);
                   localStorage.setItem("densityHintSeen", "1");
