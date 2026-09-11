@@ -1229,8 +1229,25 @@ export default function BuildEditor() {
     (localStorage.getItem("theme") as "dark" | "light") || "dark"
   );
   const [themeHintSeen, setThemeHintSeen] = useState(() => localStorage.getItem("themeHintSeen") === "1");
+  // Same one-time nudge as the theme toggle, for the compact-layout button.
+  // Deliberately queued BEHIND the theme hint rather than shown alongside it:
+  // the two buttons sit ~34px apart and both bubbles are far wider than that,
+  // so a first-time visitor would get two overlapping gold labels. Anyone who
+  // has already dismissed the theme hint (i.e. every returning user) sees this
+  // one straight away.
+  const [densityHintSeen, setDensityHintSeen] = useState(() => localStorage.getItem("densityHintSeen") === "1");
+  // UI density. "compact" shrinks the whole app proportionally (see the
+  // html[data-density="compact"] rule in styles.css) so more of a build and its
+  // breakdown fit on one screen. Applied to <html> like the theme, and mirrored
+  // by the pre-paint script in index.html so switching does not flash a reflow.
+  const [density, setDensity] = useState<"comfortable" | "compact">(() =>
+    (localStorage.getItem("density") as "comfortable" | "compact") || "comfortable"
+  );
   // Features banner: expanded by default (collapsed only if the user explicitly collapsed it).
   const [featuresBannerCollapsed, setFeaturesBannerCollapsed] = useState(() => localStorage.getItem("featuresBannerCollapsed") === "1");
+  // Dismissed outright (distinct from merely collapsed) — the banner disappears
+  // and only a small topbar button, shown solely in this state, brings it back.
+  const [featuresBannerHidden, setFeaturesBannerHidden] = useState(() => localStorage.getItem("featuresBannerHidden") === "1");
   // The per-class PS rework detail is collapsed under the "class reworks" feature line.
   const [classReworksOpen, setClassReworksOpen] = useState(false);
   // Manual stat bonuses: a niche override, collapsed by default (remembers the user's choice).
@@ -1245,6 +1262,11 @@ export default function BuildEditor() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.dataset.density = density;
+    localStorage.setItem("density", density);
+  }, [density]);
 
   useEffect(() => { api.listJobs().then(setJobs).catch(() => {}); }, []);
 
@@ -1915,6 +1937,42 @@ export default function BuildEditor() {
             <option value="standard">Standard pre-renewal</option>
           </select>
 
+          {/* Only rendered once the features panel has been dismissed — otherwise
+              there would be two competing ways to reach the same panel. */}
+          {data.server === "payon_stories" && featuresBannerHidden && (
+            <button
+              className="ghost theme-toggle"
+              onClick={() => { setFeaturesBannerHidden(false); localStorage.setItem("featuresBannerHidden", "0"); }}
+              aria-label="Show the features panel"
+              title="Show the features panel"
+            >
+              ★
+            </button>
+          )}
+
+          <div style={{ position: "relative" }}>
+            <button
+              className="ghost theme-toggle"
+              onClick={() => {
+                setDensity((d) => (d === "compact" ? "comfortable" : "compact"));
+                if (!densityHintSeen) {
+                  setDensityHintSeen(true);
+                  localStorage.setItem("densityHintSeen", "1");
+                }
+              }}
+              aria-label={density === "compact" ? "Switch to comfortable layout" : "Switch to compact layout"}
+              aria-pressed={density === "compact"}
+              title={density === "compact"
+                ? "Comfortable layout — roomier spacing and larger text"
+                : "Compact layout — smaller text and spacing, so more fits on screen"}
+            >
+              {density === "compact" ? "⤢" : "⤡"}
+            </button>
+            {themeHintSeen && !densityHintSeen && (
+              <div className="theme-hint">{density === "compact" ? "Try the roomier layout" : "Try compact layout"}</div>
+            )}
+          </div>
+
           <div style={{ position: "relative" }}>
             <button
               className="ghost theme-toggle"
@@ -1991,21 +2049,31 @@ export default function BuildEditor() {
           server={data.server}
           onImported={(build) => handleImported(build)}
         />
-        {data.server === "payon_stories" && (
+        {data.server === "payon_stories" && !featuresBannerHidden && (
           <div className="reworks-banner">
-            <button
-              className="reworks-banner-toggle"
-              onClick={() => {
-                const next = !featuresBannerCollapsed;
-                setFeaturesBannerCollapsed(next);
-                localStorage.setItem("featuresBannerCollapsed", next ? "1" : "0");
-              }}
-              aria-expanded={!featuresBannerCollapsed}
-              aria-label={featuresBannerCollapsed ? "Expand" : "Collapse"}
-            >
-              <strong>Features</strong>
-              <span className="reworks-banner-chevron">{featuresBannerCollapsed ? "▸" : "▾"}</span>
-            </button>
+            <div className="reworks-banner-head">
+              <button
+                className="reworks-banner-toggle"
+                onClick={() => {
+                  const next = !featuresBannerCollapsed;
+                  setFeaturesBannerCollapsed(next);
+                  localStorage.setItem("featuresBannerCollapsed", next ? "1" : "0");
+                }}
+                aria-expanded={!featuresBannerCollapsed}
+                aria-label={featuresBannerCollapsed ? "Expand" : "Collapse"}
+              >
+                <strong>Features</strong>
+                <span className="reworks-banner-chevron">{featuresBannerCollapsed ? "▸" : "▾"}</span>
+              </button>
+              <button
+                className="reworks-banner-dismiss"
+                onClick={() => { setFeaturesBannerHidden(true); localStorage.setItem("featuresBannerHidden", "1"); }}
+                aria-label="Hide the features panel"
+                title="Hide this panel — bring it back with the ★ button in the header"
+              >
+                ×
+              </button>
+            </div>
             {!featuresBannerCollapsed && (
               <ul>
                 <li>Payon Stories custom equipment and skills — card, combo, and gear bonuses modeled from item scripts</li>
@@ -2275,7 +2343,7 @@ export default function BuildEditor() {
               </InfoTooltip>
             </div>
             {manualStatsOpen && (
-              <div className="passive-grid">
+              <div className="passive-grid manual-stat-grid">
                 {STATS.map((s) => (
                   <div className="field" key={s}>
                     <label>{s.toUpperCase()}</label>
