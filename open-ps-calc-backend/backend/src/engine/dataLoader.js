@@ -563,7 +563,18 @@ class DataLoader {
       // lv 10"). Same gap as Mammonite/Bash above -- the script read the level
       // all along, but with MG_FIREBALL absent from this list no build could
       // set it, so the card was permanently priced at Lv3.
-      "MG_FIREBALL",
+      // The full set, from an audit of every mastery-gated autocast in item_db
+      // (2026-09-11). Each of these is a DAMAGE autocast whose cast level is
+      // read from the wearer's own level in that skill:
+      //   MG_FIREBALL   Mutant Dragonoid Card  Lv3 -> Lv10 at mastery
+      //   WZ_JUPITEL    Wind Ghost Card        Lv3 -> Lv10 at mastery (+24% DPS)
+      //   AC_DOUBLE     Double Bound (bow)     casts YOUR Double Strafe level
+      //   AS_SONICBLOW  Krishna (katar)        casts YOUR Sonic Blow level, else Lv1
+      // The remaining mastery-gated autocasts are buffs, heals or debuffs on the
+      // wearer (Blessing, Improve Concentration, Heal, Cloaking, Quagmire, and
+      // Glorious Claymore's trans-only Lord Knight buffs), which carry no damage
+      // and so need no level here.
+      "MG_FIREBALL", "WZ_JUPITEL", "AC_DOUBLE", "AS_SONICBLOW",
       "MC_MAMMONITE", "SM_BASH",
     ]);
     // PS-custom passives (constants that exist only on Payon Stories, so they are
@@ -580,7 +591,7 @@ class DataLoader {
       // the passive panel like the others here.
       "WZ_ESTIMATION",
       // Mastery feeds an autocast card's cast level — see DAMAGE_RELEVANT above.
-      "MC_MAMMONITE", "SM_BASH", "MG_FIREBALL"]);
+      "MC_MAMMONITE", "SM_BASH", "MG_FIREBALL", "WZ_JUPITEL", "AC_DOUBLE", "AS_SONICBLOW"]);
 
     try {
       const treeData = this._loadJson("tables/skill_tree.json");

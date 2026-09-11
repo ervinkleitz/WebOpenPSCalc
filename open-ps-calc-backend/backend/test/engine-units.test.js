@@ -1694,6 +1694,38 @@ test("Mutant Dragonoid Card casts Fire Ball Lv10 once Fire Ball is mastered", ()
   assert.equal(castLv(9), 3, "the card checks for ==10, so Lv9 is not mastery");
 });
 
+// Audit of every mastery-gated autocast in item_db (2026-09-11), prompted by the
+// Mutant Dragonoid report: three more cards read the wearer's own skill level and
+// were reachable by no build, so each was permanently understated. Wind Ghost is
+// the same Lv3->Lv10 shape as Mutant Dragonoid; the other two cast at YOUR level,
+// which _runCardAutocastBranches clamps to Lv1 when unset (so the symptom was a
+// quietly weak proc, not a zero). The remaining mastery-gated autocasts are buffs,
+// heals or debuffs on the wearer and carry no damage.
+test("autocast cards that read the wearer's own skill level get that level", () => {
+  const cfg = createBattleConfig();
+  const castLv = (jobId, equipped, skill, lv) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: jobId, base_level: 95, job_level: 50,
+      base_stats: { str: 70, agi: 70, vit: 40, int: 60, dex: 80, luk: 20 },
+      equipped, mastery_levels: { [skill]: lv },
+    });
+    const spec = resolvePlayerState(b, cfg, PS)[0].autocast_on_attack.find((x) => x.skill_name === skill);
+    assert.ok(spec, `${skill}: the item should grant an autocast at all`);
+    return spec.skill_level;
+  };
+
+  // Wind Ghost Card is an ACCESSORY card, not a weapon card.
+  const windGhost = { right_hand: 1604, accessory_left: 2615, accessory_left_card1: 4264 };
+  assert.equal(castLv(9, windGhost, "WZ_JUPITEL", 10), 10, "Wind Ghost: mastered Jupitel Thunder casts Lv10");
+  assert.equal(castLv(9, windGhost, "WZ_JUPITEL", 0), 3, "Wind Ghost: unmastered stays at Lv3");
+
+  // These two have no mastery threshold — the cast level IS your level.
+  assert.equal(castLv(11, { right_hand: 1736 }, "AC_DOUBLE", 10), 10, "Double Bound casts your Double Strafe level");
+  assert.equal(castLv(11, { right_hand: 1736 }, "AC_DOUBLE", 5), 5, "…at whatever that level is, not just 1 or 10");
+  assert.equal(castLv(12, { right_hand: 1284 }, "AS_SONICBLOW", 10), 10, "Krishna casts your Sonic Blow level");
+  assert.equal(castLv(12, { right_hand: 1284 }, "AS_SONICBLOW", 0), 1, "…and falls back to Lv1 with no Sonic Blow");
+});
+
 // The engine above always read getskilllv() from mastery_levels — but the masteries
 // panel is gated by getPassiveSkillsForJob's allowlist, and MC_MAMMONITE / SM_BASH
 // were not on it, so no real build could ever SET them: every Pirate Skel autocast
@@ -1719,6 +1751,15 @@ test("the masteries panel offers the skills that upgrade autocast cards", () => 
   assert.equal(entry(9, "MG_FIREBALL").max_level, 10, "…up to the mastery the card checks for");
   assert.ok(names(2).includes("MG_FIREBALL"), "a Mage learns Fire Ball and is offered it");
   assert.ok(!names(10).includes("MG_FIREBALL"), "a Blacksmith cannot learn Fire Ball and is not offered it");
+
+  // The rest of the 2026-09-11 audit: every damage autocast whose level is read
+  // from the wearer must be settable by the jobs that can actually learn it.
+  assert.ok(names(9).includes("WZ_JUPITEL"), "Wizard can set Jupitel Thunder (Wind Ghost Card)");
+  assert.ok(names(11).includes("AC_DOUBLE"), "Hunter can set Double Strafe (Double Bound)");
+  assert.ok(names(12).includes("AS_SONICBLOW"), "Assassin can set Sonic Blow (Krishna)");
+  assert.equal(entry(12, "AS_SONICBLOW").max_level, 10);
+  assert.ok(!names(10).includes("WZ_JUPITEL") && !names(10).includes("AS_SONICBLOW"),
+    "a Blacksmith learns none of them and is offered none");
 });
 
 test("Crescent Scythe heals 0.1% of crit damage PER REFINE, and never counts as damage", () => {

@@ -23,6 +23,19 @@ instead of release version. Dates are taken from actual git commit history.
   standard pre-renewal profile keeps the buggy value, because a stock server really does
   run it.
 
+- **Three more autocast items now use your real skill level.** Checking whether the
+  Mutant Dragonoid problem was isolated turned up the same gap elsewhere: an item casts
+  a skill at whatever level you have it, but the calculator gave you no way to say what
+  that level was, so it quietly assumed the minimum. **Wind Ghost Card** (Jupitel
+  Thunder) was stuck at Level 3 instead of 10 — worth about a quarter of the DPS it
+  contributes. **Double Bound** (Double Strafe) and **Krishna** (Sonic Blow) both cast at
+  your own level in those skills and were pinned to Level 1. All three skills are now in
+  the Passive skills panel for the classes that learn them.
+
+  The other mastery-gated autocasts — Blessing, Improve Concentration, Heal, Cloaking,
+  Quagmire and Glorious Claymore's Lord Knight buffs — deal no damage, so their level
+  doesn't change any number here and they were left alone.
+
 ## 2026-09-10
 
 ### Added
