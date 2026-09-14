@@ -5,6 +5,25 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-14
+
+### Changed
+
+- **Grand Cross now follows Solina's GC sim.** Three parts of the damage formula
+  changed to match it (and the pre-renewal server code it follows):
+  - The Holy element is applied to the ATK half and the MATK half separately, and then
+    **again** to their sum. Against Dark and Undead targets that roughly doubles the effect
+    of the element.
+  - The magic half now takes the target's **hard MDEF**, not just its soft MDEF.
+  - The physical half now takes your weapon's **size penalty**.
+
+  Mastery ATK now lands on the physical half only; the second element pass is what makes
+  it count double. All four in-game Blade Mastery and Demon Bane measurements still come
+  out exactly. Knight of Abyss, where the old numbers were calibrated, lands within a few
+  percent of before. Elsewhere the change is larger: Grand Cross is noticeably **stronger**
+  against low-MDEF Dark and Undead monsters, and **weaker** against high-MDEF monsters
+  that Holy does nothing extra to. The damage breakdown shows all three element steps.
+
 ## 2026-09-11
 
 ### Fixed

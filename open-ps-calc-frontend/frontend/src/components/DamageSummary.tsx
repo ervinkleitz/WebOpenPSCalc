@@ -169,6 +169,10 @@ const STEP_LABELS: Record<string, string> = {
   "Mastery Fix": "Weapon mastery",
   "Weapon Research": "Weaponry Research",
   "Attr Fix": "Element vs target",
+  // Grand Cross applies its Holy element three times — to each half, then to the sum.
+  "Attr Fix (physical half)": "Element vs target (physical half)",
+  "Attr Fix (magic half)": "Element vs target (magic half)",
+  "Attr Fix (sum)": "Element vs target (again, on the sum)",
   "Card Fix": "Cards & gear",
   "Card Fix (Magic)": "Cards & gear",
   "Forge Bonus": "Forged weapon",

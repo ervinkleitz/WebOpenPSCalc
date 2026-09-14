@@ -630,13 +630,23 @@ class BattlePipeline {
     const { profile = STANDARD, gear_bonuses: gearBonuses } = opts;
     const result = createDamageResult();
 
-    // Grand Cross (PR-Hercules battle_calc_magic_attack, CR_GRANDCROSS branch): a full
-    // physical weapon hit `wd` (ATK → size fix → hard/soft DEF → refine atk2 → weapon
-    // masteries) plus a magic hit `ad` (MATK → MDEF), summed, put through the fixed Holy
-    // element, and THEN multiplied by the skill ratio (100 + 40×lv)% — the ratio is
-    // applied LAST, so masteries/refine are amplified by it while DEF/MDEF are subtracted
-    // before it. Cards' % bonuses are ignored (IgnoreCards).
+    // Grand Cross, modelled on Solina's GC sim (v1.43), which follows Hercules pre-renewal
+    // battle_calc_magic_attack's CR_GRANDCROSS branch:
+    //   wd = ATK → size fix → hard/soft DEF → refine + mastery → × Holy   (battle.c:6092)
+    //   ad = MATK → hard MDEF % → soft MDEF → × Holy                      (battle.c:4291)
+    //   wave = attr_fix(wd + ad) × (100 + 40×lv)%                        (battle.c:4296)
+    // The Holy element is applied to EACH half and then AGAIN to their sum, so a 200%
+    // target effectively takes 400% before the ratio. The ratio is applied LAST.
+    // Cards' % bonuses are ignored (IgnoreCards).
+    //
+    // This replaces a single-element model whose defenses were fitted to in-game data
+    // (no size fix, no hard MDEF, mastery added to both halves). The two models coincide
+    // on the calibration target (Knight of Abyss: Dark 4 / MDEF 50) but diverge up to ~2x
+    // elsewhere; this branch adopts the sheet pending discriminating in-game readings.
     const ratio = 100 + 40 * skill.level;
+    // Relabel the step a shared modifier just pushed, so the breakdown can tell the
+    // three element applications (and the two halves) apart.
+    const relabelLast = (name) => { const s = result.steps[result.steps.length - 1]; if (s) s.name = name; };
 
     // ── Physical part `wd`: full weapon hit at 100% ratio (size fix, DEF, refine, mastery) ──
     let atkPmf = calculateBaseDamage(status, weapon, build, target, skill, result, {
@@ -671,6 +681,10 @@ class BattlePipeline {
     // PS: weapon masteries + Demon Bane's flat bonus apply to the physical part
     // (wiki.payonstories.com/Grand_Cross). Vanilla bypasses via MASTERY_EXEMPT_SKILLS.
     atkPmf = calculateMasteryFix(weapon, build, target, atkPmf, result, skill, { profile, ctx });
+    // First element application: the physical half is element-fixed inside the weapon
+    // attack before it is returned to the GC branch (battle.c:6092; sheet R22).
+    atkPmf = calculateAttrFix(weapon, target, atkPmf, result, build, 6 /* Ele_Holy */);
+    relabelLast("Attr Fix (physical half)");
 
     // ── Magic part `ad`: MATK → MDEF ── status.matk already includes bMatkRate/
     // Amplify/Volcano (statusCalculator), so it is NOT re-applied here.
@@ -681,32 +695,24 @@ class BattlePipeline {
     // NOT a continuation of the physical running total above it (track_start tells
     // the frontend not to badge the jump as a change).
     { const [mn, mx, av] = pmfStats(matkPmf); result.add_step({ name: "Base MATK", value: av, min_value: mn, max_value: mx, track_start: true, note: `INT=${status.int_} — resolved MATK ${matkLo}-${matkHi} (incl. gear/buff MATK%) — start of the MAGIC half`, formula: "int+(int/7)^2 to int+(int/5)^2, × MATK% bonuses", hercules_ref: "status.c status_calc_matk" }); }
-    // Magic part: soft MDEF2 (INT + VIT/2) only — GC does NOT apply the target's
-    // HARD MDEF. Verified against in-game screenshots: an INT-based GC on Knight of
-    // Abyss (hard MDEF 50) is NOT halved — it reads ~14.2k, matching soft-MDEF-only
-    // (~14.9k), not full-MDEF (~8.5k). (The physical part above DOES take hard DEF —
-    // a Provoke DEF cut measurably scales GC, and dropping hard DEF matched the base
-    // magnitude far better than keeping it. So GC is asymmetric: hard DEF yes, hard
-    // MDEF no.) `mdef_: 0` skips the ×(100−MDEF)% step while keeping soft MDEF2.
-    matkPmf = calculateMagicDefenseFix({ ...target, mdef_: 0 }, gearBonuses || {}, matkPmf, result);
+    // Magic part: the full magic defense — hard MDEF % then soft MDEF (INT + VIT/2),
+    // as in Hercules (battle.c:4268 calc_defense BF_MAGIC) and Solina's sheet (R29–R30).
+    matkPmf = calculateMagicDefenseFix(target, gearBonuses || {}, matkPmf, result);
+    // No mastery on the magic half. The old model added it here to explain why +40
+    // Blade Mastery moved a wave by 800 when element × ratio was only 2 × 5; the second
+    // element application below supplies that ×2 instead (40 × 2 × 2 × 5 = 800), so
+    // the four in-game mastery measurements still reproduce.
+    // Second element application: the magic half is element-fixed on its own before
+    // the physical part is added (battle.c:4291; sheet R33).
+    matkPmf = calculateAttrFix(weapon, target, matkPmf, result, build, 6 /* Ele_Holy */);
+    relabelLast("Attr Fix (magic half)");
 
-    // The mastery ATK lands on the MAGIC half as well as the physical one, so a
-    // point of mastery is worth double what "(wd + ad) × element × ratio" alone
-    // would make it. Measured in-game (base 99 Crusader, GC vs Loli Ruri): adding
-    // Blade Mastery Lv10 (+40 ATK, per its wiki table) moved a wave by 800 damage,
-    // and element × ratio here is only 2 × 5 = 10, so the effective multiplier on
-    // mastery is 20. Adding it to both halves is what produces that ×2, and it
-    // reproduces all four measured points exactly (40 / 1060 / 1240 / 2040 for no
-    // mastery / DB1 / DB10 / DB10+BM10). Grand Cross is the only skill that sums a
-    // physical and a magic hit, so nothing else is affected.
-    matkPmf = calculateMasteryFix(weapon, build, target, matkPmf, result, skill, {
-      profile, ctx, step_label: "Mastery Fix (magic half)", quiet_if_zero: true,
-    });
-
-    // ── Sum (wd + ad) → Holy element → × ratio (applied LAST, per Hercules) ──
+    // ── Sum (wd + ad) → Holy element AGAIN → × ratio (applied LAST, per Hercules) ──
     let pmf = convolve(atkPmf, matkPmf);
-    { const [mn, mx, av] = pmfStats(pmf); result.add_step({ name: "ATK part + MATK part", value: av, min_value: mn, max_value: mx, note: "physical (through DEF) + magic (through MDEF) summed", formula: "wd + ad", hercules_ref: "battle.c:3798" }); }
+    { const [mn, mx, av] = pmfStats(pmf); result.add_step({ name: "ATK part + MATK part", value: av, min_value: mn, max_value: mx, note: "physical + magic, each already element-fixed, summed", formula: "wd + ad", hercules_ref: "battle.c:4296" }); }
+    // Third element application, on the sum (battle.c:4296 attr_fix(wd.damage + ad.damage); sheet R38).
     pmf = calculateAttrFix(weapon, target, pmf, result, build, 6 /* Ele_Holy — fixed element, ignores weapon */);
+    relabelLast("Attr Fix (sum)");
     pmf = scaleFloor(pmf, ratio, 100);
     { const [mn, mx, av] = pmfStats(pmf); result.add_step({ name: `Grand Cross Ratio (Lv ${skill.level})`, value: av, min_value: mn, max_value: mx, multiplier: ratio / 100, note: `(physical + magic) × ${ratio}% — applied last`, formula: "(wd+ad) × (100 + 40×lv)/100", hercules_ref: "battle.c:3800" }); }
     {
@@ -797,6 +803,9 @@ class BattlePipeline {
       weapon_type: weapon ? weapon.weapon_type : "",
     });
     atkPmf = calculateMasteryFix(weapon, build, casterTarget, atkPmf, scratch, skill, { profile, ctx });
+    // Same three-application element structure as the outgoing hit (see
+    // _runGrandCrossBranch): each half is Holy-fixed vs the caster's armour, then the sum.
+    atkPmf = calculateAttrFix(weapon, casterTarget, atkPmf, scratch, null, 6 /* Ele_Holy */);
 
     // ── Magic part vs the caster's MDEF ── status.matk already includes bMatkRate/
     // Amplify/Volcano (statusCalculator), so it is NOT re-applied here.
@@ -804,8 +813,9 @@ class BattlePipeline {
     const matkHi = Math.max(matkLo, status.matk_max);
     let matkPmf = uniformPmf(matkLo, matkHi);
     matkPmf = calculateMagicDefenseFix(casterTarget, gearBonuses || {}, matkPmf, scratch);
+    matkPmf = calculateAttrFix(weapon, casterTarget, matkPmf, scratch, null, 6 /* Ele_Holy */);
 
-    // ── Sum → Holy element vs caster armour → × ratio → HALVE (build=null: the
+    // ── Sum → Holy element vs caster armour AGAIN → × ratio → HALVE (build=null: the
     //    caster's own ground-effect enchant buffs OUTGOING element, not this
     //    self-hit). PR-Hercules battle.c:3798-3808: the summed (wd+ad) hit is
     //    attr-fixed, ×(100+40×lv)%, then — because src==target and the caster is a
@@ -2012,12 +2022,11 @@ class BattlePipeline {
     }
     skill.nk_ignore_ele = damageType.includes("IgnoreElement");
     skill.nk_ignore_cards = damageType.includes("IgnoreCards");
-    // Asura Strike and Grand Cross both ignore the weapon size penalty. GC:
-    // "the damage ignores size modifications" (ratemyserver.net skill_db skid=254,
-    // Aegis behaviour) — its physical (ATK) half is NOT scaled by weapon-vs-size,
-    // unlike an ordinary weapon hit. Applies to both the outgoing hit and the
-    // self-recoil (they share this skill object).
-    skill.ignore_size_fix = skillName === "MO_EXTREMITYFIST" || skillName === "CR_GRANDCROSS";
+    // Asura Strike ignores the weapon size penalty (pre-renewal battle.c:5523, flag 8).
+    // Grand Cross does NOT: Hercules sets that flag only for MO_EXTREMITYFIST, and
+    // Solina's GC sim applies size to GC's physical half ("Size modifier does apply to
+    // gc"). Previously also exempted GC on ratemyserver's "ignores size" wording.
+    skill.ignore_size_fix = skillName === "MO_EXTREMITYFIST";
 
     const amotion = Math.max(100, Math.round(2000 - status.aspd * 10));
     const adelay = 2 * amotion;

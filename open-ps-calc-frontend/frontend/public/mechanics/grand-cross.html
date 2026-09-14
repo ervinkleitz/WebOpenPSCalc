@@ -3,22 +3,22 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <title>Grand Cross damage and recoil on Payon Stories | Open PS Calc</title>
-<meta name="description" content="Grand Cross combines ATK and MATK, hits three times, applies defence asymmetrically, and hurts the caster — how each half is computed.">
+<meta name="description" content="Grand Cross combines ATK and MATK, applies its Holy element twice, hits three times, and hurts the caster — how each half is computed.">
 <meta name="theme-color" content="#12141c">
 <link rel="canonical" href="https://openpscalc.com/mechanics/grand-cross.html">
 <meta property="og:type" content="article"><meta property="og:title" content="Grand Cross damage and recoil on Payon Stories | Open PS Calc">
-<meta property="og:description" content="Grand Cross combines ATK and MATK, hits three times, applies defence asymmetrically, and hurts the caster — how each half is computed."><meta property="og:url" content="https://openpscalc.com/mechanics/grand-cross.html">
+<meta property="og:description" content="Grand Cross combines ATK and MATK, applies its Holy element twice, hits three times, and hurts the caster — how each half is computed."><meta property="og:url" content="https://openpscalc.com/mechanics/grand-cross.html">
 <meta property="og:site_name" content="Open PS Calc">
 <meta property="og:image" content="https://openpscalc.com/icon-512.png">
 <meta property="og:image:type" content="image/png"><meta property="og:image:width" content="512"><meta property="og:image:height" content="512"><meta property="og:image:alt" content="Open PS Calc logo">
 <meta property="article:modified_time" content="2026-08-11">
 <meta name="twitter:card" content="summary"><meta name="twitter:title" content="Grand Cross damage and recoil on Payon Stories | Open PS Calc">
-<meta name="twitter:description" content="Grand Cross combines ATK and MATK, hits three times, applies defence asymmetrically, and hurts the caster — how each half is computed."><meta name="twitter:image" content="https://openpscalc.com/icon-512.png">
+<meta name="twitter:description" content="Grand Cross combines ATK and MATK, applies its Holy element twice, hits three times, and hurts the caster — how each half is computed."><meta name="twitter:image" content="https://openpscalc.com/icon-512.png">
 <meta name="twitter:image:alt" content="Open PS Calc logo">
 <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/svg+xml" href="/icon.svg">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Open PS Calc","item":"https://openpscalc.com/"},{"@type":"ListItem","position":2,"name":"Mechanics","item":"https://openpscalc.com/mechanics.html"},{"@type":"ListItem","position":3,"name":"Grand Cross damage and recoil on Payon Stories","item":"https://openpscalc.com/mechanics/grand-cross.html"}]}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Grand Cross damage and recoil on Payon Stories","description":"Grand Cross combines ATK and MATK, hits three times, applies defence asymmetrically, and hurts the caster — how each half is computed.","url":"https://openpscalc.com/mechanics/grand-cross.html","mainEntityOfPage":"https://openpscalc.com/mechanics/grand-cross.html","image":"https://openpscalc.com/icon-512.png","inLanguage":"en","about":"Payon Stories damage mechanics (pre-renewal Ragnarok Online)","author":{"@type":"Organization","name":"Open PS Calc","url":"https://openpscalc.com/"},"publisher":{"@type":"Organization","name":"Open PS Calc","logo":{"@type":"ImageObject","url":"https://openpscalc.com/icon-512.png"}},"isPartOf":{"@type":"WebSite","name":"Open PS Calc","url":"https://openpscalc.com/"},"mentions":{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Open PS Calc","alternateName":"Payon Stories Damage Calculator","url":"https://openpscalc.com/","applicationCategory":"GameApplication","operatingSystem":"Web browser","description":"Fan-made damage calculator for Payon Stories (pre-renewal Ragnarok Online): step-by-step damage breakdown, ASPD/cast/hit breakpoints, build comparison, time-to-kill and survivability, modeling the server's reworked mechanics.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"isAccessibleForFree":true}}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does Grand Cross ignore DEF on Payon Stories?","acceptedAnswer":{"@type":"Answer","text":"No. The physical half takes hard and soft DEF normally, while the magic half takes only soft MDEF. Reducing a target's DEF with Provoke therefore does increase Grand Cross damage."}},{"@type":"Question","name":"How much does Grand Cross hurt the caster?","acceptedAnswer":{"@type":"Answer","text":"Two parts: the hit recalculated against your own defences and Holy resistance then halved, plus a flat 20% of your current HP. Faith reduces both, through Holy resistance and extra Max HP."}},{"@type":"Question","name":"Should a Grand Cross Crusader stack INT or STR?","acceptedAnswer":{"@type":"Answer","text":"Both. The damage adds ATK and MATK together before the skill multiplier, so STR and INT contribute to the same number, with VIT for survivability and the recoil."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Grand Cross damage and recoil on Payon Stories","description":"Grand Cross combines ATK and MATK, applies its Holy element twice, hits three times, and hurts the caster — how each half is computed.","url":"https://openpscalc.com/mechanics/grand-cross.html","mainEntityOfPage":"https://openpscalc.com/mechanics/grand-cross.html","image":"https://openpscalc.com/icon-512.png","inLanguage":"en","about":"Payon Stories damage mechanics (pre-renewal Ragnarok Online)","author":{"@type":"Organization","name":"Open PS Calc","url":"https://openpscalc.com/"},"publisher":{"@type":"Organization","name":"Open PS Calc","logo":{"@type":"ImageObject","url":"https://openpscalc.com/icon-512.png"}},"isPartOf":{"@type":"WebSite","name":"Open PS Calc","url":"https://openpscalc.com/"},"mentions":{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Open PS Calc","alternateName":"Payon Stories Damage Calculator","url":"https://openpscalc.com/","applicationCategory":"GameApplication","operatingSystem":"Web browser","description":"Fan-made damage calculator for Payon Stories (pre-renewal Ragnarok Online): step-by-step damage breakdown, ASPD/cast/hit breakpoints, build comparison, time-to-kill and survivability, modeling the server's reworked mechanics.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"isAccessibleForFree":true}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does Grand Cross ignore DEF on Payon Stories?","acceptedAnswer":{"@type":"Answer","text":"No. The physical half takes hard and soft DEF like a normal weapon hit, and the magic half takes hard and soft MDEF like a spell. Reducing a target's DEF with Provoke therefore does increase Grand Cross damage."}},{"@type":"Question","name":"How much does Grand Cross hurt the caster?","acceptedAnswer":{"@type":"Answer","text":"Two parts: the hit recalculated against your own defences and Holy resistance then halved, plus a flat 20% of your current HP. Faith reduces both, through Holy resistance and extra Max HP."}},{"@type":"Question","name":"Should a Grand Cross Crusader stack INT or STR?","acceptedAnswer":{"@type":"Answer","text":"Both. The damage adds ATK and MATK together before the skill multiplier, so STR and INT contribute to the same number, with VIT for survivability and the recoil."}}]}</script>
 <style>
   :root{color-scheme:dark;--bg:#12141c;--panel:#181b26;--border:#2a2f40;--border-soft:#232838;--text:#e8e6df;--dim:#9a9fb0;--faint:#5d6276;--accent:#d8a657;--accent-dim:#a3793c;--link:#8fb4d9;--on-accent:#1a1306}
   :root[data-theme="light"]{color-scheme:light;--bg:#f0ebe0;--panel:#e8e2d4;--border:#b5ab95;--border-soft:#c8c0ac;--text:#1e1a10;--dim:#56493a;--faint:#8a7a64;--accent:#966419;--accent-dim:#7a5015;--link:#2060a0;--on-accent:#f0ebe0}
@@ -52,20 +52,26 @@
 <header><nav><a href="/">Open PS Calc</a> › <a href="/mechanics.html">Mechanics</a> › Grand Cross damage and recoil on Payon Stories</nav></header>
 <span class="eyebrow">Payon Stories mechanics</span>
 <h1>Grand Cross damage and recoil on Payon Stories</h1>
-<p class="lead">Grand Cross combines ATK and MATK, hits three times, applies defence asymmetrically, and hurts the caster — how each half is computed.</p>
+<p class="lead">Grand Cross combines ATK and MATK, applies its Holy element twice, hits three times, and hurts the caster — how each half is computed.</p>
 <h2>The formula</h2>
-<p class="formula">damage = (ATK + MATK) × (100 + 40 × rank)%</p>
-<p>Holy element, delivered as three waves that are summed. Because both ATK and MATK feed the
-same number, a Grand Cross Crusader invests in STR <em>and</em> INT rather than choosing.</p>
-<h2>Defence applies — but asymmetrically</h2>
-<p>This is the part that surprises people. The physical half takes the target's
-hard and soft DEF as normal, while the magic half takes <strong>soft MDEF only</strong> — hard
-MDEF does not apply to it. That asymmetry was settled by calibrating against in-game screenshots
-of an INT Grand Cross against a Knight of Abyss (hard DEF 55, hard MDEF 50): applying both hard
-values undershot the real number badly, ignoring defence entirely overshot it, and the
-asymmetric reading landed on it.</p>
-<p>It also means <strong>Provoke helps</strong>: cutting the target's DEF scales the physical half,
-which matches what players report.</p>
+<p class="formula">wave = Holy × (Holy × ATK half + Holy × MATK half) × (100 + 40 × rank)%</p>
+<p>Delivered as three waves that are summed. Because both ATK and MATK feed the same number, a
+Grand Cross Crusader invests in STR <em>and</em> INT rather than choosing.</p>
+<h2>The Holy element counts twice</h2>
+<p>Each half is multiplied by the Holy element on its own, and then the sum is multiplied
+by it <strong>again</strong> before the skill ratio. Against a Dark 4 or Undead 4 target, where Holy
+does 200%, the two halves effectively take 400%. Against a Neutral target the element does nothing
+either time. This is why Grand Cross is so much stronger against Dark and Undead monsters than a
+single element multiplier would suggest.</p>
+<p>It is also why every point of flat ATK is worth so much: a player measured Blade Mastery's +40 ATK
+adding 800 to each wave against a Loli Ruri (Dark 4): 40 × 2 × 2 × 5.</p>
+<h2>Defence and size apply to both halves</h2>
+<p>The physical half is an ordinary weapon hit: your weapon's size penalty, then the
+target's hard and soft DEF, then refine and mastery ATK. The magic half takes the target's hard
+MDEF and then its soft MDEF, exactly like a spell. Both are reduced <em>before</em> the element and
+the skill ratio are applied.</p>
+<p>That means <strong>Provoke helps</strong>, because cutting the target's DEF scales the physical
+half. High-MDEF targets also blunt an INT-heavy Grand Cross noticeably.</p>
 <h2>The recoil</h2>
 <p>Grand Cross hurts you too, in two parts:</p>
 <ul>
@@ -78,7 +84,7 @@ its own red panel rather than folding it into your damage.</p>
 
 <h2>Frequently asked questions</h2>
 <h3>Does Grand Cross ignore DEF on Payon Stories?</h3>
-<p>No. The physical half takes hard and soft DEF normally, while the magic half takes only soft MDEF. Reducing a target's DEF with Provoke therefore does increase Grand Cross damage.</p>
+<p>No. The physical half takes hard and soft DEF like a normal weapon hit, and the magic half takes hard and soft MDEF like a spell. Reducing a target's DEF with Provoke therefore does increase Grand Cross damage.</p>
 <h3>How much does Grand Cross hurt the caster?</h3>
 <p>Two parts: the hit recalculated against your own defences and Holy resistance then halved, plus a flat 20% of your current HP. Faith reduces both, through Holy resistance and extra Max HP.</p>
 <h3>Should a Grand Cross Crusader stack INT or STR?</h3>
