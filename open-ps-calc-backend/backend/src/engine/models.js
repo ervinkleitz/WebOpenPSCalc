@@ -34,6 +34,7 @@ function createPlayerBuild(overrides = {}) {
     bonus_maxhp: 0,
     bonus_maxsp: 0,
     bonus_crit_atk_rate: 0,
+    bonus_status_crit_atk_rate: 0, // Brutality status (Bonechewer Card): a separate crit-damage multiplier
     bonus_matk_rate: 0,
     bonus_maxhp_rate: 0,
 
@@ -206,7 +207,9 @@ function createGearBonuses(overrides = {}) {
     flee: 0,
     flee2: 0,
     cri: 0,
+    status_cri: 0,           // Brutality status CRIT — max, not summed (the buff does not stack)
     crit_atk_rate: 0,
+    status_crit_atk_rate: 0, // Brutality status crit damage — its own multiplier, max, not summed
     long_atk_rate: 0,
     def_: 0,
     def2: 0,

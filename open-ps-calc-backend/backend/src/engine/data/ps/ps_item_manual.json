@@ -781,7 +781,8 @@
   ],
   "slots": 0,
   "aegis_name": "Bonechewer_Card",
-  "script": "autobonus \"{ bonus bCritical,5; bonus bCritAtkRate,50; }\",50,10000,BF_WEAPON|BF_NORMAL;"
+  "_note": "Bonechewer Card grants the Brutality STATUS (live PS item API: \"enter Brutality status ... increases your CRIT by 5 and inflict 50% more damage with Critical Attacks for 10 seconds\"), modelled as an autobonus. Its crit damage uses the PS pseudo-bonus bBrutalityCritAtkRate rather than bCritAtkRate: a player (Chocolate, 2026-09-14) found in-game that Katar Mastery's crit damage, Bonechewer, and crit-damage items (Ring of the Claw, Mobster Card) are three separate buckets that stack multiplicatively. Both pseudo-bonuses take the max rather than summing, because the card says its buff effects do not stack (a second card only adds another 5% proc chance).",
+  "script": "autobonus \"{ bonus bBrutalityCritical,5; bonus bBrutalityCritAtkRate,50; }\",50,10000,BF_WEAPON|BF_NORMAL;"
  },
  "8239": {
   "type": "IT_CARD",

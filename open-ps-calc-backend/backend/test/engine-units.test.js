@@ -4768,6 +4768,49 @@ test("dual-wield off-hand element doesn't borrow the main hand's ammo/script ele
 // A weapon's OWN bAtkEle script must not shadow an active endow, and an
 // unrelated ammo's script must not leak into a skill that doesn't use it
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// PS crit damage comes in three buckets that stack MULTIPLICATIVELY: gear crit
+// damage (bCritAtkRate: Mobster Card, Ring of the Claw), Bonechewer Card's
+// Brutality status, and Katar Mastery Lv10. Reported in-game 2026-09-14 (Chocolate);
+// Brutality used to be summed into the gear bucket.
+// ---------------------------------------------------------------------------
+const critAssassin = (equipped, force_procs = true) => {
+  const r = runScenarioRaw({ build: { job_id: 12, base_level: 99, job_level: 50,
+    base_stats: { str: 80, agi: 90, vit: 30, int: 1, dex: 30, luk: 60 }, equipped,
+    mastery_levels: { AS_KATAR: 10 }, flags: { force_procs } }, target: 1002 });
+  const step = (name) => r.raw.crit.steps.find((s) => s.name === name) || {};
+  const mult = (name) => step(name).multiplier;
+  return { avg: r.raw.crit.avg_damage, cri: r.rawStatus.cri, mult, step };
+};
+
+test("crit damage: gear, Brutality and Katar Mastery are three multiplicative buckets", () => {
+  const JUR = 1250, MOBSTER = 4317, BONECHEWER = 8238, RING_OF_THE_CLAW = 8279;
+  const gearOnly = critAssassin({ right_hand: JUR, right_hand_card1: MOBSTER, accessory_left: RING_OF_THE_CLAW });
+  const all3 = critAssassin({ right_hand: JUR, right_hand_card1: MOBSTER, right_hand_card2: BONECHEWER, accessory_left: RING_OF_THE_CLAW });
+
+  assert.equal(all3.mult("Crit ATK Rate"), 1.25, "gear bucket: Mobster 15 + Ring of the Claw 10, summed with each other");
+  assert.equal(all3.mult("Brutality Crit Bonus"), 1.5, "Brutality is its own ×1.5, not +50 added to the gear bucket");
+  assert.equal(all3.mult("AS_KATAR Crit Bonus"), 1.5, "Katar Mastery Lv10 stays its own ×1.5");
+  // Bonechewer must not change the gear bucket, and must multiply what comes out of it.
+  assert.equal(all3.step("Crit ATK Rate").max_value, gearOnly.step("Crit ATK Rate").max_value,
+    "Brutality must leave the gear bucket untouched (summed, gear would read ×1.75)");
+  assert.equal(all3.step("Brutality Crit Bonus").max_value, Math.floor(all3.step("Crit ATK Rate").max_value * 1.5),
+    "Brutality multiplies the gear-bucket result");
+  assert.ok(all3.avg > gearOnly.avg * 1.4, "and the crit ends up clearly larger than the summed model's ×1.4 would give");
+});
+
+test("Brutality does not stack: two Bonechewer Cards proc the same buff as one", () => {
+  const one = critAssassin({ right_hand: 1250, right_hand_card1: 8238 });
+  const two = critAssassin({ right_hand: 1250, right_hand_card1: 8238, right_hand_card2: 8238 });
+  const none = critAssassin({ right_hand: 1250 });
+  assert.equal(two.mult("Brutality Crit Bonus"), 1.5, "crit damage is not doubled to ×2");
+  assert.equal(two.avg, one.avg);
+  assert.equal(one.cri - none.cri, 50, "Brutality's +5 CRIT (status.cri is in tenths)");
+  assert.equal(two.cri, one.cri, "the +5 CRIT is not doubled either");
+  // And it only applies while the proc is on.
+  assert.equal(critAssassin({ right_hand: 1250, right_hand_card1: 8238 }, false).mult("Brutality Crit Bonus"), undefined);
+});
+
 test("endow beats a weapon's own script element; unrelated ammo doesn't leak into it", () => {
   const cfg = createBattleConfig();
   const target = loader.getMonster(1002);

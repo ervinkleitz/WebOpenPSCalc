@@ -169,6 +169,10 @@ const STEP_LABELS: Record<string, string> = {
   "Mastery Fix": "Weapon mastery",
   "Weapon Research": "Weaponry Research",
   "Attr Fix": "Element vs target",
+  // PS crit damage: three separate buckets that multiply together.
+  "Crit ATK Rate": "Crit damage (gear)",
+  "Brutality Crit Bonus": "Crit damage (Brutality)",
+  "AS_KATAR Crit Bonus": "Crit damage (Katar Mastery)",
   "Card Fix": "Cards & gear",
   "Card Fix (Magic)": "Cards & gear",
   "Forge Bonus": "Forged weapon",

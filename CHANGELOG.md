@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-14
+
+### Fixed
+
+- **Bonechewer Card's crit damage now multiplies instead of adding.** On Payon Stories,
+  critical damage comes from three separate sources that multiply together: gear (Mobster
+  Card, Ring of the Claw, the racial crit cards), Bonechewer Card's Brutality status, and
+  Katar Mastery Lv10. The calculator already kept Katar Mastery separate, but it added
+  Brutality's +50% into the gear bonus. A Katar Mastery 10 build with Mobster Card and
+  Ring of the Claw now crits about 7% harder while Brutality is up. Two Bonechewer Cards
+  no longer double the buff either, since the card says its effects don't stack. The
+  breakdown shows each of the three as its own "Crit damage" row. Reported by a player.
+
 ## 2026-09-12
 
 ### Fixed

@@ -18,6 +18,16 @@ function calculateCritAtkRate(build, pmf, result, opts = {}) {
     result.add_step({ name: "Crit ATK Rate", value: av, min_value: mn, max_value: mx, multiplier: (100 + rate) / 100, note: `bonus.crit_atk_rate = ${rate}%`, formula: `damage * (100 + ${rate}) / 100`, hercules_ref: "battle.c:5333" });
   }
 
+  // PS Brutality status (Bonechewer Card): its own multiplier, not added into
+  // crit_atk_rate above. Crit damage on PS comes in three separate buckets that stack
+  // multiplicatively: gear (above), this status, and Katar Mastery Lv10 (below).
+  const statusRate = build.bonus_status_crit_atk_rate || 0;
+  if (statusRate !== 0) {
+    pmf = scaleFloor(pmf, 100 + statusRate, 100);
+    [mn, mx, av] = pmfStats(pmf);
+    result.add_step({ name: "Brutality Crit Bonus", value: av, min_value: mn, max_value: mx, multiplier: (100 + statusRate) / 100, note: `Brutality status (Bonechewer Card) [PS]: ×${(100 + statusRate) / 100} crit damage, separate from gear crit damage and Katar Mastery`, formula: `damage * (100 + ${statusRate}) / 100`, hercules_ref: "PS item API: Bonechewer Card" });
+  }
+
   const skillName = skill != null ? skill.name : "";
   const mastery = gb != null ? gb.effective_mastery : build.mastery_levels;
   if (

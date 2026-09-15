@@ -87,6 +87,13 @@ const BONUS1 = {
   bFlee2: def((v) => (v > 0 ? `Perfect Dodge +${v}.` : `Perfect Dodge ${v}.`), "flee2"),
   bCritical: def((v) => (v > 0 ? `CRIT +${v}.` : `CRIT ${v}.`), "cri"),
   bCritAtkRate: def((v) => (v > 0 ? `Critical damage +${v}%.` : `Critical damage ${v}%.`), "crit_atk_rate"),
+  // PS Bonechewer Card's Brutality STATUS (not an equipment bonus). A player found
+  // in-game that its crit damage stacks MULTIPLICATIVELY with gear crit damage
+  // (bCritAtkRate) and with Katar Mastery Lv10's +50%, so it gets its own field and
+  // its own multiplier in critAtkRate.js. "max" mode: the card says the buff effects
+  // do not stack, so two Bonechewers proc the same +50% / +5 CRIT, not double.
+  bBrutalityCritAtkRate: def((v) => `Brutality: critical damage +${v}% (its own multiplier).`, "status_crit_atk_rate", "max"),
+  bBrutalityCritical: def((v) => `Brutality: CRIT +${v}.`, "status_cri", "max"),
   bLongAtkRate: def((v) => (v > 0 ? `Long-range damage +${v}%.` : `Long-range damage ${v}%.`), "long_atk_rate"),
   bAtkRate: def((v) => `Physical ATK +${v}%.`, "atk_rate"),
   bHolyStrikeChance: def((v) => `+${v}% Holy Strike proc chance.`, "holy_strike_bonus_chance"),
