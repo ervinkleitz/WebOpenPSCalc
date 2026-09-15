@@ -9,6 +9,23 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **Grand Cross now follows Solina's GC sim.** Three parts of the damage formula
+  changed to match it (and the pre-renewal server code it follows):
+  - The Holy element is applied to the ATK half and the MATK half separately, and then
+    **again** to their sum. Against Dark and Undead targets that roughly doubles the effect
+    of the element.
+  - The magic half now takes the target's **hard MDEF**, not just its soft MDEF.
+  - The physical half now takes your weapon's **size penalty**.
+
+  Mastery ATK now lands on the physical half only; the second element pass is what makes
+  it count double. It reproduces the Payon Stories staff's in-game Grand Cross readings
+  exactly: 40 / 1240 / 2040 per wave with no mastery / Demon Bane 10 / plus Blade Mastery
+  10. The old formula was 20 short on every one. Knight of Abyss, where the old numbers
+  were calibrated, lands within a few percent of before. Elsewhere the change is larger:
+  Grand Cross is noticeably **stronger** against low-MDEF Dark and Undead monsters, and
+  **weaker** against high-MDEF monsters that Holy does nothing extra to. The damage
+  breakdown shows all three element steps.
+
 - **Shadow Slash uses Payon Stories' confirmed damage formula.** From Hiding it deals
   100 + 200 × (level − 1)%, so 900% at Lv5. Otherwise it's 100 + 90 × (level − 1)%, or 460%
   at Lv5. That's 100% more than the wiki's table from Hiding at every level from 2, and 10%

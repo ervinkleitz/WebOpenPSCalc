@@ -2389,6 +2389,75 @@ test("Demon Bane's base-level bonus is flat, and Grand Cross takes only its demo
 });
 
 // ---------------------------------------------------------------------------
+// Grand Cross follows Solina's GC sim (v1.43), i.e. Hercules pre-renewal's
+// CR_GRANDCROSS branch: size fix and hard MDEF apply, and Holy is applied to each
+// half AND to their sum. Adopted 2026-09-14 on feat/gc-solina-model.
+// ---------------------------------------------------------------------------
+const GC_INT_BUILD = { job_id: 14, base_level: 99, job_level: 50,
+  base_stats: { str: 50, agi: 1, vit: 1, int: 113, dex: 44, luk: 6 }, // Solina's defaults (+3 INT from Haedonggum)
+  equipped: { right_hand: 1123 }, refine: { right_hand: 5 }, mastery_levels: { SM_SWORD: 10 } };
+const gcSteps = (mastery_levels, target) => {
+  const { runScenarioRaw } = require("./engineRunner");
+  const r = runScenarioRaw({ build: { ...GC_INT_BUILD, mastery_levels }, skill: { name: "CR_GRANDCROSS", level: 10 }, target });
+  return { steps: (r.raw.magic || r.raw.normal).steps, status: r.rawStatus };
+};
+const gcWave = (steps) => steps.find((s) => s.name === "Per-Wave Damage");
+
+test("Grand Cross reproduces Solina's GC sim cell for cell", () => {
+  const fl = Math.floor;
+  // The sheet's Q column (R8–R40), transcribed. Weapon: Haedonggum, ATK 120, Lv3, +5.
+  const sheet = (st, t, ele, sizePct) => {
+    const refine = 5 * (2 + 1 + 2), mastery = 40;
+    const phys = (w, softDef) => fl(fl(Math.max(1, fl(st.batk + w * sizePct / 100) * (1 - t.def / 100) - softDef) + mastery + refine) * ele / 100);
+    const mag = (m) => fl(Math.max(1, fl(m * (1 - t.mdef / 100) - (t.int + t.vit / 2))) * ele / 100);
+    const wave = (p, m) => fl(fl((p + m) * ele / 100) * 5);
+    return [
+      wave(phys(Math.min(120, st.dex * 1.4), t.vit + Math.max(0, fl(t.vit / 20) ** 2 - 1)), mag(st.int_ + fl(st.int_ / 7) ** 2)),
+      wave(phys(120, t.vit), mag(st.int_ + fl(st.int_ / 5) ** 2)),
+    ];
+  };
+  const cases = [
+    // Knight of Abyss is the sheet's own default target; Frus is where the old
+    // single-element model and the sheet disagreed most (low MDEF, Dark 3).
+    { id: 1219, ele: 200, size: 75, label: "Knight of Abyss (Dark 4, Large)" },
+    { id: 1753, ele: 175, size: 100, label: "Frus (Dark 3, Medium)" },
+  ];
+  for (const c of cases) {
+    const { steps, status } = gcSteps(GC_INT_BUILD.mastery_levels, c.id);
+    const m = loader.getMonster(c.id);
+    const [min, max] = sheet(status, { def: m.def_, vit: m.vit, int: m.int_, mdef: m.mdef_ }, c.ele, c.size);
+    const w = gcWave(steps);
+    assert.deepEqual([w.min_value, w.max_value], [min, max], `${c.label}: engine per-wave vs the sheet`);
+  }
+});
+
+test("Grand Cross: size fix, hard MDEF, and three Holy applications are all in the pipeline", () => {
+  const { steps } = gcSteps(GC_INT_BUILD.mastery_levels, 1219); // Knight of Abyss: Large, MDEF 50, Dark 4
+  const names = steps.map((s) => s.name);
+  assert.equal(steps.find((s) => s.name === "Size Fix").multiplier, 0.75, "1H sword vs Large: the size penalty applies to GC");
+  assert.match(steps.find((s) => s.name === "Magic Defense Fix").note, /×50%/, "hard MDEF 50 halves the magic half");
+  for (const n of ["Attr Fix (physical half)", "Attr Fix (magic half)", "Attr Fix (sum)"]) {
+    assert.ok(names.includes(n), `missing ${n}`);
+    assert.equal(steps.find((s) => s.name === n).multiplier, 2, `${n}: Holy vs Dark 4 is 200%`);
+  }
+  assert.ok(!names.includes("Mastery Fix (magic half)"), "mastery is added to the physical half only");
+  assert.ok(names.indexOf("Attr Fix (sum)") < names.findIndex((n) => n.startsWith("Grand Cross Ratio")), "ratio is applied last");
+});
+
+// A player measured Grand Cross per wave vs a Loli Ruri (Demon, Dark 4): no mastery 40,
+// Demon Bane 1 → 1060, Demon Bane 10 → 1240, + Blade Mastery 10 → 2040. The previous
+// model explained the ×20-per-ATK-point by adding mastery to both halves; under the
+// sheet it comes from the second Holy application (40 × 2 × 2 × 5 = 800). Either way the
+// measured deltas must still come out exactly.
+test("Grand Cross still reproduces the four in-game mastery measurements", () => {
+  const wave = (ml) => gcWave(gcSteps(ml, 1505).steps).value;
+  const none = wave({});
+  assert.equal(wave({ AL_DEMONBANE: 1 }) - none, 1060 - 40, "Demon Bane Lv1");
+  assert.equal(wave({ AL_DEMONBANE: 10 }) - none, 1240 - 40, "Demon Bane Lv10");
+  assert.equal(wave({ AL_DEMONBANE: 10, SM_SWORD: 10 }) - none, 2040 - 40, "Demon Bane Lv10 + Blade Mastery Lv10");
+});
+
+// ---------------------------------------------------------------------------
 // Blitz Beat / auto-blitz is BF_MISC: no attacker card bonuses
 // ---------------------------------------------------------------------------
 test("the falcon ignores the attacker's race/boss cards, but the bow attack does not", () => {

@@ -199,24 +199,32 @@ base ATK they are amplified by the ×(8 + SP/10) multiplier along with everythin
     slug: "grand-cross",
     title: "Grand Cross damage and recoil on Payon Stories",
     blurb:
-      "Grand Cross combines ATK and MATK, hits three times, applies defence asymmetrically, and hurts the caster — how each half is computed.",
+      "Grand Cross combines ATK and MATK, applies its Holy element twice, hits three times, and hurts the caster — how each half is computed.",
     sections: [
       {
         h: "The formula",
-        html: `<p class="formula">damage = (ATK + MATK) × (100 + 40 × rank)%</p>
-<p>Holy element, delivered as three waves that are summed. Because both ATK and MATK feed the
-same number, a Grand Cross Crusader invests in STR <em>and</em> INT rather than choosing.</p>`,
+        html: `<p class="formula">wave = Holy × (Holy × ATK half + Holy × MATK half) × (100 + 40 × rank)%</p>
+<p>Delivered as three waves that are summed. Because both ATK and MATK feed the same number, a
+Grand Cross Crusader invests in STR <em>and</em> INT rather than choosing.</p>`,
       },
       {
-        h: "Defence applies — but asymmetrically",
-        html: `<p>This is the part that surprises people. The physical half takes the target's
-hard and soft DEF as normal, while the magic half takes <strong>soft MDEF only</strong> — hard
-MDEF does not apply to it. That asymmetry was settled by calibrating against in-game screenshots
-of an INT Grand Cross against a Knight of Abyss (hard DEF 55, hard MDEF 50): applying both hard
-values undershot the real number badly, ignoring defence entirely overshot it, and the
-asymmetric reading landed on it.</p>
-<p>It also means <strong>Provoke helps</strong>: cutting the target's DEF scales the physical half,
-which matches what players report.</p>`,
+        h: "The Holy element counts twice",
+        html: `<p>Each half is multiplied by the Holy element on its own, and then the sum is multiplied
+by it <strong>again</strong> before the skill ratio. Against a Dark 4 or Undead 4 target, where Holy
+does 200%, the two halves effectively take 400%. Against a Neutral target the element does nothing
+either time. This is why Grand Cross is so much stronger against Dark and Undead monsters than a
+single element multiplier would suggest.</p>
+<p>It is also why every point of flat ATK is worth so much: a player measured Blade Mastery's +40 ATK
+adding 800 to each wave against a Loli Ruri (Dark 4): 40 × 2 × 2 × 5.</p>`,
+      },
+      {
+        h: "Defence and size apply to both halves",
+        html: `<p>The physical half is an ordinary weapon hit: your weapon's size penalty, then the
+target's hard and soft DEF, then refine and mastery ATK. The magic half takes the target's hard
+MDEF and then its soft MDEF, exactly like a spell. Both are reduced <em>before</em> the element and
+the skill ratio are applied.</p>
+<p>That means <strong>Provoke helps</strong>, because cutting the target's DEF scales the physical
+half. High-MDEF targets also blunt an INT-heavy Grand Cross noticeably.</p>`,
       },
       {
         h: "The recoil",
@@ -233,7 +241,7 @@ its own red panel rather than folding it into your damage.</p>`,
     faq: [
       {
         q: "Does Grand Cross ignore DEF on Payon Stories?",
-        a: "No. The physical half takes hard and soft DEF normally, while the magic half takes only soft MDEF. Reducing a target's DEF with Provoke therefore does increase Grand Cross damage.",
+        a: "No. The physical half takes hard and soft DEF like a normal weapon hit, and the magic half takes hard and soft MDEF like a spell. Reducing a target's DEF with Provoke therefore does increase Grand Cross damage.",
       },
       {
         q: "How much does Grand Cross hurt the caster?",

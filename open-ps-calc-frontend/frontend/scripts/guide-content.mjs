@@ -69,7 +69,7 @@ Cross, so keep them ranked.`,
     faq: [
       {
         q: "Does Grand Cross ignore DEF?",
-        a: "No, not on Payon Stories. The physical half takes hard and soft DEF while the magic half takes soft MDEF only, so Provoke and other DEF reductions do increase the damage.",
+        a: "No, not on Payon Stories. The physical half takes hard and soft DEF and the magic half takes hard and soft MDEF, so Provoke and other DEF reductions do increase the damage.",
       },
       {
         q: "How do I reduce Grand Cross recoil?",

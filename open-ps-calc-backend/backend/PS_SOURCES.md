@@ -6207,6 +6207,26 @@ Decisions behind the Turn Undead branch, requested by a CC (Laila) who wanted a
   OPEN: that page does not restate the fail-damage magnitude; the branch assumes full
   delegation (same formula at the Res level). Worth confirming with Laila in game.
 
+## 2026-09-14 - Grand Cross adopts Solina's GC sim (element applied twice)
+
+**Source:** `Gunslinger+GC sim v1.43 (solina).xlsx`, a community sheet whose Grand Cross block
+matches Hercules pre-renewal's `CR_GRANDCROSS` branch (battle.c:4291, :4296, :6092). Three
+changes against the previous model: Holy applied to each half AND again to their sum; hard MDEF
+on the magic half; weapon size penalty on the physical half. Mastery moves to the physical half
+only.
+
+**Evidence it matches the server:** Alardun's in-game readings (base 99 Crusader vs Loli Ruri,
+Dark 4) - 40 / 1240 / 2040 per wave with no mastery / Demon Bane 10 / + Blade Mastery 10,
+reproduced by a player's share link. The new model hits all three exactly; the old one read
+20 / 1220 / 2020. That baseline 40 is what settles it: with both halves floored to 1, only an
+element applied to each half and then to the sum gives (2 + 2) x 2 x 5 = 40. Recoil deltas
+(+50 for Blade Mastery with Faith 10) match on both models.
+
+**Not yet settled by data:** hard MDEF and the size penalty. The readings above floor both halves
+to 1, so neither term can show. A reading vs a low-MDEF Dark monster (Frus / Skogul) and a
+high-MDEF Neutral one (Sage Worm) would test them. To revert, `git revert -m 1` the merge
+commit "Merge: Grand Cross adopts Solina's GC sim"; the `feat/gc-solina-model` branch is kept.
+
 ## 2026-09-09 - OPEN: Venom Splasher's re-use delay, 3s vs 6s
 
 Three sources, three answers, and the engine had a fourth (nothing at all - it was
