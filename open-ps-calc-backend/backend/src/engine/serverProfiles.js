@@ -527,10 +527,8 @@ const PS_BURNING = {
   duration_s: 5,
 };
 
-// Helper arrays for NJ_KASUMIKIRI / NJ_KIRIKAGE (core/server_profiles.py).
+// Helper array for NJ_KASUMIKIRI (core/server_profiles.py).
 const NJ_KASUMIKIRI_RATIOS = [100, 125, 150, 175, 200, 250, 275, 300, 325, 375];
-const NJ_KIRIKAGE_HIDE_ON = [100, 200, 400, 600, 800];
-const NJ_KIRIKAGE_HIDE_OFF = [100, 190, 280, 360, 450];
 
 // core/server_profiles.py's _PS_BF_WEAPON_RATIOS — verified BF_WEAPON skill-ratio
 // overrides for Payon Stories. PS_RG_TRICKARROW / PS_RG_QUICKSTEP / PS_PR_HOLYSTRIKE
@@ -639,7 +637,14 @@ const PS_BF_WEAPON_RATIOS = {
   // wiki.payonstories.com/Tranq_Shot. (Its real point is the 140% Sleep chance.)
   GS_BULLSEYE: (lv, tgt) => (tgt && ["Brute", "Demi-Human"].includes(tgt.race)) ? 100 : 10,
   GS_MAGICALBULLET: (lv, tgt, ctx) => 50 + (ctx ? ctx.dex : 0) + (ctx ? ctx.base_level : 0),
-  // Shadow Slash. The ratio is the wiki's per-level table and nothing else.
+  // Shadow Slash. PS-custom ratio, confirmed by Alardun (2026-09-14) and recorded as a
+  // standard PS change in PS_SOURCES.md section 4:
+  //   from Hiding:  100 + 200 x (lv - 1)   -> 100 / 300 / 500 / 700 / 900
+  //   otherwise:    100 +  90 x (lv - 1)   -> 100 / 190 / 280 / 370 / 460
+  // This replaces the wiki's per-level tables (100/200/400/600/800 and
+  // 100/190/280/360/450), which disagreed with the formula from Lv2 hiding and Lv4 not
+  // hiding. The wiki's "-10% per cell of distance" on the unhidden table is not part of
+  // the confirmed formula, and had no input anywhere in the calculator, so it is gone.
   //
   // This used to add `25 + 5*lv` here when Shadow's Within was active. That
   // expression is 30/35/40/45/50 by level, which is precisely the wiki table's
@@ -655,11 +660,7 @@ const PS_BF_WEAPON_RATIOS = {
   // Lv5, where most builds sit. The table is followed here for being specific.
   NJ_KIRIKAGE: (lv, tgt, ctx) => {
     const hiding = !!(ctx && ctx.skill_params.NJ_KIRIKAGE_hiding);
-    const rangePp = ctx ? (ctx.skill_params.NJ_KIRIKAGE_range_pp ?? 0) : 0;
-    const base = hiding
-      ? NJ_KIRIKAGE_HIDE_ON[lv - 1]
-      : Math.max(0, NJ_KIRIKAGE_HIDE_OFF[lv - 1] - 10 * rangePp);
-    return base;
+    return 100 + (hiding ? 200 : 90) * (lv - 1);
   },
   NJ_KASUMIKIRI: (lv, tgt, ctx) => {
     const hiding = !!(ctx && ctx.skill_params.NJ_KASUMIKIRI_hiding);

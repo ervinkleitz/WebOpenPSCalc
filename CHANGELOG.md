@@ -7,6 +7,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-09-14
 
+### Changed
+
+- **Shadow Slash uses Payon Stories' confirmed damage formula.** From Hiding it deals
+  100 + 200 × (level − 1)%, so 900% at Lv5. Otherwise it's 100 + 90 × (level − 1)%, or 460%
+  at Lv5. That's 100% more than the wiki's table from Hiding at every level from 2, and 10%
+  more at Lv4–5 when not hiding. The wiki's extra −10% per cell of distance isn't part of
+  the formula and is gone. Confirmed by the Payon Stories staff.
+
 ### Fixed
 
 - **Bonechewer Card's crit damage now multiplies instead of adding.** On Payon Stories,

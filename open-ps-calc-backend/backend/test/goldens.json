@@ -3822,15 +3822,15 @@
    "matk_max": 104
   },
   "result": {
-   "dps": 2285.408,
+   "dps": 2571.888,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 0,
    "period_ms": 932,
    "normal": {
-    "min": 1679,
-    "max": 2583,
-    "avg": 2130,
+    "min": 1889,
+    "max": 2906,
+    "avg": 2397,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -3874,15 +3874,15 @@
    "matk_max": 104
   },
   "result": {
-   "dps": 2678.03,
+   "dps": 3012.94,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 80.6,
    "period_ms": 932,
    "normal": {
-    "min": 1679,
-    "max": 2583,
-    "avg": 2130,
+    "min": 1889,
+    "max": 2906,
+    "avg": 2397,
     "steps": [
      "Status BATK",
      "Weapon ATK",
@@ -3904,9 +3904,9 @@
     ]
    },
    "crit": {
-    "min": 2584,
-    "max": 2584,
-    "avg": 2584,
+    "min": 2907,
+    "max": 2907,
+    "avg": 2907,
     "steps": [
      "Status BATK",
      "Weapon ATK",

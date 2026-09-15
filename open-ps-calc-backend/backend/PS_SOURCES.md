@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-09-14 | Alardun | Staff ruling - standard PS-custom change | Ninja / Shadow Slash |
 | 2026-08-28 | Laila, via the CCs | Staff ruling | Gunslinger / Soul Bullet |
 | 2026-08-18 | Patch Notes (18th August 2026) | GM patch notes | Super Novice, Crazy Uproar, DPS room |
 | 2026-08-18 | Dastgir client hotfix | Discord (@Payon News) | Super Novice skill tab |
@@ -6510,6 +6511,36 @@ the ruling verbatim, the mechanic we read it onto, and what the calculator was d
 so a later reader can tell the CC's words apart from our interpretation of them. Where a quote comes
 from someone whose role we have not established, it is attributed by name and treated as
 corroboration, not as a ruling.
+
+## 2026-09-14 - Shadow Slash's damage ratio (Alardun) - STANDARD PS-custom change
+
+**Status: confirmed, standard.** This is a Payon Stories custom change to Shadow Slash
+(`NJ_KIRIKAGE`), and it is how the skill normally works on the server - not an edge case, a
+proposal, or a pending rework. It applies to every Shadow Slash. Recorded as standard on the
+maintainer's instruction (Frennetix, 2026-09-14), with the formula as confirmed by Alardun:
+
+> if attacking from hide:
+> 100 + (200 * (SkillLevel -1))
+>
+> otherwise:
+> 100 + (90*(SkillLevel-1))
+
+| Level | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| From Hiding | 100% | 300% | 500% | 700% | 900% |
+| Not hiding | 100% | 190% | 280% | 370% | 460% |
+
+**What it replaced.** The calculator followed the wiki's per-level tables: Hiding 100 / 200 /
+400 / 600 / 800, not hiding 100 / 190 / 280 / 360 / 450 with a further -10% per cell of
+distance. The formula is higher from Lv2 when hiding (+100 points at every level from 2) and from
+Lv4 when not (+10). The distance penalty is not part of the confirmed formula; the calculator
+never had an input for it, so it is dropped rather than carried along. **This ruling outranks
+the wiki table** where the two disagree.
+
+**Unchanged by it.** Shadow's Within still only adds crit RATE (+30..50 by level) and still
+gates whether Shadow Slash can crit at all (2026-08-27); the ratio above is the whole damage
+change. Implemented in `serverProfiles.js` (`weapon_ratios.NJ_KIRIKAGE`), pinned in
+`engine-units.test.js` ("Shadow Slash ratio").
 
 ## 2026-08-29 - What an arrow does to a bow user's MELEE skills (Laila)
 

@@ -4621,7 +4621,7 @@ test("Shadow's Within gates Shadow Slash's crit and grants the crit rate, not da
   assert.equal(Math.round((lv5 - lv1) * 10) / 10, 20,
     "Lv1 -> Lv5 must add 20 points of crit (30 -> 50)");
 
-  // And it must NOT touch damage: the ratio is the wiki's per-level table alone.
+  // And it must NOT touch damage: the ratio is Alardun's confirmed formula alone.
   const ratioOf = (r) => (r.normal.steps.find((s) => /Skill Ratio/.test(s.name)) || {}).formula;
   assert.equal(ratioOf(run(true, 5)), ratioOf(run(false, 5)),
     "Shadow's Within is crit rate — it must not change the damage ratio");
@@ -4809,6 +4809,28 @@ test("Brutality does not stack: two Bonechewer Cards proc the same buff as one",
   assert.equal(two.cri, one.cri, "the +5 CRIT is not doubled either");
   // And it only applies while the proc is on.
   assert.equal(critAssassin({ right_hand: 1250, right_hand_card1: 8238 }, false).mult("Brutality Crit Bonus"), undefined);
+});
+
+// Shadow Slash's PS-custom ratio, confirmed by Alardun (2026-09-14) and recorded as a
+// standard PS change in PS_SOURCES.md section 4. Replaces the wiki's per-level tables.
+test("Shadow Slash ratio: 100 + 200x(lv-1) from Hiding, 100 + 90x(lv-1) otherwise", () => {
+  const ratio = PS.weapon_ratios.NJ_KIRIKAGE;
+  const at = (lv, hiding) => ratio(lv, null, { skill_params: hiding ? { NJ_KIRIKAGE_hiding: true } : {} });
+  assert.deepEqual([1, 2, 3, 4, 5].map((lv) => at(lv, true)), [100, 300, 500, 700, 900], "from Hiding");
+  assert.deepEqual([1, 2, 3, 4, 5].map((lv) => at(lv, false)), [100, 190, 280, 370, 460], "not hiding");
+
+  // And end to end: the breakdown's ratio step carries it, and the Hiding toggle picks the branch.
+  const cfg = createBattleConfig();
+  const dmg = (hiding) => {
+    const b = buildFromSaveSchema({ server: "payon_stories", job_id: 25, base_level: 99, job_level: 70,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 1, dex: 70, luk: 40 }, equipped: { right_hand: 13020 } });
+    b.skill_params = hiding ? { NJ_KIRIKAGE_hiding: true } : {};
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(st, w, createSkillInstance({ id: loader.getSkillIdByName("NJ_KIRIKAGE"), level: 5 }), loader.getMonster(1002), eff, gb);
+    return r.normal.steps.find((s) => /Skill Ratio/.test(s.name)).multiplier;
+  };
+  assert.equal(dmg(true), 9, "Lv5 from Hiding: 900%");
+  assert.equal(dmg(false), 4.6, "Lv5 not hiding: 460%");
 });
 
 test("endow beats a weapon's own script element; unrelated ammo doesn't leak into it", () => {
