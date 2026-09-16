@@ -47,6 +47,7 @@ const { calculateSkillTiming } = require("./skillTiming");
 const { calculateDps } = require("./dpsCalculator");
 const { computeFalconDamage } = require("./falconCalc");
 const { effectiveIsRanged, resolveWeapon, playerBuildToTarget } = require("../buildManager");
+const { ownScriptElement } = require("../gearBonusAggregator");
 const { resolveArmorElement } = require("../buildApplicator");
 
 // battle.c:3173-3410 BF_MAGIC skillratio switch (#else RENEWAL) — per-hit ratios.
@@ -1750,42 +1751,17 @@ class BattlePipeline {
       // since firesAmmo is true for that case.)
       baseWeaponEle = ammoOwnEle;
     } else if (scriptEle != null && !usesAmmo && !firesAmmo) {
-      const equipped = build.equipped || {};
-      const handSlot = isOffhand ? "left_hand" : "right_hand";
-      // If the wielded weapon grants this element ITSELF (Bazerald, Huuma Blaze
-      // Shuriken, ...), an active endow still beats it (resolveWeapon's elementOverride
-      // precedence, unaffected by anything below) — but without one, weapon.element
-      // can NOT be trusted here: script_atk_ele_rh is a last-assign scalar that an
-      // ammo's own bAtkEle also writes, so a scripted weapon AND scripted ammo both
-      // equipped (Huuma Blaze Shuriken + Black Earth Kunai) lets whichever was
-      // aggregated last silently win — order-dependent on `equipped`'s own key order,
-      // confirmed live both ways by the maintainer. Read from all_effects' source_slot
-      // (set by the aggregator from the actual parsed script, per slot) to find this
-      // slot's OWN effect and use ITS element value directly, bypassing the aggregate.
-      // (gearBonuses is guaranteed truthy here — scriptEle != null already required it.)
-      const weaponScriptEffect = (gearBonuses.all_effects || []).find(
-        (eff) => eff.bonus_type === "bAtkEle" && eff.source_slot === handSlot
-      );
-      if (weaponScriptEffect) {
-        if (build.weapon_element == null) {
-          const v = ELE_STR_TO_INT[String(weaponScriptEffect.params[0])];
-          if (v != null) baseWeaponEle = v;
-        }
-      } else if (build.weapon_element == null) {
-        // Same guard as above, for the same reason: without this, an active endow
-        // on a weapon with no bAtkEle script of its own (a plain Huuma Giant Wheel
-        // Shuriken, say) got silently discarded and replaced with the raw item
-        // field the instant unrelated ammo also carried a script. (e.g. with Throw
-        // Huuma Shuriken, a skill that doesn't use ammo)
-        const handId = equipped[handSlot];
-        const handItem = handId != null ? loader.getItem(handId) : null;
-        // Assumes the item's own `.element` field agrees with the bAtkEle script that
-        // put us in this branch — true for all 148 items currently carrying bAtkEle,
-        // but unenforced, and this codebase has shipped that exact mismatch before
-        // (Ghosthunter Grenade: element:8 with an empty script, so its Ghost property
-        // never reached the attack). Might need a future rework, for now just flagging this.
-        baseWeaponEle = handItem ? (handItem.element ?? 0) : 0;
-      }
+      // An ammo's bAtkEle is aggregated into the same scalar as the weapon's own, and
+      // resolveWeapon bakes that scalar into weapon.element — so with elemental ammo in
+      // the slot, weapon.element can be the AMMO's element even on an attack that never
+      // touches it. weapon.own_element is the same precedence computed blind to ammo
+      // (endow > this hand's own script or a card compounded into it > elemental forge >
+      // the item's field), which is what this attack should use.
+      //
+      // Replaces a reconstruction that re-read the raw item field here, which silently
+      // discarded an elemental FORGE (a VVS-Fire dagger went Neutral the moment any
+      // elemental kunai sat in the ammo slot) and could not see a card's bAtkEle at all.
+      baseWeaponEle = weapon.own_element;
     }
 
     let effAtkEle = baseWeaponEle;
@@ -2618,6 +2594,7 @@ class BattlePipeline {
             forge_ranked: build.lh_forge_ranked,
             forge_element: build.lh_forge_element,
             script_atk_ele_rh: gearBonuses.script_atk_ele_lh,
+            own_script_element: ownScriptElement(gearBonuses, "left_hand"),
           },
         );
         if (lhWeapon) {

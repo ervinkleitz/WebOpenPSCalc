@@ -5,6 +5,21 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-15
+
+### Fixed
+
+- **A forged elemental weapon no longer loses its element to unrelated ammo.** A VVS-Fire
+  forged dagger dropped to Neutral the moment any elemental Kunai sat in the ammo slot,
+  even for a skill that doesn't use ammo — unequip the ammo and the Fire came back. The
+  calculator worked out the weapon's element after the fact by re-reading the item's own
+  entry, which knows nothing about forging. Each weapon now carries the element it has on
+  its own, so a forge, a card's element, and an endow all survive whatever is in the ammo
+  slot. Elemental arrows and bullets still apply on the attacks that fire them, thrown
+  Kunai and Shuriken still use their own element, and an endow still beats all of them —
+  except for Gunslingers, who can't be endowed on Payon Stories, so their bullet's element
+  stands.
+
 ## 2026-09-14
 
 ### Changed

@@ -6207,6 +6207,31 @@ Decisions behind the Turn Undead branch, requested by a CC (Laila) who wanted a
   OPEN: that page does not restate the fail-damage magnitude; the branch assumes full
   delegation (same formula at the Res level). Worth confirming with Laila in game.
 
+## 2026-09-15 - RULING: an endow beats the ammo a weapon FIRES; Gunslingers cannot be endowed
+
+Maintainer ruling (Frennetix, 2026-09-15), closing the open bow cell in the
+element-provenance matrix (ROADMAP.md item 4): **the endow wins**, except that a
+Gunslinger has no endow to win with - "you can't endow gunslinger weapons".
+
+So the attack's element resolves as:
+
+| Case | Element |
+|---|---|
+| Weapon FIRES its ammo (bow + arrow, gun + bullet) | endow > ammo > weapon |
+| Ammo is THROWN by hand (kunai, shuriken) and the skill uses it | ammo, even over an endow |
+| Skill uses no ammo | endow > the hand's own script/card > elemental forge > item field |
+| Gunslinger on PS | no endow exists, so the bullet's element stands |
+
+The Gunslinger half was already implemented (`GS_CANNOT_BE_ENDOWED`, from the Gunslinger
+release notes: "Gunslingers are no longer able to be endowed, nor can they gain the effect
+of element converters") and is confirmed live: a Wind endow on a Six Shooter + Silver Bullet
+reads Holy on PS and Wind on the standard profile.
+
+The hand-thrown exception is unchanged and does NOT contradict this: it rests on an in-game
+kunai test (a Wind endow does not save a Fire Heat Wave Kunai from hitting as Fire on Throw
+Kunai) plus battle.c:5042, where a thrown ammo IS the attack. Pinned as a full matrix in
+`engine-units.test.js` ("weapon element provenance").
+
 ## 2026-09-14 - Grand Cross adopts Solina's GC sim (element applied twice)
 
 **Source:** `Gunslinger+GC sim v1.43 (solina).xlsx`, a community sheet whose Grand Cross block

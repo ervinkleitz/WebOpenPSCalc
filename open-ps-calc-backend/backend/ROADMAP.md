@@ -337,7 +337,21 @@ incoming math already exist, so this is mostly UI plus one routing branch. Armor
 slots could follow with the same shape (Marc, Raydric) if asked; start with the shield,
 which is what was asked.
 
-### 4. Element-provenance refactor (endow / script / forge / ammo)  (open — analysis 2026-09-07)
+### 4. Element-provenance refactor (endow / script / forge / ammo)  (partly done 2026-09-15)
+
+**Update 2026-09-15.** The last live bug in the list below — an elemental FORGE wiped by
+unrelated ammo — is fixed, and the open bow question is answered. `resolveWeapon` now also
+computes `weapon.own_element` (endow > this hand's own script or a card compounded into it >
+elemental forge > item field, blind to ammo), and battlePipeline's element block uses it
+instead of re-deriving from the raw item field. That deleted the reconstruction, its
+unenforced "all 148 bAtkEle items agree with their field" invariant and the duplicated
+endow guards, and closed the card-script gap. The full matrix is pinned in
+`engine-units.test.js` ("weapon element provenance").
+**Still open:** move 1 below — the aggregator still writes an ammo's `bAtkEle` into the
+shared `script_atk_ele_rh` scalar, which is why `weapon.element` needs an ammo-free twin at
+all. Doing that would let `own_element` collapse back into `element`.
+**Answered:** the bow cell — maintainer ruling 2026-09-15, endow beats a FIRED ammo, and a
+Gunslinger cannot be endowed at all (PS_SOURCES.md §3).
 
 The element pipeline destroys provenance and then reconstructs it: the aggregator
 assigns every `bAtkEle` — the weapon's own, a compounded card's, AND the equipped
@@ -384,10 +398,10 @@ and this refactor supersedes their pipeline machinery while keeping the kunai
 override concept) — doing it first would force heavy rebases on both PRs. Pin the
 full matrix in tests first: {endow, forge, own script, card script, none} x
 {uses-ammo skill, fires-ammo weapon, neither} — several cells already covered by
-their tests and ours. OPEN in-game question before pinning the bow cell: endowed bow
-+ elemental arrow — the current model has the endow winning, but battle.c:5042 reads
-as if the arrow could win there exactly as it does for kunai. Ask Hsezka/Laila for a
-trade-window test.
+their tests and ours. ANSWERED 2026-09-15 (maintainer ruling): the endow wins for a
+FIRED ammo (bow + arrow, gun + bullet), which is what the model already did; a
+Gunslinger has no endow to win with. battle.c:5042's arrow override stays scoped to
+hand-thrown kunai/shuriken.
 
 ## Done this pass (not in the original suggested order, picked up ad hoc)
 

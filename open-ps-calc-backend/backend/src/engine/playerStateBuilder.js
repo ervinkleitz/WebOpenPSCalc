@@ -85,6 +85,7 @@ function resolvePlayerState(build, config, profile = null) {
         forge_ranked: eff.forge_ranked,
         forge_element: eff.forge_element,
         script_atk_ele_rh: gb.script_atk_ele_rh,
+        own_script_element: gearBonusAggregator.ownScriptElement(gb, "right_hand"),
       }
     );
     const st = new StatusCalculator(config).calculate(eff, weapon, gb);

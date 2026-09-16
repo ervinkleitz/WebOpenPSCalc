@@ -312,7 +312,14 @@ function playerBuildToTarget(build, status, gearBonuses, weapon, loader) {
 }
 
 function resolveWeapon(loader, itemId, refine = 0, elementOverride = null, opts = {}) {
-  const { is_forged = false, forge_sc_count = 0, forge_ranked = false, forge_element = 0, script_atk_ele_rh = null } = opts;
+  const {
+    is_forged = false, forge_sc_count = 0, forge_ranked = false, forge_element = 0,
+    script_atk_ele_rh = null,
+    // This hand's OWN bAtkEle (the weapon's script or a card compounded into it),
+    // with no ammo mixed in — script_atk_ele_rh cannot be used for that because an
+    // equipped ammo's bAtkEle is aggregated into the same scalar.
+    own_script_element = null,
+  } = opts;
   const { createWeapon } = require("./models");
 
   // Unarmed still needs the element resolved: an ammo-only bAtkEle script (e.g. an
@@ -320,7 +327,9 @@ function resolveWeapon(loader, itemId, refine = 0, elementOverride = null, opts 
   // there's no weapon item to read a base element off of.
   if (itemId == null) {
     const element = elementOverride != null ? elementOverride : (script_atk_ele_rh != null ? script_atk_ele_rh : 0);
-    return createWeapon({ element });
+    // Bare-handed: there is no weapon to carry an element of its own, so only an
+    // endow counts — an equipped ammo's element must not survive into own_element.
+    return createWeapon({ element, own_element: elementOverride != null ? elementOverride : 0 });
   }
 
   const item = loader.getItem(itemId);
@@ -336,11 +345,20 @@ function resolveWeapon(loader, itemId, refine = 0, elementOverride = null, opts 
   else if (forged) element = forge_element;
   else element = item.element ?? 0;
 
+  // Same precedence, but blind to any equipped ammo. Consumed by battlePipeline for
+  // attacks that do not use the ammo sitting in the slot.
+  let ownElement;
+  if (elementOverride != null) ownElement = elementOverride;
+  else if (own_script_element != null) ownElement = own_script_element;
+  else if (forged) ownElement = forge_element;
+  else ownElement = item.element ?? 0;
+
   return createWeapon({
     atk: item.atk || 0,
     refine,
     level: item.level ?? 1,
     element,
+    own_element: ownElement,
     weapon_type: item.weapon_type || "Unarmed",
     hand: "right",
     aegis_name: item.aegis_name || "",

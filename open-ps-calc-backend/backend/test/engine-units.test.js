@@ -4902,6 +4902,59 @@ test("Shadow Slash ratio: 100 + 200x(lv-1) from Hiding, 100 + 90x(lv-1) otherwis
   assert.equal(dmg(false), 4.6, "Lv5 not hiding: 460%");
 });
 
+// The full element-provenance matrix. Each shipped bug here was one cell apart from a
+// passing one, so they are pinned together: {endow, elemental forge, own script, none}
+// x {skill uses the ammo, weapon fires the ammo, neither}. Maintainer ruling
+// (2026-09-15): an endow beats the ammo a weapon FIRES (bow/gun), and Gunslingers
+// cannot be endowed at all on PS, so their bullet's element stands.
+test("weapon element provenance: endow > own script/card > forge > item field, ammo only where it applies", () => {
+  const cfg = createBattleConfig();
+  const ele = (cfgIn, skillName, job = 25, server = "payon_stories") => {
+    const prof = getProfile(server);
+    loader.setProfile(prof);
+    const b = buildFromSaveSchema({ server, job_id: job, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 1, dex: 60, luk: 20 }, ...cfgIn });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, prof);
+    const sk = skillName
+      ? createSkillInstance({ id: loader.getSkillIdByName(skillName), level: 5 })
+      : createSkillInstance({ id: 0, level: 1 });
+    const r = new BattlePipeline(cfg).calculate(st, w, sk, loader.getMonster(1002), eff, gb);
+    return (r.normal || r.magic).steps.find((x) => x.name === "Attr Fix").note.split(" vs")[0];
+  };
+  const KNIFE = { right_hand: 1201 };      // forgeable
+  const KUNAI = 13256;                     // Black Earth Kunai (bAtkEle Earth)
+  const WIND = { support_buffs: { weapon_endow_sc: "SC_PROPERTYWIND" } };
+
+  // An elemental FORGE must survive unrelated ammo. This regressed silently: the old
+  // code re-read the weapon's raw item field here, which knows nothing about forges.
+  assert.equal(ele({ equipped: { ...KNIFE, ammo: KUNAI }, forge: { right_hand: { ele: 3, sc: 3 } } }, "NJ_HUUMA"), "Fire",
+    "a VVS-Fire forge must not be wiped by an unrelated kunai in the ammo slot");
+  assert.equal(ele({ equipped: KNIFE, forge: { right_hand: { ele: 3, sc: 3 } } }, "NJ_HUUMA"), "Fire");
+  assert.equal(ele({ equipped: KNIFE, forge: { right_hand: { ele: 3 } }, ...WIND }, null), "Wind", "endow beats a forge");
+
+  // A weapon's own script, and the no-leak baseline.
+  assert.equal(ele({ equipped: { right_hand: 13301, ammo: KUNAI } }, "NJ_HUUMA"), "Neutral", "unrelated ammo must not leak");
+  assert.equal(ele({ equipped: { right_hand: 13303, ammo: KUNAI } }, "NJ_HUUMA"), "Fire", "the weapon's own script wins over unrelated ammo");
+  assert.equal(ele({ equipped: { right_hand: 13303 }, ...WIND }, "NJ_HUUMA"), "Wind", "endow beats the weapon's own script");
+
+  // Hand-thrown ammo IS the attack, so it overrides even an endow (in-game kunai test).
+  assert.equal(ele({ equipped: { right_hand: 13301, ammo: KUNAI }, ...WIND }, "NJ_KUNAI"), "Earth");
+  // Bare-handed: only an endow can colour the attack.
+  assert.equal(ele({ equipped: { ammo: KUNAI }, ...WIND }, null), "Wind");
+  assert.equal(ele({ equipped: { ammo: KUNAI } }, null), "Neutral");
+
+  // A weapon that FIRES its ammo takes the ammo's element — but an endow beats it.
+  assert.equal(ele({ equipped: { right_hand: 1701, ammo: 1752 } }, null, 11), "Fire", "bow takes its arrow's element");
+  assert.equal(ele({ equipped: { right_hand: 1701, ammo: 1752 }, ...WIND }, null, 11), "Wind", "endow beats a fired arrow");
+
+  // PS Gunslingers cannot be endowed, so the bullet stands; vanilla endows normally.
+  assert.equal(ele({ equipped: { right_hand: 13101, ammo: 13201 }, ...WIND }, null, 24), "Holy",
+    "PS: a Gunslinger's endow is refused and the Silver Bullet's Holy stands");
+  assert.equal(ele({ equipped: { right_hand: 13101, ammo: 13201 }, ...WIND }, null, 24, "standard"), "Wind",
+    "standard profile: a Gunslinger endows normally");
+  loader.setProfile(getProfile("payon_stories")); // other tests rely on the PS profile
+});
+
 test("endow beats a weapon's own script element; unrelated ammo doesn't leak into it", () => {
   const cfg = createBattleConfig();
   const target = loader.getMonster(1002);

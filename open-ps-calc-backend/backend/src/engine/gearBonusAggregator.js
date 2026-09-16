@@ -428,6 +428,20 @@ function applyPassiveBonuses(bonuses, masteryLevels, profile = null) {
 // proc" path; otherwise they are just recorded so the UI can offer that toggle.
 // Shared by item scripts and combos — a combo can carry one too (Hahoe Mask + Wit
 // Pumpkin Hat's +50 ATK), and those used to be dropped.
+// The element a HAND grants itself: its weapon's own bAtkEle script, or one from a
+// card compounded into it. Read from all_effects by source_slot rather than from
+// gb.script_atk_ele_rh, which an equipped ammo's bAtkEle also writes to (so a plain
+// weapon plus an elemental kunai would otherwise look like an elemental weapon).
+function ownScriptElement(gb, handSlot) {
+  const eff = (gb.all_effects || []).find(
+    (e) => e.bonus_type === "bAtkEle" && typeof e.source_slot === "string"
+      && (e.source_slot === handSlot || e.source_slot.startsWith(`${handSlot}_card`))
+  );
+  if (!eff || !eff.params || !eff.params.length) return null;
+  const v = ELE_STR_TO_INT[String(eff.params[0])];
+  return v != null ? v : null;
+}
+
 function collectAutobonuses(bonuses, script, ctx, { slot = null, itemId = null, forceProcs = false, alsoApplyTo = null } = {}) {
   const autobonusRe = /\bautobonus2?\s+"([^"]+)"\s*,\s*(\d+)/g;
   let abMatch;
@@ -504,4 +518,5 @@ module.exports = {
   applyPassiveBonuses,
   applyComboBonuses,
   applyEffect,
+  ownScriptElement,
 };
