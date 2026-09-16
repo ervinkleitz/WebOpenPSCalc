@@ -4902,6 +4902,29 @@ test("Shadow Slash ratio: 100 + 200x(lv-1) from Hiding, 100 + 90x(lv-1) otherwis
   assert.equal(dmg(false), 4.6, "Lv5 not hiding: 460%");
 });
 
+// Crit chance is a per-mille roll in Hercules (`rnd()%1000 < cri`, battle.c:5215), so a
+// rate at or above 1000 always crits and can never exceed 100%. Ours was uncapped, and the
+// DPS mix weights criticals by critChance/100 — so a crit song on an already-100% build
+// showed 160% crit and a third more DPS with identical per-hit damage. Reported 2026-09-16.
+test("crit chance caps at 100%, and crit past 100% cannot add DPS", () => {
+  const critAssassin = (song) => {
+    const r = runScenarioRaw({ build: { job_id: 12, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 90, vit: 30, int: 1, dex: 40, luk: 99 },
+      equipped: { right_hand: 1250 }, mastery_levels: { AS_KATAR: 10 }, song_state: song }, target: 1002 });
+    return { crit: r.raw.crit_chance, dps: r.raw.dps };
+  };
+  const none = critAssassin({});
+  const song = critAssassin({ SC_FORTUNE: 10, dancer_luk: 99, dancer_lesson: 10 });
+  const huge = critAssassin({ SC_FORTUNE: 10, dancer_luk: 200, dancer_lesson: 10 });
+
+  assert.ok(none.crit < 100, `baseline should be under 100% to make this meaningful, got ${none.crit}`);
+  assert.equal(song.crit, 100, "a crit song must cap the displayed chance at 100%");
+  assert.equal(huge.crit, 100, "and stay there however much crit is piled on");
+  // Past 100% the extra crit must be worth nothing at all, not more DPS.
+  assert.equal(huge.dps, song.dps, "crit beyond 100% must not add DPS");
+  assert.ok(song.dps > none.dps, "but reaching 100% crit from 78% should still help");
+});
+
 // The full element-provenance matrix. Each shipped bug here was one cell apart from a
 // passing one, so they are pinned together: {endow, elemental forge, own script, none}
 // x {skill uses the ammo, weapon fires the ammo, neither}. Maintainer ruling

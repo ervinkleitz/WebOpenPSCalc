@@ -91,7 +91,14 @@ function calculateCritChance(status, weapon, skill, target, config, server = "st
   }
 
   cri = Math.max(config.critical_min, cri);
-  const critChance = Math.max(0.0, cri / 10.0);
+  // Cap at 100%. `cri` is per-mille and Hercules rolls `if (rnd()%1000 < cri)`
+  // (battle.c:5215), so any rate at or above 1000 simply always crits — it cannot
+  // crit more often than every hit. Uncapped, a crit song pushing a 100% build to
+  // 156% inflated DPS by a third: the attack mix weights criticals by
+  // critChance/100, so >1 made the weights sum past 1 (and the non-crit share go
+  // negative). Reported from a compare view showing 160% crit. hitChance clamps the
+  // same way (config.max_hitrate).
+  const critChance = Math.max(0.0, Math.min(100.0, cri / 10.0));
   return [true, critChance];
 }
 

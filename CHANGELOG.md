@@ -5,6 +5,17 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-16
+
+### Fixed
+
+- **Crit chance no longer goes above 100%.** A build already at 100% crit showed 160% with
+  a crit song running, and the DPS went up by more than half for it — with identical damage
+  per hit. Crit can't happen more often than every hit, so it's now capped, and crit beyond
+  100% adds nothing instead of inflating DPS. Songs, cards and Katar's doubled crit that
+  push you past the cap are simply worth nothing extra, which is what happens in game.
+  Reported by a player comparing two builds.
+
 ## 2026-09-15
 
 ### Fixed
