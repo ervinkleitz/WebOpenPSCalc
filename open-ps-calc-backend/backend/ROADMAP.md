@@ -337,7 +337,17 @@ incoming math already exist, so this is mostly UI plus one routing branch. Armor
 slots could follow with the same shape (Marc, Raydric) if asked; start with the shield,
 which is what was asked.
 
-### 4. Element-provenance refactor (endow / script / forge / ammo)  (partly done 2026-09-15)
+### 4. Element-provenance refactor (endow / script / forge / ammo)  (DONE 2026-09-18)
+
+**Done 2026-09-18 — move 1 landed.** The aggregator no longer writes an ammo's `bAtkEle` into
+`script_atk_ele_rh`; it lives only in `from_ammo`. `resolveWeapon` resolves ONE precedence —
+endow > ammo the weapon FIRES (`weaponFiresAmmo`) > own script/card > elemental forge > item
+field — so `weapon.own_element`, `ownScriptElement` and the pipeline's reconstruction branch are
+all gone, and the element block is a single thrown-ammo override. The duplicated
+`AMMO_FIRED_BY`/`AMMO_WEAPONS` tables are one. Two live bugs fell out: Rudra Bow (Holy) + Fire
+Arrow read Fire or Holy by the build's JSON key order (now Fire), and a left-hand CARD's
+`bAtkEle` coloured the main hand (latent — no such card yet). No goldens moved.
+
 
 **Update 2026-09-15.** The last live bug in the list below — an elemental FORGE wiped by
 unrelated ammo — is fixed, and the open bow question is answered. `resolveWeapon` now also

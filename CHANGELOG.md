@@ -28,6 +28,11 @@ instead of release version. Dates are taken from actual git commit history.
   - **Mi Gao Card** now halves damage taken from Guardians, and **Rocks** changes damage
     from the one monster it names.
 
+- **An elemental bow with an elemental arrow no longer flips element at random.** Rudra
+  Bow (Holy) with a Fire Arrow read Fire or Holy depending on nothing more than the order
+  the calculator happened to store your gear in. The arrow a bow fires now always sets the
+  element, and an endow still beats it (except on Gunslingers, who can't be endowed).
+
 ## 2026-09-16
 
 ### Fixed

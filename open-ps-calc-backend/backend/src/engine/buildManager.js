@@ -317,11 +317,13 @@ function playerBuildToTarget(build, status, gearBonuses, weapon, loader) {
 function resolveWeapon(loader, itemId, refine = 0, elementOverride = null, opts = {}) {
   const {
     is_forged = false, forge_sc_count = 0, forge_ranked = false, forge_element = 0,
+    // This hand's own bAtkEle: its weapon's script, a card compounded into it, or any
+    // other equipment's (Hercules rhw.ele). Never an ammo's - see fired_ammo_element.
     script_atk_ele_rh = null,
-    // This hand's OWN bAtkEle (the weapon's script or a card compounded into it),
-    // with no ammo mixed in — script_atk_ele_rh cannot be used for that because an
-    // equipped ammo's bAtkEle is aggregated into the same scalar.
-    own_script_element = null,
+    // The equipped ammo's element, passed ONLY when this weapon fires that ammo
+    // (bow + arrow, gun + bullet; gearBonusAggregator.weaponFiresAmmo). Thrown ammo is
+    // not a weapon property at all: battlePipeline applies it on the skill that throws it.
+    fired_ammo_element = null,
   } = opts;
   const { createWeapon } = require("./models");
 
@@ -329,10 +331,10 @@ function resolveWeapon(loader, itemId, refine = 0, elementOverride = null, opts 
   // elemental Kunai with no weapon equipped) must not be silently dropped just because
   // there's no weapon item to read a base element off of.
   if (itemId == null) {
+    // Bare-handed: an endow, or an element granted by other equipment. Nothing
+    // bare-handed fires ammo, so an equipped kunai never colours a punch.
     const element = elementOverride != null ? elementOverride : (script_atk_ele_rh != null ? script_atk_ele_rh : 0);
-    // Bare-handed: there is no weapon to carry an element of its own, so only an
-    // endow counts — an equipped ammo's element must not survive into own_element.
-    return createWeapon({ element, own_element: elementOverride != null ? elementOverride : 0 });
+    return createWeapon({ element });
   }
 
   const item = loader.getItem(itemId);
@@ -342,26 +344,22 @@ function resolveWeapon(loader, itemId, refine = 0, elementOverride = null, opts 
   const forgeable = FORGEABLE_WEAPON_IDS.has(itemId);
   const forged = is_forged && forgeable;
 
+  // Endow > ammo this weapon fires > its own script (or a card's) > elemental forge >
+  // the item's field. Endow over fired ammo is a maintainer ruling (PS_SOURCES.md,
+  // 2026-09-15); fired ammo over the weapon's own script is battle.c's arrow_ele
+  // override. On PS a Gunslinger has no endow (GS_CANNOT_BE_ENDOWED), so the bullet stands.
   let element;
   if (elementOverride != null) element = elementOverride;
+  else if (fired_ammo_element != null) element = fired_ammo_element;
   else if (script_atk_ele_rh != null) element = script_atk_ele_rh;
   else if (forged) element = forge_element;
   else element = item.element ?? 0;
-
-  // Same precedence, but blind to any equipped ammo. Consumed by battlePipeline for
-  // attacks that do not use the ammo sitting in the slot.
-  let ownElement;
-  if (elementOverride != null) ownElement = elementOverride;
-  else if (own_script_element != null) ownElement = own_script_element;
-  else if (forged) ownElement = forge_element;
-  else ownElement = item.element ?? 0;
 
   return createWeapon({
     atk: item.atk || 0,
     refine,
     level: item.level ?? 1,
     element,
-    own_element: ownElement,
     weapon_type: item.weapon_type || "Unarmed",
     hand: "right",
     aegis_name: item.aegis_name || "",

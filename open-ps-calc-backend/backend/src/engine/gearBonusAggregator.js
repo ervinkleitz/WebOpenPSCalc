@@ -30,11 +30,30 @@ const RC_FANOUT = {
 // NB A_ARROW is not bow-only: on PS a Bard's Musical Strike and a Dancer's Throw
 // Arrow both consume arrows and take their element, so instruments and whips belong
 // here too — the same set as RANGED_WEAPON_TYPES minus the guns.
-const AMMO_WEAPONS = {
+const AMMO_FIRED_BY = {
   A_ARROW:   new Set(["Bow", "MusicalInstrument", "Whip"]),
   A_BULLET:  new Set(["Revolver", "Rifle", "Gatling", "Shotgun"]),
   A_GRENADE: new Set(["Grenade"]),
 };
+
+/**
+ * Does the EQUIPPED WEAPON fire the EQUIPPED AMMO? This is the question an ammo's
+ * ELEMENT turns on (Laila, PS_SOURCES.md 2026-08-29: Bowling Bash and Triple Attack
+ * "do ignore arrow atk but not their element") - a bow's Fire Arrow colours every
+ * attack that bow makes, while its ATK and +% bonuses stay gated on whether the skill
+ * itself consumes the ammo (skillUsesAmmo). Thrown ammo (kunai, shuriken) has no
+ * weapon that fires it, so this is false for it: a bare-handed punch with a Kunai in
+ * the slot does not borrow its element (confirmed in-game).
+ */
+function weaponFiresAmmo(equipped) {
+  const eq = equipped || {};
+  if (eq.ammo == null || eq.right_hand == null) return false;
+  const ammo = loader.getItem(eq.ammo);
+  const wpn = loader.getItem(eq.right_hand);
+  if (!ammo || !wpn || wpn.type !== "IT_WEAPON") return false;
+  const fired = AMMO_FIRED_BY[ammo.subtype];
+  return fired ? fired.has(wpn.weapon_type) : false;
+}
 
 /**
  * True when the equipped weapon can use this ammo — or when we cannot tell, in
@@ -44,7 +63,7 @@ const AMMO_WEAPONS = {
  * were tagged in ps_item_manual.json for exactly this).
  */
 function ammoFitsWeapon(equipped, ammoItem) {
-  const need = AMMO_WEAPONS[ammoItem && ammoItem.subtype];
+  const need = AMMO_FIRED_BY[ammoItem && ammoItem.subtype];
   if (!need) return true;                       // thrown, or subtype unknown
   const weaponId = equipped.right_hand;
   if (weaponId == null) return false;           // bare-handed: nothing to fire it
@@ -342,16 +361,20 @@ function compute(equipped, refineLevels = null, scriptCtx = null, forceProcs = f
     // (PS_SOURCES.md §4). The consumers gate on skillUsesAmmo(): cardFix, critChance,
     // hitChance.
     //
-    // bAtkEle is the one exception, and it keeps flowing to the global pool: an
-    // elemental arrow/kunai's element is baked into the weapon by resolveWeapon and
-    // has its OWN arrow gate downstream (battlePipeline's element resolution, which
-    // reverts to the hand's own element when the skill uses no ammo). Routing it here
-    // would silently un-elemental every elemental-ammo attack.
+    // bAtkEle follows the same rule: an ammo's element lives ONLY in the ammo pool
+    // (from_ammo.script_atk_ele_rh), never in the weapon's own script_atk_ele_rh. It
+    // reaches an attack in exactly two ways - resolveWeapon folds it into a weapon that
+    // FIRES it (weaponFiresAmmo), and battlePipeline lets a THROWN one override on the
+    // skill that throws it. It used to be written into the weapon's field as well, which
+    // then had to be un-picked downstream, and each un-picking missed a case (an endow,
+    // then an elemental forge, lost to an unrelated kunai).
     const isAmmo = slot === "ammo";
     const targets = isCard ? [bonuses, cardGb] : isAmmo ? [ammoGb] : [bonuses];
+    // The left hand's weapon AND the cards compounded into it colour the left hand only.
+    const isLeftHand = slot === "left_hand" || slot.startsWith("left_hand_card");
 
     for (const eff of effects) {
-      if (eff.bonus_type === "bAtkEle" && slot === "left_hand") {
+      if (eff.bonus_type === "bAtkEle" && isLeftHand) {
         if (eff.arity === 1 && eff.params.length) {
           const v = ELE_STR_TO_INT[String(eff.params[0])];
           if (v != null) bonuses.script_atk_ele_lh = v;
@@ -364,9 +387,6 @@ function compute(equipped, refineLevels = null, scriptCtx = null, forceProcs = f
         for (const t of targets) {
           t.skill_grants[skName] = Math.max(t.skill_grants[skName] || 0, skLv);
         }
-      } else if (isAmmo && eff.bonus_type === "bAtkEle") {
-        applyEffect(ammoGb, eff);
-        applyEffect(bonuses, eff);   // see the bAtkEle note above
       } else {
         for (const t of targets) applyEffect(t, eff);
       }
@@ -428,20 +448,6 @@ function applyPassiveBonuses(bonuses, masteryLevels, profile = null) {
 // proc" path; otherwise they are just recorded so the UI can offer that toggle.
 // Shared by item scripts and combos — a combo can carry one too (Hahoe Mask + Wit
 // Pumpkin Hat's +50 ATK), and those used to be dropped.
-// The element a HAND grants itself: its weapon's own bAtkEle script, or one from a
-// card compounded into it. Read from all_effects by source_slot rather than from
-// gb.script_atk_ele_rh, which an equipped ammo's bAtkEle also writes to (so a plain
-// weapon plus an elemental kunai would otherwise look like an elemental weapon).
-function ownScriptElement(gb, handSlot) {
-  const eff = (gb.all_effects || []).find(
-    (e) => e.bonus_type === "bAtkEle" && typeof e.source_slot === "string"
-      && (e.source_slot === handSlot || e.source_slot.startsWith(`${handSlot}_card`))
-  );
-  if (!eff || !eff.params || !eff.params.length) return null;
-  const v = ELE_STR_TO_INT[String(eff.params[0])];
-  return v != null ? v : null;
-}
-
 function collectAutobonuses(bonuses, script, ctx, { slot = null, itemId = null, forceProcs = false, alsoApplyTo = null } = {}) {
   const autobonusRe = /\bautobonus2?\s+"([^"]+)"\s*,\s*(\d+)/g;
   let abMatch;
@@ -518,5 +524,6 @@ module.exports = {
   applyPassiveBonuses,
   applyComboBonuses,
   applyEffect,
-  ownScriptElement,
+  weaponFiresAmmo,
+  AMMO_FIRED_BY,
 };

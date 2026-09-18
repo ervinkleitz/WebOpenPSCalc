@@ -107,12 +107,6 @@ function createWeapon(overrides = {}) {
     refine: 0,
     level: 1,
     element: 0,
-    // The element this weapon has on its OWN: endow > its own bAtkEle script (the
-    // weapon's or a card compounded into it) > elemental forge > the item's field.
-    // `element` above can additionally carry an equipped AMMO's element, baked in by
-    // resolveWeapon; `own_element` never does, so an attack that does not use that
-    // ammo can recover the weapon's real element instead of guessing it back.
-    own_element: 0,
     weapon_type: "Unarmed",
     hand: "right",
     aegis_name: "",

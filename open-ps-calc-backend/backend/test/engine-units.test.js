@@ -5128,6 +5128,49 @@ test("weapon element provenance: endow > own script/card > forge > item field, a
   loader.setProfile(getProfile("payon_stories")); // other tests rely on the PS profile
 });
 
+// Element provenance, restored at the source (2026-09-18): an ammo's bAtkEle now lives
+// ONLY in the ammo pool, and a weapon's element field never carries it. Before this, the
+// aggregator wrote every bAtkEle - weapon, card AND ammo - into one last-assign scalar, and
+// the damage code had to un-pick it; each un-picking missed a case.
+test("an ammo's element never enters the weapon's own element field", () => {
+  const gearBonusAggregator = require("../src/engine/gearBonusAggregator");
+  const gb = gearBonusAggregator.compute({ right_hand: 13301, ammo: 13256 }, {}, null, false); // plain Huuma + Black Earth Kunai
+  assert.equal(gb.script_atk_ele_rh, null, "the weapon's own element field must not hold the kunai's Earth");
+  assert.equal(gb.from_ammo.script_atk_ele_rh, 2, "the kunai's Earth lives in the ammo pool");
+});
+
+test("a bow's fired arrow beats the bow's own element, whatever the build's key order", () => {
+  // Rudra Bow is Holy by script. On main before this, adding a Fire Arrow read Fire or
+  // Holy depending only on the JSON key order of `equipped` (last write won).
+  const ele = (equipped) => {
+    const r = runScenarioRaw({ build: { job_id: 11, base_level: 99, job_level: 50,
+      base_stats: { str: 30, agi: 70, vit: 30, int: 30, dex: 90, luk: 20 }, equipped }, target: 1002 });
+    return r.raw.normal.steps.find((s) => s.name === "Attr Fix").note.split(" vs")[0];
+  };
+  assert.equal(ele({ right_hand: 1720, ammo: 1752 }), "Fire", "bow key first");
+  assert.equal(ele({ ammo: 1752, right_hand: 1720 }), "Fire", "ammo key first - must not depend on order");
+  assert.equal(ele({ right_hand: 1720, ammo: 1750 }), "Holy", "a plain arrow leaves the bow's own Holy");
+});
+
+test("a card's element in the OFF-HAND weapon colours the off-hand, not the main hand", () => {
+  // Latent until now: no weapon card in the DB carries bAtkEle, so a fake one is stubbed
+  // in. The aggregator used to route only the left-hand WEAPON's bAtkEle to the left hand;
+  // a left-hand CARD's fell into the main hand's field.
+  const gearBonusAggregator = require("../src/engine/gearBonusAggregator");
+  const FAKE = 99901;
+  const realGetItem = loader.getItem.bind(loader);
+  loader.getItem = (id) => (Number(id) === FAKE
+    ? { id: FAKE, name: "Test Fire Card", type: "IT_CARD", loc: ["EQP_WEAPON"], script: "bonus bAtkEle,Ele_Fire;" }
+    : realGetItem(id));
+  try {
+    const gb = gearBonusAggregator.compute({ right_hand: 1201, left_hand: 1201, left_hand_card1: FAKE }, {}, null, false);
+    assert.equal(gb.script_atk_ele_lh, 3, "the off-hand takes the card's Fire");
+    assert.equal(gb.script_atk_ele_rh, null, "the main hand stays untouched");
+  } finally {
+    loader.getItem = realGetItem;
+  }
+});
+
 test("endow beats a weapon's own script element; unrelated ammo doesn't leak into it", () => {
   const cfg = createBattleConfig();
   const target = loader.getMonster(1002);

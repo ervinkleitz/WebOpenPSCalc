@@ -47,7 +47,7 @@ const { calculateSkillTiming } = require("./skillTiming");
 const { calculateDps } = require("./dpsCalculator");
 const { computeFalconDamage } = require("./falconCalc");
 const { effectiveIsRanged, resolveWeapon, playerBuildToTarget } = require("../buildManager");
-const { ownScriptElement } = require("../gearBonusAggregator");
+const { weaponFiresAmmo } = require("../gearBonusAggregator");
 const { resolveArmorElement } = require("../buildApplicator");
 
 // battle.c:3173-3410 BF_MAGIC skillratio switch (#else RENEWAL) — per-hit ratios.
@@ -160,35 +160,6 @@ function skillRangeAtLevel(skill) {
     ? (r.length ? r[Math.max(1, Math.min(Number(skill.level) || 1, r.length)) - 1] : null)
     : r;
   return Number.isFinite(pick) ? pick : null;
-}
-
-// Does the EQUIPPED WEAPON fire the EQUIPPED AMMO? Not "does this skill consume it" — this is
-// the looser question the ammo's ELEMENT turns on. A CC on the element specifically:
-//
-//   "skills like Bowling Bash and Triple Attack are now ignoring Arrows entirely; in truth,
-//    they do ignore arrow atk but not their element"
-//
-// So a bow Rogue's Bowling Bash takes a Fire Arrow's Fire property while still taking none of
-// its ATK — the ATK and the +% bonuses stay gated on the skill's own ammo requirement
-// (skillUsesAmmo), which is what the arrow_* pool models. The gate has to be the WEAPON rather
-// than always-on, because the opposite case was confirmed in-game earlier: a bare-handed punch
-// with a Kunai in the ammo slot does NOT borrow its element, and nothing bare-handed fires a
-// Kunai. Thrown ammo (kunai, shuriken, throwing daggers) has no weapon that fires it, so it
-// reaches an attack only through the skill that throws it.
-const AMMO_FIRED_BY = {
-  A_ARROW: new Set(["Bow", "MusicalInstrument", "Whip"]),
-  A_BULLET: new Set(["Revolver", "Rifle", "Gatling", "Shotgun"]),
-  A_GRENADE: new Set(["Grenade"]),
-};
-
-function weaponFiresAmmo(build) {
-  const equipped = build.equipped || {};
-  if (equipped.ammo == null || equipped.right_hand == null) return false;
-  const ammo = loader.getItem(equipped.ammo);
-  const wpn = loader.getItem(equipped.right_hand);
-  if (!ammo || !wpn || wpn.type !== "IT_WEAPON") return false;
-  const fired = AMMO_FIRED_BY[ammo.subtype];
-  return fired ? fired.has(wpn.weapon_type) : false;
 }
 
 function resolveIsRanged(build, weapon, skill) {
@@ -1721,48 +1692,23 @@ class BattlePipeline {
 
     const skillData = loader.getSkill(skill.id);
 
-    // weapon.element may be overridden by an ammo bAtkEle script (an elemental Kunai,
-    // Shuriken, or arrow), baked in unconditionally by resolveWeapon. That's only
-    // correct for attacks that actually consume that ammo — battle.c sets
-    // sd->state.arrow_atk from the CAST SKILL's own AmmoTypes requirement, not from
-    // what's sitting in the ammo slot (skill_check_condition_castbegin, skill.c:15810).
-    // A bare-handed punch with a Kunai equipped must not borrow its element — confirmed
-    // in-game: punching Sohee reads identical whether or not a High Wind Kunai is
-    // equipped. Falls back to the RESOLVED HAND's own item element (Neutral if empty) —
-    // `isOffhand` picks left vs right, since a dual-wielder's two hands are two
-    // independent weapons/attacks (e.g. a Fire Bazerald right + a Neutral dagger left:
-    // the left-hand hit must stay Neutral, not borrow the right hand's element).
+    // The attack's base element. weapon.element already resolves endow > ammo this weapon
+    // FIRES > the hand's own script or card > elemental forge > item field
+    // (resolveWeapon); an ammo the weapon does not fire never enters it, so a punch with
+    // a Kunai in the slot stays Neutral (confirmed in-game on Sohee). `isOffhand`'s
+    // weapon is the off-hand one, resolved on its own.
+    //
+    // The one case left is THROWN ammo (kunai, shuriken) on the skill that throws it.
+    // pc.c files its bAtkEle in arrow_ele rather than the weapon, and battle.c's
+    // `if (flag.arrow && arrow_ele) s_ele = arrow_ele;` then overrides the attack's
+    // element unconditionally - endow included - once the skill uses that ammo.
+    // Confirmed in-game: a Wind endow does not save a Fire Heat Wave Kunai from hitting
+    // as Fire on Throw Kunai.
     let baseWeaponEle = weapon.element;
-    const scriptEle = gearBonuses ? (isOffhand ? gearBonuses.script_atk_ele_lh : gearBonuses.script_atk_ele_rh) : null;
     const usesAmmo = skillUsesAmmo(skill, isRanged);
-    const firesAmmo = weaponFiresAmmo(build);
-    // The ammo slot's OWN element, isolated from the endow (from_ammo is a separate
-    // aggregation pool untouched by SC_PROPERTYxxx, unlike weapon.element/scriptEle).
-    const ammoOwnEle = !isOffhand && gearBonuses && gearBonuses.from_ammo ? gearBonuses.from_ammo.script_atk_ele_rh : null;
-    if (usesAmmo && !firesAmmo && ammoOwnEle != null) {
-      // Kunai/Shuriken are thrown by hand, not "fired" by a weapon type (Bow, guns —
-      // see AMMO_FIRED_BY), so pc.c's SP_ATKELE stores their bAtkEle in
-      // sd->bonus.arrow_ele instead of folding it into rhw.ele, and battle.c's
-      // `if (flag.arrow && arrow_ele) s_ele = arrow_ele;` then overwrites the attack's
-      // element with it unconditionally — endow included — once the cast skill actually
-      // uses that ammo. Confirmed in-game: a Wind endow does not save a Fire Heat Wave
-      // Kunai from hitting as Fire on Throw Kunai. (A bow's arrow instead folds into
-      // rhw.ele per pc.c, so an endow there still applies on top of it — untouched here,
-      // since firesAmmo is true for that case.)
-      baseWeaponEle = ammoOwnEle;
-    } else if (scriptEle != null && !usesAmmo && !firesAmmo) {
-      // An ammo's bAtkEle is aggregated into the same scalar as the weapon's own, and
-      // resolveWeapon bakes that scalar into weapon.element — so with elemental ammo in
-      // the slot, weapon.element can be the AMMO's element even on an attack that never
-      // touches it. weapon.own_element is the same precedence computed blind to ammo
-      // (endow > this hand's own script or a card compounded into it > elemental forge >
-      // the item's field), which is what this attack should use.
-      //
-      // Replaces a reconstruction that re-read the raw item field here, which silently
-      // discarded an elemental FORGE (a VVS-Fire dagger went Neutral the moment any
-      // elemental kunai sat in the ammo slot) and could not see a card's bAtkEle at all.
-      baseWeaponEle = weapon.own_element;
-    }
+    const thrownAmmoEle = !isOffhand && usesAmmo && !weaponFiresAmmo(build.equipped)
+      && gearBonuses && gearBonuses.from_ammo ? gearBonuses.from_ammo.script_atk_ele_rh : null;
+    if (thrownAmmoEle != null) baseWeaponEle = thrownAmmoEle;
 
     let effAtkEle = baseWeaponEle;
     if (skill.id !== 0 && skillData) {
@@ -2601,7 +2547,6 @@ class BattlePipeline {
             forge_ranked: build.lh_forge_ranked,
             forge_element: build.lh_forge_element,
             script_atk_ele_rh: gearBonuses.script_atk_ele_lh,
-            own_script_element: ownScriptElement(gearBonuses, "left_hand"),
           },
         );
         if (lhWeapon) {
