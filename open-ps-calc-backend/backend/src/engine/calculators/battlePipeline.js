@@ -2764,23 +2764,34 @@ class BattlePipeline {
     // Ancient Mummy combo adds a further 7% (Priest rework PDF; our combo script had
     // the pre-rework 5%). bHolyStrikeChance existed as a parsed bonus with NO consumer
     // anywhere, so the whole proc was worth zero until the 2026-09-09 audit.
+    //
+    // The combo ADDS the proc as well as increasing it. Priest rework PDF, Ancient
+    // Mummy Card: "Adds/increases chance of Holy Strike by 7% when attacking valid
+    // targets" - "adds" for anyone wearing the pair, "increases" for a Priest who has
+    // learned the skill. The branch used to require the learned skill, so the combo
+    // was worth nothing on every other class (reported 2026-09-18).
     let holyStrikeBranch = null, holyStrikeChance = 0;
     const holyStrikeLv = skill.id === 0 ? (gearBonuses.effective_mastery.PS_PR_HOLYSTRIKE || 0) : 0;
-    if (holyStrikeLv > 0 && !resolveIsRanged(build, weapon, null)) {
+    const holyStrikeCombo = skill.id === 0 ? (gearBonuses.holy_strike_bonus_chance || 0) : 0;
+    if ((holyStrikeLv > 0 || holyStrikeCombo > 0) && !resolveIsRanged(build, weapon, null)) {
       const tgtEle = target.element;
       const validEle = tgtEle === 9 || tgtEle === 7 || tgtEle === 8; // Undead / Dark(Shadow) / Ghost
       const validRace = target.race === "Demon" || target.race === "Undead";
       if (validEle || validRace) {
-        holyStrikeChance = Math.min(100, 20 + Math.floor(status.luk / 10)
-          + (gearBonuses.holy_strike_bonus_chance || 0));
+        // The learned skill's own rate (20% + 1% per 10 LUK) only exists if it is learned;
+        // without it the combo's chance is the whole proc.
+        const learnedChance = holyStrikeLv > 0 ? 20 + Math.floor(status.luk / 10) : 0;
+        holyStrikeChance = Math.min(100, learnedChance + holyStrikeCombo);
         const hsSkill = { id: loader.getSkillIdByName("PS_PR_HOLYSTRIKE") || 0, name: "PS_PR_HOLYSTRIKE", level: 1, nk_ignore_flee: false };
         holyStrikeBranch = this._runBranch(status, weapon, hsSkill, target, build, false,
           { profile, gear_bonuses: gearBonuses });
         holyStrikeBranch.add_step({
           name: "Holy Strike proc", value: holyStrikeBranch.avg_damage,
           min_value: holyStrikeBranch.min_damage, max_value: holyStrikeBranch.max_damage, multiplier: 1.0,
-          note: `${holyStrikeChance}% per melee attack — 20% base + ⌊LUK ${status.luk}/10⌋`
-            + ((gearBonuses.holy_strike_bonus_chance || 0) ? ` + ${gearBonuses.holy_strike_bonus_chance}% (card combo)` : "")
+          note: `${holyStrikeChance}% per melee attack — `
+            + (holyStrikeLv > 0
+              ? `20% base + ⌊LUK ${status.luk}/10⌋` + (holyStrikeCombo ? ` + ${holyStrikeCombo}% (Mummy card combo)` : "")
+              : `${holyStrikeCombo}% from the Mummy / Ancient Mummy card combo (Holy Strike not learned)`)
             + `; Holy, vs ${validEle ? "an Undead/Shadow/Ghost-element" : "a Demon/Undead-race"} target`,
           formula: "(101 + BaseSTR + BaseLevel)% ATK, Holy",
           hercules_ref: "wiki.payonstories.com/Holy_Strike",

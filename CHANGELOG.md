@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-18
+
+### Fixed
+
+- **The Mummy Card + Ancient Mummy Card combo now grants Holy Strike to every class.** The
+  pair adds a 7% chance to autocast Holy Strike on a melee attack against Undead, Shadow or
+  Ghost element or Undead or Demon race monsters. The calculator only applied that chance
+  to a Priest who had learned Holy Strike, so on any other class the combo did nothing.
+  Priests who know the skill still get their own 20% + 1% per 10 LUK, with the combo's 7%
+  on top. (The cards' own descriptions still say 5%; the Priest rework raised it to 7%.)
+  Reported by a player.
+
 ## 2026-09-16
 
 ### Fixed

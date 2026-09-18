@@ -4902,6 +4902,29 @@ test("Shadow Slash ratio: 100 + 200x(lv-1) from Hiding, 100 + 90x(lv-1) otherwis
   assert.equal(dmg(false), 4.6, "Lv5 not hiding: 460%");
 });
 
+// Mummy Card + Ancient Mummy Card. Priest rework PDF: "Adds/increases chance of Holy
+// Strike by 7% when attacking valid targets". ADDS for anyone wearing the pair; INCREASES
+// for a Priest who learned it. The branch used to require the learned skill, so the combo
+// was worth nothing on every other class (reported 2026-09-18).
+test("Mummy combo grants Holy Strike to any class, and adds 7% on top for a Priest", () => {
+  const COMBO = { right_hand_card1: 4106, left_hand: 2101, left_hand_card1: 4248 };
+  const hs = (job, equipped, extra = {}) => {
+    const r = runScenarioRaw({ build: { job_id: job, base_level: 99, job_level: 50,
+      base_stats: { str: 80, agi: 60, vit: 40, int: 20, dex: 40, luk: 30 }, equipped, ...extra }, target: 1036 }); // Ghoul, Undead
+    return { chance: (r.raw.proc_chances || {}).holy_strike, dps: r.raw.dps, status: r.rawStatus };
+  };
+  const knight = hs(7, { right_hand: 1101, ...COMBO });
+  assert.equal(knight.chance, 7, "a Knight with the pair gets the combo's 7% on its own");
+  assert.equal(hs(7, { right_hand: 1101 }).chance, undefined, "no combo, no skill: no Holy Strike at all");
+
+  const priest = hs(8, { right_hand: 1101, ...COMBO }, { mastery_levels: { PS_PR_HOLYSTRIKE: 1 } });
+  assert.equal(priest.chance, 20 + Math.floor(priest.status.luk / 10) + 7, "a Priest keeps 20% + LUK/10, plus the combo's 7%");
+
+  // It's still a melee proc: a bow user with the pair gets nothing.
+  assert.equal(hs(11, { right_hand: 1701, ammo: 1750, right_hand_card1: 4106, left_hand_card1: 4248 }).chance, undefined,
+    "Holy Strike is a melee-attack proc");
+});
+
 // Crit chance is a per-mille roll in Hercules (`rnd()%1000 < cri`, battle.c:5215), so a
 // rate at or above 1000 always crits and can never exceed 100%. Ours was uncapped, and the
 // DPS mix weights criticals by critChance/100 — so a crit song on an already-100% build
