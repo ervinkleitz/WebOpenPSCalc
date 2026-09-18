@@ -142,7 +142,9 @@ function calculateCardFixMagic(target, magicEleName, pmf, result, gearBonuses = 
   // Magic carries neither BF_SHORT nor BF_LONG, so the LONG rate is the one that applies.
   const tLong = caster ? (target.long_attack_def_rate || 0) : 0;
   const tMagicDef = target.magic_def_rate;
-  for (const reduction of [tEle, tSize, tRace, tBoss, tLong, tMagicDef]) {
+  // Monster family (bSubRace2) applies to magic too (battle.c:1135).
+  const tRace2 = caster ? (caster.race2 || []).reduce((acc, rc2) => acc + ((target.sub_race2 || {})[rc2] || 0), 0) : 0;
+  for (const reduction of [tEle, tSize, tRace, tBoss, tLong, tMagicDef, tRace2]) {
     if (reduction) pmf = scaleFloor(pmf, 100 - reduction, 100);
   }
 
@@ -154,7 +156,9 @@ function calculateCardFixMagic(target, magicEleName, pmf, result, gearBonuses = 
 
 // NOT YET WIRED INTO battlePipeline.js: incoming (mob -> player) card fix variants.
 // Ported here for completeness/future use by an incoming-damage pipeline.
-function calculateIncomingPhysical(mobRace, mobElement, mobSize, isRanged, playerTarget, pmf, result) {
+// attacker: { race2: ["RC2_Orc", ...], mob_id } - the monster's family and id, for
+// bSubRace2 and bAddDefClass. Optional so older callers keep working.
+function calculateIncomingPhysical(mobRace, mobElement, mobSize, isRanged, playerTarget, pmf, result, attacker = {}) {
   let [mn, mx, av] = pmfStats(pmf);
   if (!playerTarget.is_pc) {
     result.add_step({ name: "Card Fix (Incoming Physical)", value: av, min_value: mn, max_value: mx, multiplier: 1.0, note: "target is not a player", formula: "no change", hercules_ref: "battle.c battle_calc_cardfix" });
@@ -168,12 +172,17 @@ function calculateIncomingPhysical(mobRace, mobElement, mobSize, isRanged, playe
   const tSize = playerTarget.sub_size[sizeKey] || 0;
   const tRace = playerTarget.sub_race[raceRc] || 0;
   const tNearLong = isRanged ? playerTarget.long_attack_def_rate : playerTarget.near_attack_def_rate;
-  for (const reduction of [tEle, tSize, tRace, tNearLong]) {
+  // Monster family (bSubRace2, battle.c:1330) and specific monster id (bAddDefClass,
+  // battle.c:1334-1337) — separate multiplicative factors, like the rest.
+  const tRace2 = (attacker.race2 || []).reduce((acc, rc2) => acc + ((playerTarget.sub_race2 || {})[rc2] || 0), 0);
+  const tClass = attacker.mob_id != null ? ((playerTarget.add_def_class || {})[String(attacker.mob_id)] || 0) : 0;
+  for (const reduction of [tEle, tSize, tRace, tNearLong, tRace2, tClass]) {
     if (reduction) pmf = scaleFloor(pmf, 100 - reduction, 100);
   }
   [mn, mx, av] = pmfStats(pmf);
   const multiplier = avIn ? av / avIn : 1.0;
-  result.add_step({ name: "Card Fix (Incoming Physical)", value: av, min_value: mn, max_value: mx, multiplier, note: `Ele-${tEle}% Size-${tSize}% Race-${tRace}% Def-${tNearLong}%${(tEle || tSize || tRace || tNearLong) ? "  (from cards, gear & pets)" : ""}`, formula: "dmg × resist factors", hercules_ref: "battle.c:1269-1341" });
+  const extra = (tRace2 ? ` Family-${tRace2}%` : "") + (tClass ? ` Monster-${tClass}%` : "");
+  result.add_step({ name: "Card Fix (Incoming Physical)", value: av, min_value: mn, max_value: mx, multiplier, note: `Ele-${tEle}% Size-${tSize}% Race-${tRace}% Def-${tNearLong}%${extra}${(tEle || tSize || tRace || tNearLong || tRace2 || tClass) ? "  (from cards, gear & pets)" : ""}`, formula: "dmg × resist factors", hercules_ref: "battle.c:1269-1341" });
   return pmf;
 }
 

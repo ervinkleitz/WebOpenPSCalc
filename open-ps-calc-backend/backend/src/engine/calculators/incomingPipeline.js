@@ -153,7 +153,8 @@ function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weap
   // 1-damage hit to a genuine 0.
   pmf = floorAt(pmf, 1);
 
-  pmf = calculateIncomingPhysical(mob.race, atkEle, mob.size, isRanged, playerTarget, pmf, result);
+  pmf = calculateIncomingPhysical(mob.race, atkEle, mob.size, isRanged, playerTarget, pmf, result,
+    { race2: loader._mobRace2Map()[Number(mobId)] || [], mob_id: mobId });
 
   pmf = applyLexAeterna(build, pmf, result);
 
@@ -218,7 +219,18 @@ function calculateIncomingMagicDamage(mobId, build, status, gearBonuses, weapon,
   // Pass the CASTER so the defender's size/race/boss/ranged reductions apply — a mob's
   // magic used to be cut only by element and magic_def_rate.
   pmf = calculateCardFixMagic(playerTarget, magicEleName, pmf, result, null,
-    { race: mob.race, size: mob.size, is_boss: mob.is_boss });
+    { race: mob.race, size: mob.size, is_boss: mob.is_boss, race2: loader._mobRace2Map()[Number(mobId)] || [] });
+
+  // bNoMagicDamage (Golden Thiefbug Card 100, Chameleon Armor's proc): magic damage
+  // taken -n%, capped at 100 = immune. Applied after the card fix, in
+  // battle_calc_damage (battle.c:3158-3159).
+  const noMagic = playerTarget.no_magic_damage || 0;
+  if (noMagic > 0) {
+    pmf = scaleFloor(pmf, 100 - noMagic, 100);
+    const [nmn, nmx, nav] = pmfStats(pmf);
+    result.add_step({ name: "No Magic Damage", value: nav, min_value: nmn, max_value: nmx, multiplier: (100 - noMagic) / 100,
+      note: `-${noMagic}% magic damage taken${noMagic >= 100 ? " (immune)" : ""}`, formula: `dmg x ${100 - noMagic}%`, hercules_ref: "battle.c:3159" });
+  }
 
   pmf = applyLexAeterna(build, pmf, result);
 

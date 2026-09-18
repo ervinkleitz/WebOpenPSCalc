@@ -194,6 +194,13 @@ class StatusCalculator {
     // === DEFENSE ===
     status.def_ = build.equip_def;
     status.def2 = status.vit + build.bonus_def2;
+    // bDefRate / bDef2Rate (Masamune, Grimtooth, Spike: -67% / -50%). Hercules scales
+    // the gear DEF and the VIT DEF right here in status_calc_pc, before any status
+    // change adds to them (status.c:2031 def2, :2101 def). Floor at 0 like def_rate < 0.
+    const defRate = gb != null ? (gb.def_rate || 0) : 0;
+    const def2Rate = gb != null ? (gb.def2_rate || 0) : 0;
+    if (defRate) status.def_ = Math.floor(status.def_ * Math.max(0, 100 + defRate) / 100);
+    if (def2Rate) status.def2 = Math.floor(status.def2 * Math.max(0, 100 + def2Rate) / 100);
 
     const angelusLv = Number(support.SC_ANGELUS || 0);
     status.def2 += 3 * angelusLv;                   // PS: flat +3 per level applied first
@@ -358,6 +365,11 @@ class StatusCalculator {
     if (saFcLv) {
       status.flee += (((profile.passive_overrides || {}).SA_FREECAST || {}).flee_per_lv || 0) * saFcLv;
     }
+
+    // bHitRate (Well-Chewed Pencil +3%): HIT x (100 + n)%, applied in status_calc_pc
+    // after gear and passive HIT and before status changes like Blind (status.c:2021).
+    const hitRate = gb != null ? (gb.hit_rate || 0) : 0;
+    if (hitRate) status.hit = Math.floor(status.hit * Math.max(0, 100 + hitRate) / 100);
 
     if ("SC_BLIND" in playerScs) {
       status.hit = Math.floor(status.hit * 75 / 100);

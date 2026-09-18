@@ -17,6 +17,17 @@ instead of release version. Dates are taken from actual git commit history.
   on top. (The cards' own descriptions still say 5%; the Priest rework raised it to 7%.)
   Reported by a player.
 
+- **Several items' effects were being silently ignored, and now work.** A check of every
+  item and combo turned up bonuses the calculator read but threw away:
+  - **Gungnir**'s 25% chance to hit through Flee now raises your hit chance.
+  - **Well-Chewed Pencil**'s HIT +3% now applies.
+  - **Masamune**, **Grimtooth**, **Spike** and **Wickebine's Black Cat Ears** now actually
+    lower your own DEF, as their descriptions say, in the survivability panel.
+  - **Golden Thiefbug Card** now makes you immune to monster magic, and **Chameleon
+    Armor**'s proc does the same while it's up.
+  - **Mi Gao Card** now halves damage taken from Guardians, and **Rocks** changes damage
+    from the one monster it names.
+
 ## 2026-09-16
 
 ### Fixed

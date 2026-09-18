@@ -6512,6 +6512,15 @@ LOWER a DA build's DPS.
   (per-mille of a crit healed), `bMagnumLinger`.
 - **`autobonus` is a proc, not an always-on bonus** - applied only through the auto-bonus /
   "always proc" path.
+- **A PS combo over the SAME item set replaces the vanilla combo** rather than stacking with it
+  (`dataLoader.getActiveCombos`): the PS entry is PS's rework of that combo. Only the Mummy /
+  Ancient Mummy pair collides today - vanilla grants `bPerfectHitAddRate 20`, PS grants Holy
+  Strike +7% (Priest rework PDF), and PS's card text lists only the Holy Strike.
+- **Every bonus type a script uses must be implemented or explicitly ignored.** An unknown bonus
+  type is dropped silently, so `engine-units.test.js` ("every bonus type in an item or combo
+  script...") fails on any new one; the ignore list carries a reason for each entry and fails
+  again if an entry goes stale. Added 2026-09-18 after an audit found Gungnir's perfect hit,
+  Golden Thiefbug's magic immunity and Masamune's DEF penalty among 35 dropped types.
 - **`skill_level_cap_overrides` SETS a skill's PS max** and can raise as well as lower it;
   `BS_TWOHANDSWORD: 0` is how a removed skill disappears from the pickers.
 - **The in-game client tooltip beats the API right after a patch**, and the API beats the

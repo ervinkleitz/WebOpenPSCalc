@@ -246,7 +246,15 @@ class DataLoader {
   getActiveCombos(equippedAegisSet, profile = null) {
     let combos = this._loadItemComboDb();
     if (profile != null && profile.use_ps_data) {
-      combos = [...combos, ...this._loadPsItemComboDb()];
+      // A PS combo over the SAME item set is PS's rework of that combo, so it
+      // REPLACES the vanilla entry instead of stacking with it. Only the Mummy /
+      // Ancient Mummy pair collides today: vanilla grants bPerfectHitAddRate 20, PS
+      // grants Holy Strike +7% (Priest rework PDF), and PS's card text lists only the
+      // Holy Strike. Stacking would hand PS players a perfect-hit bonus PS removed.
+      const ps = this._loadPsItemComboDb();
+      const setKey = (c) => [...c.items].sort().join("|");
+      const psSets = new Set(ps.map(setKey));
+      combos = [...combos.filter((c) => !psSets.has(setKey(c))), ...ps];
     }
     return combos.filter((c) => c.items.every((item) => equippedAegisSet.has(item)));
   }

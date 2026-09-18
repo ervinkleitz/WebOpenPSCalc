@@ -262,6 +262,14 @@ function createGearBonuses(overrides = {}) {
     heal_bomb_full: 0,       // Purifying Ring + Rosary combo — offensive Heal deals 100% (not 50%) to Undead
     double_rate: 0,
     holy_strike_bonus_chance: 0,
+    perfect_hit: 0,          // bPerfectHitRate (max)
+    perfect_hit_add: 0,      // bPerfectHitAddRate (sum), folded into perfect_hit before the roll
+    hit_rate: 0,             // bHitRate: HIT x (100 + n)%
+    def_rate: 0,             // bDefRate: own hard DEF x (100 + n)%
+    def2_rate: 0,            // bDef2Rate: own VIT DEF x (100 + n)%
+    no_magic_damage: 0,      // bNoMagicDamage: magic taken -n%, capped at 100
+    sub_race2: {},           // bSubRace2: damage taken from an RC2_ monster family -n%
+    add_def_class: {},       // bAddDefClass: damage taken from monster #id -n%
     near_atk_def_rate: 0,
     long_atk_def_rate: 0,
     magic_def_rate: 0,

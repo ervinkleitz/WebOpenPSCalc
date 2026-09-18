@@ -306,6 +306,9 @@ function playerBuildToTarget(build, status, gearBonuses, weapon, loader) {
     // of that rework so vanilla keeps the stock buff.
     long_attack_def_rate: gearBonuses.long_atk_def_rate + runAndGunRangedResist(build),
     magic_def_rate: gearBonuses.magic_def_rate,
+    sub_race2: { ...(gearBonuses.sub_race2 || {}) },         // bSubRace2 (Mi Gao: Guardians)
+    add_def_class: { ...(gearBonuses.add_def_class || {}) }, // bAddDefClass (by monster id)
+    no_magic_damage: Math.min(100, gearBonuses.no_magic_damage || 0), // bNoMagicDamage (GTB)
     def_percent: status.def_percent,
     target_active_scs: targetScs,
   });

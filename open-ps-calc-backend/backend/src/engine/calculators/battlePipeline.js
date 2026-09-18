@@ -2363,6 +2363,13 @@ class BattlePipeline {
       hitChance = 100.0;
       perfectDodge = 0.0;
     }
+    // Perfect hit (Gungnir's bPerfectHitRate): a swing that misses the Flee roll still
+    // lands if it rolls under the perfect-hit chance (battle.c:5226,
+    // `rnd()%100 < perfect_hit`), so P(hit) = p + (1 - p) x h.
+    const perfectHitPct = gearBonuses
+      ? Math.min(100, (gearBonuses.perfect_hit || 0) + (gearBonuses.perfect_hit_add || 0)) : 0;
+    const withPerfectHit = (hc) => (perfectHitPct > 0 && hc < 100 ? perfectHitPct + (100 - perfectHitPct) * hc / 100 : hc);
+    hitChance = withPerfectHit(hitChance);
 
     const normal = this._runBranch(status, weapon, skill, target, build, false, { profile, gear_bonuses: gearBonuses });
     const crit = isEligible ? this._runBranch(status, weapon, skill, target, build, true, { profile, gear_bonuses: gearBonuses }) : null;
@@ -2513,7 +2520,7 @@ class BattlePipeline {
           arrow_hit: usesAmmo && ammoGb ? ammoGb.hit || 0 : 0,
         },
       );
-      hDouble = hitChanceDA / 100.0;
+      hDouble = withPerfectHit(hitChanceDA) / 100.0; // the doubled swing gets the same perfect-hit roll
     }
     const hDA = hDouble != null ? hDouble : h;
 

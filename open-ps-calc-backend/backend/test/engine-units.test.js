@@ -4902,6 +4902,133 @@ test("Shadow Slash ratio: 100 + 200x(lv-1) from Hiding, 100 + 90x(lv-1) otherwis
   assert.equal(dmg(false), 4.6, "Lv5 not hiding: 460%");
 });
 
+// ---------------------------------------------------------------------------
+// GUARD: no item or combo script may use a bonus type the parser doesn't know,
+// unless it is on the list below with a reason. An unknown bonus is DROPPED SILENTLY -
+// no error, no log - which is how Gungnir's perfect hit, Golden Thiefbug's magic
+// immunity and Masamune's DEF penalty went unmodelled for as long as they did
+// (audit 2026-09-18). A new item with a new bonus type now fails here, and whoever
+// adds it has to decide: implement it, or list it with a reason.
+// ---------------------------------------------------------------------------
+const IGNORED_BONUS_TYPES = {
+  // Sustain and regen: HP/SP recovered, drained or lost. Nothing the damage,
+  // survivability or timing panels show.
+  bHPGainValue: "sustain", bSPGainValue: "sustain", bMagicHPGainValue: "sustain",
+  bMagicSPGainValue: "sustain", bSPGainRaceAttack: "sustain", bSPDrainValueRace: "sustain",
+  bHPRegenRate: "regen", bSPRegenRate: "regen", bNoRegen: "regen", bSPLossRate: "regen",
+  bSPVanishRate: "SP loss on the target", bRestartFullRecover: "respawn",
+  // Healing RECEIVED (healing dealt, which Heal-bomb uses, is bHealPower/bSkillHeal).
+  bHealPower2: "healing received", bSkillHeal2: "healing received",
+  // Drops, zeny, cosmetics and utility.
+  bAddMonsterDropChainItem: "drops", bGetZenyNum: "zeny", bClassChange: "transforms a monster",
+  bIntravision: "reveals hidden", bSpeedAddRate: "movement speed",
+  bNoGemStone: "gemstone cost", bNoKnockback: "knockback", bNoCastCancel: "cast interruption",
+  // Equipment breakage.
+  bUnbreakableArmor: "breakage", bUnbreakableGarment: "breakage",
+  bUnbreakableShield: "breakage", bUnbreakableShoes: "breakage",
+  // Reflects magic back at the caster: damage to the MONSTER, which the incoming
+  // (survivability) panel does not model for any reflect source.
+  bMagicDamageReturn: "reflect, not modelled for any source",
+};
+
+test("every bonus type in an item or combo script is either implemented or deliberately ignored", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const { BONUS1, BONUS2, BONUS3, BONUS4, resolveBonusType } = require("../src/engine/bonusDefinitions");
+  loader.setProfile(getProfile("payon_stories"));
+  const tables = [BONUS1, BONUS2, BONUS3, BONUS4];
+  const known = (b) => [1, 2, 3, 4].some((a) => resolveBonusType(a, b) in tables[a - 1]);
+  const BONUS_RE = /\bbonus[2-5]?\s+(b[A-Za-z0-9_]+)/g;
+
+  const dataDir = path.join(__dirname, "../src/engine/data");
+  const scripts = [];
+  const all = loader._loadJson("db/item_db.json");
+  const ids = new Set((Array.isArray(all.items) ? all.items : Object.values(all.items || all)).map((i) => String(i.id)));
+  for (const f of ["ps_item_manual.json", "ps_item_overrides.json", "ps_item_db.json"]) {
+    Object.keys(JSON.parse(fs.readFileSync(path.join(dataDir, "ps", f), "utf8"))).forEach((k) => /^\d+$/.test(k) && ids.add(k));
+  }
+  for (const id of ids) {
+    const it = loader.getItem(id);
+    if (it && it.script) scripts.push({ where: `item ${id} (${it.name})`, script: it.script });
+  }
+  for (const f of ["ps/ps_item_combo_db.json", "pre-re/db/item_combo_db.json"]) {
+    const c = JSON.parse(fs.readFileSync(path.join(dataDir, f), "utf8"));
+    for (const x of (Array.isArray(c) ? c : (c.combos || Object.values(c)))) {
+      if (x && x.script) scripts.push({ where: `combo ${(x.items || []).join(" + ")}`, script: x.script });
+    }
+  }
+  assert.ok(scripts.length > 3000, `expected to scan every script, only found ${scripts.length}`);
+
+  const unknown = new Map();
+  for (const { where, script } of scripts) {
+    for (const m of script.matchAll(BONUS_RE)) {
+      const b = m[1];
+      if (known(b) || b in IGNORED_BONUS_TYPES) continue;
+      if (!unknown.has(b)) unknown.set(b, where);
+    }
+  }
+  assert.deepEqual([...unknown.entries()].map(([b, w]) => `${b} (e.g. ${w})`), [],
+    "these bonus types would be silently dropped - implement them in bonusDefinitions.js, or add them to IGNORED_BONUS_TYPES with a reason");
+
+  // And the ignore list must not rot: an entry that is now implemented, or no longer
+  // used by any script, should be removed rather than quietly shadowing something.
+  const used = new Set(scripts.flatMap(({ script }) => [...script.matchAll(BONUS_RE)].map((m) => m[1])));
+  for (const b of Object.keys(IGNORED_BONUS_TYPES)) {
+    assert.ok(!known(b), `${b} is implemented now - drop it from IGNORED_BONUS_TYPES`);
+    assert.ok(used.has(b), `${b} is no longer used by any script - drop it from IGNORED_BONUS_TYPES`);
+  }
+});
+
+// The bonus types the 2026-09-18 audit found being silently dropped, each checked
+// against what Hercules does with it.
+test("perfect hit, HIT%, DEF% and the defensive bonuses change the numbers they should", () => {
+  const low = (server, equipped) => runScenarioRaw({ build: { server, job_id: 7, base_level: 60, job_level: 50,
+    base_stats: { str: 80, agi: 40, vit: 40, int: 1, dex: 1, luk: 1 }, equipped }, target: 1208 }).raw.hit_chance; // Wander Man
+  // bPerfectHitRate: Gungnir's 25% lands through Flee, so P(hit) = 25 + 75% of the rest.
+  assert.equal(low("payon_stories", { right_hand: 1413 }), 25 + 0.75 * 5, "Gungnir: 25% perfect hit over a 5% Flee roll");
+  // bPerfectHitAddRate: the VANILLA Mummy combo's +20 (standard profile only - see below).
+  assert.equal(low("standard", { right_hand: 1410, right_hand_card1: 4106, left_hand: 2101, left_hand_card1: 4248 }), 20 + 0.8 * 5);
+  // ...while on PS the PS combo REPLACES that vanilla combo: Holy Strike, no perfect hit.
+  assert.equal(low("payon_stories", { right_hand: 1410, right_hand_card1: 4106, left_hand: 2101, left_hand_card1: 4248 }), 5,
+    "PS's Mummy combo replaces the vanilla one rather than stacking with it");
+  loader.setProfile(getProfile("payon_stories"));
+
+  const st = (equipped) => runScenarioRaw({ build: { job_id: 7, base_level: 99, job_level: 50,
+    base_stats: { str: 80, agi: 40, vit: 40, int: 20, dex: 20, luk: 10 }, equipped }, target: 1102 }).rawStatus;
+  // bHitRate: HIT x 103%.
+  const hit = st({ right_hand: 1410 }).hit;
+  assert.equal(st({ right_hand: 1410, head_top: 5574 }).hit, Math.floor(hit * 1.03), "Well-Chewed Pencil: HIT +3%");
+  // bDefRate / bDef2Rate: Masamune's -67% on both.
+  const plain = st({ right_hand: 1116, armor: 2316 }), masa = st({ right_hand: 1165, armor: 2316 });
+  assert.equal(masa.def_, Math.floor(plain.def_ * 33 / 100), "Masamune: hard DEF x33%");
+  assert.equal(masa.def2, Math.floor(plain.def2 * 33 / 100), "Masamune: VIT DEF x33%");
+
+  // Incoming: bNoMagicDamage (Golden Thiefbug Card) and bSubRace2 (Mi Gao Card).
+  const { calculateIncomingPhysicalDamage, calculateIncomingMagicDamage } = require("../src/engine/calculators/incomingPipeline");
+  const cfg = createBattleConfig();
+  const inc = (equipped, mobId, magic) => {
+    const b = buildFromSaveSchema({ server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 80, agi: 40, vit: 40, int: 20, dex: 20, luk: 10 }, equipped });
+    const [gb, eff, w, s] = resolvePlayerState(b, cfg, PS);
+    return (magic ? calculateIncomingMagicDamage(mobId, eff, s, gb, w, {}) : calculateIncomingPhysicalDamage(mobId, eff, s, gb, w, cfg, {})).avg_damage;
+  };
+  assert.ok(inc({ right_hand: 1410 }, 1320, true) > 0, "Owl Duke's magic should normally hurt");
+  assert.equal(inc({ right_hand: 1410, left_hand: 2101, left_hand_card1: 4128 }, 1320, true), 0, "Golden Thiefbug Card: immune to magic");
+  const without = inc({ right_hand: 1410, left_hand: 2101 }, 1285, false);
+  assert.equal(inc({ right_hand: 1410, left_hand: 2101, left_hand_card1: 4231 }, 1285, false), without / 2,
+    "Mi Gao Card: -50% from Guardians (Archer Guardian)");
+
+  // bAddDefClass: by monster id, straight through the card fix.
+  const { calculateIncomingPhysical } = require("../src/engine/calculators/modifiers/cardFix");
+  const { createDamageResult } = require("../src/engine/models");
+  const tgt = { is_pc: true, sub_ele: {}, sub_size: {}, sub_race: {}, sub_race2: {}, add_def_class: { 2048: -10 },
+    near_attack_def_rate: 0, long_attack_def_rate: 0 };
+  const pmfOut = calculateIncomingPhysical("Brute", 0, "Medium", false, tgt, { 100: 1 }, createDamageResult(), { race2: [], mob_id: 2048 });
+  assert.deepEqual(pmfOut, { 110: 1 }, "Rocks: +10% damage taken from monster #2048");
+  const pmfOther = calculateIncomingPhysical("Brute", 0, "Medium", false, tgt, { 100: 1 }, createDamageResult(), { race2: [], mob_id: 1002 });
+  assert.deepEqual(pmfOther, { 100: 1 }, "...and only from that monster");
+});
+
 // Mummy Card + Ancient Mummy Card. Priest rework PDF: "Adds/increases chance of Holy
 // Strike by 7% when attacking valid targets". ADDS for anyone wearing the pair; INCREASES
 // for a Priest who learned it. The branch used to require the learned skill, so the combo

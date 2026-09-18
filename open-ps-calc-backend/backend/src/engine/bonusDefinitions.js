@@ -97,6 +97,18 @@ const BONUS1 = {
   bLongAtkRate: def((v) => (v > 0 ? `Long-range damage +${v}%.` : `Long-range damage ${v}%.`), "long_atk_rate"),
   bAtkRate: def((v) => `Physical ATK +${v}%.`, "atk_rate"),
   bHolyStrikeChance: def((v) => `+${v}% Holy Strike proc chance.`, "holy_strike_bonus_chance"),
+  // Perfect hit: a swing that rolls under it lands regardless of Flee (battle.c:5226).
+  // bPerfectHitRate keeps the HIGHEST value (pc.c:2808); bPerfectHitAddRate adds on top
+  // and is folded in before the roll (status.c:1846).
+  bPerfectHitRate: def((v) => `${v}% chance to ignore the target's Flee.`, "perfect_hit", "max"),
+  bPerfectHitAddRate: def((v) => `+${v}% chance to ignore the target's Flee.`, "perfect_hit_add"),
+  // HIT x (100 + n)% (status.c:2021).
+  bHitRate: def((v) => (v > 0 ? `HIT +${v}%.` : `HIT ${v}%.`), "hit_rate"),
+  // Your own hard DEF / VIT DEF x (100 + n)% (status.c:2101 / :2031).
+  bDefRate: def((v) => (v > 0 ? `DEF +${v}%.` : `DEF ${v}%.`), "def_rate"),
+  bDef2Rate: def((v) => (v > 0 ? `VIT DEF +${v}%.` : `VIT DEF ${v}%.`), "def2_rate"),
+  // Magic damage taken -n%, capped at 100 = immune (pc.c:2895, battle.c:3159).
+  bNoMagicDamage: def((v) => `Reduces magic damage taken by ${v}%.`, "no_magic_damage"),
 
   bMaxHP: def((v) => (v > 0 ? `MaxHP +${v}.` : `MaxHP ${v}.`), "maxhp"),
   bMaxSP: def((v) => (v > 0 ? `MaxSP +${v}.` : `MaxSP ${v}.`), "maxsp"),
@@ -188,6 +200,10 @@ const BONUS2 = {
   bSkillHeal: def((sk, v) => `Increases ${sk} healing by ${v}%.`, "skill_heal", "dict"),
   bSkillSpCost: def((sk, v) => `${v > 0 ? "Increases" : "Reduces"} ${sk} SP cost by ${Math.abs(v)}.`, null),
   bCastrate: def((sk, v) => `${v < 0 ? "Reduces" : "Increases"} ${sk} cast time by ${Math.abs(v)}%.`, "skill_castrate", "dict"),
+  // Damage taken from a monster FAMILY (RC2_*) / a specific monster ID, -n%
+  // (battle.c:1330 / :1334-1337; magic :1135).
+  bSubRace2: def((rc2, v) => `Reduces damage taken from ${String(rc2).replace(/^RC2_/, "")} monsters by ${v}%.`, "sub_race2", "dict"),
+  bAddDefClass: def((id, v) => `${v >= 0 ? "Reduces" : "Increases"} damage taken from monster #${id} by ${Math.abs(v)}%.`, "add_def_class", "dict"),
   bDelayrate: def((sk, v) => `${v < 0 ? "Reduces" : "Increases"} ${sk} after-cast delay by ${Math.abs(v)}%.`, "skill_delayrate", "dict"),
   // Flat cooldown change in MILLISECONDS (negative reduces), e.g. FUEL Card's
   // "-2 seconds Demonstration cooldown". Distinct from bDelayrate: a cooldown is
