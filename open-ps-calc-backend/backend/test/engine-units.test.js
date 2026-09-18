@@ -5128,6 +5128,42 @@ test("weapon element provenance: endow > own script/card > forge > item field, a
   loader.setProfile(getProfile("payon_stories")); // other tests rely on the PS profile
 });
 
+// Monk combo delay. wiki.payonstories.com/Chain_Combo and /Combo_Finish, identical:
+// "Cast Delay : 800ms or (1000 - 4*agi - 2*dex + 300) + 25 ms (whichever is greatest)".
+// We used to subtract 4*AGI + 2*DEX from the DB delay only - no +300, no +25, no floor -
+// so a high-AGI Monk's combos fired every 472 ms instead of 800 (+69% DPS).
+test("Chain Combo / Combo Finish delay: max(800, 1325 - 4*AGI - 2*DEX)", () => {
+  const period = (agi, dex, sk) => {
+    const r = runScenarioRaw({ build: { job_id: 15, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi, vit: 40, int: 1, dex, luk: 1 }, equipped: { right_hand: 1801 },
+      mastery_levels: { MO_TRIPLEATTACK: 5, MO_CHAINCOMBO: 5, MO_COMBOFINISH: 5 } },
+      skill: { name: sk, level: 5 }, target: 1002 });
+    return { ms: r.raw.period_ms, agi: r.rawStatus.agi, dex: r.rawStatus.dex };
+  };
+  for (const sk of ["MO_CHAINCOMBO", "MO_COMBOFINISH"]) {
+    for (const [agi, dex] of [[97, 84], [40, 30], [1, 1]]) {
+      const p = period(agi, dex, sk);
+      assert.equal(Math.round(p.ms), Math.max(800, 1325 - 4 * p.agi - 2 * p.dex),
+        `${sk} at AGI ${p.agi} / DEX ${p.dex}`);
+    }
+    assert.equal(Math.round(period(97, 84, sk).ms), 800, `${sk}: high AGI/DEX hits the 800 ms floor`);
+  }
+});
+
+// Traps are BF_MISC: no attacker race/size/element/boss cards (battle.c:1354 has only a
+// defender block for BF_MISC). Measured before the fix: 4x Abysmal Knight exactly doubled
+// Blast Mine vs a boss. The trap cards (bSkillAtk) still apply - the Hunter rework PDF's
+// "carded" figures are x1.2 for four Wolpertingers.
+test("traps ignore the attacker's race/size/element/boss cards but keep their own trap cards", () => {
+  const blast = (cards) => runScenarioRaw({ build: { job_id: 11, base_level: 99, job_level: 50,
+    base_stats: { str: 1, agi: 50, vit: 30, int: 100, dex: 150, luk: 1 },
+    equipped: { right_hand: 1702, ...Object.fromEntries(cards.map((c, i) => [`right_hand_card${i + 1}`, c])) } },
+    skill: { name: "HT_BLASTMINE", level: 5 }, target: 1159 }).raw.normal.avg_damage; // Phreeoni (boss)
+  const bare = blast([]);
+  assert.equal(blast([4140, 4140, 4140, 4140]), bare, "4x Abysmal Knight (+25% vs boss) must not touch a trap");
+  assert.equal(blast([8243, 8243, 8243, 8243]), Math.floor(bare * 1.2), "4x Wolpertinger: +5% Blast Mine each");
+});
+
 // Element provenance, restored at the source (2026-09-18): an ammo's bAtkEle now lives
 // ONLY in the ammo pool, and a weapon's element field never carries it. Before this, the
 // aggregator wrote every bAtkEle - weapon, card AND ammo - into one last-assign scalar, and

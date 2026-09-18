@@ -305,6 +305,14 @@ const PS_SKILL_DELAY_FN = {
   // wiki.payonstories.com/Haze_Slasher — "delay = 1s (reduced by DEX & AGI)", body:
   // "The delay is reduced based on the formula: 4*AGI + 2*DEX"
   NJ_KASUMIKIRI: agiDexDelay(1000),
+  // wiki.payonstories.com/Chain_Combo and /Combo_Finish, identical on both: "Cast Delay :
+  // 800ms or (1000 - 4*agi - 2*dex + 300) + 25 ms (whichever is greatest)". They fell
+  // through to skillTiming's generic Monk branch, which only subtracts 4*AGI + 2*DEX from
+  // the DB delay - no +300, no +25 and, critically, no 800 ms floor. At AGI 97 / DEX 84
+  // that read 502 ms against the wiki's 800, overstating combo DPS by ~59%. The DB base
+  // for Combo Finish is also 700, not the 1000 the formula uses.
+  MO_CHAINCOMBO: (status) => Math.max(800, 1000 - 4 * status.agi - 2 * status.dex + 300 + 25),
+  MO_COMBOFINISH: (status) => Math.max(800, 1000 - 4 * status.agi - 2 * status.dex + 300 + 25),
   // NOT here on purpose: NJ_HUUMA. Same mechanic with doubled coefficients
   // (2000 - (8*AGI + 4*DEX)), but the wiki never says whether its 0.5+0.5*lv cast is
   // DEX-reducible, and the two readings land 1.7x apart in opposite directions. See

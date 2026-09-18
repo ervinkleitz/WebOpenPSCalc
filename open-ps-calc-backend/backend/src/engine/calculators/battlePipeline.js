@@ -1175,8 +1175,14 @@ class BattlePipeline {
     }
 
     pmf = calculateAttrFix(weapon, target, pmf, result, build, cfg.element);
-    pmf = calculateCardFix(build, gearBonuses, cfg.element, target, false /* melee */, pmf, result);
-    pmf = calculateFinalRateBonus(false, pmf, this.config, result);
+    // No attacker card fix and no melee/ranged/weapon-type rate here. Traps are BF_MISC:
+    // battle_calc_misc_attack (battle.c:4341) never calls battle_calc_defense, and
+    // battle_calc_cardfix's BF_MISC case (battle.c:1354) has ONLY a defender (tsd) block,
+    // so the attacker's race / size / element / boss cards never reach trap damage.
+    // They used to: 4x Abysmal Knight exactly DOUBLED Blast Mine against a boss. The one
+    // attacker bonus BF_MISC does take is bSkillAtk (battle.c:4395), applied above - which
+    // is what the rework's trap cards are (Wolpertinger / Dory, +5% each; the Hunter
+    // rework PDF's "carded" figures are exactly x1.2 for four of them).
     pmf = floorAt(pmf, 1);
 
     const [mn, mx, av] = pmfStats(pmf);

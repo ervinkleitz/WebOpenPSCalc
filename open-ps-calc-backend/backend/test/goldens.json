@@ -2632,9 +2632,6 @@
     "steps": [
      "Trap Base",
      "Attr Fix",
-     "Card Fix",
-     "Final Rate Bonus (Short)",
-     "Final Rate Bonus (Weapon)",
      "Final Damage"
     ]
    }
@@ -3507,9 +3504,6 @@
     "steps": [
      "Trap Base",
      "Attr Fix",
-     "Card Fix",
-     "Final Rate Bonus (Short)",
-     "Final Rate Bonus (Weapon)",
      "Final Damage"
     ]
    }
@@ -3548,9 +3542,6 @@
     "steps": [
      "Trap Base",
      "Attr Fix",
-     "Card Fix",
-     "Final Rate Bonus (Short)",
-     "Final Rate Bonus (Weapon)",
      "Final Damage"
     ]
    }

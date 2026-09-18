@@ -33,6 +33,17 @@ instead of release version. Dates are taken from actual git commit history.
   the calculator happened to store your gear in. The arrow a bow fires now always sets the
   element, and an endow still beats it (except on Gunslingers, who can't be endowed).
 
+- **Monk Chain Combo and Combo Finish no longer read far too fast.** Both have an 800 ms
+  minimum delay, from the Payon Stories wiki: 800 ms, or 1000 − 4×AGI − 2×DEX + 325 ms if
+  that's longer. The calculator only subtracted the AGI and DEX part, with no minimum, so a
+  high-AGI Monk's combos fired every 0.47 s instead of 0.8 s and their DPS read about 70%
+  too high. Lower-AGI Monks were overstated too, by a smaller margin.
+
+- **Traps no longer take your race, element or boss damage cards.** Land Mine, Blast Mine,
+  Freezing Trap and Claymore Trap are a kind of damage those cards never affect, but the
+  calculator applied them anyway — four Abysmal Knight Cards exactly doubled Blast Mine
+  against a boss. Wolpertinger and Dory Cards, which are trap cards, still add their 5% each.
+
 ## 2026-09-16
 
 ### Fixed

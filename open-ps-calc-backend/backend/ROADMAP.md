@@ -1798,7 +1798,7 @@ unmodeled — it needs the target to already carry that status.
   that actually models the skill. Same trap applies to any future "stays PS-only" assertion
   routed through `hit_chance` on a skill vanilla does not price — worth checking whether other
   tests lean on the same canned result.
-- **Monk combo delay is missing its floor — we OVERSTATE Chain Combo / Combo Finish DPS.**
+- ~~**Monk combo delay is missing its floor — we OVERSTATE Chain Combo / Combo Finish DPS.**~~ — **fixed 2026-09-18**: `PS_SKILL_DELAY_FN` now carries the wiki's `max(800, 1325 - 4*AGI - 2*DEX)` for both skills (re-checked against the live wiki). Measured before: 472 ms vs 800 at AGI 104 / DEX 88, Chain Combo 2305 DPS vs 1360.
   `skillTiming.js` already applies the right idea to `MONK_COMBO_SKILLS`
   (`baseDelay -= 4*AGI + 2*DEX`), but the wiki's formula is
   **`max(800, (1000 - 4*agi - 2*dex + 300) + 25)`** — we are missing the `+300`, the `+25`
@@ -1963,7 +1963,7 @@ unmodeled — it needs the target to already carry that status.
   fetch the live wiki page before calling any PS formula undocumented.** Vanilla was a red herring
   too: there the sphere really is mob 1142 detonating via `NPC_SELFDESTRUCTION` for `sstatus->hp`
   (battle.c:4467), a mechanic PS deleted outright.
-- **BF_MISC takes NO attacker card bonuses — traps still do** [med]. Established while chasing a
+- ~~**BF_MISC takes NO attacker card bonuses — traps still do** [med].~~ — **fixed 2026-09-18** for the traps: `_runTrapBranch` no longer runs `calculateCardFix` or `calculateFinalRateBonus`; the trap cards (Wolpertinger / Dory, `bSkillAtk`) still apply, matching the rework PDF's x1.2 carded figures. Still to check: `CR_REFLECTSHIELD` is also typed Misc and its branch still runs the card fix — its damage is a PS rework formula, so it needs evidence before changing. Established while chasing a
   player-reported DPS gap against the jaludev calc. `battle_calc_misc_attack` (battle.c:4341) never
   calls `battle_calc_defense`, and `battle_calc_cardfix`'s `case BF_MISC` (battle.c:1354) has ONLY a
   `tsd` (defender) block — unlike `case BF_WEAPON` it has no attacker-side `sd` branch at all, so
