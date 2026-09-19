@@ -7,6 +7,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-09-19
 
+### Added
+
+- **"Always proc" now covers Holy Strike.** The Normal / Always switch that shows your damage
+  with card procs (like Bonechewer's Brutality) permanently up now also fires Holy Strike on
+  every attack, so you can read its per-hit damage directly instead of as an average spread
+  over swings. The switch also appears for builds whose only proc is Holy Strike — before, it
+  showed only when you wore proc cards. It's a what-if view, as it always was: "Normal" still
+  shows the real rates.
+
 ### Fixed
 
 - **Holy Strike now shows up in the damage breakdown.** Its damage was already counted in

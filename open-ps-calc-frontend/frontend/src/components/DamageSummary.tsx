@@ -63,6 +63,7 @@ interface FalconResult {
 
 interface SingleResult {
   has_auto_bonuses?: boolean;
+  has_forceable_procs?: boolean;   // autobonus cards OR a Holy Strike proc — what "Always proc" changes
   status: { aspd: number };
   // Base timings behind the cast rate (routes/calculate.ts). Cast and after-cast are
   // 0 on the normal-attack result, which has neither.
@@ -587,7 +588,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   if (!calcResult) return <p className="hint-text">Set up a build and target, then calculate damage.</p>;
 
   const { normal_attack, skill: skillResult, selected_skill, target_hp, target_exp, target_job_exp, poison_dot_per_sec } = calcResult;
-  const hasAutoBonus = !!normal_attack.has_auto_bonuses;
+  const hasForceableProcs = !!(normal_attack.has_forceable_procs ?? normal_attack.has_auto_bonuses);
   const hasSkill = skillResult !== null && selected_skill.id !== 0;
   const primary = hasSkill ? skillResult! : normal_attack;
   const hasCrit = !!primary.result.crit;
@@ -1030,22 +1031,23 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         </div>
       )}
 
-      {/* Cards always proc toggle — shown when equipped cards have autobonus proc effects */}
-      {hasAutoBonus && (
+      {/* "Always proc" toggle — shown when the build has anything it changes: autobonus
+          card effects (Bonechewer's Brutality) or the Holy Strike proc. */}
+      {hasForceableProcs && (
         <div className="proc-mode-row">
-          <span className="proc-mode-label">Proc cards</span>
+          <span className="proc-mode-label">Procs</span>
           <div className="proc-mode-toggle">
             <button
               className={!forceProcs ? "active" : ""}
               onClick={() => { if (forceProcs) onToggleForceProcs(); }}
-              title="Show damage without proc-based card bonuses active"
+              title="Show damage at the real proc rates — proc damage counts toward DPS in proportion to how often it fires"
             >
               Normal
             </button>
             <button
               className={forceProcs ? "active" : ""}
               onClick={() => { if (!forceProcs) onToggleForceProcs(); }}
-              title="Show damage as if proc-based card bonuses are always active"
+              title="Show damage as if every proc fires: card proc bonuses stay up, and Holy Strike procs on every attack"
             >
               Always
             </button>

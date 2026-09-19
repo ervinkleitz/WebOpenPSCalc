@@ -431,7 +431,14 @@ router.post("/", (req: Request, res: Response) => {
       animation_ms: 2 * Math.max(100, Math.round(2000 - status.aspd * 10)),
     };
     const falcon = computeFalconDamage(status, effBuild, gearBonuses, target, loader);
-    res.json({ status, weapon, target, result: battleResult, timing, gear_stat_bonuses, falcon, has_auto_bonuses: gearBonuses.auto_bonuses.length > 0 });
+    // has_auto_bonuses: this build carries autobonus (proc) card effects.
+    // has_forceable_procs: anything the "Always proc" toggle changes — the autobonus cards
+    // above, plus the Holy Strike proc, which the toggle forces to 100%. The toggle is shown
+    // on this, so a Priest with Holy Strike and no proc cards still gets it.
+    const hasAutoBonuses = gearBonuses.auto_bonuses.length > 0;
+    const hasHolyStrike = !!(battleResult as any)?.proc_branches?.holy_strike;
+    res.json({ status, weapon, target, result: battleResult, timing, gear_stat_bonuses, falcon,
+      has_auto_bonuses: hasAutoBonuses, has_forceable_procs: hasAutoBonuses || hasHolyStrike });
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: "Calculation failed", detail: String(err.message || err) });

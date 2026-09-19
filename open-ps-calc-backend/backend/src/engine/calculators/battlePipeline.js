@@ -2739,7 +2739,10 @@ class BattlePipeline {
         // The learned skill's own rate (20% + 1% per 10 LUK) only exists if it is learned;
         // without it the combo's chance is the whole proc.
         const learnedChance = holyStrikeLv > 0 ? 20 + Math.floor(status.luk / 10) : 0;
-        holyStrikeChance = Math.min(100, learnedChance + holyStrikeCombo);
+        // "Always proc" (build.force_procs, the same toggle that keeps Bonechewer's Brutality
+        // up) fires it on every swing, so a player can read the per-proc damage as a rate
+        // rather than an expected value. A what-if, exactly like the card version.
+        holyStrikeChance = build.force_procs ? 100 : Math.min(100, learnedChance + holyStrikeCombo);
         const hsSkill = { id: loader.getSkillIdByName("PS_PR_HOLYSTRIKE") || 0, name: "PS_PR_HOLYSTRIKE", level: 1, nk_ignore_flee: false };
         holyStrikeBranch = this._runBranch(status, weapon, hsSkill, target, build, false,
           { profile, gear_bonuses: gearBonuses });
@@ -2747,9 +2750,14 @@ class BattlePipeline {
           name: "Holy Strike proc", value: holyStrikeBranch.avg_damage,
           min_value: holyStrikeBranch.min_damage, max_value: holyStrikeBranch.max_damage, multiplier: 1.0,
           note: `${holyStrikeChance}% per melee attack — `
-            + (holyStrikeLv > 0
-              ? `20% base + ⌊LUK ${status.luk}/10⌋` + (holyStrikeCombo ? ` + ${holyStrikeCombo}% (Mummy card combo)` : "")
-              : `${holyStrikeCombo}% from the Mummy / Ancient Mummy card combo (Holy Strike not learned)`)
+            + (build.force_procs
+              ? `forced to 100% by "Always proc" (its real rate is `
+                + (holyStrikeLv > 0
+                  ? `20% + ⌊LUK ${status.luk}/10⌋${holyStrikeCombo ? ` + ${holyStrikeCombo}% combo` : ""}`
+                  : `${holyStrikeCombo}% from the card combo`) + ")"
+              : holyStrikeLv > 0
+                ? `20% base + ⌊LUK ${status.luk}/10⌋` + (holyStrikeCombo ? ` + ${holyStrikeCombo}% (Mummy card combo)` : "")
+                : `${holyStrikeCombo}% from the Mummy / Ancient Mummy card combo (Holy Strike not learned)`)
             + `; Holy, vs ${validEle ? "an Undead/Shadow/Ghost-element" : "a Demon/Undead-race"} target`,
           formula: "(101 + BaseSTR + BaseLevel)% ATK, Holy",
           hercules_ref: "wiki.payonstories.com/Holy_Strike",
