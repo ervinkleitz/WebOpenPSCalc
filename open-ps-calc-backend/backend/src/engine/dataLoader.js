@@ -46,6 +46,17 @@ function readJsonSafe(filePath, fallback) {
   }
 }
 
+// PS-custom PASSIVES: constants that exist only on Payon Stories (absent from the vanilla
+// skill tree / DB), offered in the Passive skills panel for the jobs that can learn them
+// (ps_custom_constants.json). They are also kept OUT of the active-skill picker
+// (routes/data.ts): a passive cannot be cast, and pricing one as a cast is meaningless.
+//   PS_MC_TOOLMASTERY  Tool Mastery (Merchant line)
+//   PS_PR_HOLYSTRIKE   Holy Strike (Priest line quest skill, 1 level; wiki: "Type: Passive
+//                      Skill"). It used to be reachable ONLY as an active pick, so a Priest's
+//                      own proc (20% + 1% per 10 LUK) could not be turned on from the page
+//                      at all. Player request, 2026-09-19.
+const PS_CUSTOM_PASSIVES = new Set(["PS_MC_TOOLMASTERY", "PS_PR_HOLYSTRIKE"]);
+
 class DataLoader {
   constructor() {
     this._cache = {};
@@ -585,9 +596,6 @@ class DataLoader {
       "MG_FIREBALL", "WZ_JUPITEL", "AC_DOUBLE", "AS_SONICBLOW",
       "MC_MAMMONITE", "SM_BASH",
     ]);
-    // PS-custom passives (constants that exist only on Payon Stories, so they are
-    // absent from the vanilla skill tree/DB) offered for the jobs that can learn them.
-    const PS_CUSTOM_PASSIVES = new Set(["PS_MC_TOOLMASTERY"]);
     // Some skill DB names differ from the key masteryFix.js looks up.
     const MASTERY_KEY_OVERRIDE = { "SM_TWOHAND": "SM_TWOHANDSWORD" };
     // These are active (non-passive) skills, normally excluded by the
@@ -1098,4 +1106,4 @@ class DataLoader {
 
 const loader = new DataLoader();
 
-module.exports = { DataLoader, loader };
+module.exports = { DataLoader, loader, PS_CUSTOM_PASSIVES };

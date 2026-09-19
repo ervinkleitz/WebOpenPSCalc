@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { loader } from "../engine/dataLoader";
+import { loader, PS_CUSTOM_PASSIVES } from "../engine/dataLoader";
 import { getProfile } from "../engine/serverProfiles";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { importJaludev } = require("../engine/jaludevImport");
@@ -248,6 +248,10 @@ router.get("/skills", (req: Request, res: Response) => {
       if (name !== "ALL_RESURRECTION" && NON_PS_SKILL_PREFIXES.has(name.split("_")[0])) return false;
       // HT_POWER is an internal Hercules id, not a real player skill.
       if (name === "HT_POWER") return false;
+      // PS-custom passives live in the Passive skills panel, not here: Holy Strike's
+      // record is typed "Weapon" only because its PROC is a weapon hit, which let it in
+      // as a castable skill.
+      if (PS_CUSTOM_PASSIVES.has(name)) return false;
       // Hunter damage traps (Land Mine, Blast Mine, Freezing Trap, Claymore Trap)
       // are typed "Misc" and have no weapon/magic ratio — the engine computes them
       // through its own trap branch (INT/DEX formula) when HT_TRAP_PS_FORMULA is set.

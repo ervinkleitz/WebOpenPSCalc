@@ -1760,6 +1760,13 @@ test("the masteries panel offers the skills that upgrade autocast cards", () => 
   assert.equal(entry(12, "AS_SONICBLOW").max_level, 10);
   assert.ok(!names(10).includes("WZ_JUPITEL") && !names(10).includes("AS_SONICBLOW"),
     "a Blacksmith learns none of them and is offered none");
+
+  // Holy Strike is a Priest-line PASSIVE quest skill (wiki: "Type: Passive Skill", 1 level).
+  // It drives the Holy Strike proc, and used to be settable from nowhere on the page.
+  assert.ok(names(8).includes("PS_PR_HOLYSTRIKE"), "Priest can set Holy Strike");
+  assert.equal(entry(8, "PS_PR_HOLYSTRIKE").max_level, 1, "Holy Strike has one level");
+  assert.ok(names(4009).includes("PS_PR_HOLYSTRIKE"), "High Priest too");
+  assert.ok(!names(7).includes("PS_PR_HOLYSTRIKE"), "a Knight cannot learn it");
 });
 
 test("Crescent Scythe heals 0.1% of crit damage PER REFINE, and never counts as damage", () => {

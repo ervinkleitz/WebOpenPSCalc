@@ -16,6 +16,14 @@ instead of release version. Dates are taken from actual git commit history.
   proc, and the DPS it adds. (Yesterday's fix made the combo work for every class; this one
   makes it visible.) Reported again by the same player.
 
+- **Holy Strike is now a Priest passive skill.** It's a one-level passive quest skill, but the
+  calculator only offered it as an active skill to cast, which priced a cast that doesn't
+  exist, and gave you no way to say you'd learned it. So a Priest's own Holy Strike proc —
+  20% plus 1% per 10 LUK on melee attacks against Undead, Shadow, Ghost, Demon and Undead-race
+  monsters — could never be turned on. It now sits in the Passive skills panel for Priests and
+  High Priests, and setting it shows the proc in the damage breakdown. It no longer appears
+  in the active skill search. Requested by a player.
+
 ## 2026-09-18
 
 ### Fixed
