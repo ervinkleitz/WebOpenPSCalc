@@ -501,8 +501,9 @@ function DoubleAttackView({ branch, chance, label, taChance }: {
   );
 }
 
-function CardAutocastView({ branch, chance, label, dpsAdded }: {
+function CardAutocastView({ branch, chance, label, dpsAdded, title = "Card autocast", per = "physical attack" }: {
   branch: DamageBranch; chance: number; label: string; dpsAdded: number | null;
+  title?: string; per?: string;
 }) {
   const n = (v: number) => Math.round(v).toLocaleString();
   const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
@@ -515,8 +516,8 @@ function CardAutocastView({ branch, chance, label, dpsAdded }: {
   return (
     <div className="breakdown-view">
       <div className="breakdown-head">
-        <span className="breakdown-title">Card autocast — {label}</span>
-        <span className="breakdown-sub">{chance}% per physical attack</span>
+        <span className="breakdown-title">{title} — {label}</span>
+        <span className="breakdown-sub">{chance}% per {per}</span>
       </div>
       {unmodeled ? (
         // Same treatment an unmodelled SKILL gets in the main breakdown — a warn
@@ -664,6 +665,19 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         branch: doubleHitBranch,
         chance: doubleHitChance,
         label: normal_attack.result.double_proc_label ?? "Double Attack",
+      }
+    : null;
+  // Holy Strike proc: a Priest's learned quest skill, and/or the Mummy + Ancient Mummy
+  // card combo, which grants it to any class. The engine has priced it (and folded it
+  // into the DPS) since 2026-09-09, but nothing here rendered `holy_strike`, so players
+  // saw no trace of it and reported the combo as unimplemented.
+  const holyStrikeBranch = activeResult.result.proc_branches?.holy_strike ?? null;
+  const holyStrikeChance = activeResult.result.proc_chances?.holy_strike ?? 0;
+  const holyStrike = holyStrikeBranch
+    ? {
+        branch: holyStrikeBranch,
+        chance: holyStrikeChance,
+        dpsAdded: periodMs > 0 ? (holyStrikeBranch.avg_damage * holyStrikeChance / 100) / (periodMs / 1000) : null,
       }
     : null;
   // Card autocasts on a physical attack (Pirate Skel Card → Mammonite, Rekenber
@@ -1161,6 +1175,11 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
       )}
 
       {tripleAttack && <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label} />}
+
+      {holyStrike && (
+        <CardAutocastView title="Proc" label="Holy Strike" per="melee attack"
+          branch={holyStrike.branch} chance={holyStrike.chance} dpsAdded={holyStrike.dpsAdded} />
+      )}
 
       {cardAutocasts.map((ac) => (
         <CardAutocastView key={ac.key} branch={ac.branch} chance={ac.chance} label={ac.label} dpsAdded={ac.dpsAdded} />

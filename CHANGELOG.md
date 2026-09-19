@@ -5,6 +5,17 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-19
+
+### Fixed
+
+- **Holy Strike now shows up in the damage breakdown.** Its damage was already counted in
+  your DPS, but the breakdown never displayed it, so neither the Mummy Card + Ancient Mummy
+  Card combo nor a Priest's own Holy Strike appeared anywhere on the page. It now has its
+  own panel beside your other procs, showing its chance per melee attack, the damage per
+  proc, and the DPS it adds. (Yesterday's fix made the combo work for every class; this one
+  makes it visible.) Reported again by the same player.
+
 ## 2026-09-18
 
 ### Fixed
