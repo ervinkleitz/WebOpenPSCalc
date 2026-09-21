@@ -5355,3 +5355,42 @@ test("Double Attack exposes its proc swing's hit chance (+1 HIT per level)", () 
   const none = run(0, 80).r;
   assert.equal(none.double_hit_chance, null, "no Double Attack, no bonus");
 });
+
+// PS patch notes (2026-09-21 audit): "Fixed issue with Twinorc Card where its DEF
+// penetration did not work" and "Fixed issue where Indignant Soul Card did not reduce cast
+// delay of Soul Strike". Both already worked here; this pins them. Twinorc (item 8089):
+// pierce 4% of a Poison monster's DEF at +0..5, 8% at +6 and up (tools.payonstories.com).
+// Indignant Soul (8090): Soul Strike / Napalm Beat -10% after-cast delay, +20% damage.
+test("Twinorc Card pierces Poison DEF by refine; Indignant Soul cuts Soul Strike's delay", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const defNote = (card, refine) => {
+    const equipped = { right_hand: 1201, ...(card ? { right_hand_card1: 8089 } : {}) };
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 6, base_level: 99, job_level: 50,
+      base_stats: { str: 80, agi: 1, vit: 1, int: 1, dex: 60, luk: 1 }, equipped, refine: { right_hand: refine },
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1378), eff, gb, // Poison, DEF 48
+    );
+    return r.normal.steps.find((s) => /Defense Fix/.test(s.name)).note;
+  };
+  assert.match(defNote(false, 7), /Hard DEF 48 →\s*×/, "no card, no pierce");
+  assert.match(defNote(true, 5), /Hard DEF 48 → 46 \(-4% ignored\)/, "+5: 4% of 48, floored");
+  assert.match(defNote(true, 6), /Hard DEF 48 → 44 \(-8% ignored\)/, "+6: 8% of 48, floored");
+
+  const { calculateSkillTiming } = require("../src/engine/calculators/skillTiming");
+  const afterCast = (card) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 9, base_level: 99, job_level: 50,
+      base_stats: { str: 1, agi: 1, vit: 1, int: 90, dex: 90, luk: 1 },
+      equipped: { head_top: 2220, ...(card ? { head_top_card1: 8090 } : {}) },
+    });
+    const [gb, , , status] = resolvePlayerState(b, cfg, PS);
+    const id = loader.getSkillIdByName("MG_SOULSTRIKE");
+    return calculateSkillTiming("MG_SOULSTRIKE", 10, loader.getSkill(id), status, gb, {}, PS)[1];
+  };
+  assert.equal(afterCast(false), 1800);
+  assert.equal(afterCast(true), 1620, "Indignant Soul: -10% Soul Strike after-cast delay");
+});
