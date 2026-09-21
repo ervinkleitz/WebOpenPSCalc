@@ -555,6 +555,9 @@ class DataLoader {
       // skill_type exception below, and PS_BF_MAGIC_RATIOS in
       // serverProfiles.js for where the level is actually consumed.
       "MG_FROSTDIVER", "MG_FIREWALL",
+      // Same idea for the Assassin: Poison React's level adds 30% x lv ATK to Venom
+      // Splasher (wiki Venom_Splasher, "Interaction with other skills").
+      "AS_POISONREACT",
       // PS High Wizard rework: Soul Drain grants +1% MaxHP per level passively.
       "HW_SOULDRAIN",
       // Crusader Faith: +5% Holy resistance and +200 MaxHP per level. Both feed
@@ -601,7 +604,7 @@ class DataLoader {
     // These are active (non-passive) skills, normally excluded by the
     // skill_type check below -- carved out because their level still feeds
     // into a damage formula (see DAMAGE_RELEVANT comment above).
-    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "HT_BLITZBEAT", "AS_ENCHANTPOISON", "MO_TRIPLEATTACK", "HW_SOULDRAIN", "GS_DUST", "GS_FULLBUSTER", "GS_SPREADATTACK", "AM_PHARMACY",
+    const ACTIVE_SKILL_TYPE_EXCEPTIONS = new Set(["MG_FROSTDIVER", "MG_FIREWALL", "AS_POISONREACT", "HT_BLITZBEAT", "AS_ENCHANTPOISON", "MO_TRIPLEATTACK", "HW_SOULDRAIN", "GS_DUST", "GS_FULLBUSTER", "GS_SPREADATTACK", "AM_PHARMACY",
       // Sense is an ACTIVE skill whose PS version also grants a passive +2% resist to
       // Fire/Water/Wind/Earth (buildManager.js reads its level), so it needs a level in
       // the passive panel like the others here.

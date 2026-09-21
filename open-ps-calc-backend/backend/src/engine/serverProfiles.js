@@ -587,8 +587,12 @@ const PS_BF_WEAPON_RATIOS = {
   // states an intent that the live server did not implement as written, so for
   // this skill the per-level table outranks it. Reported in-game at 600%.
   RG_BACKSTAP: (lv) => 200 + 40 * lv,
+  // wiki.payonstories.com/Venom_Splasher: 550% at Lv1 -> 1000% at Lv10, and "Poison React
+  // adds extra (30% * Skill level)% ATK passive bonus" - up to 1300%. The Poison React term
+  // used to read a skill_param nothing ever set, so it was always 0 (reported 2026-09-21).
+  // It now reads the character's Poison React level, set in the Passive skills panel.
   AS_SPLASHER: (lv, tgt, ctx) => {
-    const poisonLv = ctx ? (ctx.skill_params.AS_SPLASHER_poison_react_lv ?? 0) : 0;
+    const poisonLv = ctx ? (ctx.skill_levels.AS_POISONREACT ?? 0) : 0;
     return 500 + 50 * lv + 30 * poisonLv;
   },
   CR_SHIELDBOOMERANG: (lv) => 100 + 40 * lv,

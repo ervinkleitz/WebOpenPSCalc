@@ -5284,3 +5284,74 @@ test("endow beats a weapon's own script element; unrelated ammo doesn't leak int
     support_buffs: { weapon_endow_sc: "SC_PROPERTYWIND" },
   }).startsWith("Wind vs"), "an active endow still beats the weapon's own script with scripted ammo also equipped");
 });
+
+// Venom Splasher's Poison React term (wiki Venom_Splasher: "Poison React adds extra (30% *
+// Skill level)% ATK passive bonus") read a skill_param nothing ever set, so it was always 0
+// and the skill capped at 1000% instead of 1300% (Laila, 2026-09-21). It now reads the
+// character's Poison React level, which the Assassin sets in the Passive skills panel.
+test("Venom Splasher gains +30% per Poison React level, set from the Passive skills panel", () => {
+  const vs = PS.weapon_ratios.AS_SPLASHER;
+  assert.equal(vs(10, null, { skill_levels: {} }), 1000, "no Poison React: 1000% at Lv10");
+  assert.equal(vs(10, null, { skill_levels: { AS_POISONREACT: 5 } }), 1150);
+  assert.equal(vs(10, null, { skill_levels: { AS_POISONREACT: 10 } }), 1300, "max 1300%");
+  assert.equal(vs(1, null, { skill_levels: { AS_POISONREACT: 10 } }), 850, "Lv1 550% + 300%");
+
+  const pr = loader.getPassiveSkillsForJob(12).find((s) => s.name === "AS_POISONREACT");
+  assert.ok(pr, "an Assassin can set Poison React");
+  assert.equal(pr.max_level, 10);
+  assert.ok(loader.getPassiveSkillsForJob(4013).some((s) => s.name === "AS_POISONREACT"), "Assassin Cross too");
+  assert.ok(!loader.getPassiveSkillsForJob(6).some((s) => s.name === "AS_POISONREACT"), "a Thief cannot learn it");
+
+  // End to end: the panel's level reaches the damage.
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const hit = (prLv) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 12, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 1, int: 1, dex: 60, luk: 1 },
+      equipped: { right_hand: 1201 }, mastery_levels: { AS_POISONREACT: prLv },
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, PS);
+    const id = loader.getSkillIdByName("AS_SPLASHER");
+    return new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id, level: 10 }), loader.getMonster(1002), eff, gb,
+    ).normal.avg_damage;
+  };
+  const r = hit(10) / hit(0);
+  assert.ok(Math.abs(r - 1.3) < 0.02, `Poison React 10 should scale Venom Splasher by ~1.3x, got ${r}`);
+});
+
+// Double Attack's "+1 HIT per level, only on a Double Attack" was always priced but never
+// shown, so it read as missing (Laila, 2026-09-21). The result now carries the proc
+// swing's own hit chance and the bonus behind it for the Double Attack panel.
+test("Double Attack exposes its proc swing's hit chance (+1 HIT per level)", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const run = (daLv, dex) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 6, base_level: 50, job_level: 40,
+      base_stats: { str: 50, agi: 1, vit: 1, int: 1, dex, luk: 1 },
+      equipped: { right_hand: 1201 }, mastery_levels: { TF_DOUBLE: daLv },
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1208), eff, gb,
+    );
+    return { r, hit: status.hit };
+  };
+  const { r, hit } = run(10, 80);
+  assert.ok(r.hit_chance < 90, `test build must miss often, got ${r.hit_chance}`);
+  assert.equal(r.double_hit_bonus, 10);
+  const [expected] = calculateHitChance({ hit: hit + 10 }, createTarget(loader.getMonster(1208)), cfg, "", 1);
+  assert.ok(Math.abs(r.double_hit_chance - Math.min(100, expected)) < 1e-6,
+    `proc swing hit ${r.double_hit_chance} should be the +10 HIT chance ${expected}`);
+  assert.ok(r.double_hit_chance > r.hit_chance, "the proc swing hits more often");
+
+  const capped = run(10, 250).r;
+  if (capped.hit_chance >= 100) {
+    assert.equal(capped.double_hit_chance, null, "nothing to show when hit is already 100%");
+    assert.equal(capped.double_hit_bonus, 0);
+  }
+  const none = run(0, 80).r;
+  assert.equal(none.double_hit_chance, null, "no Double Attack, no bonus");
+});

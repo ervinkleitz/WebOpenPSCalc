@@ -77,6 +77,8 @@ interface SingleResult {
     katar_second_crit?: DamageBranch;
     katar_proc_chance?: number;
     double_hit?: DamageBranch | null;
+    double_hit_chance?: number | null; // hit chance of the swing that procs Double Attack (with its +HIT)
+    double_hit_bonus?: number;         // the +HIT behind it (= Double Attack level)
     proc_chance?: number;
     double_proc_label?: string | null;
     ta_proc_chance?: number;
@@ -449,8 +451,9 @@ function TripleAttackView({ branch, chance, label }: { branch: DamageBranch; cha
 // subtraction, the refine bonus and the masteries are each paid once for the pair. That
 // is why two hits come to less than two normal attacks, and why the client's two numbers
 // are each below a normal hit — it splits the total.
-function DoubleAttackView({ branch, chance, label, taChance }: {
+function DoubleAttackView({ branch, chance, label, taChance, baseHit, procHit, hitBonus }: {
   branch: DamageBranch; chance: number; label: string; taChance: number;
+  baseHit?: number; procHit?: number | null; hitBonus?: number;
 }) {
   const n = (v: number) => Math.round(v).toLocaleString();
   const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
@@ -486,6 +489,13 @@ function DoubleAttackView({ branch, chance, label, taChance }: {
       </div>
 
       <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
+        {/* Double Attack adds +1 HIT per level, but only to the swing that procs it. It was
+            always in the DPS; without this line nothing on the page showed it. */}
+        {procHit != null && hitBonus != null && hitBonus > 0 && (
+          <span className="self-damage-chip">
+            hits {procHit.toFixed(1)}% of the time — {baseHit != null ? `${baseHit.toFixed(1)}% ` : ""}+{hitBonus} HIT on a {label} swing
+          </span>
+        )}
         <span className="self-damage-chip muted">one damage roll, landed twice</span>
         <span className="self-damage-chip muted">
           DEF, refine and masteries are paid once for the pair
@@ -1173,6 +1183,9 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           chance={doubleHit.chance}
           label={doubleHit.label}
           taChance={normal_attack.result.ta_proc_chance ?? 0}
+          baseHit={normal_attack.result.hit_chance}
+          procHit={normal_attack.result.double_hit_chance ?? null}
+          hitBonus={normal_attack.result.double_hit_bonus ?? 0}
         />
       )}
 

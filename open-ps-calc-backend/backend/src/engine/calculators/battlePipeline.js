@@ -2805,6 +2805,12 @@ class BattlePipeline {
         ? (doubleProcKey === "GS_CHAINACTION" ? "Chain Action" : "Double Attack")
         : null,
       double_hit: doubleSwing,
+      // Double Attack's "+1 HIT per skill level, only on a Double Attack" (PS wiki). It was
+      // always priced (hDouble above) but never shown, so players read it as missing
+      // (reported 2026-09-21). Null when it changes nothing (base hit already 100%, or not
+      // Double Attack - Chain Action carries no such bonus).
+      double_hit_chance: hDouble != null ? hDouble * 100 : null,
+      double_hit_bonus: hDouble != null ? tfDoubleLv : 0,
       katar_second: katarSecond,
       katar_second_crit: katarSecondCrit,
       katar_proc_chance: katarProcChance,

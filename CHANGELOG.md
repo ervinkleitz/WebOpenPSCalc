@@ -5,6 +5,25 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-21
+
+### Added
+
+- **The Double Attack panel now shows its bonus HIT.** Double Attack adds +1 HIT per skill
+  level, but only on the swing that procs it. That was always counted in your DPS, but
+  nothing on the page said so, so it looked missing. The Double Attack panel now states the
+  proc swing's own hit chance, e.g. "hits 46.0% of the time — 36.0% +10 HIT on a Double
+  Attack swing". It only appears when the bonus changes something (your hit is below 100%).
+  Reported by a player.
+
+### Fixed
+
+- **Poison React now boosts Venom Splasher.** Venom Splasher gains +30% ATK per Poison React
+  level, up to 1300% at Venom Splasher 10 with Poison React 10. The calculator had no way to
+  set your Poison React level, so the bonus was always zero and Venom Splasher stopped at
+  1000%. Poison React is now in the Assassin's Passive skills panel (Assassin and Assassin
+  Cross), and setting it raises Venom Splasher's damage. Reported by a player.
+
 ## 2026-09-19
 
 ### Added
