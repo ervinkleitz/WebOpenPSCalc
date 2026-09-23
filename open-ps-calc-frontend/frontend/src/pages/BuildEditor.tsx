@@ -1068,7 +1068,30 @@ export default function BuildEditor() {
   const mobBuffedElement = mobBuffed?.element ?? mobInfo?.element ?? null;
 
   const blessingOnMob = !!targetMods.offensive_blessing && offensiveBlessingApplies;
-  const mobEffDex = mobStats ? (blessingOnMob ? Math.floor(mobStats.dex / 2) : mobStats.dex) : null;
+
+  // What YOUR debuffs do to the monster's AGI and DEX. Mirrors the engine exactly:
+  // Quagmire takes 10% of each per level and Hypothermia a flat 10 DEX
+  // (targetSelfBuffs.applyIncomingDebuffs), Decrease AGI a flat 3 AGI per level
+  // (routes/calculate.ts); bosses are immune to all three. Offensive Blessing halves
+  // DEX afterwards, the same order the engine applies them in.
+  //
+  // These two stats drive OPPOSITE directions, which is the whole reason the panel
+  // shows four numbers: the monster's AGI is its Flee (how often YOU hit it), its DEX
+  // is its HIT (how often IT hits you, shown as the Flee you need to dodge it). Only
+  // the AGI half used to reach this panel, so Quagmire looked like it was being
+  // deducted twice from one stat and not at all from the other (reported 2026-09-22).
+  const mobImmune = !!mobInfo?.is_boss;
+  const mobDebuffedAgi = mobStats ? Math.max(0, mobStats.agi
+    - (mobImmune ? 0 : Math.floor((mobInfo?.stats?.agi ?? 0) * 10 * quagmireLv / 100))
+    - (mobImmune ? 0 : Math.min(mobInfo?.stats?.agi ?? 0, 3 * decreaseAgiLv))) : null;
+  const mobDebuffedDex = mobStats ? Math.max(0, (() => {
+    let dex = mobStats.dex;
+    if (mobImmune) return dex;
+    if (quagmireLv > 0) dex -= Math.floor(dex * 10 * quagmireLv / 100);
+    if (targetMods.hypothermia) dex -= 10;
+    return dex;
+  })()) : null;
+  const mobEffDex = mobDebuffedDex != null ? (blessingOnMob ? Math.floor(mobDebuffedDex / 2) : mobDebuffedDex) : null;
   const mobBaseDodgeFlee = mobInfo?.stats ? mobInfo.level + mobInfo.stats.dex + 75 : null;
   const mobDodgeFlee = mobEffDex != null && mobInfo ? mobInfo.level + mobEffDex + 75 : null;
 
@@ -3584,13 +3607,13 @@ export default function BuildEditor() {
                         { label: "MDEF",    value: mobInfo.mdef != null ? String(mobInfo.mdef) : undefined },
                         { label: "ATK",     value: (mobInfo.atk_min != null && mobInfo.atk_max != null) ? `${mobInfo.atk_min}–${mobInfo.atk_max}` : undefined },
                         { label: "STR",     value: mobInfo.stats ? String(mobInfo.stats.str) : undefined },
-                        { label: "AGI",     value: mobInfo.stats ? (mobStats && mobStats.agi !== mobInfo.stats.agi ? `${mobInfo.stats.agi} → ${mobStats.agi}` : String(mobInfo.stats.agi)) : undefined, title: mobStats && mobInfo.stats && mobStats.agi !== mobInfo.stats.agi ? "Raised by a self-buff you have ticked below." : undefined },
+                        { label: "AGI",     value: mobInfo.stats ? (mobDebuffedAgi != null && mobDebuffedAgi !== mobInfo.stats.agi ? `${mobInfo.stats.agi} → ${mobDebuffedAgi}` : String(mobInfo.stats.agi)) : undefined, title: mobDebuffedAgi != null && mobInfo.stats && mobDebuffedAgi !== mobInfo.stats.agi ? "Its AGI is its Flee — what you have to beat to land a hit. Moved by a self-buff you ticked, or cut by Quagmire / Decrease AGI." : "Its AGI is its Flee — what you have to beat to land a hit." },
                         { label: "VIT",     value: mobInfo.stats ? String(mobInfo.stats.vit) : undefined },
                         { label: "INT",     value: mobInfo.stats ? String(mobInfo.stats.int) : undefined },
-                        { label: "DEX",     value: mobInfo.stats ? (mobEffDex != null && mobEffDex !== mobInfo.stats.dex ? `${mobInfo.stats.dex} → ${mobEffDex}` : String(mobInfo.stats.dex)) : undefined, title: mobEffDex != null && mobInfo.stats && mobEffDex !== mobInfo.stats.dex ? (blessingOnMob ? "Halved by offensive Blessing; a ticked self-buff raises it." : "Raised by a self-buff you have ticked below.") : undefined },
+                        { label: "DEX",     value: mobInfo.stats ? (mobEffDex != null && mobEffDex !== mobInfo.stats.dex ? `${mobInfo.stats.dex} → ${mobEffDex}` : String(mobInfo.stats.dex)) : undefined, title: `Its DEX is its HIT (level + DEX) — how often it lands on you.${mobEffDex != null && mobInfo.stats && mobEffDex !== mobInfo.stats.dex ? ` Moved by${blessingOnMob ? " offensive Blessing (halved)," : ""}${quagmireLv > 0 ? ` Quagmire Lv${quagmireLv} (−10% per level),` : ""}${targetMods.hypothermia ? " Hypothermia (−10)," : ""} or a ticked self-buff.`.replace(/,( or)?$/, "").replace(/,$/, "") : ""}` },
                         { label: "LUK",     value: mobInfo.stats ? String(mobInfo.stats.luk) : undefined },
-                        { label: "Flee",    value: mobBaseFlee != null ? (mobEffFlee !== mobBaseFlee ? `${mobBaseFlee} → ${mobEffFlee}` : String(mobBaseFlee)) : undefined, title: `The monster's own soft FLEE (level + AGI). ${mobEffFlee !== mobBaseFlee ? `Quagmire Lv${quagmireLv} lowers it from ${mobBaseFlee} to ${mobEffFlee}, raising your hit chance.` : "Lowered by Quagmire (−AGI)."}` },
-                        { label: "Flee 95%", value: mobDodgeFlee != null ? (mobDodgeFlee !== mobBaseDodgeFlee ? `${mobBaseDodgeFlee} → ${mobDodgeFlee}` : mobDodgeFlee.toLocaleString()) : undefined, title: `FLEE to dodge this monster 95% of the time (mob level + DEX + 75 = ${mobDodgeFlee ?? "?"}).${mobDodgeFlee !== mobBaseDodgeFlee ? ` Its DEX is ${blessingOnMob ? "halved by offensive Blessing" : "raised by a self-buff you have ticked"}, moving it from ${mobBaseDodgeFlee}.` : ""} Soft-flee only — Perfect Dodge is separate, and FLEE drops when several mobs attack at once.` },
+                        { label: "Flee",    value: mobBaseFlee != null ? (mobEffFlee !== mobBaseFlee ? `${mobBaseFlee} → ${mobEffFlee}` : String(mobBaseFlee)) : undefined, title: `The monster's own soft FLEE (level + AGI) — what YOUR hit chance is measured against. ${mobEffFlee !== mobBaseFlee ? `Quagmire / Decrease AGI lower it from ${mobBaseFlee} to ${mobEffFlee}, raising your hit chance.` : "Quagmire and Decrease AGI lower it (−AGI), raising your hit chance."} Not the same as Flee 95%, which is about dodging IT.` },
+                        { label: "Flee 95%", value: mobDodgeFlee != null ? (mobDodgeFlee !== mobBaseDodgeFlee ? `${mobBaseDodgeFlee} → ${mobDodgeFlee}` : mobDodgeFlee.toLocaleString()) : undefined, title: `YOUR FLEE needed to dodge this monster 95% of the time (its level + DEX + 75 = ${mobDodgeFlee ?? "?"}) — the opposite direction to the Flee card above, which is its own.${mobDodgeFlee !== mobBaseDodgeFlee ? ` Its DEX is cut by what you have applied (Quagmire, Hypothermia, offensive Blessing) or raised by a self-buff, moving this from ${mobBaseDodgeFlee}.` : ""} Soft-flee only — Perfect Dodge is separate, and FLEE drops when several mobs attack at once.` },
                         { label: "HIT 100%", value: mobHit100 != null ? (mobHit100 !== mobBaseHit100 ? `${mobBaseHit100} → ${mobHit100}` : String(mobHit100)) : undefined, title: `HIT to land every attack on this monster (hit% = 80 + HIT − flee → 100% at flee + 20 = ${mobHit100 ?? "?"}).${mobHit100 !== mobBaseHit100 ? ` Quagmire Lv${quagmireLv} lowers it from ${mobBaseHit100} to ${mobHit100}.` : ""} Your HIT is in the Character stats readout.` },
                       ] as { label: string; value?: string; title?: string }[]).map(({ label, value, title }) => (
                         <div key={label} className="sec-stat-card" title={title}>

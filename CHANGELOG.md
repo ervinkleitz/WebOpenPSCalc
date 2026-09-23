@@ -22,6 +22,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **The Target panel now shows what your debuffs do to the monster's DEX.** Its AGI is its
+  Flee (what your hit chance is measured against) and its DEX is its HIT (shown as the Flee
+  you'd need to dodge it 95% of the time) — but only the AGI side ever reflected Quagmire, so
+  the cut looked like it was being taken twice out of one stat and not at all from the other.
+  The AGI and DEX rows now show their own before → after, and "Flee 95%" follows the monster's
+  debuffed DEX, so it finally agrees with the dodge figure in the Survivability panel: against
+  a Quagmire Lv5 + Hypothermia'd Teddy Bear both now read 197, where the Target panel used to
+  insist on 267. The tooltips also say which of the two directions each row is about. Reported
+  by a player.
+
 - **Alice Card now works against a monster's melee.** Its 40% resistance to Boss monsters (and
   the 40% extra damage from Normal ones) applied only to magic damage; a monster's physical hits
   ignored it completely. Against Stormy Knight the same test build now takes 853 per hit instead
