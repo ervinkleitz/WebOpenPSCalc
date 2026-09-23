@@ -52,7 +52,7 @@ await page.waitForTimeout(2500);
 await page.getByRole("button", { name: /calculate damage/i }).first().click();
 await page.waitForTimeout(4500);
 
-const panel = page.locator(".surv-panel, .breakdown-view", { hasText: /Survivability/ }).first();
+const panel = page.locator(".surv-view").first();
 const lines = await page.locator(".surv-line").allInnerTexts();
 const wind = lines.map((t) => t.replace(/\s+/g, " ")).find((t) => /^Wind attack/.test(t));
 console.log("Wind line:", wind);
