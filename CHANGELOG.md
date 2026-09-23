@@ -9,6 +9,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Monster attacks that splash around the caster now count against you.** Magnum Break,
+  Pulse Strike, Meteor Assault, Vampire Gift and the like are aimed by the monster at
+  itself, and everything standing next to it takes the hit — but the calculator filed them
+  as self-buffs, so they never appeared in the monster's skill list and reported "no direct
+  damage" if you found them. Golden Thief Bug's Magnum Break (Lv20, 500% of its ATK) now
+  shows as 4,377–5,682 against a test Knight. Grand Cross, Grand Darkness and Earthquake
+  also hit you and are now listed as real attacks, but marked **not modeled yet**: the first
+  two deal weapon and magic damage in one hit, which this panel can't express as one number,
+  and the emulators disagree on what Earthquake even is. Better to say so than to print a
+  figure we can't stand behind.
+
 - **Monster elemental attacks hit far harder than the calculator showed.** A monster's
   elemental attack scales with the level it casts at — Stormy Knight's Wind Attribute Attack
   is Lv4, so it lands for 400% of its ATK, and Orc Lord's Earth attack Lv5 for 500%. The

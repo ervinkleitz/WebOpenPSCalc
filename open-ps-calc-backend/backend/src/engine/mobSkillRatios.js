@@ -118,6 +118,13 @@ const MOB_SKILL_RATIOS = {
   NPC_POISON:        () => 100,
   NPC_BLEEDING:      () => 100,
 
+  // Self-centred splash attacks (SELF_CENTRED_AOE) that no other map prices.
+  // skillratio += ((skill_lv-1)%5+1) * 100  (battle.c: NPC_VAMPIRE_GIFT).
+  NPC_VAMPIRE_GIFT: (lv) => 100 + ((lv - 1) % 5 + 1) * 100,
+  // skillratio += 40*skill_lv - 60  (battle.c pre-renewal branch; the +100/+120×lv
+  // form above it is RENEWAL and PS is pre-re).
+  ASC_METEORASSAULT: (lv) => 40 + 40 * lv,
+
   // Eight mobs cast the PLAYER-id Spiral Pierce (397) rather than the clone (8218).
   // A monster has no weapon to weigh, so the weapon-weight formula that makes the
   // player's version unported simply doesn't apply to it — cast by a mob it is the
@@ -237,6 +244,15 @@ const FLAT_UNMODELED_SKILLS = new Set([
   // dmg:false, so they never reach the damage path here anyway (kept for
   // completeness — the incoming pipeline has no flat/self-HP branch).
   "NPC_SELFDESTRUCTION",
+  // Grand Cross and its monster twin deal a physical AND a magic half in one hit
+  // (the engine models that for the player's own cast, with two Attr Fix passes);
+  // the incoming pipeline runs one or the other, so a single ratio would print a
+  // number that is wrong by the missing half.
+  "CR_GRANDCROSS", "NPC_GRANDDARKNESS",
+  // Earthquake: Hercules types it Misc, rAthena Magic, and the atk2 term that would
+  // decide it is disabled behind `#if 0` in battle.c ("Can't find any source about
+  // this one even in aegis"). It hits you — the figure is what we don't have.
+  "NPC_EARTHQUAKE",
   "NPC_SMOKING",          // md.damage = 3 (negligible; also self-targeted)
 ]);
 
@@ -266,6 +282,32 @@ const ELE_NAME_TO_INT = {
 // "Fire attack" / "Wind attack" line in the survivability panel — were reported as
 // "no direct damage" or fell back to a plain 100% attack. It also meant the
 // NPC_HELLJUDGEMENT / NPC_PULSESTRIKE ratios above could never fire.
+// Skills a monster aims at ITSELF that splash damage onto everything standing around
+// it — so they land on you, even though the skill's target is "Self". The caller only
+// prices foe-targeted skills, so these were classified as support and reported as
+// doing nothing: a Magnum Break cast by any of the 33 monsters that know it, and every
+// Pulse Strike, said "no direct damage". rAthena marks each of these `TargetType: Self`
+// with a damage type and `Splash: true`; Hercules prices them all in
+// battle_calc_skillratio(). Self-targeted skills that really are support (Endure,
+// Two-Hand Quicken, the summons) stay out, so they keep reporting no damage.
+const SELF_CENTRED_AOE = new Set([
+  "SM_MAGNUM",          // Fire splash, and the mob version is the same ratio
+  "ASC_METEORASSAULT",
+  "WZ_SIGHTRASHER",
+  "WZ_FROSTNOVA",
+  "NPC_PULSESTRIKE",
+  "NPC_HELLJUDGEMENT",
+  "NPC_VAMPIRE_GIFT",
+  // These three also hit you, but are listed as unpriced (FLAT_UNMODELED_SKILLS):
+  // Grand Cross / Grand Darkness deal ATK **and** MATK in one hit, which the incoming
+  // pipeline cannot express as a single ratio, and Earthquake's own typing disagrees
+  // between emulators (Hercules Misc, rAthena Magic) while its extra atk2 term sits
+  // behind `#if 0` in battle.c. Better to say "not modeled" than print a wrong number.
+  "CR_GRANDCROSS",
+  "NPC_GRANDDARKNESS",
+  "NPC_EARTHQUAKE",
+]);
+
 const MOB_SKILL_ATTACK_TYPE = {};
 for (const n of [
   "NPC_WATERATTACK", "NPC_GROUNDATTACK", "NPC_FIREATTACK", "NPC_WINDATTACK",
@@ -275,7 +317,14 @@ for (const n of [
   "NPC_RANDOMATTACK", "NPC_HELLJUDGEMENT", "NPC_PULSESTRIKE",
   "NPC_BLINDATTACK", "NPC_CURSEATTACK", "NPC_SILENCEATTACK", "NPC_SLEEPATTACK",
   "NPC_STUNATTACK", "NPC_PETRIFYATTACK", "NPC_POISON", "NPC_BLEEDING",
+  // Self-centred splash hits with the same bad "Misc" typing (rAthena: Weapon).
+  "NPC_VAMPIRE_GIFT", "ASC_METEORASSAULT",
 ]) MOB_SKILL_ATTACK_TYPE[n] = "Weapon";
+// Earthquake is the one case where the emulators disagree (Hercules Misc, rAthena
+// Magic). Typed here only so it is classified as a DAMAGE skill rather than support —
+// it carries no ratio, so the panel shows its element and type and says "not modeled
+// yet" instead of a number picked from whichever emulator we trusted.
+MOB_SKILL_ATTACK_TYPE.NPC_EARTHQUAKE = "Magic";
 function resolveMobSkillDamage(skillId, level, profile, mob) {
   const sk = loader.getSkill(skillId);
   if (!sk) return null;
@@ -300,7 +349,7 @@ function resolveMobSkillDamage(skillId, level, profile, mob) {
   const eleName = Array.isArray(sk.element) ? atLv(sk.element) : sk.element;
   const elementInt = ELE_NAME_TO_INT[eleName] ?? 0;
   const targetsFoe = Array.isArray(sk.skill_type)
-    ? sk.skill_type.some((t) => t === "Enemy" || t === "Place")
+    ? sk.skill_type.some((t) => t === "Enemy" || t === "Place") || SELF_CENTRED_AOE.has(sk.name)
     : true;
   const name = sk.name;
 
@@ -411,5 +460,5 @@ function resolveMobSkillDamage(skillId, level, profile, mob) {
 module.exports = {
   resolveMobSkillDamage,
   MOB_SKILL_RATIOS, NO_HP_DAMAGE_SKILLS, FLAT_UNMODELED_SKILLS, MOB_SKILL_ALIASES,
-  MOB_SKILL_TARGET_STAT_DAMAGE, MOB_SKILL_ATTACK_TYPE,
+  MOB_SKILL_TARGET_STAT_DAMAGE, MOB_SKILL_ATTACK_TYPE, SELF_CENTRED_AOE,
 };

@@ -319,7 +319,15 @@ class DataLoader {
   // across PS, so this is a single pre-re table.
   getMobSkills(mobId) {
     try {
-      return this._loadJson("db/mob_skill_db.json")[String(mobId)] || [];
+      const list = this._loadJson("db/mob_skill_db.json")[String(mobId)] || [];
+      // `dmg` was generated as "Magic|Weapon AND targets a foe", which drops the
+      // skills a monster aims at itself to splash damage around it (Magnum Break,
+      // Pulse Strike, Grand Cross…). They hurt you like any other cast, so they
+      // belong in the list of skills the survivability panel offers. Derived here
+      // rather than regenerated into the file, so one set governs both this flag
+      // and the pricing. Lazy require: mobSkillRatios requires this module.
+      const { SELF_CENTRED_AOE } = require("./mobSkillRatios");
+      return list.map((s) => (s.dmg || !SELF_CENTRED_AOE.has(s.name) ? s : { ...s, dmg: true }));
     } catch {
       return [];
     }

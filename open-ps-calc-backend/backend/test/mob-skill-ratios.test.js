@@ -353,3 +353,58 @@ test("Monster elemental attacks are weapon hits at 100% per level, not 'no damag
   assert.strictEqual(pulse.attackType, "Weapon", "the db typing is corrected");
   assert.deepEqual(loader.getSkillByName("NPC_PULSESTRIKE").skill_type, ["Self"], "still unpriced for this reason");
 });
+
+// Skills a monster aims at ITSELF to splash damage around it (Magnum Break, Pulse
+// Strike, Grand Cross…) were classified as support and reported "no direct damage",
+// because the caller prices only foe-targeted skills. They land on you all the same:
+// rAthena marks each `TargetType: Self` with a damage type and `Splash: true`, and
+// Hercules prices them in battle_calc_skillratio(). Follow-up to the 2026-09-22
+// elemental-attack report, which surfaced the same classification gap.
+test("Self-targeted splash attacks damage you, and real self-buffs still do not", () => {
+  const { resolveMobSkillDamage, SELF_CENTRED_AOE, FLAT_UNMODELED_SKILLS: FLAT } = require("../src/engine/mobSkillRatios");
+  const profile = getProfile("payon_stories");
+  loader.setProfile(profile);
+  const at = (name, lv, mobId) => {
+    const sk = loader.getSkillByName(name);
+    return resolveMobSkillDamage(sk.id, lv, profile, loader.getMonsterData(mobId));
+  };
+
+  // Priced, and Magnum Break through the accurate player ratio (100 + 20×lv) rather
+  // than an NPC_ estimate — Golden Thief Bug casts it at Lv20, above the player cap.
+  const magnum = at("SM_MAGNUM", 20, 1086);
+  assert.strictEqual(magnum.damageType, "damage", "Magnum Break hits everyone next to the caster");
+  assert.strictEqual(magnum.ratio, 500);
+  assert.strictEqual(magnum.estimated, false, "priced from the player ratio map, not a baseline guess");
+
+  assert.strictEqual(at("NPC_PULSESTRIKE", 5, 1751).ratio, 500);
+  assert.strictEqual(at("NPC_HELLJUDGEMENT", 10, 1373).ratio, 1000);
+  // skillratio += ((lv-1)%5+1) * 100
+  assert.strictEqual(at("NPC_VAMPIRE_GIFT", 1, 1867).ratio, 200);
+  assert.strictEqual(at("NPC_VAMPIRE_GIFT", 5, 1867).ratio, 600);
+  // pre-renewal Meteor Assault: skillratio += 40*lv - 60
+  assert.strictEqual(at("ASC_METEORASSAULT", 10, 1647).ratio, 440);
+  for (const s of ["SM_MAGNUM", "NPC_PULSESTRIKE", "NPC_HELLJUDGEMENT", "NPC_VAMPIRE_GIFT", "ASC_METEORASSAULT"]) {
+    assert.strictEqual(at(s, 5, 1086).damageType, "damage", `${s} deals damage`);
+  }
+
+  // These three hurt you but carry no honest number: Grand Cross / Grand Darkness are
+  // ATK+MATK in one hit, Earthquake's typing disagrees between emulators. They must
+  // read as "not modeled yet" (a damage skill with no figure), never as harmless.
+  for (const [s, mobId] of [["CR_GRANDCROSS", 1096], ["NPC_GRANDDARKNESS", 1373], ["NPC_EARTHQUAKE", 1751]]) {
+    const r = at(s, 5, mobId);
+    assert.strictEqual(r.damageType, "damage", `${s} must not read as harmless`);
+    assert.strictEqual(r.hasNumber, false, `${s} must not print a fabricated number`);
+    assert.ok(FLAT.has(s), `${s} belongs in FLAT_UNMODELED_SKILLS`);
+  }
+
+  // Self-targeted skills that really are support keep saying so.
+  for (const s of ["SM_ENDURE", "KN_TWOHANDQUICKEN", "NPC_SUMMONSLAVE", "AS_CLOAKING"]) {
+    assert.ok(!SELF_CENTRED_AOE.has(s), `${s} is a buff, not a splash attack`);
+    assert.strictEqual(at(s, 5, 1086).damageType, "status", `${s} deals no damage`);
+  }
+
+  // And the monster's skill list must offer them, which it does through the same set
+  // (the generated `dmg` flag was "Magic|Weapon AND targets a foe", so it missed them).
+  const gtb = loader.getMobSkills(1086).find((s) => s.name === "SM_MAGNUM");
+  assert.ok(gtb && gtb.dmg === true, "Golden Thief Bug's Magnum Break must be listed as a damage skill");
+});
