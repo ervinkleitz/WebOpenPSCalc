@@ -299,3 +299,57 @@ test("the defender's size/race/boss resists reduce incoming damage, magic includ
   const ratio = both.magic / bare.magic;
   assert.ok(ratio > 0.660 && ratio < 0.667, `expected ≈0.665, got ${ratio.toFixed(4)}`);
 });
+
+// The elemental monster attacks — every "Fire attack" / "Wind attack" line on the
+// survivability panel — were reported as "no direct damage" or priced as a plain
+// 100% hit, because our Hercules-derived skill_db types the whole NPC_ attack family
+// "Misc". That typing cannot be right: battle_calc_misc_attack() has no case for any
+// of them, so a Misc typing means zero damage, while their real damage sits in
+// battle_calc_skillratio()'s WEAPON branch (battle.c:2194-2211, skillratio +=
+// 100*(lv-1)) and they take the weapon path's +20 hit bonus (battle.c:5295-5312).
+// rAthena types every one of them `Type: Weapon`, agreeing with that code.
+// Reported in-game as MVP elemental damage reading far too low (2026-09-22).
+test("Monster elemental attacks are weapon hits at 100% per level, not 'no damage'", () => {
+  const { resolveMobSkillDamage, MOB_SKILL_ATTACK_TYPE } = require("../src/engine/mobSkillRatios");
+  const profile = getProfile("payon_stories");
+  loader.setProfile(profile);
+
+  for (const s of ["NPC_WATERATTACK", "NPC_GROUNDATTACK", "NPC_FIREATTACK", "NPC_WINDATTACK",
+                   "NPC_POISONATTACK", "NPC_HOLYATTACK", "NPC_DARKNESSATTACK", "NPC_UNDEADATTACK",
+                   "NPC_TELEKINESISATTACK", "NPC_ACIDBREATH", "NPC_DARKNESSBREATH",
+                   "NPC_FIREBREATH", "NPC_ICEBREATH", "NPC_THUNDERBREATH"]) {
+    assert.strictEqual(MOB_SKILL_RATIOS[s](1), 100, `${s} lv1`);
+    assert.strictEqual(MOB_SKILL_RATIOS[s](4), 400, `${s} lv4`);
+    assert.strictEqual(MOB_SKILL_ATTACK_TYPE[s], "Weapon", `${s} must be priced as a weapon hit`);
+  }
+  // Its own case: skillratio += 100*lv => 100 + 100*lv.
+  assert.strictEqual(MOB_SKILL_RATIOS.NPC_RANDOMATTACK(3), 400);
+  // The ailment attacks have no case at all -> a normal hit that also inflicts it.
+  for (const s of ["NPC_BLINDATTACK", "NPC_CURSEATTACK", "NPC_SILENCEATTACK", "NPC_SLEEPATTACK",
+                   "NPC_STUNATTACK", "NPC_PETRIFYATTACK", "NPC_POISON", "NPC_BLEEDING"]) {
+    assert.strictEqual(MOB_SKILL_RATIOS[s](5), 100, `${s} is a 100% hit plus the ailment`);
+    assert.strictEqual(MOB_SKILL_ATTACK_TYPE[s], "Weapon", s);
+  }
+
+  // End to end on the two MVPs from the report: Stormy Knight's Wind Attribute
+  // Attack Lv4 and Orc Lord's Earth Attribute Attack Lv5.
+  const stormy = resolveMobSkillDamage(187, 4, profile, loader.getMonsterData(1251));
+  assert.strictEqual(stormy.name, "NPC_WINDATTACK");
+  assert.strictEqual(stormy.damageType, "damage", "it deals damage — it is not a status skill");
+  assert.strictEqual(stormy.attackType, "Weapon");
+  assert.strictEqual(stormy.ratio, 400, "Lv4 = 400% of the monster's ATK");
+  assert.strictEqual(stormy.elementInt, 4, "Wind");
+  assert.ok(stormy.hasNumber && stormy.estimated, "priced, and flagged as a baseline estimate");
+
+  const orcLord = resolveMobSkillDamage(185, 5, profile, loader.getMonsterData(1190));
+  assert.strictEqual(orcLord.ratio, 500);
+  assert.strictEqual(orcLord.elementInt, 2, "Earth");
+
+  // Not fixed here, and deliberately: NPC_PULSESTRIKE / NPC_HELLJUDGEMENT are
+  // self-centred AoEs (skill_type "Self"), and the caller only prices foe-targeted
+  // skills, so their ratios above still never fire. That is a separate gap in how
+  // self-targeted damage AoEs are classified, not the element bug reported here.
+  const pulse = resolveMobSkillDamage(loader.getSkillByName("NPC_PULSESTRIKE").id, 5, profile, loader.getMonsterData(1251));
+  assert.strictEqual(pulse.attackType, "Weapon", "the db typing is corrected");
+  assert.deepEqual(loader.getSkillByName("NPC_PULSESTRIKE").skill_type, ["Self"], "still unpriced for this reason");
+});

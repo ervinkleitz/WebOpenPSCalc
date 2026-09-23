@@ -29,7 +29,9 @@ interface SkillDamage {
 }
 
 export interface IncomingData {
-  elements: { ele: number; taken: IncomingResult }[];
+  // An elemental line carries the monster skill it came from (NPC_*ATTACK), so the
+  // damage shown is that skill's, not a re-coloured basic attack.
+  elements: { ele: number; taken: IncomingResult; skill_label?: string | null; skill_lv?: number | null; estimated?: boolean }[];
   kit: { id: number; d: string; lv: number }[];
   mob_name: string | null;
   mob_hit: number | null;     // mob HIT = level + DEX (drives your dodge chance)
@@ -43,14 +45,21 @@ const ELEMENTS = ["Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy",
 const eleName = (e: number) => ELEMENTS[e] || "Neutral";
 const n = (v: number) => Math.round(v).toLocaleString();
 
-// Raw pre-mitigation hit = the first pipeline step ("Mob Base ATK").
+// Raw pre-mitigation hit = the first pipeline step ("Mob Base ATK"), or, for a skill,
+// its ATK after the skill's own ratio — the ratio is the monster's damage, not
+// something your gear mitigates. Measuring a 400% elemental attack against plain ATK
+// read as "-264% mitigated" and an Effective HP below your actual HP.
 function rawHit(r: IncomingResult): number | null {
-  const s = r.result.steps?.[0];
+  const steps = r.result.steps || [];
+  const s = steps.find((x) => x.name === "Skill Ratio") ?? steps[0];
   const v = s?.value ?? s?.max_value;
   return typeof v === "number" && v > 0 ? v : null;
 }
 
-function EleLine({ ele, taken, maxHp, isBasic }: { ele: number; taken: IncomingResult; maxHp: number; isBasic: boolean }) {
+function EleLine({ ele, taken, maxHp, isBasic, skillLabel, skillLv, estimated }: {
+  ele: number; taken: IncomingResult; maxHp: number; isBasic: boolean;
+  skillLabel?: string | null; skillLv?: number | null; estimated?: boolean;
+}) {
   const { avg_damage: avg, min_damage: min, max_damage: max } = taken.result;
   const range = Math.round(min) !== Math.round(max);
   const hitsToKill = avg > 0 ? Math.ceil(maxHp / avg) : null;
@@ -61,7 +70,12 @@ function EleLine({ ele, taken, maxHp, isBasic }: { ele: number; taken: IncomingR
     <div className="surv-line">
       <div className="surv-line-head">
         <span className="surv-line-label">
-          {eleName(ele)} attack{isBasic ? <span className="surv-tag"> basic</span> : <span className="surv-tag surv-tag--skill"> skill</span>}
+          {eleName(ele)} attack{isBasic
+            ? <span className="surv-tag"> basic</span>
+            : <>
+                <span className="surv-tag surv-tag--skill"> {skillLabel ? `${skillLabel}${skillLv ? ` Lv${skillLv}` : ""}` : "skill"}</span>
+                {estimated && <span className="surv-tag surv-tag--test"> for testing</span>}
+              </>}
         </span>
         <span className="surv-line-dmg">
           {/* A hit reduced to 0 by resists registers as a MISS in game (maintainer):
@@ -192,8 +206,9 @@ export default function SurvivabilityView({ incoming }: { incoming: IncomingData
         <span className="surv-sub">{n(maxHp)} Max HP</span>
       </div>
 
-      {elements.map(({ ele, taken }) => (
-        <EleLine key={ele} ele={ele} taken={taken} maxHp={maxHp} isBasic={ele === incoming.mob_element} />
+      {elements.map(({ ele, taken, skill_label, skill_lv, estimated }) => (
+        <EleLine key={ele} ele={ele} taken={taken} maxHp={maxHp} isBasic={ele === incoming.mob_element}
+          skillLabel={skill_label} skillLv={skill_lv} estimated={estimated} />
       ))}
 
       {dodgePct != null && (

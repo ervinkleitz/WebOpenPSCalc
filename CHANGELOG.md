@@ -5,6 +5,24 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-22
+
+### Fixed
+
+- **Monster elemental attacks hit far harder than the calculator showed.** A monster's
+  elemental attack scales with the level it casts at — Stormy Knight's Wind Attribute Attack
+  is Lv4, so it lands for 400% of its ATK, and Orc Lord's Earth attack Lv5 for 500%. The
+  survivability panel priced every one of these as a plain 100% hit, so MVP elemental damage
+  read about four to five times too low: against Stormy Knight the same test build went from
+  "1,336–1,526 per hit, 11 hits to down you" to "5,611–6,240, 3 hits". Each elemental line now
+  names the skill and the level it is cast at, and the mitigation figure beside it is measured
+  against that hit (it could previously read as a negative percentage). The same correction
+  covers the breath attacks and the ailment attacks (Stun, Curse, Silence, Sleep, Blind,
+  Petrify, Poison, Bleeding), which were listed as "no direct damage" although they hit for a
+  full attack on top of the ailment. Like our other monster-skill figures these are marked
+  **for testing** — they use the pre-renewal baseline, which Payon Stories could tune further.
+  Reported by a player.
+
 ## 2026-09-21
 
 ### Added

@@ -1700,16 +1700,44 @@ export default function BuildEditor() {
       // Other cast skills (bolts, AoE, ailments) are listed by name only.
       const mobId = targetMode === "monster" ? data.target_mob_id : null;
       const mobSkills = mobInfo?.skills ?? [];
-      const attackEles = mobId != null
-        ? Array.from(new Set<number>([0 /* Neutral basic melee */, ...mobSkills.filter((s) => s.ele != null).map((s) => s.ele as number)])).slice(0, 5)
+      // Each elemental line IS a monster skill (an NPC_*ATTACK — that is what sets
+      // `ele`), so price it as that skill at the level the monster casts it. Pricing
+      // them as a plain re-coloured basic attack understated them by the skill's
+      // ratio: Stormy Knight's Wind Attribute Attack Lv4 is 400% of its ATK, and the
+      // panel showed 100% (reported 2026-09-22). Only the Neutral line is the basic hit.
+      const eleLines: { ele: number; skill?: { id: number; lv: number; d: string } }[] = mobId != null
+        ? [{ ele: 0 /* Neutral basic melee */ }]
         : [];
+      const seenEle = new Set<number>([0]);
+      if (mobId != null) {
+        for (const s of mobSkills) {
+          if (s.ele == null || s.id == null || seenEle.has(s.ele as number)) continue;
+          seenEle.add(s.ele as number);
+          eleLines.push({ ele: s.ele as number, skill: { id: s.id, lv: s.lv, d: s.d } });
+          if (eleLines.length >= 5) break;
+        }
+      }
       const [normalRes, skillRes, ...incByEle] = await Promise.all([
         api.calculate(normalPayload),
         skill.id !== 0 ? api.calculate(skillPayload) : Promise.resolve(null),
-        ...attackEles.map((ele) => api.calculateIncoming(buildWithFlags, mobId!, "physical", { ele_override: ele }, targetMods).catch(() => null)),
+        ...eleLines.map(async (line) => {
+          // A skill we cannot price (no ratio) falls back to the elemental basic hit,
+          // so the line still tells you what that element does to you.
+          if (line.skill) {
+            const r = await api.calculateIncomingSkill(buildWithFlags, mobId!, line.skill.id, line.skill.lv, targetMods).catch(() => null);
+            if (r && r.result) return { ...r, skill_label: line.skill.d, skill_lv: line.skill.lv, estimated: r.skill?.estimated };
+          }
+          return api.calculateIncoming(buildWithFlags, mobId!, "physical", { ele_override: line.ele }, targetMods).catch(() => null);
+        }),
       ]);
-      const elements = attackEles
-        .map((ele, i) => ({ ele, taken: incByEle[i] }))
+      const elements = eleLines
+        .map((line, i) => ({
+          ele: line.ele,
+          taken: incByEle[i] as any,
+          skill_label: (incByEle[i] as any)?.skill_label ?? null,
+          skill_lv: (incByEle[i] as any)?.skill_lv ?? null,
+          estimated: !!(incByEle[i] as any)?.estimated,
+        }))
         .filter((x) => x.taken);
       setCalcResult({
         normal_attack: normalRes,

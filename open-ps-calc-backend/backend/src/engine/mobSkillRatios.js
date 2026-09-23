@@ -78,6 +78,46 @@ const MOB_SKILL_RATIOS = {
   // weapon-WEIGHT formula (see ROADMAP), which is a different shape and still
   // unported. Keying the mob clone separately keeps that port honest.
   ML_SPIRALPIERCE: (lv) => 20 * lv,
+  // The elemental monster attacks — the "Fire attack" / "Wind attack" lines on the
+  // survivability panel. battle.c groups them with NPC_BLOODDRAIN above:
+  // `skillratio += 100 * (skill_lv - 1)` => 100 × lv. So Stormy Knight's Wind
+  // Attribute Attack Lv4 hits for 400% of its ATK, not 100% — reported in-game as
+  // MVP elemental damage reading far too low (2026-09-22). They were priced at a
+  // plain attack's 100% because our skill_db types them Misc; see
+  // MOB_SKILL_ATTACK_TYPE below for why that typing is wrong.
+  NPC_WATERATTACK:       (lv) => 100 * lv,
+  NPC_GROUNDATTACK:      (lv) => 100 * lv,
+  NPC_FIREATTACK:        (lv) => 100 * lv,
+  NPC_WINDATTACK:        (lv) => 100 * lv,
+  NPC_POISONATTACK:      (lv) => 100 * lv,
+  NPC_HOLYATTACK:        (lv) => 100 * lv,
+  NPC_DARKNESSATTACK:    (lv) => 100 * lv,
+  NPC_UNDEADATTACK:      (lv) => 100 * lv,
+  NPC_TELEKINESISATTACK: (lv) => 100 * lv,
+  // Same `case` block, same 100 × lv: the breath attacks (Ice Breath, Fire Breath…).
+  NPC_ACIDBREATH:        (lv) => 100 * lv,
+  NPC_DARKNESSBREATH:    (lv) => 100 * lv,
+  NPC_FIREBREATH:        (lv) => 100 * lv,
+  NPC_ICEBREATH:         (lv) => 100 * lv,
+  NPC_THUNDERBREATH:     (lv) => 100 * lv,
+
+  // skillratio += 100 * skill_lv  =>  100 + 100*lv  (battle.c: NPC_RANDOMATTACK,
+  // its own case just above the elemental group).
+  NPC_RANDOMATTACK: (lv) => 100 + 100 * lv,
+
+  // The status-inflicting monster attacks have no `case` at all, so they fall
+  // through at the 100 base: a normal-attack-equivalent hit that ALSO inflicts the
+  // ailment. They were reported as "no direct damage", which is wrong — the ailment
+  // rides on a real hit. (The ailment itself is not modeled; only the damage is.)
+  NPC_BLINDATTACK:   () => 100,
+  NPC_CURSEATTACK:   () => 100,
+  NPC_SILENCEATTACK: () => 100,
+  NPC_SLEEPATTACK:   () => 100,
+  NPC_STUNATTACK:    () => 100,
+  NPC_PETRIFYATTACK: () => 100,
+  NPC_POISON:        () => 100,
+  NPC_BLEEDING:      () => 100,
+
   // Eight mobs cast the PLAYER-id Spiral Pierce (397) rather than the clone (8218).
   // A monster has no weapon to weigh, so the weapon-weight formula that makes the
   // player's version unported simply doesn't apply to it — cast by a mob it is the
@@ -212,6 +252,30 @@ const ELE_NAME_TO_INT = {
   Ele_Neutral: 0, Ele_Water: 1, Ele_Earth: 2, Ele_Fire: 3, Ele_Wind: 4,
   Ele_Poison: 5, Ele_Holy: 6, Ele_Dark: 7, Ele_Ghost: 8, Ele_Undead: 9,
 };
+
+// Hercules' own skill_db types this family "Misc", which cannot be right: a Misc
+// skill is priced by battle_calc_misc_attack(), which has no `case` for any of
+// them, so they would fall to its empty default and deal ZERO damage. Their damage
+// lives in battle_calc_skillratio()'s WEAPON branch (battle.c:2194-2211, the
+// `skillratio += 100 * (skill_lv - 1)` group) and they take the weapon path's +20
+// hit bonus (battle.c:5295-5312) — both unreachable for a Misc skill. rAthena types
+// every one of them `Type: Weapon`, which agrees with that code. So the db entry is
+// the outlier and this map overrides it.
+//
+// Until now they resolved as non-damage, so ~500 monster-skill entries — every
+// "Fire attack" / "Wind attack" line in the survivability panel — were reported as
+// "no direct damage" or fell back to a plain 100% attack. It also meant the
+// NPC_HELLJUDGEMENT / NPC_PULSESTRIKE ratios above could never fire.
+const MOB_SKILL_ATTACK_TYPE = {};
+for (const n of [
+  "NPC_WATERATTACK", "NPC_GROUNDATTACK", "NPC_FIREATTACK", "NPC_WINDATTACK",
+  "NPC_POISONATTACK", "NPC_HOLYATTACK", "NPC_DARKNESSATTACK", "NPC_UNDEADATTACK",
+  "NPC_TELEKINESISATTACK",
+  "NPC_ACIDBREATH", "NPC_DARKNESSBREATH", "NPC_FIREBREATH", "NPC_ICEBREATH", "NPC_THUNDERBREATH",
+  "NPC_RANDOMATTACK", "NPC_HELLJUDGEMENT", "NPC_PULSESTRIKE",
+  "NPC_BLINDATTACK", "NPC_CURSEATTACK", "NPC_SILENCEATTACK", "NPC_SLEEPATTACK",
+  "NPC_STUNATTACK", "NPC_PETRIFYATTACK", "NPC_POISON", "NPC_BLEEDING",
+]) MOB_SKILL_ATTACK_TYPE[n] = "Weapon";
 function resolveMobSkillDamage(skillId, level, profile, mob) {
   const sk = loader.getSkill(skillId);
   if (!sk) return null;
@@ -231,7 +295,8 @@ function resolveMobSkillDamage(skillId, level, profile, mob) {
     if (typeof last !== "number" || arr.length < 2 || typeof arr[arr.length - 2] !== "number") return last;
     return last + (last - arr[arr.length - 2]) * (lv - arr.length);
   };
-  const attackType = sk.attack_type; // "Magic" | "Weapon" | "Misc"
+  // "Magic" | "Weapon" | "Misc" — with the NPC_ family's db typing corrected.
+  const attackType = MOB_SKILL_ATTACK_TYPE[sk.name] || sk.attack_type;
   const eleName = Array.isArray(sk.element) ? atLv(sk.element) : sk.element;
   const elementInt = ELE_NAME_TO_INT[eleName] ?? 0;
   const targetsFoe = Array.isArray(sk.skill_type)
@@ -346,5 +411,5 @@ function resolveMobSkillDamage(skillId, level, profile, mob) {
 module.exports = {
   resolveMobSkillDamage,
   MOB_SKILL_RATIOS, NO_HP_DAMAGE_SKILLS, FLAT_UNMODELED_SKILLS, MOB_SKILL_ALIASES,
-  MOB_SKILL_TARGET_STAT_DAMAGE,
+  MOB_SKILL_TARGET_STAT_DAMAGE, MOB_SKILL_ATTACK_TYPE,
 };
