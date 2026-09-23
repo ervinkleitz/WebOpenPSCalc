@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 const { logCalculate, logFeature, logDonateClick, logPageView } = require("../middleware/statsLogger");
 import { createBattleConfig } from "../engine/config";
-const { applyTargetSelfBuffs, applySelfBuffsToRawMob } = require("../engine/targetSelfBuffs");
+const { applyTargetSelfBuffs, applySelfBuffsToRawMob, applyIncomingDebuffs } = require("../engine/targetSelfBuffs");
 const { weaponAtkBuffs } = require("../engine/calculators/modifiers/baseDamage");
 import { buildFromSaveSchema } from "../engine/buildManager";
 import { createSkillInstance, createTarget, createDamageResult } from "../engine/models";
@@ -457,6 +457,12 @@ function applyIncomingTargetMods(mob: any, targetModsInput: any): any {
   if (mob && targetModsInput?.self_buffs) {
     mob = applySelfBuffsToRawMob(mob, targetModsInput.self_buffs);
   }
+  // Quagmire and Hypothermia cut the monster's DEX, and its HIT is level + DEX — so
+  // they are how often it lands on you, which is this direction's whole point. Only
+  // the offensive side applied them before, where DEX does nothing, so a player
+  // reported Quagmire's DEX reduction as unimplemented (2026-09-22). Bosses are
+  // immune, as they are for Quagmire on the offensive side and for the Strips.
+  mob = applyIncomingDebuffs(mob, targetModsInput);
   if (!mob || !targetModsInput?.offensive_blessing) return mob;
   const undeadOrDemon = mob.element === 9 || mob.race === "Demon" || mob.race === "Undead";
   if (!undeadOrDemon) return mob;

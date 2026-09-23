@@ -7,7 +7,38 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-09-22
 
+### Added
+
+- **Energy Coat.** The Mage-line quest skill is now in the Buffs panel for Mage, Wizard, Sage,
+  High Wizard and Professor. It soaks part of every physical hit you take, by how much SP you
+  have left — 30% at 81–100% SP, then 24 / 18 / 12 / 6% down the brackets, costing 3% to 1% of
+  your SP per hit absorbed. Pick the bracket you expect to be fighting in; magic is not covered,
+  which matches pre-renewal. Requested by a player.
+
+- **Hypothermia as a target debuff.** Next to Quagmire under Target debuffs. It takes 10 DEX off
+  the monster, which lowers its HIT, so you dodge more. Its −20% attack speed and movement
+  penalty aren't modelled — this panel reports damage per hit and dodge chance, never the
+  monster's attack rate. No effect on bosses.
+
 ### Fixed
+
+- **Alice Card now works against a monster's melee.** Its 40% resistance to Boss monsters (and
+  the 40% extra damage from Normal ones) applied only to magic damage; a monster's physical hits
+  ignored it completely. Against Stormy Knight the same test build now takes 853 per hit instead
+  of 1,423. Any other card that keys off Boss or Normal monsters was affected the same way.
+  Reported by a player.
+
+- **Quagmire's DEX reduction does something now.** It was applied after your HIT and Flee had
+  already been worked out, so standing in a Quagmire changed neither, and on the monster's side
+  the survivability panel never applied it at all — its HIT, and so your dodge chance, stayed
+  put. Quagmire now lowers the monster's HIT (Lv5 took a test Knight's dodge from 0% to 63%
+  together with Hypothermia), and on you it takes the wiki's 10% of AGI and DEX per level —
+  capped at 25% for players — instead of a flat 10 points per level. Hypothermia's −10 DEX had
+  the same problem and is fixed with it. Reported by a player.
+
+- **Amplify Magic Power is a High Wizard skill.** It was offered to plain Wizards too. It is a
+  transcendent skill, so only High Wizards get it now; the +10% MATK per level (up to +50%) is
+  unchanged. Confirmed by the maintainer after a player asked.
 
 - **Monster attacks that splash around the caster now count against you.** Magnum Break,
   Pulse Strike, Meteor Assault, Vampire Gift and the like are aimed by the monster at

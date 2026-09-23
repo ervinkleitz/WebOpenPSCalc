@@ -5394,3 +5394,135 @@ test("Twinorc Card pierces Poison DEF by refine; Indignant Soul cuts Soul Strike
   assert.equal(afterCast(false), 1800);
   assert.equal(afterCast(true), 1620, "Indignant Soul: -10% Soul Strike after-cast delay");
 });
+
+// Four survivability reports from one player, 2026-09-22.
+
+// 1. Alice Card (bSubRace RC_Boss +40 / RC_NonBoss -40) did nothing against a monster's
+// melee: the incoming MAGIC card fix applied the boss/non-boss term and the incoming
+// PHYSICAL one silently left it out (battle.c:1269-1341 applies it to both).
+test("Alice Card's boss resistance applies to a monster's physical hits, not just magic", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const { calculateIncomingPhysicalDamage, calculateIncomingMagicDamage } = require("../src/engine/calculators/incomingPipeline");
+  const hit = (card, mobId, magic) => {
+    const equipped = { right_hand: 1101, armor: 2314, left_hand: 2105, ...(card ? { left_hand_card1: card } : {}) };
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 80, int: 30, dex: 50, luk: 1 }, equipped,
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, PS);
+    return (magic ? calculateIncomingMagicDamage(mobId, eff, status, gb, weapon, {})
+      : calculateIncomingPhysicalDamage(mobId, eff, status, gb, weapon, cfg, {})).avg_damage;
+  };
+  // A high-INT caster for the magic half: a monster whose magic hit is a few hundred,
+  // so a 40% swing is not swallowed by the pre-renewal floor-to-integer.
+  const ALICE = 4253, BOSS = 1251 /* Stormy Knight, MVP */, NORMAL = 1377 /* Elder, INT 108 */;
+  assert.ok(loader.getMonsterData(BOSS).is_boss, "test needs a boss");
+  assert.ok(!loader.getMonsterData(NORMAL).is_boss, "test needs a normal monster");
+
+  // -40% from a boss, +40% from a normal monster — on BOTH damage types.
+  for (const magic of [false, true]) {
+    const bossRatio = hit(ALICE, BOSS, magic) / hit(0, BOSS, magic);
+    const normRatio = hit(ALICE, NORMAL, magic) / hit(0, NORMAL, magic);
+    assert.ok(Math.abs(bossRatio - 0.6) < 0.02, `${magic ? "magic" : "physical"} from a boss should drop 40%, got ${bossRatio.toFixed(3)}`);
+    assert.ok(Math.abs(normRatio - 1.4) < 0.02, `${magic ? "magic" : "physical"} from a normal monster should rise 40%, got ${normRatio.toFixed(3)}`);
+  }
+});
+
+// 2 + 3. Quagmire's and Hypothermia's DEX cuts were applied AFTER HIT and FLEE were
+// derived from those same stats, so standing in a Quagmire changed neither (reported
+// with "the dex reduction from quagmire is not implemented ... as well as hypothermia").
+// wiki Quagmire: -10% AGI/DEX per level, "players by more than 25%" capped -> 5%/level.
+// wiki Hypothermia: -10 DEX, -20% ASPD, +20% cast time.
+test("Quagmire and Hypothermia lower your HIT and FLEE, not just your ASPD", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const at = (scs) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 80, int: 1, dex: 80, luk: 1 },
+      equipped: { right_hand: 1101 }, ...(scs ? { player_active_scs: scs } : {}),
+    });
+    return resolvePlayerState(b, cfg, PS)[3];
+  };
+  const base = at(null);
+  const quag = at({ SC_QUAGMIRE: 5 });
+  const hypo = at({ SC_PS_HYPOTHERMIA: 1 });
+  const both = at({ SC_QUAGMIRE: 5, SC_PS_HYPOTHERMIA: 1 });
+
+  // Quagmire Lv5 on a player: 25% of AGI and DEX, and HIT/FLEE follow the stats.
+  assert.equal(quag.dex, base.dex - Math.floor(base.dex * 25 / 100), "25% of DEX at Lv5, not a flat 50");
+  assert.equal(quag.agi, base.agi - Math.floor(base.agi * 25 / 100));
+  assert.equal(quag.hit, base.hit - (base.dex - quag.dex), "HIT is level + DEX, so it must drop with DEX");
+  assert.equal(quag.flee, base.flee - (base.agi - quag.agi), "FLEE is level + AGI");
+  assert.ok(quag.aspd < base.aspd, "and it still slows you");
+
+  // Hypothermia: a flat -10 DEX, so -10 HIT; AGI and FLEE untouched.
+  assert.equal(hypo.dex, base.dex - 10);
+  assert.equal(hypo.hit, base.hit - 10);
+  assert.equal(hypo.flee, base.flee, "Hypothermia takes no AGI");
+  assert.ok(hypo.aspd < base.aspd, "-20% ASPD");
+
+  // "stacks with Quagmire's DEX reduction" (wiki).
+  assert.equal(both.dex, quag.dex - 10);
+  assert.equal(both.hit, quag.hit - 10);
+});
+
+// The same two debuffs, cast on the MONSTER: its HIT is level + DEX, which is how often
+// it lands on you. The offensive side applied them (where DEX does nothing); the
+// survivability side never did.
+test("Quagmire and Hypothermia lower the monster's HIT in the survivability direction", () => {
+  const { applyIncomingDebuffs } = require("../src/engine/targetSelfBuffs");
+  loader.setProfile(PS);
+  const raw = loader.getMonsterData(1208); // Wander Man, not a boss
+  const boss = loader.getMonsterData(1251); // Stormy Knight, MVP
+  const dex0 = raw.stats.dex;
+
+  const quag = applyIncomingDebuffs(raw, { quagmire: 5 });
+  assert.equal(quag.stats.dex, dex0 - Math.floor(dex0 * 50 / 100), "monsters take the full 10%/level");
+  assert.equal(quag.hit, raw.level + quag.stats.dex, "its HIT follows its DEX");
+
+  const hypo = applyIncomingDebuffs(raw, { hypothermia: true });
+  assert.equal(hypo.stats.dex, dex0 - 10);
+
+  const both = applyIncomingDebuffs(raw, { quagmire: 5, hypothermia: true });
+  assert.equal(both.stats.dex, quag.stats.dex - 10, "they stack");
+
+  // Bosses are immune, as they are for Quagmire on the offensive side and the Strips.
+  assert.equal(applyIncomingDebuffs(boss, { quagmire: 5, hypothermia: true }).stats.dex,
+    boss.stats.dex, "an MVP shrugs both off");
+  // And the monster record handed back is a copy — the loader caches these.
+  assert.equal(raw.stats.dex, dex0, "must not mutate the cached monster");
+});
+
+// 4. Energy Coat (MG_ENERGYCOAT), a Mage-line quest skill, was missing entirely.
+// wiki: 30/24/18/12/6% off physical damage by SP bracket, costing 3/2.5/2/1.5/1% SP per
+// hit — the same as pre-renewal battle.c:3528-3552, whose magic half is RENEWAL-only.
+test("Energy Coat soaks physical damage by SP bracket, and never magic", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const { calculateIncomingPhysicalDamage, calculateIncomingMagicDamage } = require("../src/engine/calculators/incomingPipeline");
+  const take = (buffs, magic) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 9, base_level: 99, job_level: 50,
+      base_stats: { str: 1, agi: 1, vit: 60, int: 80, dex: 40, luk: 1 },
+      equipped: { right_hand: 1601 }, ...(buffs ? { active_buffs: buffs } : {}),
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, PS);
+    return (magic ? calculateIncomingMagicDamage(1208, eff, status, gb, weapon, {})
+      : calculateIncomingPhysicalDamage(1208, eff, status, gb, weapon, cfg, {}));
+  };
+  const plain = take(null, false).avg_damage;
+  for (const [spPct, cut] of [[100, 30], [80, 24], [60, 18], [40, 12], [20, 6]]) {
+    const r = take({ SC_ENERGYCOAT: 1, SC_ENERGYCOAT_sp_pct: spPct }, false);
+    const ratio = r.avg_damage / plain;
+    assert.ok(Math.abs(ratio - (100 - cut) / 100) < 0.01,
+      `at ${spPct}% SP it should cut ${cut}%, got ${((1 - ratio) * 100).toFixed(1)}%`);
+    assert.ok(r.steps.some((s) => s.name === "Energy Coat"), "the breakdown must name the step");
+  }
+  // Off by default, and the SP knob alone does nothing.
+  assert.equal(take({ SC_ENERGYCOAT_sp_pct: 100 }, false).avg_damage, plain);
+  // Magic is untouched: that half of the condition is behind #ifdef RENEWAL.
+  assert.equal(take({ SC_ENERGYCOAT: 1 }, true).avg_damage, take(null, true).avg_damage,
+    "pre-renewal Energy Coat covers weapon damage only");
+});

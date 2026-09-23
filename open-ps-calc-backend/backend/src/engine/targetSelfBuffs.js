@@ -294,4 +294,37 @@ function applySelfBuffsToRawMob(mob, buffs) {
   return copy == null ? mob : copy;
 }
 
-module.exports = { SELF_BUFFS, applyTargetSelfBuffs, applySelfBuffsToRawMob, describeSelfBuff };
+// The AGI/DEX debuffs, applied to the monster for the incoming direction. Kept apart
+// from the offensive copy of the same debuffs (which lowers its flee and soft DEF)
+// because here only DEX matters: HIT = level + DEX.
+//   Quagmire      — wiki: "-10% AGI and DEX per level", monsters capped at 50%.
+//   Hypothermia   — wiki: "-10 DEX", plus -20% ASPD and -20% movement speed. Only the
+//                   DEX part is modelled: this panel reports damage PER HIT and your
+//                   dodge chance, neither of which reads the monster's attack rate.
+function applyIncomingDebuffs(mob, targetModsInput) {
+  if (!mob || !targetModsInput || mob.is_boss) return mob;
+  const quagLv = targetModsInput.quagmire === true ? 5
+    : Math.max(0, Math.min(5, Number(targetModsInput.quagmire) || 0));
+  const hypothermia = !!targetModsInput.hypothermia;
+  if (quagLv <= 0 && !hypothermia) return mob;
+
+  const stats = mob.stats || {};
+  let agi = stats.agi || 0;
+  let dex = stats.dex || 0;
+  if (quagLv > 0) {
+    const pct = 10 * quagLv;
+    agi = Math.max(0, agi - Math.floor(agi * pct / 100));
+    dex = Math.max(0, dex - Math.floor(dex * pct / 100));
+  }
+  if (hypothermia) dex = Math.max(0, dex - 10);
+  const dexCut = (stats.dex || 0) - dex;
+  return {
+    ...mob,
+    stats: { ...stats, agi, dex },
+    // Its HIT is recomputed from the debuffed DEX. A mob whose HIT was already set
+    // (Power Up doubles it) keeps that, minus what DEX it just lost.
+    hit: mob.hit != null ? Math.max(0, mob.hit - dexCut) : (mob.level || 0) + dex,
+  };
+}
+
+module.exports = { SELF_BUFFS, applyTargetSelfBuffs, applySelfBuffsToRawMob, describeSelfBuff, applyIncomingDebuffs };

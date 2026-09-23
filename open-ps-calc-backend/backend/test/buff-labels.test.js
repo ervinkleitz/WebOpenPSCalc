@@ -58,7 +58,8 @@ const BUFF_SKILL = {
   SC_GS_GATLINGFEVER: "GS_GATLINGFEVER",      // Gatling Fever
   SC_NJ_NEN: "NJ_NEN",                        // Ninja Aura  <-- the "Ki" regression guard
   SC_NJ_BUNSINJYUTSU: "NJ_BUNSINJYUTSU",      // Mirror Image (level = images LEFT, 1-5)
-  SC_AMPLIFYMAGICPOWER: "HW_MAGICPOWER",      // Amplify Magic Power
+  SC_AMPLIFYMAGICPOWER: "HW_MAGICPOWER",      // Amplify Magic Power (High Wizard only)
+  SC_ENERGYCOAT: "MG_ENERGYCOAT",             // Energy Coat (Mage-line quest skill)
   // --- PARTY_BUFFS ---
   SC_IMPOSITIO: "PR_IMPOSITIO",               // Impositio Manus
   SC_BLESSING: "AL_BLESSING",                 // Blessing

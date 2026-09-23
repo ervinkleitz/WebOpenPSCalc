@@ -171,18 +171,24 @@ function calculateIncomingPhysical(mobRace, mobElement, mobSize, isRanged, playe
   const tEle = (playerTarget.sub_ele[eleKey] || 0) + (playerTarget.sub_ele.Ele_All || 0);
   const tSize = playerTarget.sub_size[sizeKey] || 0;
   const tRace = playerTarget.sub_race[raceRc] || 0;
+  // Boss / non-boss resistance (bSubRace RC_Boss / RC_NonBoss — Alice Card's
+  // +40% vs Boss, −40% vs Normal). battle.c:1269-1341 applies this beside the race
+  // term, and the incoming MAGIC path already did; this one silently dropped it, so
+  // Alice did nothing against a monster's melee (reported 2026-09-22).
+  const bossRc = attacker.is_boss ? "RC_Boss" : "RC_NonBoss";
+  const tBoss = playerTarget.sub_race[bossRc] || 0;
   const tNearLong = isRanged ? playerTarget.long_attack_def_rate : playerTarget.near_attack_def_rate;
   // Monster family (bSubRace2, battle.c:1330) and specific monster id (bAddDefClass,
   // battle.c:1334-1337) — separate multiplicative factors, like the rest.
   const tRace2 = (attacker.race2 || []).reduce((acc, rc2) => acc + ((playerTarget.sub_race2 || {})[rc2] || 0), 0);
   const tClass = attacker.mob_id != null ? ((playerTarget.add_def_class || {})[String(attacker.mob_id)] || 0) : 0;
-  for (const reduction of [tEle, tSize, tRace, tNearLong, tRace2, tClass]) {
+  for (const reduction of [tEle, tSize, tRace, tBoss, tNearLong, tRace2, tClass]) {
     if (reduction) pmf = scaleFloor(pmf, 100 - reduction, 100);
   }
   [mn, mx, av] = pmfStats(pmf);
   const multiplier = avIn ? av / avIn : 1.0;
   const extra = (tRace2 ? ` Family-${tRace2}%` : "") + (tClass ? ` Monster-${tClass}%` : "");
-  result.add_step({ name: "Card Fix (Incoming Physical)", value: av, min_value: mn, max_value: mx, multiplier, note: `Ele-${tEle}% Size-${tSize}% Race-${tRace}% Def-${tNearLong}%${extra}${(tEle || tSize || tRace || tNearLong || tRace2 || tClass) ? "  (from cards, gear & pets)" : ""}`, formula: "dmg × resist factors", hercules_ref: "battle.c:1269-1341" });
+  result.add_step({ name: "Card Fix (Incoming Physical)", value: av, min_value: mn, max_value: mx, multiplier, note: `Ele-${tEle}% Size-${tSize}% Race-${tRace}% ${attacker.is_boss ? "Boss" : "Normal"}-${tBoss}% Def-${tNearLong}%${extra}${(tEle || tSize || tRace || tBoss || tNearLong || tRace2 || tClass) ? "  (from cards, gear & pets)" : ""}`, formula: "dmg × resist factors", hercules_ref: "battle.c:1269-1341" });
   return pmf;
 }
 

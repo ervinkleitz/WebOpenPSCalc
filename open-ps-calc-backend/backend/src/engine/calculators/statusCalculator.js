@@ -139,6 +139,25 @@ class StatusCalculator {
     if ("SC_DECREASEAGI" in playerScs) status.agi -= 2 + playerScs.SC_DECREASEAGI;
     if ("SC_CURSE" in playerScs) status.luk = 0;
 
+    // Quagmire and Hypothermia cut AGI/DEX, so they belong HERE with the other stat
+    // statuses: HIT, FLEE, ATK, ASPD and cast time are all derived below from these
+    // values. They used to be applied ~100 lines further down, after HIT and FLEE were
+    // already computed, so neither moved — a player reported Quagmire's DEX reduction
+    // doing nothing, and Hypothermia's with it (2026-09-22).
+    //
+    // wiki Quagmire: "-10% AGI and DEX per level", and "cannot reduce the AGI or DEX of
+    // monsters by more than 50% or players by more than 25% of their original value" —
+    // you are a player, so 5% per level. It was a flat -10 per level here, which is a
+    // different number at every stat total.
+    if ("SC_QUAGMIRE" in playerScs) {
+      const pct = 5 * Math.max(0, Math.min(5, Number(playerScs.SC_QUAGMIRE) || 0));
+      status.agi = Math.max(0, status.agi - Math.floor(status.agi * pct / 100));
+      status.dex = Math.max(0, status.dex - Math.floor(status.dex * pct / 100));
+    }
+    // wiki Hypothermia: "-10 DEX (stacks with Quagmire's DEX reduction)". Its -20% ASPD
+    // and +20% cast time are applied in those blocks below.
+    if ("SC_PS_HYPOTHERMIA" in playerScs) status.dex = Math.max(0, status.dex - 10);
+
     // === BASE ATK ===
     let strVal = status.str;
     let dexVal = status.dex;
@@ -376,12 +395,6 @@ class StatusCalculator {
       status.flee = Math.floor(status.flee * 75 / 100);
     }
 
-    if ("SC_QUAGMIRE" in playerScs) {
-      const val2 = 10 * Number(playerScs.SC_QUAGMIRE);
-      status.agi = Math.max(0, status.agi - val2);
-      status.dex = Math.max(0, status.dex - val2);
-    }
-    if ("SC_PS_HYPOTHERMIA" in playerScs) status.dex = Math.max(0, status.dex - 10);
 
     // === ASPD ===
     const lhItemId = DUAL_WIELD_JOBS.has(build.job_id) ? build.equipped.left_hand : null;

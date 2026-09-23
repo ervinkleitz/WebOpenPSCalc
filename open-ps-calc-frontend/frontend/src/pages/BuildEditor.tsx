@@ -396,10 +396,16 @@ const SELF_BUFFS = [
   // Strike; modeled in battlePipeline.js as halving the effective period for
   // those skills (DPS only, not per-hit damage).
   { key: "SC_DOUBLECASTING",   label: "Double Bolt",          max: 1,  jobs: [16, 4017] },
-  // Wizard / High Wizard — Mystical Amplification: next spell +50% MATK (vanilla),
-  // or +10% per level capped at level 5 (PS rework). Max 10 vanilla / 5 PS;
-  // PS cap enforced server-side via SC_AMPLIFYMAGICPOWER_SCALING mechanic flag.
-  { key: "SC_AMPLIFYMAGICPOWER", label: "Amplify Magic Power", max: 5, jobs: [9, 4010] },
+  // Mystical Amplification: next spell +50% MATK (vanilla), or +10% per level capped
+  // at level 5 (PS rework). Max 10 vanilla / 5 PS; PS cap enforced server-side via the
+  // SC_AMPLIFYMAGICPOWER_SCALING mechanic flag. HIGH WIZARD ONLY -- it is a transcendent
+  // skill (wiki.payonstories.com/Mystical_Amplification: "Job: High Wizard"), confirmed
+  // by the maintainer 2026-09-22. It used to be offered to plain Wizards as well.
+  { key: "SC_AMPLIFYMAGICPOWER", label: "Amplify Magic Power", max: 5, jobs: [4010] },
+  // Energy Coat (MG_ENERGYCOAT) -- a Mage-line quest skill: soaks part of every PHYSICAL
+  // hit, by how much SP you have left (30/24/18/12/6% down the brackets), and burns SP
+  // per hit absorbed. The bracket is picked below; the engine holds the table.
+  { key: "SC_ENERGYCOAT", label: "Energy Coat", max: 1, jobs: [2, 9, 16, 4010, 4017] },
 ] as const;
 
 // Received from a party member rather than self-cast -- battle.c treats
@@ -712,6 +718,9 @@ const Z3_KEYS: string[] = [
   "decrease_agi", // targetMods.decrease_agi — AL_DECAGI level 0-5
   // Rogue Strips (targetMods.strip_*) — booleans
   "strip_shield", "strip_armor", "strip_weapon", "strip_helm",
+  "hypothermia", // targetMods.hypothermia — −10 DEX on the monster (its HIT)
+  // Energy Coat (active_buffs): the toggle and which SP bracket you are in
+  "SC_ENERGYCOAT", "SC_ENERGYCOAT_sp_pct",
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -3103,7 +3112,9 @@ export default function BuildEditor() {
                           const active = (data.active_buffs?.[b.key] ?? 0) > 0;
                           return (
                             <div className="field field-checkbox" key={b.key}>
-                              <label title={b.key}>
+                              <label title={b.key === "SC_ENERGYCOAT"
+                                ? "MG_ENERGYCOAT: reduces the damage of every physical hit you take by how much SP you have left \u2014 30% at 81-100% SP, then 24/18/12/6% down the brackets \u2014 and spends 3% to 1% of your SP per hit absorbed. Magic is not covered (pre-renewal). Lasts 5 minutes or until your SP runs out."
+                                : b.key}>
                                 <input
                                   type="checkbox"
                                   checked={active}
@@ -3111,6 +3122,20 @@ export default function BuildEditor() {
                                 />
                                 <span>{b.label}</span>
                               </label>
+                              {b.key === "SC_ENERGYCOAT" && active && (
+                                <select
+                                  style={{ marginTop: "0.35rem" }}
+                                  title="The calculator has no notion of a partly-drained SP bar, so say which bracket you are in. Energy Coat weakens as your SP falls."
+                                  value={Number(data.active_buffs?.SC_ENERGYCOAT_sp_pct ?? 100)}
+                                  onChange={(e) => updateBuffField("active_buffs", "SC_ENERGYCOAT_sp_pct", Number(e.target.value))}
+                                >
+                                  <option value={100}>81-100% SP left (-30%)</option>
+                                  <option value={80}>61-80% SP left (-24%)</option>
+                                  <option value={60}>41-60% SP left (-18%)</option>
+                                  <option value={40}>21-40% SP left (-12%)</option>
+                                  <option value={20}>1-20% SP left (-6%)</option>
+                                </select>
+                              )}
                             </div>
                           );
                         })}
@@ -3776,8 +3801,8 @@ export default function BuildEditor() {
 
             <span className="buff-group-label" style={{ display: "block", marginTop: "0.75rem" }}>Debuff skills &amp; statuses</span>
             <div className="field debuff-field">
-              <label title="WZ_QUAGMIRE: cuts the target's AGI/DEX by 10% per level (max 50% at Lv5), lowering its flee. Does NOT guarantee a hit; no effect on bosses; halved vs players.">
-                Quagmire (−AGI/DEX → lower flee)
+              <label title="WZ_QUAGMIRE: cuts the target's AGI/DEX by 10% per level (max 50% at Lv5). Its AGI is its flee, so you hit it more often; its DEX is its HIT, so it lands on you less often (see Survivability). Does NOT guarantee a hit; no effect on bosses; halved vs players.">
+                Quagmire (−AGI/DEX → lower flee &amp; its HIT)
               </label>
               <select
                 value={quagmireLv}
@@ -3791,9 +3816,19 @@ export default function BuildEditor() {
               {quagmireRedundant && (
                 <div className="hint-text">
                   Your hit chance is already at the 100% cap — Quagmire only helps when you're missing
-                  (it lowers flee, not damage).
+                  (it lowers flee, not damage). It still lowers the monster's HIT, so you dodge more.
                 </div>
               )}
+            </div>
+            <div className="field field-checkbox">
+              <label title="Hypothermia (PS status, e.g. Frost Nova Lv5): −10 DEX, −20% ASPD and −20% movement speed on the target for 10 seconds, and it cannot be resisted. Only the DEX cut is modelled here — it lowers the monster's HIT, so you dodge more; this panel reports damage per hit and dodge chance, never the monster's attack rate. No effect on bosses.">
+                <input
+                  type="checkbox"
+                  checked={!!targetMods.hypothermia}
+                  onChange={(e) => setTargetMods((m) => ({ ...m, hypothermia: e.target.checked }))}
+                />
+                <span>Hypothermia (−10 DEX → its HIT)</span>
+              </label>
             </div>
             {/* Rogue Strips. Flat percentages per skill (ranks change only duration
                 and success rate), so these are toggles. Shield/Armor make YOUR hits

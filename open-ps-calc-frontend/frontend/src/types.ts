@@ -124,6 +124,7 @@ export interface TargetMods {
   breaking_cloak: boolean; // Cloak initiative (Assassin, Cloak Lv3+): opening auto-attack ×2, or Sonic Blow +10%.
   performing: boolean; // Performing (Bard/Dancer): while a song/dance is active, Musical Strike & Throw Arrow gain +100 ratio points.
   quagmire: number; // WZ_QUAGMIRE level 0–5 (0 = off). Legacy shared URLs may carry a boolean.
+  hypothermia?: boolean; // PS Hypothermia on the target: −10 DEX, so its HIT drops
   decrease_agi?: number; // AL_DECAGI level 0–5 (0 = off): flat −3 AGI per level.
   // Rogue Strip debuffs. Flat percentages (ranks change duration/success only), no MvPs.
   strip_shield?: boolean; // −30% target hard DEF

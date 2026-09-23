@@ -44,6 +44,41 @@ function applyLexAeterna(build, pmf, result) {
   return pmf;
 }
 
+// Energy Coat (MG_ENERGYCOAT) — a Mage quest skill on Payon Stories, one level, up
+// for 5 minutes or until your SP runs out. It soaks a share of every PHYSICAL hit,
+// set by how much SP you have left, and burns SP for each hit it absorbs:
+//
+//   SP left   81-100%  61-80%  41-60%  21-40%  1-20%
+//   reduction    30%     24%     18%     12%     6%
+//   SP per hit    3%    2.5%      2%    1.5%     1%
+//
+// (wiki.payonstories.com/Energy_Coat; identical to the pre-renewal formula in
+// battle.c:3528-3552 — `per = (100*sp/max_sp - 1)/20`, `damage -= damage*6*(1+per)/100`.)
+// Magic is untouched: the BF_MAGIC half of that condition is behind `#ifdef RENEWAL`
+// and PS is pre-renewal. The calculator has no notion of a partly-drained SP bar, so
+// the bracket is chosen on the build (`SC_ENERGYCOAT_sp_pct`), defaulting to full.
+function energyCoatReduction(build) {
+  const activeSc = build.active_status_levels || {};
+  if (!activeSc.SC_ENERGYCOAT) return { pct: 0, spPct: 100, spCostPct: 0 };
+  const raw = Number(activeSc.SC_ENERGYCOAT_sp_pct);
+  const spPct = Number.isFinite(raw) && raw > 0 ? Math.max(1, Math.min(100, raw)) : 100;
+  const per = Math.floor((spPct - 1) / 20); // 4 at 81-100% SP … 0 at 1-20%
+  return { pct: 6 * (1 + per), spPct, spCostPct: (10 + 5 * per) / 10 };
+}
+
+function applyEnergyCoat(build, pmf, result) {
+  const { pct, spPct, spCostPct } = energyCoatReduction(build);
+  if (!pct) return pmf;
+  pmf = scaleFloor(pmf, 100 - pct, 100);
+  const [mn, mx, av] = pmfStats(pmf);
+  result.add_step({
+    name: "Energy Coat", value: av, min_value: mn, max_value: mx, multiplier: (100 - pct) / 100,
+    note: `−${pct}% at ${spPct > 80 ? "81–100" : spPct > 60 ? "61–80" : spPct > 40 ? "41–60" : spPct > 20 ? "21–40" : "1–20"}% SP (costs ${spCostPct}% SP per hit)`,
+    formula: `dmg × ${100 - pct}%`, hercules_ref: "battle.c:3528-3552",
+  });
+  return pmf;
+}
+
 function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weapon, config, opts = {}) {
   const {
     is_ranged: isRanged = false, mob_atk_bonus_rate: mobAtkBonusRate = 0,
@@ -154,9 +189,11 @@ function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weap
   pmf = floorAt(pmf, 1);
 
   pmf = calculateIncomingPhysical(mob.race, atkEle, mob.size, isRanged, playerTarget, pmf, result,
-    { race2: loader._mobRace2Map()[Number(mobId)] || [], mob_id: mobId });
+    { race2: loader._mobRace2Map()[Number(mobId)] || [], mob_id: mobId, is_boss: !!mob.is_boss });
 
   pmf = applyLexAeterna(build, pmf, result);
+
+  pmf = applyEnergyCoat(build, pmf, result);
 
   pmf = floorAt(pmf, 0);
   const [mn, mx, av] = pmfStats(pmf);

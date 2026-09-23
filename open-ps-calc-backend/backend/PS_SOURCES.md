@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-09-22 | Frennetix (maintainer) | Maintainer ruling | Wizard / Amplify Magic Power |
 | 2026-09-14 | Alardun | Staff ruling - standard PS-custom change | Ninja / Shadow Slash |
 | 2026-08-28 | Laila, via the CCs | Staff ruling | Gunslinger / Soul Bullet |
 | 2026-08-18 | Patch Notes (18th August 2026) | GM patch notes | Super Novice, Crazy Uproar, DPS room |
@@ -6951,3 +6952,17 @@ Bullet gets no ammo effects and no ranged min-ATK scaling, and both are implemen
 statement touches the long-range damage bonus, which Hercules decides from the skill's *range*
 and not from ammo, so `bLongAtkRate` gear still applies to it here. If PS means that to be
 stripped too, it is a deviation from Hercules and needs saying explicitly.
+
+## 2026-09-22 - Amplify Magic Power is a High Wizard skill (maintainer ruling)
+
+**Status: confirmed.** Mystical Amplification / Amplify Magic Power (`HW_MAGICPOWER`) is a
+TRANSCENDENT skill: only a High Wizard has it, not a Wizard.
+wiki.payonstories.com/Mystical_Amplification lists "Job: High Wizard", max level 5 (fixed),
+"30 seconds or next cast skill", and a bonus of "10% * level of Amp" - so +10% MATK per level,
++50% at Lv5, which is what the calculator computes (the PS scaling is the
+`SC_AMPLIFYMAGICPOWER_SCALING` mechanic flag; vanilla is a flat +50%).
+
+The buff picker offered it to Wizard (job 9) as well as High Wizard (4010). A player asked
+whether a Wizard should have it at all, and the maintainer confirmed it is High Wizard only
+(Frennetix, 2026-09-22). It is now offered to 4010 alone; the MATK formula was already correct
+and is unchanged.
