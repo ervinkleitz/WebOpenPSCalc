@@ -50,8 +50,16 @@ function calculateSkillTiming(skillName, skillLv, skillData, status, gearBonuses
   const lvIdx = skillLv - 1;
   const profile = getProfile(server);
 
+  // A per-level table stops where the LEARNABLE ranks stop, but a rank above that is
+  // reachable: a Rogue copies a monster's Water Ball 10 off a five-entry table. Reading
+  // past the end used to give 0, i.e. an instant cast with no after-cast delay, so the
+  // copied Lv10 came out FASTER than the Lv5 anyone can learn and its DPS was nonsense.
+  // Nothing publishes the timing for those ranks, so hold the last value we do have —
+  // the conservative reading, and the only one that cannot make a higher rank cheaper.
+  const atLevel = (table) => (table.length === 0 ? 0 : table[Math.max(0, Math.min(lvIdx, table.length - 1))]);
+
   const castTimes = skillData.cast_time || [];
-  let baseCast = lvIdx < castTimes.length ? castTimes[lvIdx] : 0;
+  let baseCast = atLevel(castTimes);
 
   if (server === "payon_stories" && skillName in PS_CAST_TIME_OVERRIDES) {
     const override = PS_CAST_TIME_OVERRIDES[skillName];
@@ -105,7 +113,7 @@ function calculateSkillTiming(skillName, skillLv, skillData, status, gearBonuses
   if (profile.ps_zero_cast.has(skillName)) effectiveCast = 0;
 
   const delays = skillData.after_cast_act_delay || [];
-  let baseDelay = lvIdx < delays.length ? delays[lvIdx] : 0;
+  let baseDelay = atLevel(delays);
 
   if (skillName in (profile.ps_skill_delay_fn || {})) {
     baseDelay = profile.ps_skill_delay_fn[skillName](status);

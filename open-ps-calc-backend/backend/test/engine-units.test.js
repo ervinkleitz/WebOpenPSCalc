@@ -5526,3 +5526,92 @@ test("Energy Coat soaks physical damage by SP bracket, and never magic", () => {
   assert.equal(take({ SC_ENERGYCOAT: 1 }, true).avg_damage, take(null, true).avg_damage,
     "pre-renewal Energy Coat covers weapon damage only");
 });
+
+// ---------------------------------------------------------------------------
+// Two reports from the same player, 2026-09-24.
+// ---------------------------------------------------------------------------
+
+// 1. "Spear boom doesn't exist." It does — under the wrong name. The scraped PS
+// skill DB calls skill 59 "Sonic Wave" (that is RK_SONICWAVE, a Rune Knight skill,
+// id 2002), while its own scraped description and 150-350% ATK table are Spear
+// Boomerang's. wiki.payonstories.com/Knight lists "Spear Boomerang" and there is no
+// /Sonic_Wave page, so searching the picker for what the wiki and the game call it
+// returned nothing. Corrected in ps_skill_desc_overrides.json.
+test("Spear Boomerang is named what the PS wiki names it, not the scrape's 'Sonic Wave'", () => {
+  assert.equal(loader.getSkillDisplayName("KN_SPEARBOOMERANG", PS), "Spear Boomerang");
+  // The rest of the record is untouched: this is a name correction, not a rework.
+  const rec = loader.getSkillByName("KN_SPEARBOOMERANG");
+  assert.equal(rec.max_level, 5);
+  // And a player typing what they see in game finds it. This is the actual failure
+  // that was reported — the display name is what the picker searches on.
+  const hit = loader.getAllSkills().filter((sk) =>
+    loader.getSkillDisplayName(sk.name, PS).toLowerCase().includes("spear boom"));
+  assert.deepEqual(hit.map((sk) => sk.name), ["KN_SPEARBOOMERANG"]);
+});
+
+// 2. "Can you add the option for lv 10 waterball? Rogues can plagiarize that from
+// monsters." Water Ball stops at 5 for a Wizard, but Ktullanux (1779), Turtle General
+// (1312), Pouring (1894) and Hardrock Mammoth (1990) all cast it at 10, and
+// Plagiarism copies the rank used on you — so a Rogue can be holding Water Ball 10.
+const { plagiarisedRankCap } = require("../src/engine/serverProfiles");
+
+test("plagiarised rank ceiling lifts Water Ball to 10 for a Rogue and nobody else", () => {
+  for (const rogueish of [17, 4018]) {
+    assert.equal(plagiarisedRankCap(PS, rogueish, "WZ_WATERBALL", 5), 10);
+  }
+  // A Wizard's own Water Ball is still a 5-rank skill.
+  assert.equal(plagiarisedRankCap(PS, 9, "WZ_WATERBALL", 5), 5);
+  // Copyable, but no monster casts it above its max — unchanged.
+  assert.equal(plagiarisedRankCap(PS, 17, "MO_TRIPLEATTACK", 5), 5);
+  // Not copyable at all — unchanged even for a Rogue.
+  assert.equal(plagiarisedRankCap(PS, 17, "KN_SPEARBOOMERANG", 5), 5);
+  // Never lowers a cap.
+  assert.equal(plagiarisedRankCap(PS, 17, "WZ_WATERBALL", 10), 10);
+});
+
+test("a Rogue's Water Ball is priced at the rank asked for; a Wizard's still clamps to 5", () => {
+  const ratioStep = (jobId, level) => {
+    const cfg = createBattleConfig();
+    loader.setProfile(PS);
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: jobId, base_level: 99, job_level: 50,
+      base_stats: { str: 1, agi: 1, vit: 1, int: 99, dex: 90, luk: 1 }, equipped: {},
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, PS);
+    const res = new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 86, level }), loader.getMonster(1002), eff, gb);
+    return res.normal.steps.find((st) => st.name.startsWith("Skill Ratio"));
+  };
+  // 100 + 30 x lv, so Lv5 = 250% and Lv10 = 400%.
+  assert.equal(ratioStep(17, 5).multiplier, 2.5);
+  assert.equal(ratioStep(17, 10).multiplier, 4);
+  assert.equal(ratioStep(17, 6).multiplier, 2.8);
+  // The Wizard asking for 10 gets Lv5 back, which is all the rank they have.
+  assert.equal(ratioStep(9, 10).multiplier, 2.5);
+  assert.ok(ratioStep(9, 10).name.includes("Lv 5"), "the step must say which rank it actually priced");
+});
+
+// The number on screen is ONE ball. Saying so matters most at the ranks a Rogue
+// copies off an MvP, where the ball count is the whole reason to want Lv10.
+test("Water Ball's breakdown says it is per ball, and how many balls the rank throws", () => {
+  const note = (level) => {
+    const cfg = createBattleConfig();
+    loader.setProfile(PS);
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 17, base_level: 99, job_level: 50,
+      base_stats: { str: 1, agi: 1, vit: 1, int: 99, dex: 90, luk: 1 }, equipped: {},
+    });
+    const [gb, eff, weapon, status] = resolvePlayerState(b, cfg, PS);
+    const res = new BattlePipeline(cfg).calculate(
+      status, weapon, createSkillInstance({ id: 86, level }), loader.getMonster(1002), eff, gb);
+    return res.normal.steps.find((st) => st.name.startsWith("Skill Ratio")).note;
+  };
+  // Hercules walks a square of radius lv/2: 1x1, 3x3, 3x3, 5x5, 5x5 ... 11x11 —
+  // the same 1 / 9 / 25 table wiki.payonstories.com/Water_Ball prints.
+  for (const [lv, balls, side] of [[1, 1, 1], [2, 9, 3], [4, 25, 5], [10, 121, 11]]) {
+    const n = note(lv);
+    assert.match(n, /ONE ball/, `Lv${lv} note must say the figure is one ball: ${n}`);
+    assert.ok(n.includes(`up to ${balls} of them`), `Lv${lv} should throw ${balls} balls: ${n}`);
+    assert.ok(n.includes(`${side}×${side} area`), `Lv${lv} area should be ${side}x${side}: ${n}`);
+  }
+});

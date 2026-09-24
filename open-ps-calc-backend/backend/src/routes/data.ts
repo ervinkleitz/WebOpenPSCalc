@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { loader, PS_CUSTOM_PASSIVES } from "../engine/dataLoader";
-import { getProfile } from "../engine/serverProfiles";
+import { getProfile, plagiarisedRankCap } from "../engine/serverProfiles";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { importJaludev } = require("../engine/jaludevImport");
 const { describeSelfBuff } = require("../engine/targetSelfBuffs");
@@ -305,7 +305,15 @@ router.get("/skills", (req: Request, res: Response) => {
       loader.getSkillDisplayName(s.name, profile).toLowerCase().includes(q)
     );
   }
-  const withNames = skills.map((s: any) => ({ ...s, display_name: loader.getSkillDisplayName(s.name, profile) }));
+  // `job` is optional and only widens a rank cap: a Rogue/Stalker can be carrying a
+  // copy of a skill at a rank its own class cannot learn (Water Ball 10 off an MvP),
+  // and the picker has to offer that rank or the copy cannot be priced at all.
+  const jobId = req.query.job != null ? Number(req.query.job) : NaN;
+  const withNames = skills.map((s: any) => ({
+    ...s,
+    max_level: plagiarisedRankCap(profile, jobId, s.name, s.max_level),
+    display_name: loader.getSkillDisplayName(s.name, profile),
+  }));
   res.json(paginate(withNames, req));
 });
 
@@ -313,7 +321,15 @@ router.get("/skills/:id", (req: Request, res: Response) => {
   const server = applyServerProfile(req);
   const skill = loader.getSkill(Number(req.params.id));
   if (!skill) return res.status(404).json({ error: "Skill not found" });
-  res.json({ ...skill, display_name: loader.getSkillDisplayName(skill.name, getProfile(server)) });
+  const profile = getProfile(server);
+  const jobId = req.query.job != null ? Number(req.query.job) : NaN;
+  res.json({
+    ...skill,
+    // Same widening as /skills above — this is the call the editor re-syncs the rank
+    // input from, so without it a Lv10 copy snapped back to Lv5 on reload.
+    max_level: plagiarisedRankCap(profile, jobId, skill.name, skill.max_level),
+    display_name: loader.getSkillDisplayName(skill.name, profile),
+  });
 });
 
 router.get("/jobs", (_req: Request, res: Response) => {
@@ -330,7 +346,12 @@ router.get("/plagiarism", (req: Request, res: Response) => {
     .map((name: string) => {
       const rec = (loader as any).getSkillByName(name);
       if (!rec) return null;
-      return { name, display_name: loader.getSkillDisplayName(name, profile), max_level: rec.max_level };
+      // The Plagiarism slot's own rank input: the ceiling applies by definition here,
+      // every skill in this list is a copy. `plagiarism_jobs` always contains the
+      // Rogue, so pass one rather than plumbing the build's job into this route.
+      const rogue = [...(profile.plagiarism_jobs || [])][0];
+      const maxLevel = plagiarisedRankCap(profile, rogue, name, rec.max_level);
+      return { name, display_name: loader.getSkillDisplayName(name, profile), max_level: maxLevel };
     })
     .filter((s: any) => s && s.max_level > 0)
     .sort((a: any, b: any) => a.display_name.localeCompare(b.display_name));

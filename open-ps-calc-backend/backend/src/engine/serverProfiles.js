@@ -59,6 +59,41 @@ const PLAGIARISM_COPYABLE = new Set([
   "RG_INTIMIDATE",
 ]);
 
+// Ranks a Rogue/Stalker can be holding that are ABOVE the skill's own learnable
+// maximum. Plagiarism copies a skill at "the level used on the rogue", and monsters
+// cast past the player cap, so a copied spell can outrank anything its own class
+// could ever learn -- wiki.payonstories.com/Plagiarism calls these the MvP versions.
+//
+// Water Ball stops at 5 for a Wizard, but Ktullanux (1779), Turtle General (1312),
+// Pouring (1894) and Hardrock Mammoth (1990) all cast it at 10 in mob_skill_db.json,
+// and the PS monster pages in monsters.json agree -- so a Rogue can carry Water Ball
+// 10. Its ratio (100 + 30 x lv) is vanilla, is in PS_MAGIC_VANILLA_OK, and carries
+// straight on to 400% at Lv10; the ball count is not read per level here (see the
+// per-ball note in battlePipeline), so ranks 6-10 are arithmetic, not a guess.
+// Reported 2026-09-24: "can you add the option for lv 10 waterball? Rogues can
+// plagiarize that from monsters".
+//
+// NOT listed, although monsters cast them above their learnable 5 too: Earth Spike
+// and Heaven's Drive. PS prices both at a flat 140% and their hit count comes out of
+// a five-entry number_of_hits table, so nothing we have says what rank 6-10 does.
+// Add them when that has been checked, not before.
+//
+// The ceiling is also Plagiarism's own rank ceiling: you cannot hold a copy above
+// your own Plagiarism level, which stops at 10.
+const PLAGIARISM_RANK_CEILING = { WZ_WATERBALL: 10 };
+
+// The rank cap for `skillName` on a build of `jobId`: the skill's own max, raised to
+// the Plagiarism ceiling for the jobs that can copy it. One function so the skill
+// picker, the Plagiarism slot, the share-link clamp and the damage pipeline cannot
+// drift apart -- a cap that only the picker honoured would let a share link ask for
+// Lv10 and silently get Lv5 damage back.
+function plagiarisedRankCap(profile, jobId, skillName, dbMax) {
+  if (!profile || !profile.plagiarism_jobs || !profile.plagiarism_jobs.has(jobId)) return dbMax;
+  if (!profile.plagiarism_copyable || !profile.plagiarism_copyable.has(skillName)) return dbMax;
+  const ceiling = (profile.plagiarism_rank_ceiling || {})[skillName];
+  return ceiling != null && (dbMax == null || ceiling > dbMax) ? ceiling : dbMax;
+}
+
 function emptyProfile(name, overrides = {}) {
   return {
     name,
@@ -114,6 +149,8 @@ function emptyProfile(name, overrides = {}) {
     plagiarism_copyable: PLAGIARISM_COPYABLE,
     // Jobs that can copy a skill with it — Rogue and Stalker only.
     plagiarism_jobs: new Set([17, 4018]),
+    // Copied ranks that exceed the skill's own max (Water Ball 10 off an MvP).
+    plagiarism_rank_ceiling: PLAGIARISM_RANK_CEILING,
     ...overrides,
   };
 }
@@ -994,4 +1031,4 @@ function getProfile(server) {
   return PROFILES[server] || STANDARD;
 }
 
-module.exports = { STANDARD, PAYON_STORIES, getProfile, emptyProfile };
+module.exports = { STANDARD, PAYON_STORIES, getProfile, emptyProfile, plagiarisedRankCap };

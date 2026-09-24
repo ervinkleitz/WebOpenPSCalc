@@ -1317,7 +1317,9 @@ export default function BuildEditor() {
   // Keep skill.max_level in sync whenever the selected skill changes
   useEffect(() => {
     if (skill.id === 0) return;
-    api.getSkillById(skill.id, data.server)
+    // The job goes along so a Rogue/Stalker gets the plagiarised rank ceiling
+    // (Water Ball 10) instead of the rank a Wizard could learn.
+    api.getSkillById(skill.id, data.server, data.job_id)
       .then((s) => {
         const cap = s.max_level ?? 10;
         setSkill((prev) => ({
@@ -1327,7 +1329,7 @@ export default function BuildEditor() {
         }));
       })
       .catch(() => {});
-  }, [skill.id, data.server]);
+  }, [skill.id, data.server, data.job_id]);
 
   // The URL only reflects the build on an explicit Save or Copy-share-link (see
   // writeStateToUrl below) — not on every edit — so the address bar stays stable
@@ -1956,9 +1958,9 @@ export default function BuildEditor() {
 
   const skillSearch = useCallback(
     (query: string): Promise<SearchResult[]> =>
-      api.searchSkills({ q: query, limit: 12, server: data.server, damage_only: "true" })
+      api.searchSkills({ q: query, limit: 12, server: data.server, job: data.job_id, damage_only: "true" })
         .then((r) => r.items.map((s: any) => ({ id: s.id, label: s.display_name || s.name || `Skill ${s.id}`, sublabel: s.name, max_level: s.max_level ?? 10 }))),
-    [data.server],
+    [data.server, data.job_id],
   );
 
   // Rank cap for the plagiarised skill: its PS max level (Triple Attack is 5 ranks

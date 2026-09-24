@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-09-24 | wiki Knight / Plagiarism + mob data | Wiki + bundled data | Knight / Spear Boomerang, Rogue / Water Ball |
 | 2026-09-22 | Frennetix (maintainer) | Maintainer ruling | Wizard / Amplify Magic Power |
 | 2026-09-14 | Alardun | Staff ruling - standard PS-custom change | Ninja / Shadow Slash |
 | 2026-08-28 | Laila, via the CCs | Staff ruling | Gunslinger / Soul Bullet |
@@ -6966,3 +6967,69 @@ The buff picker offered it to Wizard (job 9) as well as High Wizard (4010). A pl
 whether a Wizard should have it at all, and the maintainer confirmed it is High Wizard only
 (Frennetix, 2026-09-22). It is now offered to 4010 alone; the MATK formula was already correct
 and is unchanged.
+
+## 2026-09-24 - Spear Boomerang's name, and the ranks Plagiarism can hand a Rogue
+
+Two player reports, one session: *"Spear boom doesn't exist"* and *"can you add the option for
+lv 10 waterball? Rogues can plagiarize that from monsters"*.
+
+### Spear Boomerang is not "Sonic Wave"
+
+`ps_skill_db.json` entry **59** carries `"name": "Sonic Wave"` against
+`"constant": "KN_SPEARBOOMERANG"`. Everything else in that entry is Spear Boomerang's -
+*"Attacks an enemy from a distance by hurling a spear. Requires Spear class weapon"* and a
+150 / 200 / 250 / 300 / 350% ATK table. "Sonic Wave" is **RK_SONICWAVE (2002)**, a Rune Knight
+skill, which is the giveaway that the scrape crossed two rows.
+
+Sources checked:
+
+- **wiki.payonstories.com/Knight** lists the class's actives as Bowling Bash, Brandish Spear,
+  Counter Attack, Pierce, **Spear Boomerang**, Spear Stab, Sword Quickening. No Sonic Wave.
+- **wiki.payonstories.com/Spear_Boomerang** exists and gives *"an ATK bonus of 50% per skill
+  level (350% ATK at rank 5)"* - which is what `skillRatio.js` already computes
+  (`100 + 50 * lv`), and `KN_SPEARBOOMERANG` is in `PS_WEAPON_VANILLA_OK`.
+- **wiki.payonstories.com/Sonic_Wave** is a 404.
+
+Corrected with a `name` override in `ps_skill_desc_overrides.json`, which survives a rescrape.
+A sweep of every pre-renewal constant in the scrape for the same failure found 15 other
+name-vs-vanilla differences and **all 15 are real PS renames** already relied on elsewhere
+(Sword Quickening, Barrage, Run and Gun, Blade Mastery, Aspergillium...). This was the only bad
+row.
+
+**Why the report said the skill did not exist at all:** the picker searches the vanilla
+description as well as the display name, so typing "spear boom" DID return a row - labelled
+"Sonic Wave". Seeing no Spear Boomerang anywhere in the list reads as "not implemented".
+
+### A Rogue can hold Water Ball 10
+
+wiki.payonstories.com/Plagiarism: *"The skill level learned is limited by the level used on the
+rogue, and their max level of Plagerism"*, and the page's list of MvP versions names
+**Water Ball rank 10 off Ktullanux** (it also says rank 6 off Drake; the bundled mob data has
+Drake at 8, which does not change the ceiling).
+
+Corroborated in our own data - `mob_skill_db.json` and the PS `monsters.json` agree that
+**Ktullanux (1779), Turtle General (1312), Pouring (1894) and Hardrock Mammoth (1990)** all cast
+`WZ_WATERBALL` at level 10.
+
+So the ceiling is 10, for `plagiarism_jobs` only (`PLAGIARISM_RANK_CEILING` in
+`serverProfiles.js`). Ranks 6-10 are honest arithmetic rather than an extrapolation of taste:
+the ratio is vanilla's `100 + 30 x lv` (Lv10 = 400%), `WZ_WATERBALL` is in
+`PS_MAGIC_VANILLA_OK`, and the engine prices one ball regardless of rank.
+
+**Deliberately NOT lifted:** Earth Spike and Heaven's Drive. Monsters cast both at 10 and both
+stop at 5 for a player, but PS prices them at a flat 140% and their hit count comes out of a
+five-entry `number_of_hits` table - nothing we have says what rank 6-10 does. Worth asking a CC.
+
+**A side effect worth recording:** `skillTiming.js` read its per-rank cast-time and after-cast
+tables with `lvIdx < table.length ? table[lvIdx] : 0`, so any rank past the table cast instantly
+with no delay. Water Ball 10 was the first rank that could reach that path, and it showed 3.00
+casts/s against Lv5's 0.54. Those ranks now hold the last published value, which is the only
+reading that cannot make a higher rank cheaper than a lower one.
+
+### Open question for the CCs
+
+Water Ball throws one ball **per water cell** in a square that grows with the rank (1x1, 3x3,
+5x5 ... 11x11 at Lv10 - the wiki's own 1 / 9 / 25 table). The calculator quotes one ball and
+now says so on the breakdown. Whether a Lv10 copy can realistically find 121 water cells on PS
+- and how Deluge's 7x7 interacts with a Water Ball area larger than itself - decides whether
+that is ever worth modelling as a hit count.

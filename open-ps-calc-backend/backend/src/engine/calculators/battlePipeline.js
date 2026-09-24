@@ -27,7 +27,7 @@
  */
 const { loader } = require("../dataLoader");
 const { createCalcContext, createDamageResult, createBattleResult, createAttackDefinition } = require("../models");
-const { getProfile, STANDARD } = require("../serverProfiles");
+const { getProfile, STANDARD, plagiarisedRankCap } = require("../serverProfiles");
 const { uniformPmf, scaleFloor, floorAt, pmfStats, convolve, addFlat } = require("../pmf");
 
 const { calculateBaseDamage, skillUsesAmmo } = require("./modifiers/baseDamage");
@@ -278,6 +278,18 @@ class BattlePipeline {
       ratioSrc = "ratio_base (DB fallback)";
     }
 
+    // Water Ball is quoted PER BALL. It throws one ball per WATER CELL in an area
+    // that grows with the rank (Hercules skill.c walks a square of radius lv/2: 1x1
+    // at Lv1, 3x3 at Lv2-3, 5x5 at Lv4-5, on to 11x11 at Lv10 — the same 1 / 9 / 25
+    // table wiki.payonstories.com/Water_Ball prints). How many of those cells hold
+    // water is terrain, not a stat, so the number below is one ball and the note
+    // says how many a cast of this rank can throw at most. Matters most for the
+    // ranks a Rogue copies off an MvP, where the ball count is the whole point.
+    const waterBallCells = (lv) => {
+      const r = Math.floor(Math.max(1, Math.min(lv, 10)) / 2);
+      return { side: 2 * r + 1, balls: (2 * r + 1) * (2 * r + 1) };
+    };
+
     // Hit count: a PS profile magic_hit_counts fn (e.g. Blaze Shield's 3/6/9 by
     // level) overrides the skills.json number_of_hits, which is sometimes wrong
     // for PS-reworked multi-hit spells. Mirrors weapon_hit_counts in skillRatio.js.
@@ -303,7 +315,12 @@ class BattlePipeline {
     result.add_step({
       name: `Skill Ratio (ID ${skill.id} Lv ${skill.level})`,
       value: av1, min_value: mn1, max_value: mx1, multiplier: ratio / 100,
-      note: skillData ? (skillData.description || "") : "",
+      note: (() => {
+        const base = skillData ? (skillData.description || "") : "";
+        if (skillName !== "WZ_WATERBALL") return base;
+        const { side, balls } = waterBallCells(skill.level);
+        return `${base}${base ? " — " : ""}this is ONE ball. Lv${skill.level} throws up to ${balls} of them, one per water cell in the ${side}×${side} area around you.`;
+      })(),
       formula: `dmg × ${ratio}%${hitCount !== 1 ? ` (per hit — ×${hitCount} hits applied after MDEF)` : ""} (${ratioSrc})`,
       hercules_ref: "battle.c battle_calc_skillratio BF_MAGIC",
     });
@@ -1971,7 +1988,12 @@ class BattlePipeline {
     // requested level, and any share URL made while the picker offered the vanilla
     // count kept computing with ranks that do not exist.
     const servedMax = skillData && skillData.max_level > 0 ? skillData.max_level : null;
-    const lvCap = (profile.skill_level_cap_overrides || {})[skillName] ?? servedMax;
+    // A Rogue/Stalker can be holding a copy above the skill's own max (Water Ball 10
+    // off Ktullanux), so the cap is widened for exactly those jobs and skills — the
+    // same function the picker and the Plagiarism slot ask, so the rank you choose is
+    // the rank that gets priced.
+    const cappedMax = plagiarisedRankCap(profile, build.job_id, skillName, servedMax);
+    const lvCap = (profile.skill_level_cap_overrides || {})[skillName] ?? cappedMax;
     if (lvCap != null && skill.level > lvCap) skill = { ...skill, level: lvCap };
 
     if (skillName === "MO_EXTREMITYFIST") {

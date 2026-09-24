@@ -51,6 +51,13 @@ node wildcard-carryover.mjs https://openpscalc.com/
   and rendered nowhere, so a player reported it as unimplemented. Covers the dagger skill
   proc and Sidewinder Card's `bDoubleRate` on a Monk's knuckle.
 
+- **plagiarised-waterball.mjs** — covers two reports from one player. Typing "spear boom" into
+  the skill picker must select **Spear Boomerang**: the scraped PS skill DB labelled it "Sonic
+  Wave", and because the picker also searches the vanilla description the query DID return a
+  row, just under a name that exists nowhere on PS — which reads as "the skill is missing". And
+  a Rogue's Water Ball must offer 10 ranks and price them (Lv10 / Lv5 ≈ 400% / 250%), while a
+  Wizard's own Water Ball still stops at 5.
+
 ## These go stale silently
 
 Being outside `npm test` is what makes them cheap to keep, and also what let

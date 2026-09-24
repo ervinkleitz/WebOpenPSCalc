@@ -10,7 +10,7 @@ const buildApplicator = require("./buildApplicator");
 const buildManager = require("./buildManager");
 const { StatusCalculator } = require("./calculators/statusCalculator");
 const gearBonusAggregator = require("./gearBonusAggregator");
-const { getProfile } = require("./serverProfiles");
+const { getProfile, plagiarisedRankCap } = require("./serverProfiles");
 const { loader } = require("./dataLoader");
 
 function resolvePlayerState(build, config, profile = null) {
@@ -41,8 +41,11 @@ function resolvePlayerState(build, config, profile = null) {
     // Clamp to the skill's PS max rank — you cannot copy a rank that does not
     // exist, and an over-max level reads as 0 in the rate tables (PS retuned
     // Triple Attack to 5 ranks, so a copied "Lv10" would silently proc nothing).
+    // Except where a monster casts the skill ABOVE that max and so hands out a copy
+    // above it (Water Ball 10) — plagiarisedRankCap knows which those are.
     const rec = loader.getSkillByName(plag.name);
-    const maxLv = rec && rec.max_level > 0 ? rec.max_level : plag.level;
+    const dbMax = rec && rec.max_level > 0 ? rec.max_level : plag.level;
+    const maxLv = plagiarisedRankCap(profile, build.job_id, plag.name, dbMax);
     build = { ...build, mastery_levels: { ...(build.mastery_levels || {}), [plag.name]: Math.min(plag.level, maxLv) } };
   }
 
