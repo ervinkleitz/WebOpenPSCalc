@@ -7,6 +7,39 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-09-24
 
+### Fixed
+
+- **A two-handed weapon now fills both hands.** Two-handers and katars left the off-hand
+  slot open, and whatever you put there still counted — a Claymore with a four-Hydra dagger
+  in the left hand read 80% ahead of the Claymore alone, and a shield next to a katar still
+  gave its DEF and its card. The slot now says "Both hands are holding your weapon", and a
+  build shared with something in it shows the item greyed out and leaves it out of the
+  numbers. One-handed weapons keep their off-hand exactly as before.
+
+- **Shield Boomerang only throws a shield.** It used to take whatever sat in the off-hand
+  and use its weight, so parking a two-handed sword there out-threw every real shield
+  (1,049 against a Mirror Shield's 684). With no shield, it now says so instead of quietly
+  quoting a number for a cast that cannot happen.
+
+- **Skills say when your weapon can't cast them.** Double Strafe with a sword, Pierce with a
+  sword and Sonic Blow with a sword all produced confident numbers with nothing to suggest
+  the build was impossible. The skill panel now names what the skill needs and what you are
+  holding, and the damage breakdown carries the same note. The requirement comes from the
+  skill database, so it is right about the awkward cases too — Bash and Asura Strike work
+  with anything except a bow.
+
+- **Items you are too low to wear are excluded.** Every item carries a level requirement and
+  nothing checked it: a level-1 character could wear a level-33 Claymore at full ATK. Those
+  items are now greyed out in the picker and, if one arrives in a shared build, flagged in
+  red with the level it needs and left out of the calculation — the same treatment gear for
+  the wrong class already got.
+
+- **Exploding Dragon no longer pays the target's MDEF three times.** The wiki is explicit
+  that it "is calculated as a single hit that is then divided into three separate hits", so
+  soft MDEF comes off the one roll, not off each strike. Against a Teddy Bear a Lv5 cast goes
+  from 2,281 to 2,395, and more against tougher targets. It also now behaves as the wiki
+  describes against plants, where a 1-damage roll splits three ways into nothing.
+
 ### Added
 
 - **Water Ball up to rank 10 for Rogues and Stalkers.** A Wizard's Water Ball stops at 5, but

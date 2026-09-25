@@ -93,6 +93,13 @@ export interface EquippedItemInfo {
   slots?: number;
   refineable?: boolean;
   job?: number[];
+  // Equip locations as the item DB gives them. "EQP_ARMS" is how a two-handed
+  // weapon (and a katar) says it fills both hands, which is what stops a shield or
+  // an off-hand weapon going in beside it.
+  loc?: string[];
+  // Minimum base level to wear it.
+  equip_level?: number;
+  weapon_type?: string;
 }
 
 export interface SearchResult {

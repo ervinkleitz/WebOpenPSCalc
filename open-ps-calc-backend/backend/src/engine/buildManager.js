@@ -135,6 +135,25 @@ function buildFromSaveSchema(data) {
     for (let i = 1; i <= 4; i++) delete equipped[`${slot}_card${i}`];
   }
 
+  // A two-handed weapon fills BOTH hands, so there is no off-hand to fill. The item
+  // DB has always said which those are — every two-hander and every katar is
+  // `EQP_ARMS`, one-handers are `EQP_WEAPON` — and nothing read it, so an off-hand
+  // equipped alongside one still contributed its DEF, its cards and (for Shield
+  // Boomerang) its weight. A Claymore plus a four-Hydra dagger in the left hand came
+  // out 80% ahead of the Claymore alone, on a character that cannot exist. Dropped
+  // here, next to the forged-weapon rule above, for the same reason: better to price
+  // the legal part of the build than a combination the game will not let you wear.
+  // (Found in the 2026-09-24 QA sweep.) The editor greys the slot out as well; this
+  // is the backstop for share links, imports and direct API calls.
+  if (equipped.right_hand != null && equipped.left_hand != null) {
+    const { loader } = require("./dataLoader");
+    const rh = loader.getItem(equipped.right_hand);
+    if (rh && Array.isArray(rh.loc) && rh.loc.includes("EQP_ARMS")) {
+      equipped = { ...equipped, left_hand: null };
+      for (let i = 1; i <= 4; i++) delete equipped[`left_hand_card${i}`];
+    }
+  }
+
   let activeBuffs = { ...(data.active_buffs || {}) };
   let supportBuffs = { ...(data.support_buffs || {}) };
   if ("SC_ADRENALINE" in activeBuffs && !("SC_ADRENALINE" in supportBuffs)) {

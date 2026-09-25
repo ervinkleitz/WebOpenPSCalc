@@ -59,7 +59,7 @@ export const api = {
   // `job` only ever widens max_level: a Rogue/Stalker can hold a copied skill at a
   // rank its own class cannot learn (Water Ball 10 off an MvP).
   getSkillById: (id: number, server: string, job?: number) =>
-    request(`/data/skills/${id}?server=${server}${job != null ? `&job=${job}` : ""}`) as Promise<{ id: number; max_level: number; name: string; [key: string]: any }>,
+    request(`/data/skills/${id}?server=${server}${job != null ? `&job=${job}` : ""}`) as Promise<{ id: number; max_level: number; name: string; required_weapon_types?: string[] | null; required_weapon_label?: string | null; [key: string]: any }>,
   getGearStatBonuses: (build: unknown) =>
     request("/calculate/gear-stat-bonuses", { method: "POST", body: { build } }) as Promise<{ str_: number; agi: number; vit: number; int_: number; dex: number; luk: number; ic_excluded_agi?: number; ic_excluded_dex?: number }>,
   getCharacterStatus: (build: unknown) =>

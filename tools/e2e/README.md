@@ -58,6 +58,14 @@ node wildcard-carryover.mjs https://openpscalc.com/
   a Rogue's Water Ball must offer 10 ranks and price them (Lv10 / Lv5 ≈ 400% / 250%), while a
   Wizard's own Water Ball still stops at 5.
 
+- **equip-legality.mjs** — the three rules the 2026-09-24 QA sweep found sitting unread in
+  the data. A two-handed weapon must leave no off-hand (a Claymore with a four-Hydra dagger
+  in the left hand read +80%), an item's base-level requirement must exclude it (a level-1
+  character wore a level-33 Claymore), and a skill must say when your weapon cannot cast it
+  (Double Strafe priced happily with a dagger). Each is checked both ways — the one-handed
+  weapon that must KEEP its off-hand, and the bow that must not be warned about — because
+  all three fixes are the kind that are easy to make too aggressive.
+
 ## These go stale silently
 
 Being outside `npm test` is what makes them cheap to keep, and also what let

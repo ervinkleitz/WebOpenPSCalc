@@ -28,6 +28,7 @@
 const { loader } = require("../dataLoader");
 const { createCalcContext, createDamageResult, createBattleResult, createAttackDefinition } = require("../models");
 const { getProfile, STANDARD, plagiarisedRankCap } = require("../serverProfiles");
+const { weaponRequirementViolation, describeViolation } = require("../weaponRequirements");
 const { uniformPmf, scaleFloor, floorAt, pmfStats, convolve, addFlat } = require("../pmf");
 
 const { calculateBaseDamage, skillUsesAmmo } = require("./modifiers/baseDamage");
@@ -248,6 +249,17 @@ class BattlePipeline {
       hercules_ref: "status.c status_calc_matk",
     });
 
+    // Same weapon-requirement notice the weapon branch carries — a Staff-only spell
+    // asked for with a sword should say so rather than quietly answer.
+    const magicViolation = weaponRequirementViolation(skillData, weapon ? weapon.weapon_type : null);
+    if (magicViolation) {
+      result.add_step({
+        name: "⚠ Wrong weapon for this skill", value: av0, min_value: mn0, max_value: mx0, multiplier: 1.0,
+        note: describeViolation(magicViolation), formula: "",
+        hercules_ref: "skill_db requirements.weapon_types",
+      });
+    }
+
     // 2. Skill ratio — explicit BF_MAGIC_RATIOS, then PS profile, then skill DB fallback
     const ctx = createCalcContext({
       skill_levels: gearBonuses ? gearBonuses.effective_mastery : build.mastery_levels,
@@ -301,8 +313,20 @@ class BattlePipeline {
       const noh = skillData.number_of_hits;
       if (noh && skill.level <= noh.length) hitCountRaw = noh[skill.level - 1];
     }
+    // A few spells roll damage ONCE and then divide it between their strikes, rather
+    // than rolling each strike separately. That is not cosmetic — the split is real,
+    // each part is floored — but it means the target's soft MDEF comes off the single
+    // roll, not off every strike. Exploding Dragon is the case on PS: "calculated as a
+    // single hit that is then divide[d] into three separate hits. Each hit is then
+    // rounded down; as a result, dealing damage of 1 (such as to plants) will split up
+    // and rounded to zero" (wiki.payonstories.com/Exploding_Dragon). The engine was
+    // charging MDEF three times, losing 2x soft MDEF on every cast, and showing 3
+    // damage against plants where the game shows none. Found in the 2026-09-24 QA
+    // sweep — the mirror image of the Meteor Storm / Lord of Vermilion fix, which had
+    // to start subtracting MDEF per hit.
+    const splitHits = (profile.magic_single_roll_split_hits || {})[skillName] || 0;
     // Negative = cosmetic (visual multi-hit, damage applied once)
-    const hitCount = hitCountRaw > 0 ? hitCountRaw : 1;
+    const hitCount = splitHits ? 1 : (hitCountRaw > 0 ? hitCountRaw : 1);
 
     pmf = scaleFloor(pmf, ratio, 100);
     // number_of_hits is applied at the END of this branch (after MDEF/element/
@@ -431,6 +455,20 @@ class BattlePipeline {
     }
 
     pmf = floorAt(pmf, 1); // per-hit floor (each bolt is at least 1)
+
+    // One roll, then divided between the strikes — floor each part, then add them
+    // back up, which is what makes a 1-damage cast land for nothing at all.
+    if (splitHits > 1) {
+      pmf = scaleFloor(pmf, 1, splitHits);
+      pmf = scaleFloor(pmf, splitHits, 1);
+      const [mnS, mxS, avS] = pmfStats(pmf);
+      result.add_step({
+        name: `Split into ${splitHits} strikes`, value: avS, min_value: mnS, max_value: mxS, multiplier: 1,
+        note: `${skillName} rolls its damage once — MDEF comes off that single roll (above) — and then divides it between ${splitHits} strikes, each rounded down. A roll under ${splitHits} therefore lands for nothing.`,
+        formula: `${splitHits} × floor(dmg / ${splitHits})`,
+        hercules_ref: "wiki.payonstories.com/Exploding_Dragon",
+      });
+    }
 
     // Now sum the hits: each bolt was fully computed (ratio → MDEF → element →
     // cards) and floored above, so a multi-hit spell is per-hit-damage × hits.
@@ -1371,7 +1409,7 @@ class BattlePipeline {
   /**
    * CR_SHIELDBOOMERANG — PS formula (wiki.payonstories.com/Shield_Boomerang):
    *   damage = floor((BATK + shield_weight) × ratio / 100) + shield_refine × 10
-   * Ratios per level: [130, 180, 220, 260, 300].
+   * Ratios per level: [140, 180, 220, 260, 300].
    * Weapon ATK and size fix are excluded. Neutral element. Mastery flat bonuses apply (PS).
    * Ranged attack; always hits monsters (nk_ignore_flee via mechanic_flags).
    */
@@ -1380,10 +1418,16 @@ class BattlePipeline {
     const result = createDamageResult();
     const skillName = "CR_SHIELDBOOMERANG";
 
+    // The off-hand item only counts if it is a SHIELD. This used to take whatever
+    // was in `left_hand` and read its weight, so a Claymore parked there (weight 250)
+    // threw for 1049 against the heaviest real shield's 684 — heavier than anything
+    // the skill can actually throw. Found in the 2026-09-24 QA sweep.
     const shieldId = build.equipped && build.equipped.left_hand;
-    const shieldItem = shieldId ? loader.getItem(shieldId) : null;
+    const offHandItem = shieldId ? loader.getItem(shieldId) : null;
+    const isShield = !!(offHandItem && Array.isArray(offHandItem.loc) && offHandItem.loc.includes("EQP_SHIELD"));
+    const shieldItem = isShield ? offHandItem : null;
     const shieldWeight = shieldItem ? (shieldItem.weight || 0) : 0;
-    const shieldRefine = (build.refine_levels && build.refine_levels.left_hand) || 0;
+    const shieldRefine = isShield ? ((build.refine_levels && build.refine_levels.left_hand) || 0) : 0;
 
     // item_db stores weight as 10× the in-game displayed value (e.g. Buckler: db=600, displayed=60)
     const displayWeight = Math.floor(shieldWeight / 10);
@@ -1394,6 +1438,18 @@ class BattlePipeline {
     const baseSum = status.batk + displayWeight;
     const baseDmg = Math.floor(baseSum * ratio / 100);
     let pmf = uniformPmf(baseDmg, baseDmg);
+    // You throw the shield — with nothing in the off-hand there is nothing to throw,
+    // and the skill cannot be cast. It still prices out so a Crusader can see what a
+    // shield would be worth, but it says plainly that this build could not do it.
+    if (!isShield) {
+      result.add_step({
+        name: "⚠ No shield equipped", value: baseDmg, min_value: baseDmg, max_value: baseDmg, multiplier: 1.0,
+        note: offHandItem
+          ? `Shield Boomerang throws a SHIELD; your off-hand holds ${offHandItem.name}, which contributes nothing. The figure below is what you would do with no shield at all — in game the skill could not be cast.`
+          : "Shield Boomerang throws a shield and you have none equipped, so the skill could not be cast. The figure below is BATK alone; equip a shield to see the real number.",
+        formula: "", hercules_ref: "wiki.payonstories.com/Shield_Boomerang",
+      });
+    }
     result.add_step({
       name: "Shield Boomerang Base",
       value: baseDmg, min_value: baseDmg, max_value: baseDmg,

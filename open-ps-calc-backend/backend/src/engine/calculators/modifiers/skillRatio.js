@@ -14,6 +14,7 @@
  * specific ratio for skills not yet transcribed.
  */
 const { loader } = require("../../dataLoader");
+const { weaponRequirementViolation, describeViolation } = require("../../weaponRequirements");
 const { scaleFloor, scaleFloorNumRange, addFlat, pmfStats } = require("../../pmf");
 const { STANDARD } = require("../../serverProfiles");
 
@@ -90,6 +91,22 @@ function calculateSkillRatio(skill, pmf, build, result, opts = {}) {
 
   const skillData = loader.getSkill(skill.id);
   const skillName = skillData ? skillData.name || "" : "";
+
+  // Can this weapon even cast it? The skill DB has always said so and nobody asked,
+  // which is how Double Strafe with a sword and Sonic Blow with a sword produced
+  // confident numbers (2026-09-24 QA sweep). The figure is still computed — you may
+  // be mid-build, and refusing to answer helps nobody — but the breakdown now leads
+  // with the reason it could not happen in game.
+  const weaponViolation = weaponRequirementViolation(skillData, weapon ? weapon.weapon_type : null);
+  if (weaponViolation) {
+    const [wvMn, wvMx, wvAv] = pmfStats(pmf);
+    result.add_step({
+      name: "⚠ Wrong weapon for this skill", value: wvAv, min_value: wvMn, max_value: wvMx, multiplier: 1.0,
+      note: describeViolation(weaponViolation),
+      formula: "",
+      hercules_ref: "skill_db requirements.weapon_types",
+    });
+  }
 
   const params = build.skill_params || {};
   let flatAdd = 0;

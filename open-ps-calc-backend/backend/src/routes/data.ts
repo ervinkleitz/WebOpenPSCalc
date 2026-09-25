@@ -2,6 +2,8 @@ import { Router, Request, Response } from "express";
 import { loader, PS_CUSTOM_PASSIVES } from "../engine/dataLoader";
 import { getProfile, plagiarisedRankCap } from "../engine/serverProfiles";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
+const { allowedWeaponTypes, describeRequirement } = require("../engine/weaponRequirements");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { importJaludev } = require("../engine/jaludevImport");
 const { describeSelfBuff } = require("../engine/targetSelfBuffs");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -328,6 +330,14 @@ router.get("/skills/:id", (req: Request, res: Response) => {
     // Same widening as /skills above — this is the call the editor re-syncs the rank
     // input from, so without it a Lv10 copy snapped back to Lv5 on reload.
     max_level: plagiarisedRankCap(profile, jobId, skill.name, skill.max_level),
+    // The skill DB's weapon requirement, translated from its own plural vocabulary
+    // ("Bows") into the item weapon_type the editor holds ("Bow"), or null when the
+    // skill has no restriction. Sent already mapped so the translation table lives in
+    // one place — the engine warns from the same function.
+    required_weapon_types: allowedWeaponTypes(skill),
+    // Ready-made wording for the editor's notice; null when the list is long enough
+    // that naming the weapon you are holding reads better than listing 21 classes.
+    required_weapon_label: describeRequirement(allowedWeaponTypes(skill)),
     display_name: loader.getSkillDisplayName(skill.name, profile),
   });
 });

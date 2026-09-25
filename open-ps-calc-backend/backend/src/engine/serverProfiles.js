@@ -101,6 +101,9 @@ function emptyProfile(name, overrides = {}) {
     use_ps_skill_names: false,
     weapon_ratios: {},
     weapon_hit_counts: {},
+    // Skills whose damage is rolled once and then split N ways (see
+    // PS_MAGIC_SINGLE_ROLL_SPLIT_HITS).
+    magic_single_roll_split_hits: {},
     rate_bonuses: {},
     magic_ratios: {},
     magic_hit_counts: {},
@@ -438,6 +441,20 @@ const PS_MAGIC_HIT_COUNTS = {
   // Each wave is ONE hit on a given target; the four waves are summed by
   // _runVermilionBranch, which is what applies MDEF four times.
   WZ_VERMILION: () => 1,
+};
+
+// Spells that roll their damage ONCE and then divide it between their strikes, so
+// the target's soft MDEF comes off the single roll rather than off each strike.
+// The engine's default — and the right answer for bolts, Meteor Storm and Lord of
+// Vermilion — is the opposite, one full roll per hit.
+//
+// wiki.payonstories.com/Exploding_Dragon says it plainly: "This skill is calculated
+// as a single hit that is then divide[d] into three separate hits. Each hit is then
+// rounded down; as a result, dealing damage of 1 (such as to plants) will split up
+// and rounded to zero." Pricing it per-strike charged MDEF three times.
+// Its ratio below is therefore the COMBINED total for all three strikes.
+const PS_MAGIC_SINGLE_ROLL_SPLIT_HITS = {
+  NJ_BAKUENRYU: 3,
 };
 
 // Mechanic flag sentinels — checked by individual modifiers across the engine.
@@ -815,6 +832,13 @@ const PS_BF_MAGIC_RATIOS = {
     return 70 + 2 * firewallLv;
   },
   WZ_SIGHTRASHER: (lv) => 100 + 75 * lv,
+  // wiki.payonstories.com/Exploding_Dragon: 300 / 450 / 600 / 750 / 900% by level.
+  // This is the COMBINED total for all three strikes, because PS rolls the damage
+  // once and splits it (PS_MAGIC_SINGLE_ROLL_SPLIT_HITS above) — so it is not
+  // multiplied by a hit count afterwards. The engine used to fall through to
+  // vanilla's per-strike 50+50xlv, which reached the same total via three separate
+  // MDEF subtractions and so undercharged the spell by 2x the target's soft MDEF.
+  NJ_BAKUENRYU: (lv) => 150 + 150 * lv,
   // wiki.payonstories.com/Napalm_Vulcan: "1*MATK per hit", hits = skill level
   // (10/300/500% at lv1/3/5). The engine was falling through to the vanilla
   // BF ratio (100+20×lv per hit), doubling the damage. Still ignores 50% MDEF.
@@ -1000,6 +1024,7 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   weapon_ratios: PS_BF_WEAPON_RATIOS,
   weapon_hit_counts: PS_WEAPON_HIT_COUNTS,
   magic_hit_counts: PS_MAGIC_HIT_COUNTS,
+  magic_single_roll_split_hits: PS_MAGIC_SINGLE_ROLL_SPLIT_HITS,
   weapon_vanilla_ok: PS_WEAPON_VANILLA_OK,
   magic_ratios: PS_BF_MAGIC_RATIOS,
   magic_vanilla_ok: PS_MAGIC_VANILLA_OK,

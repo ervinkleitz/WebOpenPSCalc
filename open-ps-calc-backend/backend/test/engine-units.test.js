@@ -4994,9 +4994,12 @@ test("perfect hit, HIT%, DEF% and the defensive bonuses change the numbers they 
   // bPerfectHitRate: Gungnir's 25% lands through Flee, so P(hit) = 25 + 75% of the rest.
   assert.equal(low("payon_stories", { right_hand: 1413 }), 25 + 0.75 * 5, "Gungnir: 25% perfect hit over a 5% Flee roll");
   // bPerfectHitAddRate: the VANILLA Mummy combo's +20 (standard profile only - see below).
-  assert.equal(low("standard", { right_hand: 1410, right_hand_card1: 4106, left_hand: 2101, left_hand_card1: 4248 }), 20 + 0.8 * 5);
+  // The spear here is a ONE-handed Pike, not the Lance this used to hold: a Lance is
+  // EQP_ARMS and fills both hands, so the Guard alongside it was a build the game
+  // cannot wear, and the off-hand is now dropped before the combo can form.
+  assert.equal(low("standard", { right_hand: 1408, right_hand_card1: 4106, left_hand: 2101, left_hand_card1: 4248 }), 20 + 0.8 * 5);
   // ...while on PS the PS combo REPLACES that vanilla combo: Holy Strike, no perfect hit.
-  assert.equal(low("payon_stories", { right_hand: 1410, right_hand_card1: 4106, left_hand: 2101, left_hand_card1: 4248 }), 5,
+  assert.equal(low("payon_stories", { right_hand: 1408, right_hand_card1: 4106, left_hand: 2101, left_hand_card1: 4248 }), 5,
     "PS's Mummy combo replaces the vanilla one rather than stacking with it");
   loader.setProfile(getProfile("payon_stories"));
 
@@ -5019,10 +5022,13 @@ test("perfect hit, HIT%, DEF% and the defensive bonuses change the numbers they 
     const [gb, eff, w, s] = resolvePlayerState(b, cfg, PS);
     return (magic ? calculateIncomingMagicDamage(mobId, eff, s, gb, w, {}) : calculateIncomingPhysicalDamage(mobId, eff, s, gb, w, cfg, {})).avg_damage;
   };
-  assert.ok(inc({ right_hand: 1410 }, 1320, true) > 0, "Owl Duke's magic should normally hurt");
-  assert.equal(inc({ right_hand: 1410, left_hand: 2101, left_hand_card1: 4128 }, 1320, true), 0, "Golden Thiefbug Card: immune to magic");
-  const without = inc({ right_hand: 1410, left_hand: 2101 }, 1285, false);
-  assert.equal(inc({ right_hand: 1410, left_hand: 2101, left_hand_card1: 4231 }, 1285, false), without / 2,
+  // One-handed Pike again, for the same reason as the combo above: a shield cannot
+  // be worn next to a two-handed weapon, so the off-hand would be dropped and these
+  // shield cards would never load.
+  assert.ok(inc({ right_hand: 1408 }, 1320, true) > 0, "Owl Duke's magic should normally hurt");
+  assert.equal(inc({ right_hand: 1408, left_hand: 2101, left_hand_card1: 4128 }, 1320, true), 0, "Golden Thiefbug Card: immune to magic");
+  const without = inc({ right_hand: 1408, left_hand: 2101 }, 1285, false);
+  assert.equal(inc({ right_hand: 1408, left_hand: 2101, left_hand_card1: 4231 }, 1285, false), without / 2,
     "Mi Gao Card: -50% from Guardians (Archer Guardian)");
 
   // bAddDefClass: by monster id, straight through the card fix.
@@ -5614,4 +5620,172 @@ test("Water Ball's breakdown says it is per ball, and how many balls the rank th
     assert.ok(n.includes(`up to ${balls} of them`), `Lv${lv} should throw ${balls} balls: ${n}`);
     assert.ok(n.includes(`${side}×${side} area`), `Lv${lv} area should be ${side}x${side}: ${n}`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// 2026-09-24 QA sweep. Four rules the calculator knew about in its own data and
+// had never actually applied.
+// ---------------------------------------------------------------------------
+
+const { weaponRequirementViolation, allowedWeaponTypes } = require("../src/engine/weaponRequirements");
+
+// 1. A two-handed weapon fills BOTH hands. The item DB says which ones (EQP_ARMS,
+// covering every two-hander and every katar) and nothing read it, so a Claymore plus
+// a four-Hydra dagger in the off-hand read 80% ahead of the Claymore alone.
+test("a two-handed weapon leaves no off-hand: the left-hand item and its cards are dropped", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const state = (equipped) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 99, agi: 60, vit: 60, int: 1, dex: 90, luk: 1 }, equipped,
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1023), eff, gb); // Orc Warrior, Demi-Human
+    return { gb, st, dmg: Math.round(r.normal.avg_damage), equipped: eff.equipped };
+  };
+  const HYDRAS = { left_hand: 1208, left_hand_card1: 4035, left_hand_card2: 4035, left_hand_card3: 4035, left_hand_card4: 4035 };
+
+  // Claymore (1163) and Loki's Nail (1262) are both EQP_ARMS.
+  for (const twoHanded of [1163, 1262]) {
+    const alone = state({ right_hand: twoHanded });
+    const withOffHand = state({ right_hand: twoHanded, ...HYDRAS });
+    assert.equal(withOffHand.dmg, alone.dmg,
+      `item ${twoHanded} fills both hands - an off-hand dagger must not add damage`);
+    assert.deepEqual(withOffHand.gb.add_race, {}, "its cards must not load either");
+    assert.equal(withOffHand.equipped.left_hand, null, "the slot is emptied before anything is priced");
+    // A shield is the same story, on the defensive side.
+    const shielded = state({ right_hand: twoHanded, left_hand: 2104, left_hand_card1: 4058 });
+    assert.equal(shielded.st.def_, alone.st.def_, "no shield DEF from a hand you do not have");
+    assert.deepEqual(shielded.gb.sub_race, {}, "no Thara Frog resistance either");
+  }
+
+  // ...and a ONE-handed weapon is untouched: this is the case that must keep working.
+  const oneHanded = state({ right_hand: 1129 });                 // Flamberge, EQP_WEAPON
+  const oneHandedPlus = state({ right_hand: 1129, ...HYDRAS });
+  assert.ok(oneHandedPlus.dmg > oneHanded.dmg, "a one-handed weapon still has an off-hand");
+  assert.deepEqual(oneHandedPlus.gb.add_race, { RC_DemiHuman: 80, RC_Player: 80 });
+  const oneHandedShield = state({ right_hand: 1129, left_hand: 2104, left_hand_card1: 4058 });
+  assert.deepEqual(oneHandedShield.gb.sub_race, { RC_DemiHuman: 30, RC_Player: 30 });
+});
+
+// 2. Shield Boomerang throws a SHIELD. It used to read whatever sat in the off-hand
+// and take its weight, so a Claymore parked there out-threw every real shield.
+test("Shield Boomerang counts a shield's weight and nothing else's", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const sbId = loader.getAllSkills().find((sk) => sk.name === "CR_SHIELDBOOMERANG").id;
+  const throwIt = (equipped) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 15, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 40, vit: 80, int: 40, dex: 70, luk: 10 }, equipped,
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: sbId, level: 5 }), loader.getMonster(1622), eff, gb);
+    return r.normal;
+  };
+  const MACE = 1522; // one-handed, so the off-hand slot itself stays legal
+  const bare = throwIt({ right_hand: MACE });
+  const buckler = throwIt({ right_hand: MACE, left_hand: 2104 });   // weight 600 -> 60
+  const mirror = throwIt({ right_hand: MACE, left_hand: 2107 });    // weight 1000 -> 100
+  const claymore = throwIt({ right_hand: MACE, left_hand: 1163 });  // a WEAPON, weight 2500
+
+  assert.ok(buckler.avg_damage > bare.avg_damage, "a real shield adds its weight");
+  assert.ok(mirror.avg_damage > buckler.avg_damage, "a heavier shield adds more");
+  assert.equal(claymore.avg_damage, bare.avg_damage,
+    "a two-handed sword in the off-hand is not a shield and must weigh nothing here");
+  // And say so, rather than quietly quoting a number for a cast that cannot happen.
+  const warned = (br) => br.steps.some((st) => st.name === "\u26a0 No shield equipped");
+  assert.ok(warned(bare), "no shield at all must be called out");
+  assert.ok(warned(claymore), "a non-shield off-hand must be called out");
+  assert.ok(!warned(buckler), "a real shield must not warn");
+});
+
+// 3. The skill DB has always listed which weapons a skill can be cast with. Nothing
+// read it, so Double Strafe with a sword answered as confidently as with a bow.
+test("a skill cast with a weapon that cannot use it says so", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const stepsFor = (jobId, weaponId, skillName, level) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: jobId, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 60, int: 60, dex: 90, luk: 10 },
+      equipped: weaponId ? { right_hand: weaponId } : {},
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const sk = loader.getAllSkills().find((x) => x.name === skillName);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: sk.id, level }), loader.getMonster(1622), eff, gb);
+    return ((r.normal || r.magic).steps || []).map((x) => x.name);
+  };
+  const WARN = "\u26a0 Wrong weapon for this skill";
+  //             job  weapon  skill                lv   warns?
+  const CASES = [
+    [11, 1718, "AC_DOUBLE", 10, false],    // Hunter Bow - legal
+    [11, 1101, "AC_DOUBLE", 10, true],     // Double Strafe with a sword
+    [7, 1408, "KN_PIERCE", 10, false],     // Pike - legal
+    [7, 1101, "KN_PIERCE", 10, true],      // Pierce with a sword
+    [12, 1262, "AS_SONICBLOW", 10, false], // Katar - legal
+    [12, 1101, "AS_SONICBLOW", 10, true],  // Sonic Blow with a sword
+    [7, 1101, "SM_BASH", 10, false],       // Bash names 21 classes; a sword is one
+    [9, 1601, "WZ_STORMGUST", 10, false],  // no weapon requirement at all
+  ];
+  for (const [job, weapon, skillName, lv, shouldWarn] of CASES) {
+    const has = stepsFor(job, weapon, skillName, lv).includes(WARN);
+    assert.equal(has, shouldWarn, `${skillName} with item ${weapon}: expected warn=${shouldWarn}`);
+  }
+  // Bash EXCLUDES bows in the DB, which is Hercules' real rule and matters for a
+  // Rogue holding a bow with a copied Bash - so that one does warn.
+  assert.ok(weaponRequirementViolation(loader.getSkillByName("SM_BASH"), "Bow"));
+  // A skill that lists nothing has no opinion.
+  assert.equal(allowedWeaponTypes(loader.getSkillByName("WZ_STORMGUST")), null);
+});
+
+// 4. Exploding Dragon rolls damage ONCE and splits it three ways - "calculated as a
+// single hit that is then divide[d] into three separate hits. Each hit is then
+// rounded down; as a result, dealing damage of 1 (such as to plants) will split up
+// and rounded to zero" (wiki.payonstories.com/Exploding_Dragon). The engine was
+// charging the target's soft MDEF on all three, losing 2x MDEF a cast.
+test("Exploding Dragon takes MDEF off one roll, then splits it three ways", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const bakId = loader.getAllSkills().find((sk) => sk.name === "NJ_BAKUENRYU").id;
+  const cast = (level, mobId, weak = false) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 25, base_level: weak ? 1 : 99, job_level: weak ? 1 : 50,
+      base_stats: weak
+        ? { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }
+        : { str: 1, agi: 40, vit: 40, int: 99, dex: 90, luk: 1 },
+      equipped: {},
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: bakId, level }), loader.getMonster(mobId), eff, gb);
+    return r.magic || r.normal;
+  };
+  // The wiki's table is the TOTAL for all three strikes: 300% at Lv1, 900% at Lv5.
+  for (const [lv, pct] of [[1, 300], [3, 600], [5, 900]]) {
+    const ratioStep = cast(lv, 1622).steps.find((st) => st.name.startsWith("Skill Ratio"));
+    assert.equal(ratioStep.multiplier, pct / 100, `Lv${lv} should price ${pct}% in one roll`);
+  }
+  const lv5 = cast(5, 1622);
+  // MDEF exactly once, not once per strike.
+  assert.equal(lv5.steps.filter((st) => st.name === "Magic Defense Fix").length, 1);
+  assert.ok(!lv5.steps.some((st) => /hits$/.test(st.name)),
+    "it must NOT go through the per-hit multiply that subtracts MDEF three times");
+  assert.ok(lv5.steps.some((st) => st.name === "Split into 3 strikes"),
+    "the split has to be visible - it is why the number is not divisible by 3");
+  // The split floors each strike, so every OUTCOME is a multiple of three (the
+  // average is a mean over the roll and need not be).
+  assert.equal(lv5.min_damage % 3, 0, `min ${lv5.min_damage} should be a whole number of strikes`);
+  assert.equal(lv5.max_damage % 3, 0, `max ${lv5.max_damage} should be a whole number of strikes`);
+  // Charging MDEF once rather than three times is worth exactly 2x soft MDEF.
+  assert.ok(lv5.avg_damage > 2300, `Lv5 vs Teddy Bear should clear 2300, got ${lv5.avg_damage}`);
+  // A roll of 1 splits into three zeroes, which is why the wiki singles out plants:
+  // they floor every hit at 1 damage, and a third of 1 rounds away. Needs a caster
+  // weak enough to actually be on the floor - a 99 INT Ninja clears it.
+  assert.equal(cast(1, 1078, true).avg_damage, 0, "a plant takes nothing, as the wiki describes");
+  assert.ok(cast(1, 1078).avg_damage > 0, "a real caster still hurts it");
 });

@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-09-24 | QA sweep vs bundled item/skill DB | Internal audit | Equip legality, Ninja / Exploding Dragon |
 | 2026-09-24 | wiki Knight / Plagiarism + mob data | Wiki + bundled data | Knight / Spear Boomerang, Rogue / Water Ball |
 | 2026-09-22 | Frennetix (maintainer) | Maintainer ruling | Wizard / Amplify Magic Power |
 | 2026-09-14 | Alardun | Staff ruling - standard PS-custom change | Ninja / Shadow Slash |
@@ -7033,3 +7034,92 @@ Water Ball throws one ball **per water cell** in a square that grows with the ra
 now says so on the breakdown. Whether a Lv10 copy can realistically find 121 water cells on PS
 - and how Deluge's 7x7 interacts with a Water Ball area larger than itself - decides whether
 that is ever worth modelling as a hit count.
+
+## 2026-09-24 - QA sweep: four rules the data already carried and nothing applied
+
+A differential pass over the bundled databases against what the engine actually does.
+The theme is not wrong formulas - it is fields that have been sitting in the data since
+the first import with no reader.
+
+### `loc: EQP_ARMS` - a two-handed weapon fills both hands
+
+The item DB distinguishes them cleanly and always has: every two-hander, every katar,
+every bow and every gun is `EQP_ARMS`, while one-handers are `EQP_WEAPON`. Nothing read
+it, so the off-hand slot stayed open under a Claymore and everything in it counted.
+
+Measured before the fix, Knight vs Orc Warrior (Demi-Human):
+
+| build | damage |
+|---|---|
+| Claymore alone | 260 |
+| Claymore + Main Gauche [4] with 4x Hydra in the LEFT hand | 467 (+80%) |
+| Claymore + Buckler + Thara Frog | +4 DEF, +30% Demi-Human resist |
+
+Dropped in `buildManager.buildFromSaveSchema`, next to the forged-weapon rule that
+already removes cards a forged weapon cannot hold, for the same reason: better to price
+the legal part of a build than a combination the game will not let you wear. The editor
+greys the slot out as well; the engine rule is the backstop for share links and imports.
+
+**This caught three test fixtures modelling impossible builds** - a Lance (2HSpear) with a
+Guard for the Mummy combo and the Golden Thiefbug / Mi Gao checks. All three were switched
+to a one-handed Pike, which is what they meant.
+
+### Shield Boomerang reads the off-hand, not a shield
+
+`_runShieldBoomerangBranch` took `build.equipped.left_hand` and used `item.weight`.
+Crusader, Lv5: nothing 441, Buckler 587, Mirror Shield 684, **Claymore parked in the
+off-hand 1049** - heavier than anything the skill can throw. It now requires an
+`EQP_SHIELD` item and says so when there is none.
+
+### `requirements.weapon_types` - 123 skills declare one, nothing checked
+
+Double Strafe with a sword (628), Pierce with a sword (321), Sonic Blow with a sword
+(1696): all answered with no hint the build was impossible. Now warned in the damage
+breakdown and in the editor.
+
+The translation between the two vocabularies is in `weaponRequirements.js` - the skill DB
+names classes in the plural ("Bows", "Daggers", "Instruments"), item records use the
+singular type ("Bow", "Knife", "MusicalInstrument"). Two judgement calls are recorded
+there: an untranslatable entry means NO OPINION rather than a violation, and a long list
+is read as written rather than treated as "no restriction" - Bash and Asura Strike name
+21 weapon classes each and both leave Bows out, which is Hercules' real rule and matters
+for a Rogue holding a bow with a copied Bash.
+
+### Exploding Dragon: one roll, split three ways
+
+wiki.payonstories.com/Exploding_Dragon: *"This skill is calculated as a single hit that is
+then divide[d] into three separate hits. Each hit is then rounded down; as a result,
+dealing damage of 1 (such as to plants) will split up and rounded to zero."*
+
+The engine priced vanilla's per-strike `50 + 50 x lv` and multiplied by three, which
+reaches the same 300% / 900% totals the wiki prints but subtracts soft MDEF **three
+times**. Lv5 vs Teddy Bear: 2281, against 2395 when MDEF comes off once. The ratio is now
+the combined total (`150 + 150 x lv`) with `PS_MAGIC_SINGLE_ROLL_SPLIT_HITS` marking the
+three-way split, which also reproduces the plant case exactly.
+
+This is the mirror image of the Meteor Storm / Lord of Vermilion fix, which had to start
+subtracting MDEF **per hit**. Both are in the engine now, and which one a skill gets is a
+per-skill fact, not a default - so it needs a source each time.
+
+### Checked and found correct (so nobody re-audits them)
+
+Weapon refine (+2/+3/+5/+7 per level by weapon level) and armor refine against Hercules'
+`StatsPerLevel: 66`; card stacking (4x Hydra = a linear 80%); shield cards, and weapon
+cards correctly REFUSED from a shield slot; the Ghost-vs-Neutral element table (Soul Bullet
+doing nothing to a Neutral Lv2+ monster is correct); every skill's element against its
+description; all 118 picker skill caps against the PS skill DB; the share-link key table
+for duplicates; Brandish Spear's distance multipliers; Grimtooth, Finger Offensive, Spear
+Stab and Back Stab, where the bundled `ps_skill_db.json` level tables are STALE and the
+engine is right - Spear Stab in particular is 100+40xLv from the Knight PDF, not the
+100+20xLv the scrape and the wiki still show.
+
+### Still open from the same sweep
+
+**Envenom: a flat +15 x Lv ATK, or +15% x Lv?** The engine implements Hercules pre-re
+faithfully (`eatk += 15 * skill_lv`, battle.c:513, applied as the "Envenom Mastery" step),
+and the Assassin rework PDF changed only Envenom's ELEMENT, never its damage - which is why
+this was not touched. But wiki.payonstories.com/Envenom publishes a column headed `ATK(%)`
+running 115 to 250, and the scraped PS description says "base weapon damage plus 15%
+additional attack per skill level". At Lv10 the two readings are 362 and ~530 on the same
+build. **Decisive in-game test:** hit anything with a normal attack, then with Envenom
+Lv10. About 1.7x means the flat reading is right; about 2.5x means the wiki is.

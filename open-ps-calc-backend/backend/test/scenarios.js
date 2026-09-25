@@ -351,6 +351,10 @@ const scenarios = [
     target: 1036,
   },
   {
+    // Deliberately unarmed: this scenario is about Desperado's HIT RANGE, not its
+    // gear, and gunslinger-desperado-10-coins already covers it with a revolver.
+    // Since Desperado is a Revolvers-only skill, the frozen output also carries the
+    // "wrong weapon" notice — which is the point: it proves the warning fires.
     name: "gunslinger-desperado-hit-range",
     build: { job_id: 24, base_level: 90, job_level: 50, base_stats: { str: 20, agi: 70, vit: 30, int: 20, dex: 99, luk: 30 }, equipped: {} },
     skill: { name: "GS_DESPERADO", level: 10 },

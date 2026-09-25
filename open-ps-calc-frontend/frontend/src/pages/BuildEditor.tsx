@@ -909,6 +909,9 @@ export default function BuildEditor() {
   const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
   const [passiveSkills, setPassiveSkills] = useState<PassiveSkill[]>([]);
   const [plagiarism, setPlagiarism] = useState<{ jobs: number[]; skills: { name: string; display_name: string; max_level: number }[] }>({ jobs: [], skills: [] });
+  // Which weapons the selected skill can be cast with, already translated into item
+  // weapon_types by the backend, plus its ready-made wording. Null = no restriction.
+  const [skillWeaponReq, setSkillWeaponReq] = useState<{ types: string[]; label: string | null } | null>(null);
   const [itemCache, setItemCache] = useState<Record<number, EquippedItemInfo>>({});
   const [mobInfo, setMobInfo] = useState<{
     name: string; level: number; race?: string;
@@ -929,32 +932,49 @@ export default function BuildEditor() {
   const [buffBonusStats, setBuffBonusStats] = useState<Record<string, number>>({ str_: 0, agi: 0, vit: 0, int_: 0, dex: 0, luk: 0 });
   const [charStatus, setCharStatus] = useState<any>(null);
 
-  // Slots whose equipped item's job[] list doesn't include the current job_id.
-  // Derived — no extra state. Assumes valid when item not yet in cache.
+  // Slots holding something this character could not actually be wearing, each with
+  // the reason — the pill turns red and says why, and sanitizedBuild below drops it
+  // before anything is calculated. Derived; assumes valid until the item is cached.
   const invalidSlots = useMemo(() => {
-    const invalid = new Set<string>();
+    const invalid = new Map<string, string>();
     // Super Novice (23) equips Novice-flagged (0) gear via its base-class
     // mask, plus PS custom gear that lists 23 explicitly (same rule as
     // canEquip / the item picker).
     const jobMatch = (job: number[]) =>
       job.includes(data.job_id) || (data.job_id === 23 && job.includes(0));
+    // A two-handed weapon (and a katar) is EQP_ARMS: it fills both hands, so there
+    // is no off-hand to fill. Nothing checked this, so a Claymore plus a four-Hydra
+    // dagger in the left hand read 80% ahead of the Claymore alone — a character the
+    // game will not let you wear (2026-09-24 QA sweep).
+    const rightHandId = data.equipped.right_hand as number | null | undefined;
+    const rightHand = rightHandId != null ? itemCache[rightHandId] : null;
+    const mainHandFillsBoth = !!rightHand?.loc?.includes("EQP_ARMS");
     for (const slot of EQUIP_SLOTS) {
       if (slot.itemType === "IT_AMMO") continue; // ammo restrictions enforced by search filter only
       const equippedId = data.equipped[slot.key] as number | null | undefined;
       if (equippedId == null) continue;
       const item = itemCache[equippedId];
-      if (!item?.job || item.job.length === 0) continue;
-      if (!jobMatch(item.job)) invalid.add(slot.key);
+      if (!item) continue;
+      if (slot.key === "left_hand" && mainHandFillsBoth) {
+        invalid.set(slot.key, `${rightHand?.name ?? "That weapon"} is two-handed and fills both hands — nothing can go in the off-hand. Excluded from the calculation.`);
+        continue;
+      }
+      if (item.equip_level != null && item.equip_level > data.base_level) {
+        invalid.set(slot.key, `Needs base level ${item.equip_level}; you are level ${data.base_level}. Excluded from the calculation.`);
+        continue;
+      }
+      if (!item.job || item.job.length === 0) continue;
+      if (!jobMatch(item.job)) invalid.set(slot.key, "Not equippable by this class — excluded from calculation.");
     }
     return invalid;
-  }, [data.equipped, data.job_id, itemCache]);
+  }, [data.equipped, data.job_id, data.base_level, itemCache]);
 
   // Build sent to the backend — same as `data` but with invalid slots nulled out
   // so they don't affect gear bonus badges or the damage calculation.
   const sanitizedBuild = useMemo(() => {
     if (invalidSlots.size === 0) return data;
     const equipped = { ...data.equipped };
-    for (const slotKey of invalidSlots) {
+    for (const slotKey of invalidSlots.keys()) {
       equipped[slotKey] = null;
       for (let i = 1; i <= 4; i++) delete equipped[`${slotKey}_card${i}`];
     }
@@ -1316,7 +1336,7 @@ export default function BuildEditor() {
 
   // Keep skill.max_level in sync whenever the selected skill changes
   useEffect(() => {
-    if (skill.id === 0) return;
+    if (skill.id === 0) { setSkillWeaponReq(null); return; }
     // The job goes along so a Rogue/Stalker gets the plagiarised rank ceiling
     // (Water Ball 10) instead of the rank a Wizard could learn.
     api.getSkillById(skill.id, data.server, data.job_id)
@@ -1327,8 +1347,12 @@ export default function BuildEditor() {
           max_level: cap,
           level: Math.max(1, Math.min(cap, prev.level)),
         }));
+        const types = s.required_weapon_types;
+        setSkillWeaponReq(Array.isArray(types) && types.length
+          ? { types, label: s.required_weapon_label ?? null }
+          : null);
       })
-      .catch(() => {});
+      .catch(() => setSkillWeaponReq(null));
   }, [skill.id, data.server, data.job_id]);
 
   // The URL only reflects the build on an explicit Save or Copy-share-link (see
@@ -1878,6 +1902,9 @@ export default function BuildEditor() {
 
   const canEquip = useCallback(
     (it: any) => {
+      // An item you are too low to wear is as unequippable as one for another class,
+      // and `equip_level` sat unread in every item record until the 2026-09-24 sweep.
+      if (it.equip_level != null && it.equip_level > data.base_level) return false;
       // Super Novice (23): vanilla items carry no SN bit (the game equips SN
       // via its Novice base mask → accept 0), but PS custom gear lists 23
       // explicitly — accept both. Mirrors the backend /data/items job filter.
@@ -1885,7 +1912,7 @@ export default function BuildEditor() {
       if (it.job.includes(data.job_id)) return true;
       return data.job_id === 23 && it.job.includes(0);
     },
-    [data.job_id],
+    [data.job_id, data.base_level],
   );
 
   const sortResults = (rows: SearchResult[]) =>
@@ -1912,8 +1939,18 @@ export default function BuildEditor() {
     [data.server, data.job_id, canEquip],
   );
 
+  // True while the right hand holds something EQP_ARMS — a two-hander or a katar.
+  const mainHandFillsBothHands = useMemo(() => {
+    const id = data.equipped.right_hand as number | null | undefined;
+    return id != null && !!itemCache[id]?.loc?.includes("EQP_ARMS");
+  }, [data.equipped.right_hand, itemCache]);
+
   const leftHandSearch = useCallback(
     (query: string): Promise<SearchResult[]> => {
+      // Both hands are already full. Offering shields and daggers here is offering a
+      // character that cannot exist, so the rows come back greyed with the reason
+      // rather than silently missing.
+      if (mainHandFillsBothHands) return Promise.resolve([]);
       const browse = !query.trim();
       const jobParam = browse ? { job: data.job_id } : {};
       return Promise.all([
@@ -1929,7 +1966,7 @@ export default function BuildEditor() {
         })),
       ]));
     },
-    [data.server, data.job_id, canEquip],
+    [data.server, data.job_id, canEquip, mainHandFillsBothHands],
   );
 
   const fetchItemTooltip = useCallback(
@@ -1962,6 +1999,30 @@ export default function BuildEditor() {
         .then((r) => r.items.map((s: any) => ({ id: s.id, label: s.display_name || s.name || `Skill ${s.id}`, sublabel: s.name, max_level: s.max_level ?? 10 }))),
     [data.server, data.job_id],
   );
+
+  // Can the weapon you are holding cast the skill you picked? The skill DB has always
+  // known, and nothing asked, so Double Strafe with a sword answered as confidently as
+  // Double Strafe with a bow (2026-09-24 QA sweep). Read off sanitizedBuild: a weapon
+  // already excluded for class or level is not in your hands either.
+  const weaponRequirementWarning = useMemo(() => {
+    if (!skillWeaponReq) return null;
+    // The weapon slot already has its own red complaint (wrong class, level too low).
+    // Two overlapping warnings about the same slot is noise, and the honest reading of
+    // "you are holding nothing" next to a weapon you can see is confusing — let the
+    // slot's own message stand.
+    if (invalidSlots.has("right_hand")) return null;
+    const heldId = sanitizedBuild.equipped.right_hand as number | null | undefined;
+    const held = heldId != null ? itemCache[heldId] : null;
+    // Still loading the item — say nothing rather than flash a wrong warning.
+    if (heldId != null && !held) return null;
+    const heldType = heldId == null ? "Unarmed" : held?.weapon_type;
+    if (!heldType) return null;
+    if (skillWeaponReq.types.includes(heldType)) return null;
+    const holding = heldId == null ? "nothing" : (held?.name ?? "that weapon");
+    return skillWeaponReq.label
+      ? `${skill.label} needs ${skillWeaponReq.label} — you are holding ${holding}. The numbers below assume you could cast it.`
+      : `${skill.label} cannot be cast while holding ${holding}. The numbers below assume you could.`;
+  }, [skillWeaponReq, sanitizedBuild.equipped.right_hand, itemCache, skill.label, invalidSlots]);
 
   // Rank cap for the plagiarised skill: its PS max level (Triple Attack is 5 ranks
   // on PS, not 10). 0 when nothing is copied, which also disables the input.
@@ -2529,7 +2590,7 @@ export default function BuildEditor() {
                         <HoverDescription
                           id={equippedId as number}
                           fetchDescription={fetchItemTooltip}
-                          title={isInvalid ? "Not equippable by this class — excluded from calculation" : undefined}
+                          title={isInvalid ? invalidSlots.get(slot.key) : undefined}
                         >
                           {item ? item.name : `Item #${equippedId}`}
                           {isRefineable ? ` +${data.refine[slot.key] || 0}` : ""}
@@ -2555,10 +2616,15 @@ export default function BuildEditor() {
                       </div>
                       {isInvalid && (
                         <span style={{ fontSize: "0.72rem", color: "var(--crit)", marginTop: "0.2rem", display: "block" }}>
-                          Not equippable by this class
+                          {invalidSlots.get(slot.key)?.replace(/\s*Excluded from the calculation\.$/, "")
+                            ?? "Not equippable by this class"}
                         </span>
                       )}
                       </>
+                    ) : slot.key === "left_hand" && mainHandFillsBothHands ? (
+                      <span className="field-static" style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>
+                        Both hands are holding your weapon — no off-hand.
+                      </span>
                     ) : (
                       <SearchPicker
                         placeholder={`Search ${slot.label.toLowerCase()}…`}
@@ -3510,6 +3576,9 @@ export default function BuildEditor() {
                 />
               )}
             </div>
+            {weaponRequirementWarning && (
+              <div className="notice warn" style={{ marginBottom: "0.6rem" }}>{weaponRequirementWarning}</div>
+            )}
             <div className="field-row">
               <button onClick={() => setSkill(DEFAULT_SKILL)}>Use normal attack</button>
             </div>
