@@ -7,7 +7,32 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-09-24
 
+### Added
+
+- **Water Ball up to rank 10 for Rogues and Stalkers.** A Wizard's Water Ball stops at 5, but
+  Plagiarism copies a skill at the rank it was used on you, and Ktullanux, Turtle General,
+  Pouring and Hardrock Mammoth all cast it at 10 — so a Rogue can be carrying Water Ball 10.
+  The skill picker now offers ranks 6–10 to the classes that can copy them (400% MATK per ball
+  at Lv10, against 250% at Lv5) and prices them properly; every other class still stops where
+  its own skill tree does. Requested by a player.
+
+- **Water Ball's breakdown says it is quoting ONE ball**, and how many balls the rank you
+  picked can throw — 1 at Lv1, 9 at Lv2–3, 25 at Lv4–5, up to 121 at Lv10, one per water cell
+  in the area around you. How many of those cells actually hold water is terrain, so the
+  calculator prices a single ball rather than guessing a count.
+
 ### Fixed
+
+- **Spear Boomerang is called Spear Boomerang again.** The skill picker showed the Knight's
+  spear throw as "Sonic Wave" — a name that belongs to a Rune Knight skill and appears nowhere
+  on Payon Stories — so a player searching for it reported the skill missing entirely. Its
+  damage was always correct (100% + 50% ATK per rank, 350% at Lv5); only the name was wrong.
+  Reported by a player.
+
+- **Ranks above a skill's own maximum no longer cast instantly.** Cast time and after-cast
+  delay are listed per rank, and reading past the end of that list gave zero — which would have
+  made a copied Water Ball 10 faster than the Lv5 anyone can learn. Those ranks now hold the
+  last published timing.
 
 - **A two-handed weapon now fills both hands.** Two-handers and katars left the off-hand
   slot open, and whatever you put there still counted — a Claymore with a four-Hydra dagger
@@ -39,33 +64,6 @@ instead of release version. Dates are taken from actual git commit history.
   soft MDEF comes off the one roll, not off each strike. Against a Teddy Bear a Lv5 cast goes
   from 2,281 to 2,395, and more against tougher targets. It also now behaves as the wiki
   describes against plants, where a 1-damage roll splits three ways into nothing.
-
-### Added
-
-- **Water Ball up to rank 10 for Rogues and Stalkers.** A Wizard's Water Ball stops at 5, but
-  Plagiarism copies a skill at the rank it was used on you, and Ktullanux, Turtle General,
-  Pouring and Hardrock Mammoth all cast it at 10 — so a Rogue can be carrying Water Ball 10.
-  The skill picker now offers ranks 6–10 to the classes that can copy them (400% MATK per ball
-  at Lv10, against 250% at Lv5) and prices them properly; every other class still stops where
-  its own skill tree does. Requested by a player.
-
-- **Water Ball's breakdown says it is quoting ONE ball**, and how many balls the rank you
-  picked can throw — 1 at Lv1, 9 at Lv2–3, 25 at Lv4–5, up to 121 at Lv10, one per water cell
-  in the area around you. How many of those cells actually hold water is terrain, so the
-  calculator prices a single ball rather than guessing a count.
-
-### Fixed
-
-- **Spear Boomerang is called Spear Boomerang again.** The skill picker showed the Knight's
-  spear throw as "Sonic Wave" — a name that belongs to a Rune Knight skill and appears nowhere
-  on Payon Stories — so a player searching for it reported the skill missing entirely. Its
-  damage was always correct (100% + 50% ATK per rank, 350% at Lv5); only the name was wrong.
-  Reported by a player.
-
-- **Ranks above a skill's own maximum no longer cast instantly.** Cast time and after-cast
-  delay are listed per rank, and reading past the end of that list gave zero — which would have
-  made a copied Water Ball 10 faster than the Lv5 anyone can learn. Those ranks now hold the
-  last published timing.
 
 ## 2026-09-22
 
