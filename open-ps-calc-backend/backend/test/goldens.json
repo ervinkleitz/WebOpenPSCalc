@@ -2742,6 +2742,142 @@
    }
   }
  },
+ "priest-holy-strike-crit-proc": {
+  "status": {
+   "str": 95,
+   "agi": 64,
+   "vit": 45,
+   "int_": 45,
+   "dex": 74,
+   "luk": 106,
+   "batk": 211,
+   "max_hp": 6168,
+   "max_sp": 1162,
+   "aspd": 159.8,
+   "cri": 363,
+   "hit": 173,
+   "flee": 163,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 81,
+   "matk_max": 126
+  },
+  "result": {
+   "dps": 994.444,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 36.3,
+   "period_ms": 804,
+   "normal": {
+    "min": 269,
+    "max": 304,
+    "avg": 286,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Status BATK Added",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (Normal attack)",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "crit": {
+    "min": 351,
+    "max": 351,
+    "avg": 351,
+    "steps": [
+     "Status BATK",
+     "Weapon ATK",
+     "Branch",
+     "Weapon ATK Range",
+     "Size Fix",
+     "Status BATK Added",
+     "Overrefine Bonus",
+     "Base Damage",
+     "Skill Ratio (Normal attack)",
+     "Crit ATK Rate",
+     "Defense Fix",
+     "Active Status Bonuses",
+     "Refine Bonus",
+     "Mastery Fix",
+     "Attr Fix",
+     "Card Fix",
+     "Final Rate Bonus (Short)",
+     "Final Rate Bonus (Weapon)",
+     "Final Damage"
+    ]
+   },
+   "proc_branches": {
+    "holy_strike": {
+     "min": 1461,
+     "max": 1639,
+     "avg": 1550,
+     "steps": [
+      "Status BATK",
+      "Weapon ATK",
+      "Weapon ATK Range",
+      "Size Fix",
+      "Status BATK Added",
+      "Overrefine Bonus",
+      "Base Damage",
+      "Skill Ratio (Holy Strike Lv1)",
+      "Defense Fix",
+      "Active Status Bonuses",
+      "Refine Bonus",
+      "Mastery Fix",
+      "Attr Fix",
+      "Card Fix",
+      "Final Rate Bonus (Short)",
+      "Final Rate Bonus (Weapon)",
+      "Final Damage",
+      "Holy Strike proc"
+     ]
+    }
+   },
+   "proc_crit_branches": {
+    "holy_strike": {
+     "min": 1779,
+     "max": 1779,
+     "avg": 1779,
+     "steps": [
+      "Status BATK",
+      "Weapon ATK",
+      "Branch",
+      "Weapon ATK Range",
+      "Size Fix",
+      "Status BATK Added",
+      "Overrefine Bonus",
+      "Base Damage",
+      "Skill Ratio (Holy Strike Lv1)",
+      "Crit ATK Rate",
+      "Defense Fix",
+      "Active Status Bonuses",
+      "Refine Bonus",
+      "Mastery Fix",
+      "Attr Fix",
+      "Card Fix",
+      "Final Rate Bonus (Short)",
+      "Final Rate Bonus (Weapon)",
+      "Final Damage"
+     ]
+    }
+   },
+   "proc_crit_chances": {
+    "holy_strike": 36.3
+   }
+  }
+ },
  "gunslinger-desperado-hit-range": {
   "status": {
    "str": 23,

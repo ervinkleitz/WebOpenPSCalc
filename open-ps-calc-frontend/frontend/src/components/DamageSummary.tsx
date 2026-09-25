@@ -96,6 +96,10 @@ interface SingleResult {
     dw_ps_bonus_pct?: number | null;
     proc_branches?: Record<string, DamageBranch>;
     proc_chances?: Record<string, number>;
+    // A proc that can itself land a critical (Holy Strike) carries its crit outcome
+    // beside the normal one, keyed the same way.
+    proc_crit_branches?: Record<string, DamageBranch>;
+    proc_crit_chances?: Record<string, number>;
     proc_labels?: Record<string, string>;
   };
   falcon?: FalconResult;
@@ -512,9 +516,13 @@ function DoubleAttackView({ branch, chance, label, taChance, baseHit, procHit, h
   );
 }
 
-function CardAutocastView({ branch, chance, label, dpsAdded, title = "Card autocast", per = "physical attack" }: {
+function CardAutocastView({ branch, chance, label, dpsAdded, title = "Card autocast", per = "physical attack",
+  critBranch = null, critChance = 0 }: {
   branch: DamageBranch; chance: number; label: string; dpsAdded: number | null;
   title?: string; per?: string;
+  // Only a proc that can crit passes these (Holy Strike). Card autocasts are skill
+  // casts and never do, so they leave them off and nothing extra renders.
+  critBranch?: DamageBranch | null; critChance?: number;
 }) {
   const n = (v: number) => Math.round(v).toLocaleString();
   const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
@@ -538,9 +546,19 @@ function CardAutocastView({ branch, chance, label, dpsAdded, title = "Card autoc
         <>
           <PipelineView steps={branch.steps} hideFinal />
           <div className="breakdown-total">
-            <span className="breakdown-total-label">Per-proc damage</span>
+            <span className="breakdown-total-label">Per-proc damage{critBranch ? " (normal)" : ""}</span>
             <span className="breakdown-total-val">{range}</span>
           </div>
+          {critBranch && (
+            <div className="breakdown-total">
+              <span className="breakdown-total-label">Per-proc damage (critical — {critChance.toFixed(1)}% of procs)</span>
+              <span className="breakdown-total-val">
+                {Math.round(critBranch.min_damage) !== Math.round(critBranch.max_damage)
+                  ? `${n(critBranch.min_damage)}–${n(critBranch.max_damage)}`
+                  : n(critBranch.avg_damage)}
+              </span>
+            </div>
+          )}
           {dpsAdded != null && dpsAdded > 0 && (
             <div className="breakdown-total">
               <span className="breakdown-total-label">≈ DPS added</span>
@@ -684,11 +702,23 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   // saw no trace of it and reported the combo as unimplemented.
   const holyStrikeBranch = activeResult.result.proc_branches?.holy_strike ?? null;
   const holyStrikeChance = activeResult.result.proc_chances?.holy_strike ?? 0;
+  const holyStrikeCrit = activeResult.result.proc_crit_branches?.holy_strike ?? null;
+  const holyStrikeCritChance = activeResult.result.proc_crit_chances?.holy_strike ?? 0;
   const holyStrike = holyStrikeBranch
     ? {
         branch: holyStrikeBranch,
         chance: holyStrikeChance,
-        dpsAdded: periodMs > 0 ? (holyStrikeBranch.avg_damage * holyStrikeChance / 100) / (periodMs / 1000) : null,
+        critBranch: holyStrikeCrit,
+        critChance: holyStrikeCritChance,
+        // Holy Strike crits like any weapon hit, so the damage a proc is worth is the
+        // blend of its two outcomes — the same blend the headline DPS already applies.
+        // Quoting the normal figure alone made this row disagree with the DPS above.
+        dpsAdded: periodMs > 0
+          ? ((holyStrikeCrit
+              ? (holyStrikeCritChance / 100) * holyStrikeCrit.avg_damage
+                + (1 - holyStrikeCritChance / 100) * holyStrikeBranch.avg_damage
+              : holyStrikeBranch.avg_damage) * holyStrikeChance / 100) / (periodMs / 1000)
+          : null,
       }
     : null;
   // Card autocasts on a physical attack (Pirate Skel Card → Mammonite, Rekenber
@@ -1193,7 +1223,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
 
       {holyStrike && (
         <CardAutocastView title="Proc" label="Holy Strike" per="melee attack"
-          branch={holyStrike.branch} chance={holyStrike.chance} dpsAdded={holyStrike.dpsAdded} />
+          branch={holyStrike.branch} chance={holyStrike.chance} dpsAdded={holyStrike.dpsAdded}
+          critBranch={holyStrike.critBranch} critChance={holyStrike.critChance} />
       )}
 
       {cardAutocasts.map((ac) => (

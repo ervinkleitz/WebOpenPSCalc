@@ -351,6 +351,15 @@ const scenarios = [
     target: 1036,
   },
   {
+    // Holy Strike had NO golden at all, which is how its proc could ignore the
+    // character's crit rate unnoticed - a proc worth a third of a battle priest's
+    // DPS. Priest with a mace against a Ghoul (Undead element, a valid target), LUK
+    // high enough that the crit share is a real part of the number.
+    name: "priest-holy-strike-crit-proc",
+    build: { job_id: 8, base_level: 99, job_level: 50, base_stats: { str: 90, agi: 60, vit: 40, int: 40, dex: 70, luk: 99 }, equipped: { right_hand: 1522 }, mastery_levels: { PS_PR_HOLYSTRIKE: 1 } },
+    target: 1036,
+  },
+  {
     // Deliberately unarmed: this scenario is about Desperado's HIT RANGE, not its
     // gear, and gunslinger-desperado-10-coins already covers it with a revolver.
     // Since Desperado is a Revolvers-only skill, the frozen output also carries the

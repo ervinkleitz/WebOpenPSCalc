@@ -46,17 +46,23 @@ const b = await chromium.launch({ channel: "chrome", headless: true });
 let ok = true;
 const check = (cond, msg) => { if (!cond) { console.error("FAIL: " + msg); ok = false; } };
 
-async function panelText(state) {
+async function panels(state) {
   const page = await b.newPage({ viewport: { width: 1500, height: 1200 } });
   await page.goto(shareLink(state), { waitUntil: "networkidle" });
   await page.waitForTimeout(2000);
   const calc = page.getByRole("button", { name: /calculate damage/i }).first();
   if (await calc.count()) { await calc.click(); await page.waitForTimeout(3000); }
-  const heads = await page.evaluate(() => [...document.querySelectorAll(".breakdown-head")]
-    .map((h) => h.innerText.replace(/\s+/g, " ").trim()));
+  const out = await page.evaluate(() => ({
+    heads: [...document.querySelectorAll(".breakdown-head")].map((h) => h.innerText.replace(/\s+/g, " ").trim()),
+    // The whole Holy Strike panel, so the per-proc rows can be read too.
+    holyStrike: [...document.querySelectorAll(".breakdown-view")]
+      .map((v) => v.innerText.replace(/\s+/g, " ").trim())
+      .find((t) => /Holy Strike/.test(t)) || "",
+  }));
   await page.close();
-  return heads;
+  return out;
 }
+const panelText = async (state) => (await panels(state)).heads;
 
 // A Knight with the pair: the combo alone grants a 7% proc.
 const knight = await panelText(build(7));
@@ -69,6 +75,25 @@ check(hsKnight && /7% per melee attack/.test(hsKnight), `Knight's Holy Strike sh
 const priest = await panelText(build(8, { mastery_levels: { PS_PR_HOLYSTRIKE: 1 } }, 1501)); // Club
 const hsPriest = priest.find((h) => /Holy Strike/.test(h));
 check(hsPriest && /30% per melee attack/.test(hsPriest), `Priest's Holy Strike should read 30% (20 + LUK/10 + 7), got: ${hsPriest}`);
+
+// Holy Strike crits like any weapon hit — wiki.payonstories.com/Holy_Strike, "Holy
+// Strike can be a critical attack". The proc used to be built non-crit and pushed into
+// DPS as a single outcome, so a battle priest's crit rate did nothing for it (reported
+// 2026-09-25). The panel must now show both outcomes, and the crit must be the bigger.
+const critPriest = await panels(build(8, { mastery_levels: { PS_PR_HOLYSTRIKE: 1 }, base_stats: { str: 90, agi: 60, vit: 40, int: 40, dex: 70, luk: 99 } }, 1501));
+console.log("Holy Strike panel:", critPriest.holyStrike);
+const critRow = /Per-proc damage \(critical\s*[\u2014-]\s*([\d.]+)% of procs\)\s*([\d,]+)/i.exec(critPriest.holyStrike);
+const normRow = /Per-proc damage \(normal\)\s*([\d,]+)/i.exec(critPriest.holyStrike);
+check(!!critRow, `the Holy Strike panel must show its critical outcome, got: ${critPriest.holyStrike}`);
+check(!!normRow, `the Holy Strike panel must still show its normal outcome, got: ${critPriest.holyStrike}`);
+if (critRow && normRow) {
+  const critDmg = Number(critRow[2].replace(/,/g, ""));
+  const normDmg = Number(normRow[1].replace(/,/g, ""));
+  const critPct = Number(critRow[1]);
+  console.log(`  normal ${normDmg}  |  critical ${critDmg} on ${critPct}% of procs`);
+  check(critDmg > normDmg, `a critical proc must hit harder (${critDmg} vs ${normDmg})`);
+  check(critPct > 1, `the crit share should be the character's real crit rate, got ${critPct}%`);
+}
 
 // No combo, no skill: no panel.
 const plain = await panelText({ ...build(7), build: { ...build(7).build, equipped: { right_hand: 1101 } } });

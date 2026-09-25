@@ -440,6 +440,11 @@ function createBattleResult(overrides = {}) {
     proc_branches: {},
     proc_chances: {},
     proc_labels: {},
+    // A proc that can itself land a critical carries its crit outcome alongside the
+    // normal one (Holy Strike — wiki: "can be a critical attack"). Keyed the same way
+    // as proc_branches so a view can pair them up.
+    proc_crit_branches: {},
+    proc_crit_chances: {},
     dps: 0.0,
     attacks: [],
     period_ms: 0.0,

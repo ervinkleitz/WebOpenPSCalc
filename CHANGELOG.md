@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-25
+
+### Fixed
+
+- **Holy Strike's proc can crit again.** The wiki says "Holy Strike can be a critical attack",
+  and the calculator already knew it — but only when you picked Holy Strike as your skill. The
+  proc that actually fires it off your melee swings was always priced as a normal hit, so the
+  crit rate a battle priest builds for did nothing for the skill they built it around. It now
+  rolls its own critical at your real crit chance, the panel shows both outcomes, and the DPS
+  blends them. At 43% crit the proc was reading about 6% light and total DPS 3.9% light; at low
+  crit the difference is negligible, so this grows with the build. Reported by a player.
+
 ## 2026-09-24
 
 ### Added

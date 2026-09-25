@@ -5789,3 +5789,61 @@ test("Exploding Dragon takes MDEF off one roll, then splits it three ways", () =
   assert.equal(cast(1, 1078, true).avg_damage, 0, "a plant takes nothing, as the wiki describes");
   assert.ok(cast(1, 1078).avg_damage > 0, "a real caster still hurts it");
 });
+
+// Holy Strike procs on a melee swing and deals weapon damage, and
+// wiki.payonstories.com/Holy_Strike says plainly "Holy Strike can be a critical
+// attack". critChance.js has listed PS_PR_HOLYSTRIKE in PS_CRIT_ELIGIBLE all along,
+// but only the path that prices it as a SELECTED skill ever read that — the proc was
+// built with isCrit=false and contributed a single non-crit outcome to DPS. So the
+// skill a crit battle-priest builds around ignored their crit rate entirely: at 43%
+// crit the proc ran 6% light and total DPS 3.9% light. Reported by a player 2026-09-25.
+test("Holy Strike's proc crits, and the crit is folded into DPS", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const cast = (luk) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 8, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 40, dex: 70, luk },
+      equipped: { right_hand: 1522 }, mastery_levels: { PS_PR_HOLYSTRIKE: 1 },
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    // Ghoul (1036) is Undead element, one of the targets Holy Strike fires on.
+    return new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1036), eff, gb);
+  };
+
+  for (const luk of [1, 60, 120]) {
+    const r = cast(luk);
+    const normal = r.proc_branches.holy_strike;
+    const crit = r.proc_crit_branches.holy_strike;
+    assert.ok(normal, `LUK ${luk}: the proc must still have its normal outcome`);
+    assert.ok(crit, `LUK ${luk}: the proc must have a critical outcome`);
+    assert.ok(crit.avg_damage > normal.avg_damage,
+      `LUK ${luk}: a critical proc must hit harder (${crit.avg_damage} vs ${normal.avg_damage})`);
+    // The proc rolls the character's own crit rate, the same one the swing uses.
+    assert.equal(r.proc_crit_chances.holy_strike, r.crit_chance,
+      `LUK ${luk}: the proc should crit at the character's crit chance`);
+
+    // The whole point: reconstruct DPS from every outcome and check the engine agrees.
+    // A Priest with a mace has no Triple Attack, Double Attack or katar second hit, so
+    // the swing is crit / normal / miss, and the proc adds its own two outcomes. Crits
+    // never miss, so the crit terms carry no hit factor.
+    const c = r.crit_chance / 100;
+    const h = r.hit_chance / 100;
+    const pc = r.proc_crit_chances.holy_strike / 100;
+    const share = r.proc_chances.holy_strike / 100;
+    const perSwing =
+      c * r.crit.avg_damage + (1 - c) * h * r.normal.avg_damage
+      + share * (pc * crit.avg_damage + (1 - pc) * normal.avg_damage);
+    const expected = perSwing / r.period_ms * 1000;
+    assert.ok(Math.abs(expected - r.dps) < 0.01,
+      `LUK ${luk}: DPS should be ${expected.toFixed(2)}, engine says ${r.dps.toFixed(2)} — the proc's crit share is missing from the total`);
+  }
+
+  // The proc RATE is untouched by the split: 20% + 1% per 10 LUK, as the wiki says.
+  // Only its damage is divided between the two outcomes.
+  for (const luk of [1, 60, 120]) {
+    assert.equal(cast(luk).proc_chances.holy_strike, 20 + Math.floor(luk / 10),
+      "splitting the outcome must not change how often Holy Strike fires");
+  }
+});

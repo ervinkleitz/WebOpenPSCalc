@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-09-25 | wiki Holy_Strike | Wiki | Priest / Holy Strike crit |
 | 2026-09-24 | QA sweep vs bundled item/skill DB | Internal audit | Equip legality, Ninja / Exploding Dragon |
 | 2026-09-24 | wiki Knight / Plagiarism + mob data | Wiki + bundled data | Knight / Spear Boomerang, Rogue / Water Ball |
 | 2026-09-22 | Frennetix (maintainer) | Maintainer ruling | Wizard / Amplify Magic Power |
@@ -7123,3 +7124,66 @@ running 115 to 250, and the scraped PS description says "base weapon damage plus
 additional attack per skill level". At Lv10 the two readings are 362 and ~530 on the same
 build. **Decisive in-game test:** hit anything with a normal attack, then with Envenom
 Lv10. About 1.7x means the flat reading is right; about 2.5x means the wiki is.
+
+## 2026-09-25 - Holy Strike's proc crits (player report)
+
+A player noticed the calculator's Holy Strike DPS did not move with crit rate, and reasoned
+that criticals must not be in the DPS model at all. The conclusion was right and the reason
+was not, which is worth recording because the distinction is where the bug actually was.
+
+**Criticals were already fully in the DPS model.** `calculateDps` is a weighted average over
+mutually exclusive swing outcomes, and the plain auto-attack list is crit / normal-hit / miss
+with the crit share deliberately NOT multiplied by hit chance, because criticals ignore flee.
+Checked numerically: `crit x critDmg + (1 - crit) x hit x normal / period` reproduces the
+engine's DPS exactly, including at 49% hit chance.
+
+**What was wrong was narrower.** `critChance.js` has listed `PS_PR_HOLYSTRIKE` in
+`PS_CRIT_ELIGIBLE` since crits were ported, alongside Sonic Blow, Grimtooth and Tracking. Two
+code paths then disagreed about it:
+
+| path | behaviour |
+|---|---|
+| Holy Strike picked as the SELECTED skill | honoured the table - full crit branch |
+| Holy Strike firing as its passive PROC | `_runBranch(..., isCrit = false)`, one non-crit outcome |
+
+Measured on a Priest with a mace vs Ghoul, the proc damage was *exactly* the non-crit branch at
+every LUK (1453 / 1511 / 1569 at LUK 1 / 60 / 120) while the crit branch sat right there
+unused (1678 / 1739 / 1800).
+
+**Source.** wiki.payonstories.com/Holy_Strike: *"Holy Strike can be a critical attack."* Same
+page gives the 20% + 1% per 10 LUK activation rate and the `[101 + BaseSTR + BaseLevel]% ATK`
+formula the engine already uses.
+
+**Size of the error**, total DPS:
+
+| LUK | crit | before | after | understated by |
+|---|---|---|---|---|
+| 1 | 3.6% | 696 | 698 | 0.3% |
+| 60 | 23.3% | 853 | 870 | 2.0% |
+| 99 | 36.3% | 963 | 994 | 3.1% |
+| 120 | 43.3% | 1020 | 1060 | 3.9% |
+
+**Easy to miss** because the proc damage does rise with LUK (1453 -> 1569) - LUK feeds status
+ATK. It looks like crit is in there. It was not.
+
+### Two decisions taken, both deliberately narrow
+
+1. **The proc rolls its OWN critical** at the character's crit chance, which is what the
+   selected-skill path already did - the two now agree. The alternative reading, that the proc
+   inherits the swing's crit, is not what the eligibility table models for any other skill.
+2. **The proc RATE is untouched.** Whether a critical SWING can also proc Holy Strike is a
+   separate question nothing documents, so the split only moves damage between the two
+   outcomes; the two chances still sum to the same 20% + LUK/10. If a CC can say whether a
+   critical swing procs it, that is the follow-up.
+
+### Scope
+
+Holy Strike is the only proc affected. Of the four PS crit-eligible skills only it has a
+passive proc path; Hindsight is magic, Auto Blitz Beat is a falcon hit that bypasses DEF, and
+the card autocasts (Pirate Skel -> Mammonite, Rekenber -> Bash) are skill casts. The katar
+second hit already carried its own crit branch.
+
+**It had no golden at all**, which is how a proc worth roughly a third of a battle priest's DPS
+could ignore crit unnoticed. `priest-holy-strike-crit-proc` now freezes it, and the golden
+normaliser records `proc_crit_branches` separately from the blended DPS so a crit outcome
+cannot drift while the blend happens to land the same.

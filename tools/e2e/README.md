@@ -66,6 +66,12 @@ node wildcard-carryover.mjs https://openpscalc.com/
   weapon that must KEEP its off-hand, and the bow that must not be warned about — because
   all three fixes are the kind that are easy to make too aggressive.
 
+- **holy-strike-visible.mjs** — the Holy Strike proc has to be on screen, not just in the DPS:
+  it was computed and folded into the total for nine days while rendering nowhere, and players
+  reported the card combo as unimplemented twice. It also now covers the 2026-09-25 report that
+  the proc ignored crit — the panel must show a normal AND a critical per-proc figure, the
+  critical being the larger and quoted at the character's real crit rate.
+
 ## These go stale silently
 
 Being outside `npm test` is what makes them cheap to keep, and also what let

@@ -2807,6 +2807,8 @@ class BattlePipeline {
     // learned the skill. The branch used to require the learned skill, so the combo
     // was worth nothing on every other class (reported 2026-09-18).
     let holyStrikeBranch = null, holyStrikeChance = 0;
+    // The proc's own critical outcome, when the character can crit at all.
+    let holyStrikeCrit = null, holyStrikeCritChance = 0;
     const holyStrikeLv = skill.id === 0 ? (gearBonuses.effective_mastery.PS_PR_HOLYSTRIKE || 0) : 0;
     const holyStrikeCombo = skill.id === 0 ? (gearBonuses.holy_strike_bonus_chance || 0) : 0;
     if ((holyStrikeLv > 0 || holyStrikeCombo > 0) && !resolveIsRanged(build, weapon, null)) {
@@ -2824,6 +2826,32 @@ class BattlePipeline {
         const hsSkill = { id: loader.getSkillIdByName("PS_PR_HOLYSTRIKE") || 0, name: "PS_PR_HOLYSTRIKE", level: 1, nk_ignore_flee: false };
         holyStrikeBranch = this._runBranch(status, weapon, hsSkill, target, build, false,
           { profile, gear_bonuses: gearBonuses });
+
+        // "Holy Strike can be a critical attack" (wiki.payonstories.com/Holy_Strike),
+        // and critChance.js has listed PS_PR_HOLYSTRIKE in PS_CRIT_ELIGIBLE all along —
+        // but only the path that prices it as a SELECTED skill ever read that. The proc
+        // that actually fires it was built with isCrit=false and pushed as a single
+        // non-crit outcome, so a battle priest's crit rate did nothing for the skill
+        // built around it: at 43% crit the proc was 6% light and total DPS 3.9% light.
+        // Reported by a player, 2026-09-25.
+        //
+        // The proc rolls its OWN critical at the character's crit chance, which is what
+        // the selected-skill path already does — the two now agree. Note this leaves the
+        // proc's chance alone: whether a critical SWING can also proc Holy Strike is a
+        // separate question nothing documents, so the total proc rate is unchanged and
+        // only its damage is split between critical and normal.
+        //
+        // usesAmmo is false rather than the swing's value: the proc is gated to melee
+        // (resolveIsRanged above), so no ammo is fired and the arrow crit pool does not
+        // apply to it.
+        const [hsCritEligible, hsCritChance] = calculateCritChance(
+          status, weapon, hsSkill, target, this.config, build.server, gearBonuses,
+          taFury, shadowsWithin, false);
+        if (hsCritEligible && hsCritChance > 0) {
+          holyStrikeCrit = this._runBranch(status, weapon, hsSkill, target, build, true,
+            { profile, gear_bonuses: gearBonuses });
+          holyStrikeCritChance = Math.min(100, hsCritChance);
+        }
         holyStrikeBranch.add_step({
           name: "Holy Strike proc", value: holyStrikeBranch.avg_damage,
           min_value: holyStrikeBranch.min_damage, max_value: holyStrikeBranch.max_damage, multiplier: 1.0,
@@ -2836,11 +2864,22 @@ class BattlePipeline {
               : holyStrikeLv > 0
                 ? `20% base + ⌊LUK ${status.luk}/10⌋` + (holyStrikeCombo ? ` + ${holyStrikeCombo}% (Mummy card combo)` : "")
                 : `${holyStrikeCombo}% from the Mummy / Ancient Mummy card combo (Holy Strike not learned)`)
-            + `; Holy, vs ${validEle ? "an Undead/Shadow/Ghost-element" : "a Demon/Undead-race"} target`,
+            + `; Holy, vs ${validEle ? "an Undead/Shadow/Ghost-element" : "a Demon/Undead-race"} target`
+            + (holyStrikeCrit
+              ? `. It crits like any weapon hit — ${holyStrikeCritChance.toFixed(1)}% of procs land for ${Math.round(holyStrikeCrit.avg_damage).toLocaleString()} instead.`
+              : ""),
           formula: "(101 + BaseSTR + BaseLevel)% ATK, Holy",
           hercules_ref: "wiki.payonstories.com/Holy_Strike",
         });
-        attacks.push(createAttackDefinition(holyStrikeBranch.avg_damage, 0.0, 0.0, holyStrikeChance / 100.0));
+        // Split the proc's share between its critical and normal outcomes. The two
+        // chances still sum to holyStrikeChance, so the proc RATE is untouched — this
+        // only moves damage from the normal figure onto the crit one.
+        const hsShare = holyStrikeChance / 100.0;
+        const hsCritFrac = holyStrikeCrit ? holyStrikeCritChance / 100.0 : 0;
+        if (holyStrikeCrit) {
+          attacks.push(createAttackDefinition(holyStrikeCrit.avg_damage, 0.0, 0.0, hsShare * hsCritFrac));
+        }
+        attacks.push(createAttackDefinition(holyStrikeBranch.avg_damage, 0.0, 0.0, hsShare * (1 - hsCritFrac)));
       }
     }
 
@@ -2899,6 +2938,8 @@ class BattlePipeline {
       // so the breakdown can SHOW what one proc hits for — it is the only source of
       // damage a plagiarising Rogue has while auto-attacking, and Monks never had a
       // readout for it either. `ta_proc` stays as-is for existing consumers.
+      proc_crit_branches: { ...(holyStrikeCrit ? { holy_strike: holyStrikeCrit } : {}) },
+      proc_crit_chances: { ...(holyStrikeCrit ? { holy_strike: holyStrikeCritChance } : {}) },
       proc_branches: { ...(holyStrikeBranch ? { holy_strike: holyStrikeBranch } : {}), ...(autoSpellBranch ? { autospell: autoSpellBranch } : {}), ...(autoBlitzBranch ? { auto_blitz: autoBlitzBranch } : {}), ...(taProc ? { triple_attack: taProc } : {}), ...cardAutocastBranches },
       proc_chances: { ...(holyStrikeBranch ? { holy_strike: holyStrikeChance } : {}), ...(autoSpellBranch ? { autospell: autoSpellChance } : {}), ...(autoBlitzBranch ? { auto_blitz: autoBlitzChance } : {}), ...(taProc ? { triple_attack: taProcChance } : {}), ...cardAutocastChances },
       proc_labels: { ...(holyStrikeBranch ? { holy_strike: "Holy Strike" } : {}), ...(autoSpellBranch ? { autospell: autoSpellLabel } : {}), ...(autoBlitzBranch ? { auto_blitz: "Auto Blitz Beat" } : {}), ...(taProc ? { triple_attack: `Triple Attack Lv${taLv}` } : {}), ...cardAutocastLabels },

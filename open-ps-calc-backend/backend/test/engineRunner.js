@@ -78,6 +78,18 @@ function normalizeBattleResult(res) {
     out.proc_branches = {};
     for (const k of procs) out.proc_branches[k] = normalizeBranch(res.proc_branches[k]);
   }
+  // A proc that can land its own critical (Holy Strike) carries a second branch. It is
+  // frozen separately: the DPS above already blends the two, so without this a crit
+  // outcome could change size unnoticed as long as the blend happened to land the same.
+  const critProcs = Object.keys(res.proc_crit_branches || {}).sort();
+  if (critProcs.length) {
+    out.proc_crit_branches = {};
+    out.proc_crit_chances = {};
+    for (const k of critProcs) {
+      out.proc_crit_branches[k] = normalizeBranch(res.proc_crit_branches[k]);
+      out.proc_crit_chances[k] = r3((res.proc_crit_chances || {})[k]);
+    }
+  }
   // Grand Cross recoil lives on the branch result (battlePipeline.js
   // _runGrandCrossBranch sets result.self_damage on the damage result).
   const sd = res.self_damage || (res.normal && res.normal.self_damage);
