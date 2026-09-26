@@ -5903,6 +5903,40 @@ test("PS-custom skills come across under our own constants", () => {
   assert.equal(r.mastery_levels.PR_MACEMASTERY, 10, "an unaliased constant must pass straight through");
 });
 
+// Tool Mastery is the case that proves the alias table is load-bearing rather than
+// cosmetic. PS did not add a new skill for it — they repurposed Overcharge in place,
+// so it is still id 38 / MC_OVERCHARGE, while we carry a synthetic PS_MC_TOOLMASTERY
+// at 2637 because it reached us through the override file. Without the alias a
+// Merchant-line import told the player Tool Mastery was "not used by any damage
+// formula here", which is false: it is 4 ATK a level.
+test("Tool Mastery imports across the whole Merchant line", () => {
+  loader.setProfile(PS);
+  for (const job of ["Merchant", "Blacksmith", "Alchemist", "Whitesmith", "Creator", "Super_Novice"]) {
+    const r = importPsToolsSkills(psToolsLink(job, { MC_OVERCHARGE: 10 }), PS);
+    assert.equal(r.mastery_levels.PS_MC_TOOLMASTERY, 10, `${job}: Tool Mastery should import as 10`);
+    assert.ok(r.applied.some((a) => a.display === "Tool Mastery"),
+      `${job}: Tool Mastery should be reported as applied, not skipped`);
+    assert.ok(!r.not_modelled.some((n) => /tool mastery/i.test(n.display)),
+      `${job}: Tool Mastery must not be reported as unmodelled — we price it`);
+  }
+  // And it reaches the damage: 4 ATK a level with an Axe or a Mace.
+  const cfg = createBattleConfig();
+  const dmg = (mastery) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 10, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 60, int: 1, dex: 90, luk: 1 },
+      equipped: { right_hand: 1522 }, mastery_levels: mastery,  // Stunner, a Mace
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1023), eff, gb);
+    return Math.round(r.normal.avg_damage);
+  };
+  const imported = importPsToolsSkills(psToolsLink("Blacksmith", { MC_OVERCHARGE: 10 }), PS);
+  assert.equal(dmg(imported.mastery_levels) - dmg({}), 40,
+    "Tool Mastery 10 is +40 ATK with a Mace");
+});
+
 test("every alias points at a skill this calculator actually has", () => {
   loader.setProfile(PS);
   // The table was derived from their skill ids; if we rename a PS custom it rots

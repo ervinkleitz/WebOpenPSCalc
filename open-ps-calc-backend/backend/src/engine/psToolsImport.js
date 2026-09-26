@@ -32,6 +32,18 @@ const { loader } = require("./dataLoader");
  * Roundup is `AM_` for them, `PS_BS_` here).
  */
 const CONSTANT_ALIASES = {
+  // Tool Mastery is NOT a new skill on PS: they repurposed Overcharge in place, so
+  // it is still id 38 / MC_OVERCHARGE. Their tree labels it "Overcharge / Tools
+  // Mastery" and their UI renders it "Tool Mastery" -- Passive, "Increases damage
+  // inflicted with Axe and Mace class weapons", +4 damage a level, which is our
+  // Tool Mastery exactly. We model it as a synthetic PS_MC_TOOLMASTERY at 2637
+  // because it arrived via ps_skill_desc_overrides rather than the scrape, so the
+  // ids do not line up and this alias is the bridge.
+  //
+  // Missing it meant a Merchant-line import reported Tool Mastery as "not used by
+  // any damage formula here" -- which is false, we price it at 4 ATK a level. Found
+  // when the maintainer pointed at the skill sitting in their planner (2026-09-26).
+  MC_OVERCHARGE: "PS_MC_TOOLMASTERY",          // 38    Overcharge / Tools Mastery
   AM_DETONATOR: "PS_AM_REMOTEDETONATOR",       // 2613  Remote Detonator
   AM_HERBICIDE: "PS_AM_HERBICIDE",             // 2614  Herbicide
   AC_SCATTERING: "PS_AC_SCATTERING",           // 2615  Scattering

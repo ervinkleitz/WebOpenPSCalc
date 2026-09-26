@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-09-26 | tools.payonstories.com chunk data | First-party tool | Merchant / Tool Mastery id |
 | 2026-09-25 | wiki Holy_Strike | Wiki | Priest / Holy Strike crit |
 | 2026-09-24 | QA sweep vs bundled item/skill DB | Internal audit | Equip legality, Ninja / Exploding Dragon |
 | 2026-09-24 | wiki Knight / Plagiarism + mob data | Wiki + bundled data | Knight / Spear Boomerang, Rogue / Water Ball |
@@ -7187,3 +7188,46 @@ second hit already carried its own crit branch.
 could ignore crit unnoticed. `priest-holy-strike-crit-proc` now freezes it, and the golden
 normaliser records `proc_crit_branches` separately from the blended DPS so a crit outcome
 cannot drift while the blend happens to land the same.
+
+## 2026-09-26 - Tool Mastery is MC_OVERCHARGE (id 38), not a new skill
+
+Found while building the PS-planner skill import, and worth recording because our own
+id for this skill is invented.
+
+**PS repurposed Overcharge in place.** tools.payonstories.com's skill-tree data labels
+id 38 `MC_OVERCHARGE` as **"Overcharge / Tools Mastery"**, their UI name map renders it
+"Tool Mastery", and the client description for id 38 reads:
+
+> Tool Mastery / Max Level: 10 / Skill Form: Passive / Description: Increases damage
+> inflicted with Axe and Mace class weapons. / [Lv 1]: Damage +4 ... [Lv 5]: Damage +20
+
+That is our Tool Mastery exactly (4 ATK a level, Axe and Mace). The same rework renamed
+`MC_DISCOUNT` to "Barter", so the Merchant's Discount/Overcharge pair became
+Barter/Tool Mastery - two renames in place, not two new skills.
+
+**We carry it as a synthetic `PS_MC_TOOLMASTERY` at id 2637**, because it arrived through
+`ps_skill_desc_overrides.json` ("not yet in the scraped PS skill DB") rather than the
+scrape, and 2637 was chosen locally. The engine is internally consistent, so nothing is
+wrong with the numbers - but the id does NOT correspond to anything on PS, and any
+integration keyed on ids has to bridge it. `psToolsImport.CONSTANT_ALIASES` does that.
+
+If the scrape is ever refreshed and picks up id 38 properly, this is the wart to clean up.
+
+### The audit that found it, and why the first one could not
+
+The import's round-trip QA generated links from OUR constants and read them back, which
+only ever proves self-consistency - it cannot notice that their constant for a skill
+differs from ours. The check that works is the other direction:
+
+1. Take every skill our passive panels price, per job.
+2. Read their tree for the matching job key out of the `skill~` chunk (regex the
+   `"skid"/"id"/"name"` triples - their data contains `\'` inside names, which is not
+   valid JSON, so `JSON.parse` fails on 16 of the 35 trees).
+3. Ask whether ANY constant in that tree resolves - directly or through the alias table -
+   to our skill. Fall back to a display-name match only as a hint for what the right
+   constant would be.
+
+Over 184 job/skill pairs that leaves exactly two, both correct: Double Strafing shows on
+our Rogue and Stalker panels because a Rogue can PLAGIARISE it, and their planner rightly
+does not offer it as learnable. Re-run this after any PS rework rather than trusting the
+round-trip.

@@ -22,6 +22,10 @@ instead of release version. Dates are taken from actual git commit history.
   skills belonging to other classes — the PS planner hands those out whatever class you pick.
   Requested by a player.
 
+  Merchants, Blacksmiths and Alchemists included: Payon Stories turned the old Overcharge
+  slot into Tool Mastery rather than adding a new skill, so it comes across correctly even
+  though this calculator files it under a different internal name.
+
 ## 2026-09-25
 
 ### Fixed
