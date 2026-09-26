@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-09-26 | PS item API + monsters.json | First-party + bundled data | Item pickers / unobtainable duplicates |
 | 2026-09-25 | wiki Holy_Strike | Wiki | Priest / Holy Strike crit |
 | 2026-09-24 | QA sweep vs bundled item/skill DB | Internal audit | Equip legality, Ninja / Exploding Dragon |
 | 2026-09-24 | wiki Knight / Plagiarism + mob data | Wiki + bundled data | Knight / Spear Boomerang, Rogue / Water Ball |
@@ -7187,3 +7188,61 @@ second hit already carried its own crit branch.
 could ignore crit unnoticed. `priest-holy-strike-crit-proc` now freezes it, and the golden
 normaliser records `proc_crit_branches` separately from the blended DPS so a crit outcome
 cannot drift while the blend happens to land the same.
+
+## 2026-09-26 - Unobtainable items in the pickers, and how to tell which are real
+
+A player reported "a bunch of unobtainable AoAs in calc, the correct one should be 2285".
+They were right, and the audit behind the fix is worth keeping because the obvious method
+is not safe.
+
+### The specific case
+
+| id | shown as | stats | on PS? |
+|---|---|---|---|
+| **2285** | Apple of Archer | Dex +3, DEF 0, Lv30 | yes |
+| 5265 | Apple of Archer | Dex +4, DEF 7, Lv1 | no |
+| 5649 | F Apple Of Archer C | Dex +4, DEF 7, Lv1 | no |
+| 5731 | E Apple OE Archer C | Dex +4, DEF 7, Lv1 | no |
+
+The strongest evidence is the item API's NAME search, which enumerates every id PS holds
+under a name: `Apple of Archer` returns 2285, 8019 (costume), 13658 (box), 19210 (illusion)
+and 5002285 (costume). 5265 is not among them. Prefer that over an id lookup where you can -
+a list you can read to the end beats a single "No data".
+
+### The scale
+
+Of 2,206 equippable items the pickers offer, **564 (26%) are not in the PS item scrape at
+all**. 55 of those share a name with a real item, and in 36 of those 55 the absent one is
+strictly stronger in ATK or DEF - Ballista 1728 is 194 ATK with +20% ranged at level 1
+against the real 1722's 145 ATK at level 77.
+
+### Why "not in the item API" is NOT sufficient on its own
+
+Two independent checks each caught real items the API does not know:
+
+1. **Hand-written PS data.** Ring of Peace (8269), Talisman of Holy Protection (8324),
+   Ardent Helm (8417), Purifying Ring (81011), Rust-Worn Apparatus (81012), Whirling
+   Hammer (8429) and Giant Pestle (8430) are absent from `ps_item_db.json` and only exist
+   in `ps_item_manual.json` / `ps_item_overrides.json`. This is the caution already
+   recorded for the item API returning "No data".
+2. **Monster drops.** `monsters.json` is a separate scrape listing 6,880 drop rows across
+   1,160 monsters. Three items the API does not know are dropped by real monsters:
+   **Doom Slayer 1370** (Sword Master), **Icicle Fist 1819** and **Seismic Fist 1821**
+   (Treasure Chest). Obtainable, whatever the API says.
+
+So a blanket "hide everything the API does not know" would have hidden at least ten real
+items. **The bar used instead:** absent from `ps_item_db.json` AND absent from the
+manual/override files AND "No data" from the item API AND not dropped by any monster.
+
+### Why only the name collisions were acted on
+
+Run against the 55 name-collision ids, all four checks agree - none is dropped, none is
+hand-written, all return "No data". Run against the full 557, the drop check alone finds
+three contradictions. A name collision is also self-limiting: something with the same name
+IS on PS, so hiding the copy leaves the name findable. The other ~500 unobtainables are
+clutter rather than a wrong number, and are not worth the risk of hiding something real
+until each is checked.
+
+`ps_hidden_items.json` now carries a reason per id and the loader accepts that shape as
+well as a bare array. A test asserts nothing in it is in the PS item DB, the manual or
+override files, or any monster's drop table.

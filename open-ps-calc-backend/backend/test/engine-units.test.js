@@ -5847,3 +5847,66 @@ test("Holy Strike's proc crits, and the crit is folded into DPS", () => {
       "splitting the outcome must not change how often Holy Strike fires");
   }
 });
+
+// ---------------------------------------------------------------------------
+// Unobtainable duplicates in the item pickers (reported by Hsezka, 2026-09-26:
+// "there is a bunch of unobtainable AoAs in calc, the correct one should be 2285").
+// ---------------------------------------------------------------------------
+test("the item picker offers one Apple of Archer, the one Payon Stories has", () => {
+  loader.setProfile(PS);
+  // 2285 is the real headgear: Dex +3, no DEF, level 30. PS's item API enumerates
+  // every id it holds under that name and 5265 is not one of them; 5649 and 5731 are
+  // event copies it returns "No data" for. All three are Dex +4 / DEF 7 at level 1,
+  // so picking one instead of 2285 overstates damage AND survivability.
+  assert.equal(loader.isItemHidden(2285), false, "the real Apple of Archer must stay");
+  for (const id of [5265, 5649, 5731]) {
+    assert.equal(loader.isItemHidden(id), true, `item ${id} is not on PS and must be hidden`);
+  }
+
+  // What the player actually sees: searching the head-top slot for "apple" should
+  // turn up exactly one of them.
+  const visible = loader.getItemsByType("IT_ARMOR")
+    .filter((it) => /apple/i.test(it.name)
+      && (it.loc || []).includes("EQP_HEAD_TOP")
+      && !loader.isItemHidden(it.id));
+  assert.deepEqual(visible.map((it) => it.id), [2285],
+    `only 2285 should be listed, got ${visible.map((i) => `${i.id} ${i.name}`).join(" | ")}`);
+});
+
+test("nothing is hidden that Payon Stories actually has", () => {
+  loader.setProfile(PS);
+  // The guard rail for a list that silently removes things from the UI. An id only
+  // belongs here if PS does not have it: absent from the PS item scrape, absent from
+  // the hand-written manual/override files that cover items the API cannot describe
+  // (Ring of Peace, Ardent Helm and friends), and not dropped by any monster.
+  const psdb = require("../src/engine/data/ps/ps_item_db.json");
+  const manual = require("../src/engine/data/ps/ps_item_manual.json");
+  const overrides = require("../src/engine/data/ps/ps_item_overrides.json");
+  const mobs = require("../src/engine/data/ps/monsters.json");
+
+  const dropped = new Set();
+  for (const m of mobs) {
+    for (const d of m.Drops || []) {
+      const id = Number(String(d["Item ID"] ?? d.id ?? "").replace(/[^0-9]/g, ""));
+      if (id) dropped.add(id);
+    }
+  }
+
+  const raw = require("../src/engine/data/ps/ps_hidden_items.json");
+  const ids = Array.isArray(raw) ? raw : Object.keys((raw && raw.hidden) || {}).map(Number);
+  assert.ok(ids.length > 0, "the hidden list should not be silently emptied");
+  for (const id of ids) {
+    const k = String(id);
+    assert.ok(!psdb[k], `hidden item ${id} IS in the PS item DB — it should not be hidden`);
+    assert.ok(!manual[k], `hidden item ${id} has a hand-written PS entry — it is real`);
+    assert.ok(!overrides[k], `hidden item ${id} has a PS override — it is real`);
+    assert.ok(!dropped.has(id), `hidden item ${id} is dropped by a PS monster — it is obtainable`);
+  }
+
+  // Every entry carries its reason, so the list stays auditable as it grows.
+  if (!Array.isArray(raw)) {
+    for (const [id, why] of Object.entries(raw.hidden || {})) {
+      assert.ok(typeof why === "string" && why.length > 30, `hidden item ${id} needs a reason`);
+    }
+  }
+});

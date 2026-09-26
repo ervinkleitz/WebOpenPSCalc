@@ -1,1 +1,10 @@
-[]
+{
+  "_comment": "Item ids hidden from the PS item pickers, each with the reason. Read by dataLoader.isItemHidden, which filters /data/items. An array of ids is also accepted for backwards compatibility.",
+  "_comment2": "ONLY add an item that Payon Stories does not have. The bar used so far: absent from ps_item_db.json AND absent from ps_item_manual.json / ps_item_overrides.json AND 'No data' from tools.payonstories.com/api/pc/item AND not dropped by any monster in monsters.json. That last check matters - it caught three items (Doom Slayer 1370, Icicle Fist 1819, Seismic Fist 1821) that the item API does not know but real monsters drop.",
+  "_comment3": "See PS_SOURCES.md, 2026-09-26, for the full audit and why a name collision is the safe subset to act on.",
+  "hidden": {
+    "5265": "Duplicate 'Apple of Archer'. The real one is 2285 (Dex +3, DEF 0, Lv30); this is a rental/event copy with Dex +4 and DEF 7 at Lv1, so picking it by mistake overstates both damage and survivability. PS's item API enumerates every id it has under that name - 2285, 8019, 13658, 19210, 5002285 - and 5265 is not among them. Reported by a player (Hsezka, 2026-09-26).",
+    "5649": "'F Apple Of Archer C' - an event/costume copy of Apple of Archer (Dex +4, DEF 7). 'No data' from PS's item API by id, not in ps_item_db, not dropped by anything. Shows up in a search for 'apple' next to the real 2285.",
+    "5731": "'E Apple OE Archer C' - the other event/costume copy, same stats and same evidence as 5649."
+  }
+}

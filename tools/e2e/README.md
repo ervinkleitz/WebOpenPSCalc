@@ -72,6 +72,12 @@ node wildcard-carryover.mjs https://openpscalc.com/
   the proc ignored crit — the panel must show a normal AND a critical per-proc figure, the
   critical being the larger and quoted at the character's real crit rate.
 
+- **item-picker-duplicates.mjs** — searching the headgear slot for "apple" must return
+  exactly one Apple of Archer, the real 2285, and none of the three copies Payon Stories
+  does not have. Checked in the search box because that is where the wrong pick happens,
+  with a control search ("hat", 50 results) so a hiding rule that went too far would fail
+  rather than look like a pass.
+
 ## These go stale silently
 
 Being outside `npm test` is what makes them cheap to keep, and also what let

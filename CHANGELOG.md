@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-26
+
+### Fixed
+
+- **Only one Apple of Archer in the headgear list now, and it's the right one.** Searching
+  for it turned up four: the real 2285, a copy sharing its name exactly, and two event
+  versions called "E Apple OE Archer C" and "F Apple Of Archer C". None of the three exist
+  on Payon Stories, and all three were *better* than the real one — Dex +4 and 7 DEF at
+  level 1, against 2285's Dex +3 and no DEF at level 30 — so picking one by mistake quietly
+  overstated your damage and your survivability at the same time. They're gone from the
+  picker; 2285 stays. Reported by a player.
+
 ## 2026-09-25
 
 ### Fixed

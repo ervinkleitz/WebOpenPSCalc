@@ -1088,9 +1088,16 @@ class DataLoader {
     return this.__hiddenMobs;
   }
 
+  // Accepts either a bare array of ids or the documented `{ hidden: { id: reason } }`
+  // shape. The object form is what ps_hidden_items.json uses: a list that silently
+  // removes things from the pickers needs a reason recorded against every entry, or
+  // nobody can tell later whether an id belongs there.
   _loadPsHiddenItems() {
     if (!this.__psHiddenItems) {
-      this.__psHiddenItems = readJsonSafe(path.join(PS_DIR, "ps_hidden_items.json"), []);
+      const raw = readJsonSafe(path.join(PS_DIR, "ps_hidden_items.json"), []);
+      this.__psHiddenItems = Array.isArray(raw)
+        ? raw
+        : Object.keys((raw && raw.hidden) || {}).map(Number).filter((n) => !Number.isNaN(n));
     }
     return this.__psHiddenItems;
   }
