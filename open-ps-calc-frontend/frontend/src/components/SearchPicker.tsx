@@ -68,9 +68,16 @@ export default function SearchPicker({ placeholder, search, onSelect, fetchToolt
     }
     const handle = setTimeout(() => {
       search(query).then((rows) => {
-        const enabled = rows.filter((r) => !r.disabled);
-        if (enabled.length === 1) {
-          selectResult(enabled[0]);
+        // Auto-select only when the query was UNAMBIGUOUS — one result, and usable.
+        // It used to fire whenever exactly one row was ENABLED, which quietly picked
+        // the wrong item as soon as most rows were greyed out: on a fresh level-1
+        // build 57% of gear is below its level requirement, so typing "app" matched
+        // five headgears, greyed four of them, and silently equipped Happy Wig while
+        // the Apple of Archer the player was reaching for never appeared. Reported
+        // 2026-09-26. If anything else matched, show the list and let them choose —
+        // seeing a greyed row and why is the useful outcome, not a silent pick.
+        if (rows.length === 1 && !rows[0].disabled) {
+          selectResult(rows[0]);
           return;
         }
         setResults(rows);

@@ -50,6 +50,28 @@ const hats = await search(/Headgear \(top\)/i, "hat");
 console.log(`control — 'hat' still returns ${hats.length} headgears`);
 check(hats.length > 5, `the picker should still find plenty of hats, got ${hats.length}`);
 
+// ---------------------------------------------------------------------------
+// The follow-on report: "when i type app it picks happy wig". The picker used to
+// auto-select whenever exactly one row was ENABLED — and on the default level-1
+// build 57% of gear is below its level requirement, so a partial query greyed
+// everything except one unrelated hat and silently equipped it. The Apple of
+// Archer the player was reaching for is level 30: present, blocked, never seen.
+// Auto-select now needs an unambiguous query, and a greyed row says why.
+const partial = await search(/Headgear \(top\)/i, "app");
+console.log("partial query 'app':", JSON.stringify(partial));
+check(partial.length > 1, `"app" should list its matches, got ${JSON.stringify(partial)}`);
+check(partial.some((r) => /Apple of Archer/i.test(r)),
+  `the Apple of Archer must be visible even though it is level-gated, got ${JSON.stringify(partial)}`);
+check(partial.some((r) => /Apple of Archer/i.test(r) && /LV\s*30/i.test(r)),
+  `the greyed Apple of Archer should say why it is greyed, got ${JSON.stringify(partial)}`);
+
+// Nothing may have been equipped by the act of typing.
+const topSlot = slot(/Headgear \(top\)/i);
+check((await topSlot.locator(".selected-pill").count()) === 0,
+  "typing a partial query must not equip anything on its own");
+check((await topSlot.locator("input").count()) > 0,
+  "the search box must still be there — an auto-select would have replaced it with a pill");
+
 console.log(ok ? "PASS" : "see failures");
 await browser.close();
 process.exit(ok ? 0 : 1);

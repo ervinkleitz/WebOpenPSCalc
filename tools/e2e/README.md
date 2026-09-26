@@ -76,7 +76,9 @@ node wildcard-carryover.mjs https://openpscalc.com/
   exactly one Apple of Archer, the real 2285, and none of the three copies Payon Stories
   does not have. Checked in the search box because that is where the wrong pick happens,
   with a control search ("hat", 50 results) so a hiding rule that went too far would fail
-  rather than look like a pass.
+  rather than look like a pass. It also covers the follow-on report — typing a PARTIAL query
+  must not auto-equip anything, because the picker used to fire as soon as one row was
+  enabled and a level-1 build greys most of the list.
 
 ## These go stale silently
 

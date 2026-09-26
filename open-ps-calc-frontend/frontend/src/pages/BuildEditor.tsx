@@ -1900,6 +1900,20 @@ export default function BuildEditor() {
 
   const itemLabel = (it: any) => it.slots > 0 ? `${it.name}[${it.slots}]` : it.name;
 
+  // Why an item cannot be worn, or null when it can. A greyed row with no reason is
+  // the thing that made a level-gated Apple of Archer look deleted rather than
+  // blocked, so the picker shows this as a pill.
+  const equipBlockReason = useCallback(
+    (it: any): string | null => {
+      if (it.equip_level != null && it.equip_level > data.base_level) return `Lv ${it.equip_level}`;
+      if (!Array.isArray(it.job) || it.job.length === 0) return null;
+      if (it.job.includes(data.job_id)) return null;
+      if (data.job_id === 23 && it.job.includes(0)) return null;
+      return "Wrong class";
+    },
+    [data.job_id, data.base_level],
+  );
+
   const canEquip = useCallback(
     (it: any) => {
       // An item you are too low to wear is as unequippable as one for another class,
@@ -1928,6 +1942,11 @@ export default function BuildEditor() {
       return api.searchItems(params)
         .then((r) => sortResults(r.items.map((it: any) => ({
           id: it.id, label: itemLabel(it), sublabel: `#${it.id}`, disabled: !canEquip(it),
+          ...(equipBlockReason(it)
+            ? { badge: equipBlockReason(it)!, badgeTitle: equipBlockReason(it) === "Wrong class"
+                ? "Another class wears this"
+                : `Needs base level ${it.equip_level} — you are level ${data.base_level}` }
+            : {}),
           // Forging is only offered for weapons on the blacksmith list, and that is
           // invisible until after you equip one. Surfacing it here saves picking a
           // weapon just to find out. Same marker on the off-hand search below.
@@ -1936,7 +1955,7 @@ export default function BuildEditor() {
             : {}),
         }))));
     },
-    [data.server, data.job_id, canEquip],
+    [data.server, data.job_id, data.base_level, canEquip, equipBlockReason],
   );
 
   // True while the right hand holds something EQP_ARMS — a two-hander or a katar.

@@ -17,6 +17,15 @@ instead of release version. Dates are taken from actual git commit history.
   overstated your damage and your survivability at the same time. They're gone from the
   picker; 2285 stays. Reported by a player.
 
+- **The gear search no longer picks something you didn't type.** It used to equip an item
+  the moment exactly one *usable* match was left — and since gear you're too low-level for
+  is greyed out, a fresh level-1 build greys 57% of everything. So typing "app" greyed the
+  Apple of Archer (level 30) along with three others and silently equipped the one hat left
+  standing, Happy Wig, without ever showing the list. It now only auto-picks when your query
+  matched a single item outright; otherwise you get the list. Greyed rows also say why
+  — "LV 30" or "Wrong class" — so an item you can't wear yet reads as blocked rather than
+  missing. Reported by a player.
+
 ## 2026-09-25
 
 ### Fixed
