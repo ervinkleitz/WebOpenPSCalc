@@ -11,7 +11,7 @@ import AttackRateNote from "../components/AttackRateNote";
 import ChangelogModal from "../components/ChangelogModal";
 import ResultsPanel from "../components/ResultsPanel";
 import SavedBuildsModal from "../components/SavedBuildsModal";
-import ImportJaludevModal from "../components/ImportJaludevModal";
+import ImportBuildModal from "../components/ImportBuildModal";
 import KofiModal from "../components/KofiModal";
 import { summaryMetrics, type ComparePin } from "../components/CompareView";
 import { BreakpointsView } from "../components/BreakpointsView";
@@ -1234,6 +1234,30 @@ export default function BuildEditor() {
     setResultsOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+  // A PS planner link carries a job and skill levels and nothing else, so this
+  // MERGES rather than replacing: wiping the player's gear and stats because they
+  // pasted a skill tree would be the wrong trade. Imported levels win; a skill the
+  // link never mentions keeps whatever it had, which also protects the few PS-custom
+  // passives their planner has no entry for (Tool Mastery, Blunt Mastery,
+  // Transmutation) from being silently zeroed.
+  const handleSkillsImported = useCallback((res: {
+    job_id: number; job_name: string; mastery_levels: Record<string, number>;
+  }) => {
+    statsApi.trackFeature("ps_tools_skill_import");
+    setData((prev) => {
+      const job = jobs.find((j) => j.id === res.job_id);
+      return {
+        ...prev,
+        job_id: res.job_id,
+        job_name: job?.name ?? res.job_name,
+        mastery_levels: { ...(prev.mastery_levels || {}), ...res.mastery_levels },
+      };
+    });
+    // The old numbers describe the old skill levels.
+    setCalcResult(null);
+    setResultsOpen(false);
+  }, [jobs]);
+
   const applyTemplate = useCallback((t: BuildTemplate) => {
     setData((prev) => {
       const job = jobs.find((j) => j.id === t.job_id);
@@ -2184,11 +2208,12 @@ export default function BuildEditor() {
           onLoad={(state) => { statsApi.trackFeature("build_load"); onLoadSavedState(state); }}
           onSave={(name) => { statsApi.trackFeature("build_save"); setData((prev) => ({ ...prev, name })); writeStateToUrl({ name }); }}
         />
-        <ImportJaludevModal
+        <ImportBuildModal
           open={importOpen}
           onClose={() => setImportOpen(false)}
           server={data.server}
           onImported={(build) => handleImported(build)}
+          onSkillsImported={handleSkillsImported}
         />
         {data.server === "payon_stories" && !featuresBannerHidden && (
           <div className="reworks-banner">

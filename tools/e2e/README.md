@@ -72,6 +72,14 @@ node wildcard-carryover.mjs https://openpscalc.com/
   the proc ignored crit — the panel must show a normal AND a critical per-proc figure, the
   critical being the larger and quoted at the character's real crit rate.
 
+- **ps-tools-skill-import.mjs** — paste a link from PS's own skill planner and the right
+  skills have to land in the Passive skills panel at the right levels, which is the only thing
+  a player will judge the feature by. It starts from a Knight who already has gear, so the
+  test also proves the import MERGES: the weapon has to survive, because that link carries no
+  equipment and replacing the build would delete it. Ends by calculating twice and checking
+  the damage actually moved — a level that reaches the input box but not the damage would
+  otherwise look like a pass.
+
 ## These go stale silently
 
 Being outside `npm test` is what makes them cheap to keep, and also what let

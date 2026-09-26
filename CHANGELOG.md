@@ -5,6 +5,23 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-26
+
+### Added
+
+- **Import your skill tree from the Payon Stories planner.** Plan your build at
+  tools.payonstories.com/skill, copy the link, and paste it into Import here — the job and
+  every skill level that affects damage are filled in for you. The link only carries skills,
+  so your stats, gear and cards are kept exactly as they were; anything the link doesn't
+  mention keeps the level it has now. The Import box takes either kind of link now and works
+  out which is which, so a jaludev build link still imports the way it always did.
+
+  The summary afterwards says what happened rather than leaving you to guess: the skills that
+  were applied and at what level, any skill on your tree that no damage formula here reads
+  (Provoke, Endure and the like) so you know it was seen and skipped, and a count of the quest
+  skills belonging to other classes — the PS planner hands those out whatever class you pick.
+  Requested by a player.
+
 ## 2026-09-25
 
 ### Fixed

@@ -5,6 +5,8 @@ import { getProfile, plagiarisedRankCap } from "../engine/serverProfiles";
 const { allowedWeaponTypes, describeRequirement } = require("../engine/weaponRequirements");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { importJaludev } = require("../engine/jaludevImport");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { importPsToolsSkills } = require("../engine/psToolsImport");
 const { describeSelfBuff } = require("../engine/targetSelfBuffs");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { TRAP_SKILL_NAMES } = require("../engine/calculators/battlePipeline");
@@ -20,6 +22,20 @@ router.post("/import/jaludev", (req: Request, res: Response) => {
     res.json(importJaludev(String(url)));
   } catch (e: any) {
     res.status(400).json({ error: e?.message || "Failed to import build" });
+  }
+});
+
+// A skill build from PS's own planner (tools.payonstories.com/skill). Unlike the
+// jaludev import this returns only a job and skill levels — the link carries nothing
+// else — so the editor MERGES it into the build on screen instead of replacing it.
+router.post("/import/ps-tools-skills", (req: Request, res: Response) => {
+  const server = applyServerProfile(req);
+  try {
+    const url = (req.body && req.body.url) || "";
+    if (!url) return res.status(400).json({ error: "url is required" });
+    res.json(importPsToolsSkills(String(url), getProfile(server)));
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || "Failed to read that skill link" });
   }
 });
 

@@ -5847,3 +5847,119 @@ test("Holy Strike's proc crits, and the crit is folded into DPS", () => {
       "splitting the outcome must not change how often Holy Strike fires");
   }
 });
+
+// ---------------------------------------------------------------------------
+// Importing a skill build from PS's own planner (tools.payonstories.com/skill).
+// The whole build rides in the URL as zlib+base64 JSON, so nothing is fetched from
+// them and there is no snapshot to go stale.
+// ---------------------------------------------------------------------------
+const zlib = require("zlib");
+const { importPsToolsSkills, decodePsToolsSkillUrl, CONSTANT_ALIASES } =
+  require("../src/engine/psToolsImport");
+
+// Build a link the way their planner does, so the awkward cases can be covered
+// without hunting for a real URL that happens to contain them.
+const psToolsLink = (job, levels) =>
+  "https://tools.payonstories.com/skill?state=" +
+  encodeURIComponent(zlib.deflateSync(Buffer.from(JSON.stringify({ job, levels }), "utf8")).toString("base64"));
+
+// A real link, copied from the planner, so the decoder is pinned against the
+// genuine article and not only against my own encoder.
+const REAL_LINK = "https://tools.payonstories.com/skill?state=eJxdk71u3TAMhd%2FFc4Z27N0omZYV68clZbvOIrRoliJtgAZohyDvXlqybtKM%2FEQdkkfUc%2Ffj8Vt36fjv4%2B%2FvTz%2B%2F%2Fupuuof7P%2FcPT93luQOXx%2Bh2Z82YusvHmwY4kZ2wEp97TDFAitQAIceFdE3wOt9h2Gcb9IjUkAZKPepIkK46cqystv0JnMtq2W0wmUX7KqZHCAaP%2B4XMJOV69HOysd4rKWQQiOLWkIdJlP5DrCElJMGFpCHzLNHkkCH0NYvziiH6KdgBG%2BEYrAat0bV7aRRZaTJgIwr0xM72b8RnK%2BiaoyDPMsca7WmT4mwIsW%2FBEgaw5HZxWk8Fss%2BwpKiQGOmKfFylCImVK9JeqKbM4zFJyxkggVPuHL3XeZPDwyRfwJjyLKYmYG91IeFWFKCPm2Sm0YYCp9CMTVXZm4wByew6Qn0MH%2FNkE0FgB%2FIeoUEFbtrjcppBJmsXWVoOgz39EPZ5KQ7h3IBy4qIHmrCqM2R06DGkTbaG3jN7PtorMiQ138PBnrskSJMMc%2FTRgJGULzKArhW3u8zH7ksn3CqGVTZgcQOBaf6%2Bcf9DAWmLY92hGs8U11g%2BTI0x9Au9hgp47C6fXl7%2BATZP8x4%3D";
+
+test("a real PS planner link decodes to its job and skill levels", () => {
+  const { job, levels } = decodePsToolsSkillUrl(REAL_LINK);
+  assert.equal(job, "Swordsman");
+  assert.equal(levels.SM_BASH, 9);
+  assert.equal(levels.SM_TWOHAND, 10);
+  // Their planner hands every class the whole platinum list at Lv1.
+  assert.equal(levels.AL_HOLYSTRIKE, 1);
+});
+
+test("a PS planner link lands on the passive panel's own mastery keys", () => {
+  loader.setProfile(PS);
+  const r = importPsToolsSkills(REAL_LINK, PS);
+  assert.equal(r.job_id, 1);
+  assert.equal(r.job_name, "Swordsman");
+  // Blade Mastery is SM_TWOHAND on both sides but is STORED under SM_TWOHANDSWORD —
+  // the key masteryFix actually reads. Writing the raw constant would silently lose
+  // 40 ATK, which is exactly the kind of miss this import exists to avoid.
+  assert.equal(r.mastery_levels.SM_TWOHANDSWORD, 10);
+  assert.equal(r.mastery_levels.SM_BASH, 9);
+  assert.ok(!("SM_TWOHAND" in r.mastery_levels), "the raw constant must not be written");
+  assert.deepEqual(r.applied.map((a) => `${a.display} ${a.level}`), ["Bash 9", "Blade Mastery 10"]);
+  // Swordsman skills we do not price are NAMED (the player really has them)...
+  assert.ok(r.not_modelled.some((n) => n.constant === "SM_PROVOKE"));
+  // ...while the other classes' quest skills are only counted.
+  assert.ok(r.off_tree_count > 20, `expected the platinum noise to be counted, got ${r.off_tree_count}`);
+});
+
+test("PS-custom skills come across under our own constants", () => {
+  loader.setProfile(PS);
+  // Holy Strike is AL_HOLYSTRIKE for them and PS_PR_HOLYSTRIKE here, same id 2622.
+  const r = importPsToolsSkills(psToolsLink("Priest", { AL_HOLYSTRIKE: 1, PR_MACEMASTERY: 10 }), PS);
+  assert.equal(r.job_id, 8);
+  assert.equal(r.mastery_levels.PS_PR_HOLYSTRIKE, 1, "the alias must resolve to our constant");
+  assert.equal(r.mastery_levels.PR_MACEMASTERY, 10, "an unaliased constant must pass straight through");
+});
+
+test("every alias points at a skill this calculator actually has", () => {
+  loader.setProfile(PS);
+  // The table was derived from their skill ids; if we rename a PS custom it rots
+  // silently and that skill stops importing. Cheap to check, so check it.
+  const psdb = require("../src/engine/data/ps/ps_skill_db.json");
+  const overrides = require("../src/engine/data/ps/ps_skill_desc_overrides.json");
+  const known = new Set(Object.keys(overrides).filter((k) => !k.startsWith("_comment")));
+  for (const rec of Object.values(psdb)) if (rec && rec.constant) known.add(rec.constant);
+  for (const [theirs, ours] of Object.entries(CONSTANT_ALIASES)) {
+    assert.ok(known.has(ours) || loader.getSkillByName(ours),
+      `alias ${theirs} -> ${ours} no longer resolves to a skill we know`);
+  }
+});
+
+test("a level above our cap is clamped, and says it was", () => {
+  loader.setProfile(PS);
+  // PS condensed Spear Stab to 5 ranks; a link claiming 10 must not smuggle one in.
+  const r = importPsToolsSkills(psToolsLink("Knight", { KN_SPEARMASTERY: 99 }), PS);
+  const entry = r.applied.find((a) => a.constant === "KN_SPEARMASTERY");
+  assert.ok(entry, "Spear Mastery should import for a Knight");
+  assert.equal(entry.level, 10);
+  assert.equal(entry.requested, 99, "the original level is reported so the cap is visible");
+});
+
+test("unusable links fail with something a player can act on", () => {
+  loader.setProfile(PS);
+  // A class this calculator does not model, named rather than swallowed.
+  assert.throws(() => importPsToolsSkills(psToolsLink("Baby_Crusader", { SM_BASH: 1 }), PS),
+    /does not model Baby Crusader/);
+  assert.throws(() => importPsToolsSkills(psToolsLink("Rune_Knight", { SM_BASH: 1 }), PS),
+    /does not model Rune Knight/);
+  // Not a skill link at all.
+  assert.throws(() => importPsToolsSkills("https://example.com/nope", PS), /should contain/);
+  assert.throws(() => importPsToolsSkills("", PS), /Paste a Payon Stories skill link/);
+  // A truncated blob: valid-looking characters, not valid zlib.
+  assert.throws(() => importPsToolsSkills("https://tools.payonstories.com/skill?state=eJxdk71u3TAMhd", PS),
+    /Could not read that link/);
+});
+
+test("imported skill levels actually reach the damage numbers", () => {
+  // The whole point of the feature: paste a link, get the right damage. Blade
+  // Mastery is +4 ATK per level, so a Knight importing it must hit harder.
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const dmg = (masteryLevels) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 60, int: 1, dex: 90, luk: 1 },
+      equipped: { right_hand: 1129 }, mastery_levels: masteryLevels,
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(1023), eff, gb);
+    return Math.round(r.normal.avg_damage);
+  };
+  const imported = importPsToolsSkills(psToolsLink("Knight", { SM_TWOHAND: 10 }), PS);
+  const withMastery = dmg(imported.mastery_levels);
+  const without = dmg({});
+  assert.equal(withMastery - without, 40, `Blade Mastery 10 is +40 ATK, got +${withMastery - without}`);
+});

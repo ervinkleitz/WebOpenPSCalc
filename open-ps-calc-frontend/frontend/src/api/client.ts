@@ -95,6 +95,15 @@ export const api = {
       skill: { name: string; desc: string; attackType: string; elementInt: number; hits: number; ratio: number; hasNumber: boolean; estimated: boolean; damageType: "damage" | "status"; level: number };
       result: { min_damage: number; max_damage: number; avg_damage: number } | null;
     }>,
+  // PS's own skill planner. Returns a job and skill levels only — the caller merges.
+  importPsToolsSkills: (url: string, server: string) =>
+    request(`/data/import/ps-tools-skills?server=${encodeURIComponent(server)}`, { method: "POST", body: { url } }) as Promise<{
+      job_id: number; job_name: string;
+      mastery_levels: Record<string, number>;
+      applied: { constant: string; display: string; level: number; requested?: number }[];
+      not_modelled: { constant: string; display: string; level: number }[];
+      off_tree_count: number;
+    }>,
   importJaludev: (url: string, server: string) =>
     request(`/data/import/jaludev?server=${encodeURIComponent(server)}`, { method: "POST", body: { url } }) as Promise<{
       build: any; unmapped: string[]; jobName: string;
