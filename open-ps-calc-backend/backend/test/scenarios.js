@@ -360,6 +360,15 @@ const scenarios = [
     target: 1036,
   },
   {
+    // A Gunslinger with both gun buffs up had NO golden, which is how an ASPD bug
+    // survived from the initial commit to 2026-09-27: Gatling Fever and Barrage were
+    // each counted once as a rate and then a third time as a renewal-only flat bonus.
+    // ASPD is the point of this one.
+    name: "gunslinger-gatling-fever-barrage-aspd",
+    build: { job_id: 24, base_level: 88, job_level: 63, base_stats: { str: 1, agi: 95, vit: 1, int: 1, dex: 82, luk: 1 }, equipped: { right_hand: 13157, armor: 2339, garment: 2522, shoes: 2417 }, mastery_levels: { GS_CHAINACTION: 10, GS_SINGLEACTION: 9, GS_SNAKEEYE: 10 }, active_buffs: { SC_GS_MADNESSCANCEL: 1, SC_GS_GATLINGFEVER: 10 }, consumable_buffs: { aspd_potion: 3 } },
+    target: 1002,
+  },
+  {
     // Deliberately unarmed: this scenario is about Desperado's HIT RANGE, not its
     // gear, and gunslinger-desperado-10-coins already covers it with a revolver.
     // Since Desperado is a Revolvers-only skill, the frozen output also carries the

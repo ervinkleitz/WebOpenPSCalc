@@ -472,10 +472,20 @@ class StatusCalculator {
 
     let scAspdRate = 1000 - scAspdMax;
 
-    let aspdAdd = 0;
-    if ("SC_GS_GATLINGFEVER" in activeSc) aspdAdd += activeSc.SC_GS_GATLINGFEVER;
-    if ("SC_GS_MADNESSCANCEL" in activeSc && aspdAdd < 20) aspdAdd = 20;
-    scAspdRate -= aspdAdd;
+    // There is NO flat ASPD bonus on top of the rate here. Hercules has a second
+    // function, status_calc_aspd(), that adds one — and its whole body is inside
+    // `#ifdef RENEWAL_ASPD`, with `return 0` for everyone else (status.c:5610-5756).
+    // Pre-renewal ASPD is the rate path alone: status_calc_aspd_rate() takes the
+    // best of the quicken-style buffs (Gatling Fever's val2 = 20 x level is in that
+    // group, applied as scAspdMax above) and then subtracts Madness Cancel's 200
+    // separately, exactly as below.
+    //
+    // This port carried the renewal function's `bonus += SC_GS_GATLINGFEVER->val1`
+    // across without its guard, so a Gunslinger's gun buffs were counted a third
+    // time: 2% too fast with Barrage up, 1% per Gatling Fever level without it. A
+    // player caught it at 1 ASPD — we said 189.4 where the client showed 188, and
+    // dropping the stray term gives 188.7, which the client floors to 188
+    // (Armalore via Hsezka, 2026-09-27). Present since the initial commit.
 
     if ("SC_GS_MADNESSCANCEL" in activeSc) scAspdRate -= 200;
     if ("SC_STEELBODY" in activeSc) scAspdRate += 250;

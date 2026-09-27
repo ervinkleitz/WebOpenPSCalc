@@ -5,6 +5,17 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-09-27
+
+### Fixed
+
+- **Gunslinger attack speed was a little too fast with Barrage or Gatling Fever up.** Both
+  buffs were being counted one extra time, so the calculator read about 2% higher than the
+  game. A player spotted it at a single point of ASPD — we said 189 where his client showed
+  188 — and the numbers now line up: same build, same buffs, 188.7, which the game displays
+  as 188. Affects any Gunslinger using either buff; everything else is unchanged. Reported
+  by a player.
+
 ## 2026-09-26
 
 ### Fixed

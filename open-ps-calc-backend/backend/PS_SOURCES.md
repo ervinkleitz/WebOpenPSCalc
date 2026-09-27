@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-09-27 | Hercules status.c (pre-re guards) | Source | Gunslinger / ASPD with gun buffs |
 | 2026-09-26 | PS item API + monsters.json | First-party + bundled data | Item pickers / unobtainable duplicates |
 | 2026-09-25 | wiki Holy_Strike | Wiki | Priest / Holy Strike crit |
 | 2026-09-24 | QA sweep vs bundled item/skill DB | Internal audit | Equip legality, Ninja / Exploding Dragon |
@@ -7246,3 +7247,61 @@ until each is checked.
 `ps_hidden_items.json` now carries a reason per id and the loader accepts that shape as
 well as a bare array. A test asserts nothing in it is in the PS item DB, the manual or
 override files, or any monster's drop table.
+
+## 2026-09-27 - Gunslinger ASPD: the gun buffs are a rate, with nothing on top
+
+A player reported a one-point gap: Lv88 Gunslinger, AGI 107 / DEX 95, Gatling Fever 10 +
+Barrage + a Berserk potion, Drifter. We said **189.4**, his client showed **188**.
+
+### Hercules has two ASPD paths and only one runs pre-renewal
+
+`status_calc_aspd_rate()` is the pre-renewal path. Gatling Fever lives in the
+quicken-style "best of" group as `val2 = 20 x level` (status.c:5819), and Madness Cancel
+subtracts a separate 200 right after `aspd_rate -= max`:
+
+```c
+        aspd_rate -= max;
+        if(sc->data[SC_BERSERK])          aspd_rate -= 300;
+        else if(sc->data[SC_GS_MADNESSCANCEL]) aspd_rate -= 200;
+```
+
+The other path, `status_calc_aspd()` (status.c:5610), adds a FLAT bonus that includes
+`bonus += sc->data[SC_GS_GATLINGFEVER]->val1` at 5727 - and its entire body is inside
+`#ifdef RENEWAL_ASPD`, with `return 0` for everyone else at 5753-5755.
+
+**This port carried that flat bonus across without its guard.** The gun buffs were
+therefore counted a third time: 2% fast with Barrage up (the code floored the flat term at
+20), 1% per Gatling Fever level without it. Present since the initial commit, 2026-06-20.
+
+Single Action's `aspd_rate -= ((lv+1)/2)*10` was checked at the same time and is correct -
+status.c:2145, inside `#ifndef RENEWAL_ASPD`.
+
+### The arithmetic, for the record
+
+| step | value |
+|---|---|
+| job 24 Gatling base amotion | 700 |
+| after AGI 107 / DEX 95 | 700 - floor(700 x 523/1000) = 334 |
+| Gatling Fever Lv10 (val2, best-of group) | rate -200 |
+| Barrage | rate -200 |
+| Single Action Lv9 | rate -50 |
+| Berserk potion 20% + pet 1% | rate -210 |
+| rate 340, amotion floor(334 x 0.340) | 113 -> **ASPD 188.7** |
+
+The stray term made the rate 320 and the amotion 106, giving 189.4.
+
+### What this does NOT prove
+
+A client showing `188` is consistent with anything from 188.0 to 188.9, so the report
+proves the flat term is wrong - with it we showed 189 - but not that 188.7 is exact to the
+decimal. Confirming that needs an unbuffed reading: the same character with no potion and
+no buffs should show **168** (168.7), and with the potion alone **175** (175.3). Worth
+collecting if another Gunslinger report arrives.
+
+### Still open: Gatling Fever below Lv10
+
+The Gunslinger rework PDF gives Gatling Fever a **flat "Increases ASPD by 20%"**, while we
+use vanilla's `20 x level`. Those agree at Lv10 - which is the level in this report, so it
+did not affect it - but below that we understate the buff (Lv5 would be 10% here against
+the PDF's 20%). Not changed, because no one has reported it and the PDF wording could also
+be describing the max rank. Worth a CC question.

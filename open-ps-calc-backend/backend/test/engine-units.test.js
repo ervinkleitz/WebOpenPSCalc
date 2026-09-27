@@ -5910,3 +5910,85 @@ test("nothing is hidden that Payon Stories actually has", () => {
     }
   }
 });
+
+// ---------------------------------------------------------------------------
+// Gunslinger ASPD: the gun buffs are a RATE, with no flat bonus on top.
+//
+// Hercules has two ASPD paths. Pre-renewal uses status_calc_aspd_rate() only:
+// Gatling Fever sits in the quicken-style "best of" group as val2 = 20 x level,
+// and Madness Cancel (Barrage on PS) subtracts a separate 200. The other path,
+// status_calc_aspd(), adds a FLAT bonus that includes Gatling Fever's val1 — and
+// its entire body is behind `#ifdef RENEWAL_ASPD`, returning 0 otherwise.
+//
+// This port carried that flat bonus across without its guard, so the gun buffs
+// were counted a third time. A player reported it at 1 ASPD: Lv88 Gunslinger,
+// AGI 107 / DEX 95, Gatling Fever 10 + Barrage + a Berserk potion, where we said
+// 189.4 and the client showed 188 (Armalore via Hsezka, 2026-09-27).
+// ---------------------------------------------------------------------------
+test("a Gunslinger's gun buffs are a rate only — no flat ASPD on top", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const GUNNER = (over = {}) => buildFromSaveSchema({
+    server: "payon_stories", job_id: 24, base_level: 88, job_level: 63,
+    base_stats: { str: 1, agi: 95, vit: 1, int: 1, dex: 82, luk: 1 },
+    equipped: { armor: 2339, garment: 2522, shoes: 2417, right_hand: 13157 }, // Drifter, a Gatling
+    mastery_levels: { GS_CHAINACTION: 10, GS_SINGLEACTION: 9, GS_SNAKEEYE: 10 },
+    ...over,
+  });
+  const aspdOf = (over) => {
+    const [, , , st] = resolvePlayerState(GUNNER(over), cfg, PS);
+    return st.aspd;
+  };
+
+  // The build as reported. 188.7 is what the client floors to 188; the bug made
+  // this 189.4, which floors to 189 — the whole substance of the report.
+  const reported = aspdOf({
+    consumable_buffs: { aspd_potion: 3 },
+    active_buffs: { SC_GS_MADNESSCANCEL: 1, SC_GS_GATLINGFEVER: 10 },
+    clan: "crossbow_clan", selected_pet: "yser",
+  });
+  assert.equal(reported, 188.7, `the reported build should be 188.7, got ${reported}`);
+  assert.equal(Math.floor(reported), 188, "and the client shows 188");
+
+  // Rebuilt from the pre-renewal chain, so the test states the rule rather than
+  // just freezing a number: amotion = base - floor(base*(4*AGI+DEX)/1000), then
+  // one multiply by the summed rate.
+  const [, eff, weapon, st] = resolvePlayerState(GUNNER({
+    consumable_buffs: { aspd_potion: 3 },
+    active_buffs: { SC_GS_MADNESSCANCEL: 1, SC_GS_GATLINGFEVER: 10 },
+    clan: "crossbow_clan", selected_pet: "yser",
+  }), cfg, PS);
+  assert.equal(weapon.weapon_type, "Gatling");
+  const base = loader.getAspdBase(24, "Gatling");
+  const amBase = base - Math.floor(base * (4 * st.agi + st.dex) / 1000);
+  const rate = 1000
+    - 20 * 10              // Gatling Fever Lv10, val2, the "best of" group
+    - 200                  // Barrage / Madness Cancel
+    - 50                   // Single Action Lv9: floor((9+1)/2)*10
+    - eff.bonus_aspd_percent * 10;
+  const expected = (2000 - Math.floor(amBase * rate / 1000)) / 10;
+  assert.equal(reported, expected,
+    `ASPD should follow the pre-renewal rate chain exactly (expected ${expected})`);
+
+  // Each buff on its own must be worth exactly its rate and not a point more. With
+  // the flat term present Barrage ran 2% fast and Fever 0.1% per level. Predicted
+  // from the base amotion each time, NOT by re-multiplying an already-rated value:
+  // pre-renewal sums the rates and multiplies once, so chaining would floor twice.
+  const predict = (buffs, extraRate) => {
+    const [, e, , s2] = resolvePlayerState(GUNNER({ active_buffs: buffs }), cfg, PS);
+    const am = base - Math.floor(base * (4 * s2.agi + s2.dex) / 1000);
+    const r = 1000 - 50 /* Single Action Lv9 */ - e.bonus_aspd_percent * 10 - extraRate;
+    return (2000 - Math.floor(am * r / 1000)) / 10;
+  };
+  assert.equal(aspdOf({ active_buffs: { SC_GS_MADNESSCANCEL: 1 } }),
+    predict({ SC_GS_MADNESSCANCEL: 1 }, 200), "Barrage is exactly -200 rate");
+  for (const lv of [1, 5, 10]) {
+    assert.equal(aspdOf({ active_buffs: { SC_GS_GATLINGFEVER: lv } }),
+      predict({ SC_GS_GATLINGFEVER: lv }, 20 * lv),
+      `Gatling Fever Lv${lv} is exactly -${20 * lv} rate`);
+  }
+  // And together they add: 20% each, not 20% plus a flat top-up.
+  assert.equal(aspdOf({ active_buffs: { SC_GS_MADNESSCANCEL: 1, SC_GS_GATLINGFEVER: 10 } }),
+    predict({ SC_GS_MADNESSCANCEL: 1, SC_GS_GATLINGFEVER: 10 }, 200 + 200),
+    "Barrage and Gatling Fever together are -400 rate and nothing more");
+});
