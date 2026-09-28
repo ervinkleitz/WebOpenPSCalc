@@ -140,6 +140,11 @@ function emptyProfile(name, overrides = {}) {
     ps_zero_cast: new Set(),
     ps_attack_interval: {},
     skill_level_cap_overrides: {},
+    // Which weapons may CAST a skill, REPLACING the vanilla skill DB's
+    // requirements.weapon_types for this profile. `[]` means "no restriction".
+    // Only for skills where the server's own client text disagrees with vanilla —
+    // see PS_WEAPON_REQUIREMENTS.
+    weapon_requirement_overrides: {},
     passive_resists: {},
     ps_job_bonuses: {},
     ps_mastery_weapon_map: {},
@@ -187,6 +192,35 @@ const PS_PASSIVE_RESISTS = {
   GS_DUST:        { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun", "Grenade"], max_level: 10 },
   GS_FULLBUSTER:  { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun", "Grenade"], max_level: 10 },
   GS_SPREADATTACK: { sub_ele_at_max_lv: { Ele_Neutral: 7 }, weapon_types: ["Shotgun", "Grenade"], max_level: 10 },
+};
+
+// Which weapons may CAST a skill on PS, where PS's own client text disagrees with
+// the vanilla skill DB. Reported by Jenard via Frennetix, 2026-09-27: "wounding shot
+// works with shotgun too", against our warning "Wounding Shot needs a Revolver or a
+// Rifle". He is right, and two neighbours were wrong the same way.
+//
+// The evidence is the client's skill descriptions, and it is only usable because the
+// GUNSLINGER tree states weapon restrictions as a convention — 10 of its 22 skills
+// carry an explicit "Requires X class weapon." / "Weapon: ..." line, including every
+// skill vanilla restricts except these three. No other class writes such a line at
+// all (checked all 1036 description entries), so silence elsewhere proves nothing and
+// nothing else is touched here: Double Strafing still needs a bow.
+//
+//   Wounding Shot (id 514) — full description, every other field present, NO weapon
+//     line, while Rapid Shower and Desperado either side of it both say "Requires
+//     Revolver class weapon." Vanilla's Revolvers/Rifles is simply not PS's rule.
+//   Disarm (id 513) — "Weapon:  Shotgun/Grenade Launcher/Revolvers/Rifles/Gatling
+//     Guns", i.e. every gun. We allowed two of the five.
+//   Dust (id 518) — "Requires Shotgun or Grenade Launcher class weapon." The profile
+//     already knew this: PS_PASSIVE_RESISTS.GS_DUST scopes its resist to
+//     ["Shotgun", "Grenade"]. Only the cast requirement was left behind.
+//
+// Names here are the skill DB's plural vocabulary, not item weapon_types, because
+// this REPLACES requirements.weapon_types and is read through the same map.
+const PS_WEAPON_REQUIREMENTS = {
+  GS_PIERCINGSHOT: [],                                    // Wounding Shot: any gun
+  GS_DISARM: ["Shotguns", "GrenadeLaunchers", "Revolvers", "Rifles", "GatlingGuns"],
+  GS_DUST: ["Shotguns", "GrenadeLaunchers"],
 };
 
 // wiki.payonstories.com/Advanced_Book: PS retunes this to max level 5 (vanilla
@@ -1009,6 +1043,7 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
     RG_STRIPWEAPON: 3, RG_STRIPARMOR: 3, RG_STRIPSHIELD: 3, RG_STRIPHELM: 3,
     SA_ABRACADABRA: 5,
   },
+  weapon_requirement_overrides: PS_WEAPON_REQUIREMENTS,
   // HW_NAPALMVULCAN uses Shadow (Dark) element on PS instead of Ghost
   // PS_PR_HOLYSTRIKE is a Holy-property proc (wiki Holy_Strike: "Melee Attacks
   // sometimes call a Holy Property attack"), so its branch must not inherit the

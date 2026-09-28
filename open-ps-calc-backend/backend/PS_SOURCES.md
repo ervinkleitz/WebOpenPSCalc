@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-09-27 | PS client skill descriptions | First-party | Gunslinger / which guns cast what |
 | 2026-09-27 | Hercules status.c (pre-re guards) | Source | Gunslinger / ASPD with gun buffs |
 | 2026-09-26 | PS item API + monsters.json | First-party + bundled data | Item pickers / unobtainable duplicates |
 | 2026-09-25 | wiki Holy_Strike | Wiki | Priest / Holy Strike crit |
@@ -7305,3 +7306,65 @@ use vanilla's `20 x level`. Those agree at Lv10 - which is the level in this rep
 did not affect it - but below that we understate the buff (Lv5 would be 10% here against
 the PDF's 20%). Not changed, because no one has reported it and the PDF wording could also
 be describing the max rank. Worth a CC question.
+
+## 2026-09-27 - Gunslinger weapon requirements are PS's, not vanilla's
+
+Jenard, via Frennetix: **"wounding shot works with shotgun too"**, against the warning
+the 2026-09-24 QA sweep had just introduced:
+
+> Wounding Shot needs a Revolver or a Rifle - you are holding Black Rose.
+> The numbers below assume you could cast it.
+
+He is right. The warning reads `requirements.weapon_types` out of the vanilla skill DB,
+and for three Gunslinger skills PS does not use vanilla's rule.
+
+### The evidence, and why it is only usable for this one class
+
+PS's client ships a description per skill. The **Gunslinger tree states weapon
+restrictions as a convention**: 10 of its 22 descriptions carry an explicit line, either
+`Requires <X> class weapon.` or `Weapon: <list>`. Within that tree, silence is a
+statement.
+
+| id | skill | vanilla / ours | PS description |
+|---|---|---|---|
+| 514 | Wounding Shot | Revolvers, Rifles | *no weapon line at all* |
+| 513 | Disarm | Revolvers, Rifles | `Weapon:  Shotgun/Grenade Launcher/Revolvers/Rifles/Gatling Guns` |
+| 518 | Dust | Shotguns | `Requires Shotgun or Grenade Launcher class weapon.` |
+
+Wounding Shot's entry is complete - Max Level, SP Cost, Skill Form, the full bleeding
+table - so the missing line is an absence, not a truncation, and its immediate
+neighbours Rapid Shower and Desperado both say "Requires Revolver class weapon."
+
+Dust was already half-known: `PS_PASSIVE_RESISTS.GS_DUST` scopes its resist to
+`["Shotgun", "Grenade"]`. Only the cast requirement had been left on vanilla's value.
+
+### What was checked so this does NOT spread
+
+All **1036** description entries were swept against every skill we restrict. Two things
+came out of it:
+
+- **Direct contradictions: exactly the two above (Disarm, Dust).** Nothing outside
+  Gunslinger.
+- **"We restrict, PS is silent": ~80 skills, and all but Wounding Shot are noise.**
+  Every other class writes **zero** weapon lines - Archer 0/7, Bard 0/9, Knight 2/12,
+  Monk 0/17 - so silence there carries no information. Double Strafing still needs a
+  bow. Only Gunslinger has the convention that makes the inference safe, and only
+  Wounding Shot sits inside it.
+
+That asymmetry is the whole argument, and it is why the fix is three entries and not
+eighty.
+
+### Where it lives
+
+`serverProfiles.PS_WEAPON_REQUIREMENTS`, applied by
+`dataLoader._applyWeaponRequirement` on the way out of `getSkill`/`getAllSkills`, so the
+damage breakdown, the skill-ratio note and the `/data` route the editor's warning reads
+all get one answer. The shipped skill DB is untouched - a vanilla server still reads
+Revolvers/Rifles for Wounding Shot, and a test asserts that.
+
+### One limit worth stating
+
+Disarm deals no damage, so the skill picker never offers it and no player can see a
+warning for it either way. It is fixed at the engine and API level and covered by the
+unit test; the browser test deliberately does not assert it, because a browser
+assertion on a skill you cannot select passes whatever the code does.

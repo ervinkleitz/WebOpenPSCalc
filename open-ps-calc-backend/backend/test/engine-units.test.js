@@ -5743,6 +5743,65 @@ test("a skill cast with a weapon that cannot use it says so", () => {
   assert.equal(allowedWeaponTypes(loader.getSkillByName("WZ_STORMGUST")), null);
 });
 
+// 3b. ...but the requirement has to be the SERVER's, not vanilla's. Jenard, via
+// Frennetix (2026-09-27): "wounding shot works with shotgun too" — against our brand
+// new warning "Wounding Shot needs a Revolver or a Rifle — you are holding Black
+// Rose." He was right. PS's own client text for Wounding Shot names no weapon at all,
+// while 10 of the Gunslinger tree's 22 descriptions state one explicitly, so silence
+// there is a statement. Two neighbours were wrong the same way: Disarm lists all five
+// gun types and Dust lists two. The whole point of the warning is that it only fires
+// on a build that cannot exist, so a false positive is the worst thing it can do.
+test("Gunslinger weapon requirements follow PS's client text, not vanilla's", () => {
+  const cfg = createBattleConfig();
+  const GUNS = { Revolver: 13100, Rifle: 13150, Shotgun: 13154, Gatling: 13157, Grenade: 13160 };
+  const WARN = "\u26a0 Wrong weapon for this skill";
+  const warns = (skillName, weaponId, level) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 24, base_level: 99, job_level: 50,
+      base_stats: { str: 40, agi: 90, vit: 40, int: 40, dex: 90, luk: 40 },
+      equipped: { right_hand: weaponId },
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const sk = loader.getSkillByName(skillName);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: sk.id, level }), loader.getMonster(1622), eff, gb);
+    return ((r.normal || r.magic).steps || []).map((x) => x.name).includes(WARN);
+  };
+
+  loader.setProfile(PS);
+  // The report itself: every gun casts Wounding Shot, the shotgun above all.
+  for (const [type, id] of Object.entries(GUNS)) {
+    assert.equal(warns("GS_PIERCINGSHOT", id, 5), false,
+      `Wounding Shot must not warn with a ${type} — PS states no weapon requirement`);
+  }
+  // "Weapon:  Shotgun/Grenade Launcher/Revolvers/Rifles/Gatling Guns"
+  for (const [type, id] of Object.entries(GUNS)) {
+    assert.equal(warns("GS_DISARM", id, 5), false, `Disarm must not warn with a ${type}`);
+  }
+  // "Requires Shotgun or Grenade Launcher class weapon." — and only those two.
+  assert.equal(warns("GS_DUST", GUNS.Shotgun, 10), false, "Dust takes a Shotgun");
+  assert.equal(warns("GS_DUST", GUNS.Grenade, 10), false, "Dust takes a Grenade Launcher");
+  assert.equal(warns("GS_DUST", GUNS.Revolver, 10), true, "Dust does NOT take a Revolver");
+
+  // The negative case that keeps this honest: the restrictions PS DOES state must
+  // still fire. If they stopped, the warning would be worthless rather than wrong.
+  assert.equal(warns("GS_DESPERADO", GUNS.Shotgun, 10), true, "Desperado is Revolver-only");
+  assert.equal(warns("GS_FULLBUSTER", GUNS.Revolver, 10), true, "Full Buster is Shotgun-only");
+  assert.equal(warns("GS_GROUNDDRIFT", GUNS.Revolver, 5), true, "Ground Drift is Grenade-only");
+  assert.equal(warns("GS_TRACKING", GUNS.Gatling, 10), true, "Tracking is Revolver/Rifle");
+
+  // The override is PS's, not a change to the shipped skill DB: a vanilla server
+  // still reads vanilla's rule. This is also what proves the fix is the override and
+  // not an edit that leaked into the data for everyone.
+  loader.setProfile(getProfile("standard"));
+  assert.deepEqual(allowedWeaponTypes(loader.getSkillByName("GS_PIERCINGSHOT")),
+    ["Revolver", "Rifle"], "vanilla keeps its own Wounding Shot requirement");
+  loader.setProfile(PS);
+  assert.equal(allowedWeaponTypes(loader.getSkillByName("GS_PIERCINGSHOT")), null,
+    "on PS the skill has no weapon opinion at all");
+  assert.deepEqual(allowedWeaponTypes(loader.getSkillByName("GS_DUST")), ["Shotgun", "Grenade"]);
+});
+
 // 4. Exploding Dragon rolls damage ONCE and splits it three ways - "calculated as a
 // single hit that is then divide[d] into three separate hits. Each hit is then
 // rounded down; as a result, dealing damage of 1 (such as to plants) will split up

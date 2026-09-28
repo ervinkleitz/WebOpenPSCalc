@@ -459,11 +459,28 @@ class DataLoader {
     return cap != null && skill.max_level !== cap ? { ...skill, max_level: cap } : skill;
   }
 
+  // The profile's cast weapon requirement, when it overrides the vanilla DB's.
+  // Applied here rather than in weaponRequirements.js so that every consumer —
+  // the damage breakdown, the skill-ratio note and the /data route the editor's
+  // warning reads — sees one answer without each one having to know the profile.
+  _applyWeaponRequirement(skill) {
+    if (!skill || !skill.name) return skill;
+    const table = this._profile && this._profile.weapon_requirement_overrides;
+    const override = table ? table[skill.name] : null;
+    if (!Array.isArray(override)) return skill;
+    return { ...skill, requirements: { ...(skill.requirements || {}), weapon_types: override } };
+  }
+
+  // Every per-profile patch a skill record gets, in one place.
+  _applySkillPatches(skill) {
+    return this._applyWeaponRequirement(this._applySkillCap(skill));
+  }
+
   getSkill(skillId) {
     try {
       const data = this._loadJson("db/skills.json");
       const vanilla = (data.skills || {})[String(skillId)];
-      if (vanilla) return this._applySkillCap(vanilla);
+      if (vanilla) return this._applySkillPatches(vanilla);
     } catch {
       /* fall through to PS-custom */
     }
@@ -495,7 +512,7 @@ class DataLoader {
     let skills = [];
     try {
       const data = this._loadJson("db/skills.json");
-      skills = Object.values(data.skills || {}).map((s) => this._applySkillCap(s));
+      skills = Object.values(data.skills || {}).map((s) => this._applySkillPatches(s));
     } catch {
       skills = [];
     }

@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Wounding Shot no longer claims you need a Revolver or a Rifle.** It works with any
+  gun, shotguns included, and the calculator was warning that it doesn't — a warning we
+  added three days ago, from the standard skill database rather than from Payon Stories.
+  Dust was narrowed the same way and now correctly accepts a Grenade Launcher as well as
+  a Shotgun. The damage numbers were never affected, only the warning above them. The
+  restrictions that are real still show: Desperado and Rapid Shower want a Revolver, Full
+  Buster and Spread Attack a Shotgun, Ground Drift a Grenade Launcher, Tracking a Revolver
+  or a Rifle, Gatling Fever a Gatling Gun. Reported by a player.
+
 - **Gunslinger attack speed was a little too fast with Barrage or Gatling Fever up.** Both
   buffs were being counted one extra time, so the calculator read about 2% higher than the
   game. A player spotted it at a single point of ASPD — we said 189 where his client showed
