@@ -176,6 +176,12 @@ router.get("/data", async (req: Request, res: Response) => {
   const allEvents = [...archivedViews, ...recentViews, ...calcEvents];
 
   const uniqueIps     = new Set<string>();
+  // A funnel has to count PEOPLE, not events, or its stages aren't nested and its
+  // percentages don't mean anything. Calculations ran at 217% of page views and
+  // donation clicks were quoted against them, which made a 0.49%-of-visitors ask
+  // read as 0.08%. These two sets are the honest middle and bottom stages.
+  const calcIps       = new Set<string>();
+  const donateIps     = new Set<string>();
   const byDay: Record<string, { date: string; views: number; calcs: number }> = {};
   const jobCounts:    Record<number, number> = {};
   const skillCounts:  Record<number, number> = {};
@@ -217,6 +223,7 @@ router.get("/data", async (req: Request, res: Response) => {
       deviceCounts[device] = (deviceCounts[device] || 0) + 1;
     } else if (e.type === "calculate") {
       totalCalcs++;
+      if (e.ip) calcIps.add(e.ip);
       byDay[day].calcs++;
       if (e.job_id != null) jobCounts[e.job_id] = (jobCounts[e.job_id] || 0) + 1;
       if (e.skill_id != null && e.skill_id !== 0) skillCounts[e.skill_id] = (skillCounts[e.skill_id] || 0) + 1;
@@ -310,6 +317,7 @@ router.get("/data", async (req: Request, res: Response) => {
   // Donation-link clicks (Ko-fi), for the visits → calcs → donations funnel.
   const donateTargetCounts: Record<string, number> = {};
   for (const e of donateEvents) {
+    if (e.ip) donateIps.add(e.ip);
     const t = (e.target as string) || "unknown";
     donateTargetCounts[t] = (donateTargetCounts[t] || 0) + 1;
   }
@@ -328,6 +336,10 @@ router.get("/data", async (req: Request, res: Response) => {
     total_calcs:  totalCalcs,
     unique_ips:   uniqueIps.size,
     total_donate_clicks: donateEvents.length,
+    // Distinct visitors at each stage — what the funnel is drawn from. Raw event
+    // counts stay above for load/engagement; they are not funnel material.
+    calc_visitors:   calcIps.size,
+    donate_visitors: donateIps.size,
     donate_targets: donateTargets,
     stored_shares:     countStoredShares(),
     browsers:          rankCounts(browserCounts),

@@ -20,6 +20,10 @@ interface StatsData {
   total_calcs: number;
   unique_ips: number;
   total_donate_clicks: number;
+  // Distinct visitors at each funnel stage. Optional so an older backend (or a
+  // cached bundle talking to one) renders 0 rather than NaN%.
+  calc_visitors?: number;
+  donate_visitors?: number;
   donate_targets: DonateTarget[];
   stored_shares?: number;
   browsers?: RankEntry[];
@@ -110,13 +114,43 @@ function BarChart({ days, maxVal }: { days: DayEntry[]; maxVal: number }) {
   );
 }
 
-function Funnel({ views, calcs, donates, targets }: { views: number; calcs: number; donates: number; targets: DonateTarget[] }) {
+// The funnel counts DISTINCT VISITORS, not events.
+//
+// It used to count events, and that made it lie in both directions. Calculations
+// came out at 216.8% of page views — people calculate ~6 times a visit, so the
+// "funnel" grew in the middle — and donation clicks were then quoted against that
+// inflated number: "0.08% of calcs". The same 13 clicks are 0.49% of visitors,
+// which is the bottom of the normal band for a soft ask rather than the disaster
+// 0.08% reads as.
+//
+// Stage 2 is a strict subset of stage 1 (a calculate event carries the visitor's
+// IP into the visitor set). Stage 3 is not strictly nested under stage 2 — the
+// topbar button can be clicked without ever calculating — so it is shown against
+// both, and "% of those who calculated" is a ratio rather than a drop-off.
+//
+// Raw event totals are still shown per stage, because they are the real measure of
+// load and engagement — they are just not what a conversion rate divides by.
+function Funnel({ visitors, views, calcVisitors, calcs, donateVisitors, donates, targets }: {
+  visitors: number; views: number; calcVisitors: number; calcs: number;
+  donateVisitors: number; donates: number; targets: DonateTarget[];
+}) {
   const pct = (n: number, d: number) => (d > 0 ? (n / d) * 100 : 0);
-  const max = Math.max(views, 1);
+  const max = Math.max(visitors, 1);
+  const per = (events: number, people: number) =>
+    people > 0 ? `${(events / people).toFixed(1)} each` : "";
   const stages = [
-    { label: "Page views", val: views, sub: "" },
-    { label: "Calculations", val: calcs, sub: `${pct(calcs, views).toFixed(1)}% of views` },
-    { label: "Donation clicks", val: donates, sub: `${pct(donates, calcs).toFixed(2)}% of calcs · ${pct(donates, views).toFixed(2)}% of views` },
+    {
+      label: "Visitors", val: visitors,
+      sub: `${views.toLocaleString()} page views · ${per(views, visitors)}`,
+    },
+    {
+      label: "Visitors who calculated", val: calcVisitors,
+      sub: `${pct(calcVisitors, visitors).toFixed(1)}% of visitors · ${calcs.toLocaleString()} calculations · ${per(calcs, calcVisitors)}`,
+    },
+    {
+      label: "Visitors who opened the tip form", val: donateVisitors,
+      sub: `${pct(donateVisitors, visitors).toFixed(2)}% of visitors · ${pct(donateVisitors, calcVisitors).toFixed(2)}% of those who calculated · ${donates.toLocaleString()} clicks`,
+    },
   ];
   return (
     <div className="stats-funnel">
@@ -351,8 +385,11 @@ export default function StatsPage() {
           <div className="stats-section">
             <h2 className="stats-section-title">Conversion funnel</h2>
             <Funnel
+              visitors={data.unique_ips ?? 0}
               views={data.total_views ?? 0}
+              calcVisitors={data.calc_visitors ?? 0}
               calcs={data.total_calcs ?? 0}
+              donateVisitors={data.donate_visitors ?? 0}
               donates={data.total_donate_clicks ?? 0}
               targets={data.donate_targets ?? []}
             />
