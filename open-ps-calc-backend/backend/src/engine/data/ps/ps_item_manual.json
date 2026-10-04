@@ -1,4 +1,22 @@
 {
+  "1531": {
+    "_note": "Wrench (Spanner, id 1531). Payon Stories REWORKED this item and the bundled data did not follow: ps_item_db.json has the id but null stats, so every field fell back to vanilla pre-renewal. Reported by a player 2026-10-04 as \"item 1531 is wrong\". Checked against the live PS item API (tools.payonstories.com/api/pc/item?id=1531, scraped 2026-10-04), which is first-party and authoritative per PS_SOURCES.\n\n  field       vanilla (what we served)        Payon Stories\n  script      1% each Blind/Stun/Poison/      ignores 1/3 of Formless DEF;\n              Freeze on hit (bAddEff x4)      +10% physical vs Formless;\n                                              chance of a Rusty Screw on a\n                                              Formless kill\n  equip_level 55                              45\n  job         Acolyte line only               Acolyte AND Merchant classes\n\nATK 115, Mace, weapon level 3 and weight 2500 (PS shows 250 = tenths) all already matched and are left alone.\n\nThe two Formless effects are damage-relevant and the engine already models both: bIgnoreDefRate feeds ignore_def_rate (consumed by defenseFix.js) and bAddRace feeds add_race. \"Ignores 1/3\" is written as 33 because Hercules bonus rates are integers; the 0.33pp shortfall against a true third is below the engine's resolution. The Rusty Screw drop is loot, not damage, so it is described but not scripted -- there is no bonus for it and inventing one would show a fake line in the breakdown.\n\nThe vanilla status procs are REMOVED, not kept alongside: PS's description replaces them rather than adding to them, and the sibling item 1534 (Spanner_C) still carries exactly that status-proc text on PS, which is where that script belongs. 1534 is a RENTAL item on PS (ATK 150, no level requirement) and shares the name \"Wrench\" in the picker -- left alone here, flagged separately.",
+    "script": "bonus2 bIgnoreDefRate,RC_Formless,33;\n\t\tbonus2 bAddRace,RC_Formless,10;",
+    "equip_level": 45,
+    "job": [
+      4,
+      5,
+      8,
+      10,
+      15,
+      18,
+      4009,
+      4011,
+      4016,
+      4019
+    ],
+    "description": "A heavy tool with many<br/>practical applications.<br/>Ignores 1/3 of <font color='#6666CC'>Formless</font><br/>monsters physical defense.<br/>Increases physical damage<br/>inflicted on <font color='#6666CC'>Formless</font><br/>monsters by 10%.<br/>Add the chance of gaining <font color='#008800'>Rusty Screw</font><br/>each time a <font color='#6666CC'>Formless</font> monster is killed.<br/>Class:<font color='#6666CC'> Mace</font><br/>Attack:<font color='#CC0000'> 115</font><br/>Weight:<font color='#009900'> 250</font><br/>Weapon Level:<font color='#009900'> 3</font><br/>Level Requirement:<font color='#009900'> 45</font><br/>Jobs:<font color='#6666CC'> Acolyte and Merchant Classes</font>"
+  },
   "4203": {
     "_note": "Mutant Dragonoid Card: the vanilla Hercules item_db encodes the mastery upgrade as 3+2*(getskilllv(MG_FIREBALL)==10), i.e. Lv3 normally and Lv5 once mastered -- but BOTH descriptions that ship alongside it (the kRO client text in item_descriptions.json and the live PS item API, checked 2026-09-11) read \"If the user has mastered the skill at level 10, it will cast Level 10 Fire Ball.\" Every structural twin in the same DB lands the coefficient on 10 to match its own description -- Wind Ghost Card is the exact parallel (\"Level 3 ... Level 10\", script 3+7*(getskilllv(WZ_JUPITEL)==10)), and Enchanted Peach Tree uses 1+9*(...) for \"Level 1 ... Level 10\". 3+2* is the odd one out and lands on 5, so it is a typo in the Hercules data, not an intended nerf. Pinned to 3+7* here (PS profile only: a stock pre-renewal server really does run the buggy script, so the standard profile keeps it). Reported by a player 2026-09-11 as the Fire Ball autocast not reaching Lv10; the other half of that report was that MG_FIREBALL was not settable in the passive panel at all -- see dataLoader.js DAMAGE_RELEVANT.",
     "script": "bonus bBaseAtk,15; bonus3 bAutoSpell,MG_FIREBALL,3+7*(getskilllv(MG_FIREBALL)==10),50;"

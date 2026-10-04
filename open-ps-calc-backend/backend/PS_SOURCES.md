@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-04 | PS item API (tools.payonstories.com/api/pc/item) | First-party | Wrench 1531 / reworked item |
 | 2026-09-27 | PS client skill descriptions | First-party | Gunslinger / which guns cast what |
 | 2026-09-27 | Hercules status.c (pre-re guards) | Source | Gunslinger / ASPD with gun buffs |
 | 2026-09-26 | PS item API + monsters.json | First-party + bundled data | Item pickers / unobtainable duplicates |
@@ -7368,3 +7369,49 @@ Disarm deals no damage, so the skill picker never offers it and no player can se
 warning for it either way. It is fixed at the engine and API level and covered by the
 unit test; the browser test deliberately does not assert it, because a browser
 assertion on a skill you cannot select passes whatever the code does.
+
+## 2026-10-04 - The Wrench (1531) is a PS rework we were serving vanilla for
+
+Reported by a player as **"item 1531 is wrong"**.
+
+`ps_item_db.json` carries id 1531 with **null stats** - name only - so
+`_applyPsItemLayers` had nothing to layer and every field fell through to the vanilla
+pre-renewal record. The live PS item API disagrees on three of them.
+
+| field | vanilla (what we served) | Payon Stories |
+|---|---|---|
+| script | 1% each Blind / Stun / Poison / Freeze (`bAddEff` x4) | ignores 1/3 of Formless DEF; +10% physical vs Formless; chance of a Rusty Screw on a Formless kill |
+| equip_level | 55 | **45** |
+| job | Acolyte line only (4, 8, 15, 4009, 4016) | **Acolyte AND Merchant classes** |
+
+ATK 115, Mace, weapon level 3 and weight 2500 (PS prints 250 - tenths) already matched.
+
+### What is modelled and what is not
+
+Both Formless effects are damage-relevant and the engine already had the bonuses:
+`bonus2 bIgnoreDefRate,RC_Formless,33` feeds `ignore_def_rate` (consumed by
+defenseFix.js) and `bonus2 bAddRace,RC_Formless,10` feeds `add_race`. "Ignores 1/3" is
+written as the integer **33** because Hercules bonus rates are integers; the 0.33pp
+shortfall is below the engine's resolution.
+
+The **Rusty Screw drop is not scripted** - it is loot, not damage, and inventing a bonus
+for it would put a fake line in the breakdown. It stays in the description only.
+
+The vanilla status procs are **removed, not kept alongside**: PS's text replaces them.
+They still belong to the sibling item **1534 (Spanner_C)**, whose PS entry describes
+exactly those procs.
+
+### Still open
+
+**1534 shares the name "Wrench" in the picker.** On PS it is a *Rental Item* - ATK 150,
+no level requirement, Acolyte only - so it is strictly stronger than the real 1531 and
+indistinguishable by name, which is the Apple-of-Archer shape all over again. Not
+touched here because the reporter only flagged 1531 and rentals are a different
+obtainability question from the unobtainable duplicates hidden on 2026-09-26.
+
+**PS descriptions leak into the standard profile.** `getItemDescription` applies the PS
+scrape and both hand-curated layers with no `_usePsData` check, unlike
+`_applyPsItemLayers` which returns early. That already affects the 6,237 scraped
+descriptions, so this entry only adds one more - but it means a *standard pre-renewal*
+server now shows PS's Wrench text over vanilla's stats. Pre-existing and out of scope
+for a single-item report; worth its own pass.

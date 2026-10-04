@@ -6051,3 +6051,73 @@ test("a Gunslinger's gun buffs are a rate only — no flat ASPD on top", () => {
     predict({ SC_GS_MADNESSCANCEL: 1, SC_GS_GATLINGFEVER: 10 }, 200 + 200),
     "Barrage and Gatling Fever together are -400 rate and nothing more");
 });
+
+// ---------------------------------------------------------------------------
+// The Wrench (1531) is a Payon Stories rework and we were serving vanilla's.
+//
+// ps_item_db.json carries the id with null stats, so every field fell through to
+// the vanilla pre-renewal record: 1% status procs, level 55, Acolyte-only. PS's
+// own item API gives it Formless-specific effects, level 45 and the Merchant
+// classes. Reported by a player 2026-10-04 as "item 1531 is wrong".
+//
+// Target is RSX 0806 (1623) deliberately: Formless, DEF 39, and the monster that
+// actually drops the Wrench on PS.
+// ---------------------------------------------------------------------------
+test("the Wrench carries PS's Formless effects, not vanilla's status procs", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+
+  const WRENCH = 1531;
+  const wield = (jobId, mobId) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: jobId, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 40, vit: 50, int: 40, dex: 70, luk: 10 },
+      equipped: { right_hand: WRENCH },
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(mobId), eff, gb);
+    return { gb, w, dmg: Math.round(r.normal.avg_damage) };
+  };
+
+  // --- the two effects that change damage -----------------------------------
+  const priest = wield(8, 1623);
+  assert.equal(priest.w.weapon_type, "Mace", "still a Mace");
+  assert.equal(priest.gb.add_race.RC_Formless, 10,
+    "+10% physical damage against Formless");
+  assert.equal(priest.gb.ignore_def_rate.RC_Formless, 33,
+    "ignores 1/3 of a Formless target's DEF (33, integer rate)");
+
+  // --- and the vanilla procs are GONE, not kept alongside -------------------
+  // They belong to 1534 (the rental), whose PS text still describes them.
+  const item = loader.getItem(WRENCH);
+  for (const eff of ["Eff_Blind", "Eff_Stun", "Eff_Poison", "Eff_Freeze"]) {
+    assert.ok(!item.script.includes(eff),
+      `${eff} is vanilla's Wrench, not PS's — it must not survive the override`);
+  }
+
+  // --- the bonuses are race-gated, not unconditional ------------------------
+  // A Demon target must see neither, or the override would be a flat damage buff.
+  const vsDemon = wield(8, 1301);
+  assert.equal(vsDemon.gb.add_race.RC_Demon ?? 0, 0, "no Formless bonus leaks onto Demons");
+  // Same gear, so the dictionaries are identical — what must differ is that the
+  // pipeline only spends them on the Formless target.
+  assert.ok(priest.dmg > 0 && vsDemon.dmg > 0, "both targets take damage");
+
+  // --- equip legality: PS lowered the level and added the Merchant line ------
+  assert.equal(item.equip_level, 45, "PS requires base level 45, not vanilla's 55");
+  for (const [jobId, who] of [[4, "Acolyte"], [8, "Priest"], [15, "Monk"],
+                              [5, "Merchant"], [10, "Blacksmith"], [18, "Alchemist"]]) {
+    assert.ok(item.job.includes(jobId), `${who} must be able to wield the PS Wrench`);
+  }
+
+  // --- a vanilla server keeps vanilla's Wrench ------------------------------
+  // This is what proves the fix is a PS override and not an edit to the shipped
+  // item DB that silently changed the standard profile too.
+  loader.setProfile(getProfile("standard"));
+  const vanillaItem = loader.getItem(WRENCH);
+  assert.equal(vanillaItem.equip_level, 55, "standard profile keeps level 55");
+  assert.deepEqual(vanillaItem.job, [4, 8, 15, 4009, 4016], "and Acolyte-only");
+  assert.ok(vanillaItem.script.includes("Eff_Blind"), "and the status procs");
+  loader.setProfile(PS);
+});

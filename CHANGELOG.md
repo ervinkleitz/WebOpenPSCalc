@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-04
+
+### Fixed
+
+- **The Wrench was using the standard Ragnarok version, not Payon Stories'.** PS reworked
+  it and the calculator never got the memo, so it was priced with the old 1% chances to
+  Blind, Stun, Poison or Freeze — effects it no longer has. On Payon Stories the Wrench
+  instead ignores a third of a Formless monster's defence and adds 10% physical damage
+  against them, both of which now show up in your damage breakdown when you're hitting
+  something Formless. Two other things were wrong with it: it needs base level 45, not 55,
+  and the Merchant classes can wield it, so Merchants, Blacksmiths and Alchemists are no
+  longer told it's the wrong class. Reported by a player.
+
 ## 2026-09-27
 
 ### Fixed
