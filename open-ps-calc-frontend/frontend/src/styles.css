@@ -1520,6 +1520,24 @@ label {
   .panel-highlight { position: static; top: auto; } /* don't stick on a narrow scroll */
   .ro-stat-grid { gap: 0.5rem; }
   .sec-stat-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Support card: on a phone it sat 833px BELOW the fold after a calculation —
+     more than a full screen down, behind the whole survivability panel — while on
+     desktop it lands right at the fold. Measured on production 2026-10-04 with a
+     geared build (iPhone 13, 390x664). 23% of visitors are on mobile and the card
+     is where 7 of 13 donation clicks come from, so a full screen of scrolling is
+     the difference between seen and not.
+
+     Reordered rather than moved in the DOM, so desktop is untouched and the
+     reading order of the breakdown itself does not change: the card goes after
+     the damage numbers a visitor came for, but ahead of the survivability panel.
+     Only these two get an order; every other child keeps the default 0 and so
+     stays in source order above them. Flex column here is layout-neutral — the
+     children are full-width blocks either way — and it stops the margins
+     collapsing, which the explicit margin below restores. */
+  .results-panel-body { display: flex; flex-direction: column; }
+  .support-card { order: 1; margin-top: 1rem; }
+  .surv-view { order: 2; }
 }
 
 /* ── Build-vs-build comparison ─────────────────────────────────────── */
