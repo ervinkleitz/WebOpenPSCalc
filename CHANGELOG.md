@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-05
+
+### Fixed
+
+- **Weapon ATK from gear no longer counts twice for dual wielders.** A Bradium Ring's
+  +10 weapon ATK — and any other accessory, armour or headgear that grants it — was
+  being added to *both* weapons of a dual-dagger Assassin, so the calculator overstated
+  the off-hand. Only the main hand gets it. Buffs are the other way around and were
+  already right: Impositio Manus, Drum Battle and Volcano really do raise both weapons,
+  and still do. If you build a dual wielder with ATK accessories your off-hand numbers
+  will drop a little; they were too high before. Reported by a player.
+
 ## 2026-10-04
 
 ### Fixed

@@ -74,7 +74,8 @@ function weaponAtkBuffs(build, weapon) {
 }
 
 function calculateBaseDamage(status, weapon, build, target, skill, result, opts = {}) {
-  const { gear_bonuses: gearBonuses, is_crit: isCrit = false, is_ranged: isRanged = false } = opts;
+  const { gear_bonuses: gearBonuses, is_crit: isCrit = false, is_ranged: isRanged = false,
+    is_offhand: isOffhand = false } = opts;
 
   const wlv = weapon.level;
   let atkmax = weapon.atk;
@@ -88,9 +89,30 @@ function calculateBaseDamage(status, weapon, build, target, skill, result, opts 
     });
   }
 
-  if (gearBonuses && gearBonuses.weapon_atk_flat) {
+  // `bonus bAtk` (SP_ATK1) is RIGHT-HAND ONLY, unlike the SC buffs above.
+  //
+  // pc.c's SP_ATK1 writes to bst->rhw.atk when sd->state.lr_flag is 0, and to
+  // bst->lhw.atk only when lr_flag == 1 — and lr_flag is set to 1 exclusively while
+  // parsing the LEFT-HAND WEAPON's own script or the cards compounded into it. An
+  // accessory, armour or headgear is parsed with lr_flag 0, so its bAtk lands on the
+  // right hand and nowhere else.
+  //
+  // The status buffs handled by weaponAtkBuffs() above are the opposite case and are
+  // correctly applied to both hands: status.c's SCB_WATK block calls
+  // status_calc_watk() for bst->rhw.atk AND again for bst->lhw.atk (status.c:3152-3167),
+  // which is why Impositio Manus really does buff both weapons of a dual-wielder.
+  // Nibelungen is per-hand within that call (it tests the equip index for
+  // lr_flag ? EQI_HAND_L : EQI_HAND_R), which weaponAtkBuffs mirrors by checking the
+  // level of whichever weapon it was handed.
+  //
+  // Reported by Metan via Frennetix, 2026-10-05: two Bradium Rings (2789,
+  // `bonus bAtk,10`) appeared to give +10 weapon ATK to BOTH hands of a dual-dagger
+  // Assassin. In-game, gibz and Alardun saw the off-hand unmoved.
+  if (gearBonuses && gearBonuses.weapon_atk_flat && !isOffhand) {
     atkmax += gearBonuses.weapon_atk_flat;
-    result.add_step({ name: "bAtk", value: gearBonuses.weapon_atk_flat, note: `Equipment: +${gearBonuses.weapon_atk_flat} weapon ATK`, formula: `atkmax += ${gearBonuses.weapon_atk_flat}`, hercules_ref: "status_calc_pc", info: true });
+    result.add_step({ name: "bAtk", value: gearBonuses.weapon_atk_flat, note: `Equipment: +${gearBonuses.weapon_atk_flat} weapon ATK`, formula: `atkmax += ${gearBonuses.weapon_atk_flat}`, hercules_ref: "pc.c SP_ATK1 (lr_flag 0 -> rhw)", info: true });
+  } else if (gearBonuses && gearBonuses.weapon_atk_flat && isOffhand) {
+    result.add_step({ name: "bAtk", value: 0, note: `Off-hand: equipment bAtk (+${gearBonuses.weapon_atk_flat}) does NOT apply — SP_ATK1 is right-hand only`, formula: "lr_flag 0 -> rhw.atk", hercules_ref: "pc.c SP_ATK1", info: true });
   }
 
   // Whether the ammo's ATK counts at all — see skillUsesAmmo() above (battle.c's

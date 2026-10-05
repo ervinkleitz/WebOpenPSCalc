@@ -6193,3 +6193,80 @@ test("items PS reworked since the 2026-03 scrape", () => {
   assert.equal(loader.getItem(2253).refineable, false, "vanilla agrees, unchanged");
   loader.setProfile(PS);
 });
+
+// ---------------------------------------------------------------------------
+// An item's `bonus bAtk` is RIGHT-HAND ONLY; a status buff is BOTH hands.
+//
+// Metan via Frennetix, 2026-10-05: two Bradium Rings (2789, `bonus bAtk,10`)
+// appeared to give +10 weapon ATK to both hands of a dual-dagger Assassin, and
+// openpscalc agreed. In-game (gibz, Alardun) the off-hand did not move.
+//
+// The two halves of the question have OPPOSITE answers, which is the whole point:
+//   * pc.c SP_ATK1 writes bst->rhw.atk when sd->state.lr_flag == 0, and bst->lhw.atk
+//     only when lr_flag == 1 — set exclusively while parsing the LEFT-HAND weapon's
+//     own script or the cards in it. An accessory is parsed with lr_flag 0.
+//   * status.c's SCB_WATK block (status.c:3152-3167) calls status_calc_watk() for
+//     bst->rhw.atk AND again for bst->lhw.atk, so Impositio Manus really does buff
+//     both weapons.
+// ---------------------------------------------------------------------------
+test("equipment bAtk is right-hand only, but Impositio buffs both hands", () => {
+  const cfg = createBattleConfig();
+  loader.setProfile(PS);
+  const KNIFE = 1201, BRADIUM = 2789, PORING = 1002;
+
+  const hands = (over = {}) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 12, base_level: 99, job_level: 50,
+      base_stats: { str: 110, agi: 1, vit: 1, int: 1, dex: 60, luk: 1 },
+      equipped: { right_hand: KNIFE, left_hand: KNIFE, ...(over.equipped || {}) },
+      mastery_levels: { AS_RIGHT: 5, AS_LEFT: 5 },
+      target_mob_id: PORING,
+      ...(over.build || {}),
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(PORING), eff, gb);
+    return { rh: r.normal.avg_damage, lh: r.dw_lh_normal.avg_damage, steps: r.normal.steps || [], gb };
+  };
+
+  const base = hands();
+  const rings = hands({ equipped: { accessory_left: BRADIUM, accessory_right: BRADIUM } });
+
+  // Two rings really are +20 weapon ATK in the aggregate...
+  assert.equal(rings.gb.weapon_atk_flat, 20, "2x Bradium Ring = +20 bAtk");
+  // ...and all of it must land on the right hand.
+  assert.ok(rings.rh > base.rh, "the right hand gains it");
+  assert.equal(rings.lh, base.lh,
+    `the off-hand must not move (${base.lh} -> ${rings.lh}) — SP_ATK1 is rhw only`);
+
+  // The off-hand breakdown should SAY so rather than silently omitting the step,
+  // because "no line at all" is what made this invisible in the first place.
+  const lhSteps = (() => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 12, base_level: 99, job_level: 50,
+      base_stats: { str: 110, agi: 1, vit: 1, int: 1, dex: 60, luk: 1 },
+      equipped: { right_hand: KNIFE, left_hand: KNIFE, accessory_left: BRADIUM, accessory_right: BRADIUM },
+      mastery_levels: { AS_RIGHT: 5, AS_LEFT: 5 }, target_mob_id: PORING,
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, cfg, PS);
+    const r = new BattlePipeline(cfg).calculate(
+      st, w, createSkillInstance({ id: 0, level: 1 }), loader.getMonster(PORING), eff, gb);
+    return (r.dw_lh_normal.steps || []).map((x) => `${x.name} ${x.note || ""}`).join(" | ");
+  })();
+  assert.match(lhSteps, /right-hand only/i,
+    "the off-hand breakdown should explain why bAtk is absent");
+
+  // --- the opposite case: a status buff DOES reach both hands ---------------
+  const imp = hands({ build: { support_buffs: { SC_IMPOSITIO: 5 } } });
+  assert.ok(imp.rh > base.rh, "Impositio buffs the right hand");
+  assert.ok(imp.lh > base.lh,
+    "Impositio buffs the OFF-hand too — status_calc_watk runs over lhw as well");
+  assert.equal(imp.rh - base.rh, imp.lh - base.lh,
+    "and by the same amount, since both hands hold the same weapon here");
+
+  // A single hit's displayed damage is the branch value times the hand's dual-wield
+  // factor, so the ring's +20 weapon ATK reaches the screen as
+  //   20 x (dagger size modifier vs the target) x rh_factor
+  // — which is why it is never a clean +20. Poring is MEDIUM, so a dagger does 75%.
+  assert.equal(loader.getMonster(PORING).size, "Medium");
+});

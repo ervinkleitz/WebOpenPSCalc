@@ -1704,7 +1704,7 @@ class BattlePipeline {
     });
 
     let pmf = calculateBaseDamage(status, weapon, build, target, skill, result, {
-      gear_bonuses: gearBonuses, is_crit: isCrit, is_ranged: isRanged,
+      gear_bonuses: gearBonuses, is_crit: isCrit, is_ranged: isRanged, is_offhand: isOffhand,
     });
 
     if (gearBonuses.atk_rate) {

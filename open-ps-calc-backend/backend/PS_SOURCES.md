@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-05 | Hercules pc.c SP_ATK1 + status.c SCB_WATK | Source | Dual wield / which hand gets watk |
 | 2026-10-04 | PS item API — full catalogue sweep (2,755 items) | First-party | All equipment/cards verified |
 | 2026-10-04 | PS item API (tools.payonstories.com/api/pc/item) | First-party | Wrench 1531 / reworked item |
 | 2026-09-27 | PS client skill descriptions | First-party | Gunslinger / which guns cast what |
@@ -7503,3 +7504,79 @@ open.
 
 **The durable fix is re-scraping PS with stats included**, not curating items one at a
 time.
+
+## 2026-10-05 - Dual wield: item watk is right-hand only, buff watk is both hands
+
+Metan, via Frennetix: does Impositio Manus add to both weapons of a dual-dagger
+Assassin, and if so does a Bradium Ring (2789, `bonus bAtk,10`) give +10 weapon ATK to
+both hands? He noted openpscalc appeared to say yes to both.
+
+**The two halves have opposite answers, and we had one of them wrong.**
+
+### Item bonuses: right hand only
+
+`pc.c`'s `SP_ATK1` writes to `bst->rhw.atk` when `sd->state.lr_flag == 0`, and to
+`bst->lhw.atk` only when `lr_flag == 1`:
+
+```c
+case SP_ATK1:
+    if(!sd->state.lr_flag) {
+        bonus = bst->rhw.atk + val;
+        bst->rhw.atk = cap_value(bonus, 0, USHRT_MAX);
+    } else if(sd->state.lr_flag == 1) {
+        bonus = bst->lhw.atk + val;
+        bst->lhw.atk = cap_value(bonus, 0, USHRT_MAX);
+    }
+    break;
+```
+
+`lr_flag` is 1 **only** while parsing the LEFT-HAND WEAPON's own script, or the cards
+compounded into that weapon. An accessory, armour or headgear is parsed with `lr_flag`
+0, so its `bAtk` lands on the right hand and nowhere else. (Credit to Alardun, who
+found this and stated the rule exactly.)
+
+### Status buffs: both hands
+
+The opposite, and we already had it right. `status.c`'s SCB_WATK block runs
+`status_calc_watk()` over each hand separately (status.c:3152-3167):
+
+```c
+st->rhw.atk = status->calc_watk(bl, sc, bst->rhw.atk, true);
+if(bst->lhw.atk) {
+    sd->state.lr_flag = 1;
+    st->lhw.atk = status->calc_watk(bl, sc, bst->lhw.atk, true);
+    sd->state.lr_flag = 0;
+}
+```
+
+and `status_calc_watk` is where SC_IMPOSITIO, SC_DRUMBATTLE and SC_VOLCANO add their
+watk. So **Impositio Manus does buff both weapons** - Metan's first assumption was
+correct. SC_NIBELUNGEN is the per-hand exception inside that call: it checks
+`sd->equip_index[sd->state.lr_flag ? EQI_HAND_L : EQI_HAND_R]` for a level-4 weapon,
+which `weaponAtkBuffs()` already mirrors by testing the level of whichever weapon it
+was handed.
+
+### What was wrong here
+
+`calculateBaseDamage()` added `gearBonuses.weapon_atk_flat` to whichever weapon it was
+given, and `_runBranch` never forwarded its `is_offhand` flag - the flag existed but
+was only used for thrown-ammo element. So the off-hand received the full item `bAtk`.
+Fixed by gating on the hand; the off-hand breakdown now carries an explicit line saying
+the bonus does not apply, because a silently missing step is what hid this.
+
+### On the in-game numbers
+
+gibz measured +22 main hand / +3 off-hand with 2 rings. The **+3 off-hand is not a real
+effect**: his own two readings move in opposite directions (280 -> 283 on a
+double-attack swing, 280 -> 278 on a non-double swing), and Alardun's controlled test
+reads 54 / 54 / 54 across zero, one and two rings. That is damage roll noise.
+
+The main hand is not a clean +20 either, and this is the part worth explaining to
+players: the ring's +20 weapon ATK reaches the screen as
+
+    20 x (weapon size modifier vs that target) x (right-hand mastery factor)
+
+A dagger does 75% to a Medium target, and Poring (1002) is Medium, so +20 becomes +15
+before mastery and +18 after a Lv5 right-hand factor of 1.20. Against a genuinely Small
+target it would be +24, which is the figure Metan expected. Pinning his exact +22 needs
+his Right Hand Mastery level and the actual monster - not guessed here.
