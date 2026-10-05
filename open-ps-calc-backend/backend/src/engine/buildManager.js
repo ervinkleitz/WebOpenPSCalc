@@ -196,6 +196,10 @@ function buildFromSaveSchema(data) {
     lh_forge_element: lhForge.ele,
     active_status_levels: activeBuffs,
     mastery_levels: data.mastery_levels || {},
+    // The ranks the character has actually learned, from a PS planner import. Read by
+    // the editor to pick the level a skill or buff starts at; the engine itself does
+    // not price anything from this map — a known skill is not an active one.
+    known_skill_levels: data.known_skill_levels || {},
     is_ranged_override: flags.is_ranged_override ?? null,
     is_riding_peco: flags.is_riding_peco ?? false,
     no_sizefix: flags.no_sizefix ?? false,

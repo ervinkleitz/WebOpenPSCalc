@@ -113,6 +113,10 @@ export interface SearchResult {
   badge?: string;
   /** Tooltip for `badge` — the pill is small, so the meaning lives here. */
   badgeTitle?: string;
+  /** The underlying DB constant (SM_BASH, MG_FIREBOLT). `sublabel` happens to carry
+   *  it for skills today, but that is a display field and callers should not key off
+   *  one — the skill picker needs it to look up the rank the character has learned. */
+  constant?: string;
 }
 
 export type TargetMode = "monster" | "custom";

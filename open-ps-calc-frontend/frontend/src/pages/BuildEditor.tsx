@@ -721,6 +721,10 @@ const Z3_KEYS: string[] = [
   "hypothermia", // targetMods.hypothermia — −10 DEX on the monster (its HIT)
   // Energy Coat (active_buffs): the toggle and which SP bracket you are in
   "SC_ENERGYCOAT", "SC_ENERGYCOAT_sp_pct",
+  // The ranks a PS planner import says the character has learned, so a shared build
+  // keeps them. Nothing is priced from this directly — see known_skill_levels in
+  // buildManager.js.
+  "known_skill_levels",
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -1242,6 +1246,7 @@ export default function BuildEditor() {
   // Transmutation) from being silently zeroed.
   const handleSkillsImported = useCallback((res: {
     job_id: number; job_name: string; mastery_levels: Record<string, number>;
+    known_skill_levels?: Record<string, number>;
   }) => {
     statsApi.trackFeature("ps_tools_skill_import");
     setData((prev) => {
@@ -1251,6 +1256,11 @@ export default function BuildEditor() {
         job_id: res.job_id,
         job_name: job?.name ?? res.job_name,
         mastery_levels: { ...(prev.mastery_levels || {}), ...res.mastery_levels },
+        // REPLACED, not merged, unlike mastery_levels. The import is this character's
+        // whole spellbook; merging would leave ranks from a previous import for
+        // skills the new tree does not take, which is how you end up with a Knight
+        // who still "knows" the Wizard build you imported before it.
+        known_skill_levels: { ...(res.known_skill_levels || {}) },
       };
     });
     // The old numbers describe the old skill levels.
@@ -2039,7 +2049,7 @@ export default function BuildEditor() {
   const skillSearch = useCallback(
     (query: string): Promise<SearchResult[]> =>
       api.searchSkills({ q: query, limit: 12, server: data.server, job: data.job_id, damage_only: "true" })
-        .then((r) => r.items.map((s: any) => ({ id: s.id, label: s.display_name || s.name || `Skill ${s.id}`, sublabel: s.name, max_level: s.max_level ?? 10 }))),
+        .then((r) => r.items.map((s: any) => ({ id: s.id, label: s.display_name || s.name || `Skill ${s.id}`, sublabel: s.name, constant: s.name, max_level: s.max_level ?? 10 }))),
     [data.server, data.job_id],
   );
 
@@ -3636,7 +3646,14 @@ export default function BuildEditor() {
                 // pointlessly weak. The rank input right next to it still moves.
                 onSelect={(r) => {
                   const cap = r.max_level ?? 10;
-                  setSkill({ id: r.id, level: cap, label: r.label, max_level: cap });
+                  // Default to the rank this character actually has, when a PS planner
+                  // import told us. Before this the picker always opened at the skill's
+                  // MAX, so a player with Fire Bolt 5 was shown Lv10 damage and had to
+                  // notice and correct it by hand. Still capped by the skill's own max,
+                  // and still freely editable in the stepper beside it.
+                  const known = (data.known_skill_levels || {})[r.constant ?? ""] ?? null;
+                  const level = known != null && known > 0 ? Math.min(known, cap) : cap;
+                  setSkill({ id: r.id, level, label: r.label, max_level: cap });
                 }}
               />
             </div>

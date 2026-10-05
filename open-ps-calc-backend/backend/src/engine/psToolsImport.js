@@ -134,6 +134,19 @@ function importPsToolsSkills(input, profile = null) {
 
   const panel = passivePanelIndex(jobEntry.id);
   const masteryLevels = {};
+  // EVERY skill on this character's tree that they put points in, keyed by our
+  // constant. mastery_levels only carries the passives the bonus engine reads, which
+  // is a small slice: handing the importer a full tree applies 4 of a Knight's 28 and
+  // 1 of a Ninja's 30. The rest are not junk — 92 of them are skills this calculator
+  // already prices as the SELECTED skill, and 37 drive self-buffs it models through
+  // active_status_levels. What was missing was anywhere to put the LEVEL.
+  //
+  // So this is the player's spellbook: what they know and at what rank. It does NOT
+  // turn anything on. Importing a tree says what you have learned, not what you are
+  // currently buffed with, and auto-enabling 37 self-buffs would quietly inflate
+  // everyone's damage the moment they imported. The editor uses these as the level a
+  // skill takes when YOU pick it or switch it on.
+  const knownSkillLevels = {};
   const applied = [];
   // Two very different reasons to skip something, and a player cares about only one
   // of them. Their planner hands every class the whole platinum skill list at Lv1, so
@@ -147,6 +160,18 @@ function importPsToolsSkills(input, profile = null) {
     const level = Math.max(0, Number(rawLevel) || 0);
     if (level <= 0) continue; // unallocated
     const ourConstant = CONSTANT_ALIASES[theirConstant] || theirConstant;
+
+    // Record the rank before deciding whether a passive slot exists for it, and cap
+    // it at what the skill can actually reach here — their planner hands out the
+    // whole platinum list, and a stale link can carry a rank PS has since lowered.
+    const known = loader.getSkillByName(ourConstant);
+    if (known) {
+      const onTree = loader.filterMasteryLevelsForJob(jobEntry.id, { [ourConstant]: level });
+      if (!onTree.dropped.length) {
+        knownSkillLevels[ourConstant] = Math.min(level, known.max_level || level);
+      }
+    }
+
     const entry = panel.get(ourConstant);
     if (!entry) {
       // Is it on this job's tree at all? filterMasteryLevelsForJob is the same check
@@ -173,6 +198,8 @@ function importPsToolsSkills(input, profile = null) {
     job_id: jobEntry.id,
     job_name: jobEntry.name,
     mastery_levels: masteryLevels,
+    // What the character knows, for the skill picker and the buff toggles.
+    known_skill_levels: knownSkillLevels,
     applied,
     // Skills this character really has that no damage formula here reads.
     not_modelled: notModelled,

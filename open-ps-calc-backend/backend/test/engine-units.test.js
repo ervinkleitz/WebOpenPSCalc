@@ -6508,3 +6508,77 @@ test("PS skill poll: reads the skill list out of their JS chunk", async () => {
   // "parsed 0 skills" guard fires instead of a confident empty diff.
   assert.deepEqual(parseSkillPairs('{"skills":[{"id":1,"name":"Basic Skill"}]}'), {});
 });
+
+// ---------------------------------------------------------------------------
+// known_skill_levels — the ranks an imported character actually has.
+//
+// mastery_levels only carries the passives the bonus engine reads, which is a small
+// slice of a tree: handing the importer a Knight's whole tree applies 4 of 28, and a
+// Ninja's 1 of 30. The rest is not junk — measured across every job we model, 92 of
+// the dropped skills are ones this calculator already prices as the SELECTED skill
+// and 37 drive self-buffs it models. What was missing was anywhere to put the LEVEL,
+// so the skill picker always opened at the skill's max and a player with Fire Bolt 5
+// was shown Lv10 damage.
+//
+// This map is the spellbook: what you know and at what rank. It deliberately does
+// NOT turn anything on.
+// ---------------------------------------------------------------------------
+test("a PS planner import records the ranks the character actually has", () => {
+  const zlib2 = require("zlib");
+  const { importPsToolsSkills: imp } = require("../src/engine/psToolsImport");
+  loader.setProfile(PS);
+  const mkLink = (job, levels) =>
+    "https://tools.payonstories.com/skill?state=" + encodeURIComponent(
+      zlib2.deflateSync(Buffer.from(JSON.stringify({ job, levels }), "utf8")).toString("base64"));
+
+  const res = imp(mkLink("Knight", {
+    SM_BASH: 7,            // an attack skill — priced, but only as the picked skill
+    KN_PIERCE: 5,          // same
+    KN_TWOHANDQUICKEN: 10, // a self-buff the engine models via active_status_levels
+    NV_BASIC: 9,           // real, on the tree, and nothing reads it
+  }), PS);
+
+  // Everything on the tree lands in the spellbook, whatever the engine does with it.
+  assert.equal(res.known_skill_levels.SM_BASH, 7);
+  assert.equal(res.known_skill_levels.KN_PIERCE, 5);
+  assert.equal(res.known_skill_levels.KN_TWOHANDQUICKEN, 10,
+    "a self-buff's rank is recorded even though importing must not switch it on");
+
+  // ...while mastery_levels stays what it was: only what the bonus engine reads.
+  assert.ok(!("KN_PIERCE" in res.mastery_levels),
+    "an attack skill is not a passive bonus and must not become one");
+
+  // A rank beyond what the skill can reach here is capped, not trusted. Their planner
+  // hands out whole lists and a stale link can carry a rank PS has since lowered.
+  const over = imp(mkLink("Knight", { KN_PIERCE: 99 }), PS);
+  const pierceMax = loader.getSkillByName("KN_PIERCE").max_level;
+  assert.equal(over.known_skill_levels.KN_PIERCE, pierceMax,
+    `Pierce should cap at ${pierceMax}, not 99`);
+
+  // Skills this class cannot learn are not in the spellbook at all. Their planner
+  // hands every class the platinum list, so this is most of what arrives.
+  const offTree = imp(mkLink("Knight", { MG_FIREBOLT: 10, SM_BASH: 1 }), PS);
+  assert.ok(!("MG_FIREBOLT" in offTree.known_skill_levels),
+    "a Knight does not know Fire Bolt");
+  assert.ok(offTree.off_tree_count >= 1);
+
+  // Unallocated skills are absent rather than present at 0 — otherwise importing a
+  // tree would claim the character "knows" every skill they skipped.
+  const zero = imp(mkLink("Knight", { SM_BASH: 0, KN_PIERCE: 3 }), PS);
+  assert.ok(!("SM_BASH" in zero.known_skill_levels));
+  assert.equal(zero.known_skill_levels.KN_PIERCE, 3);
+
+  // The build schema carries it through, so a shared link keeps the ranks.
+  const b = buildFromSaveSchema({
+    server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 },
+    known_skill_levels: { KN_PIERCE: 5 },
+  });
+  assert.equal(b.known_skill_levels.KN_PIERCE, 5);
+  // And an absent map is an empty one, not undefined — the editor indexes it directly.
+  const plain = buildFromSaveSchema({
+    server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 },
+  });
+  assert.deepEqual(plain.known_skill_levels, {});
+});
