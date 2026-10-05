@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-04 | PS item API — full catalogue sweep (2,755 items) | First-party | All equipment/cards verified |
 | 2026-10-04 | PS item API (tools.payonstories.com/api/pc/item) | First-party | Wrench 1531 / reworked item |
 | 2026-09-27 | PS client skill descriptions | First-party | Gunslinger / which guns cast what |
 | 2026-09-27 | Hercules status.c (pre-re guards) | Source | Gunslinger / ASPD with gun buffs |
@@ -7415,3 +7416,81 @@ scrape and both hand-curated layers with no `_usePsData` check, unlike
 descriptions, so this entry only adds one more - but it means a *standard pre-renewal*
 server now shows PS's Wrench text over vanilla's stats. Pre-existing and out of scope
 for a single-item report; worth its own pass.
+
+## 2026-10-04 - Full item sweep against the live PS catalogue
+
+After the Wrench (1531), the obvious question was how many more there were. Every
+weapon, armour and card we serve - **2,755 items** - was fetched from the live PS item
+API and compared three ways: live stats vs ours, live text vs our bundled scrape, and
+(for cards) the numbers in PS's text vs the numbers in our script. 2,755 fetched, 0
+failures.
+
+### The structural problem
+
+`ps_item_db.json` **carries no stats**. All 6,237 entries have `atk: null`; it supplies
+only name, slots, refine and description. Every number we serve - ATK, DEF, weight,
+level requirement, jobs, slots - comes from the **vanilla pre-renewal** record. And the
+whole scrape is dated **2026-03-24**. So a PS stat rework cannot reach this calculator
+except by hand-curation, and our PS *text* is six months behind as well.
+
+That is the root cause. The per-item entries below are symptoms.
+
+### Stats are in good shape
+
+Across 2,195 live records, only **6 uncurated numeric disagreements**:
+
+| item | field | ours | PS |
+|---|---|---|---|
+| Butcher (13158, Gatling) | card slots | 0 | **2** |
+| Sheep Hat (5133) | level requirement | 0 | 50 |
+| Red Glasses (5288) | level requirement | 0 | 10 |
+| Whisper Mask / Loki Mask / Filir Hat | DEF | 0 | 1 / 2 / 2 |
+
+Butcher is the only damage-significant one and is NOT fixed yet.
+
+### Reworked since the scrape - fixed here
+
+- **Hunter Fly Card (4115)** - leech proc 3% -> **12%** (`bHPDrainRate,30,15` ->
+  `120,15`; the rate is in tenths). Also fixed the *shared* description formula, which
+  misread both arguments as "Drains 15 HP per 30 physical hits". Corroborated against
+  PS's own wording for three items: Hunter Fly (120,15), Sniper Card (50,20) and
+  Rideword Hat (50,8 HP / 10,4 SP). **bHPDrainRate is description-only in this engine**
+  - no field, no consumer - so this fixes the tooltip and the data, not a number.
+  Modelling leech would touch all 8 items that use it and is not bundled in here.
+- **Alligator Card (4252)** and **Noxious Card (4334)** - text now says "long ranged
+  physical **and magical**". **Script deliberately unchanged.** `bLongAtkDef` already
+  covers both: pre-renewal applies the defender's LONG ranged-def rate to incoming
+  magic (Skotlex's "ranged defense also counts vs magic"; magic sets
+  `BF_MAGIC|BF_SKILL` with neither BF_SHORT nor BF_LONG, so the long rate is the one
+  that applies - battle.c:1132-1156), implemented at cardFix.js:143. A clarification,
+  not a rework. Tests assert the scripts stay as they are so nobody adds the magic half
+  a second time.
+- **Greatest General Card (4283)** - PS added an Asura Strike 33% SP refund. Description
+  only: it lands after the cast, and pre-renewal Asura scales with the SP you had when
+  you cast, so it cannot move the damage of the cast being priced.
+- **Sunflower (2253)** - flagged because PS's text gained "Unrefineable". Checked before
+  touching it: **vanilla already has refineable=false**, so the two agree and there was
+  nothing to fix. Description refreshed only; no stat override, since one would imply a
+  change that never happened.
+
+### Still open
+
+**548 items we serve do not exist on Payon Stories.** 560 returned "No data" by id; the
+counter-hypothesis that PS's id index is merely incomplete was tested by re-querying 40
+of them BY NAME - our id came back **0 times**, while PS returned the same names at
+different ids (our Claymore 1190 vs PS 1163/1172; our Infiltrator 1267 vs PS 1261/1266).
+Applying the Apple-of-Archer safety checks protects 12 (6 monster drops, 3 already
+hidden, 3 hand-curated), leaving 548 - 411 of them armour.
+
+A caution for whoever picks this up: the first version of that safety check was broken.
+It called `loader.getMonster()`, which returns combat stats with no drops, found zero
+dropped items and duly cleared Doom Slayer (1370) - an item the 2026-09-26 sweep had
+already identified as a real drop. Drops live in the raw `mob_db.json` keyed by AEGIS
+NAME, not item id. The corrected check returns 1370, 1819 and 1821 as protected, which
+is what validates it.
+
+**Butcher's 2 card slots** (13158) and the two level-requirement gates are also still
+open.
+
+**The durable fix is re-scraping PS with stats included**, not curating items one at a
+time.

@@ -6121,3 +6121,75 @@ test("the Wrench carries PS's Formless effects, not vanilla's status procs", () 
   assert.ok(vanillaItem.script.includes("Eff_Blind"), "and the status procs");
   loader.setProfile(PS);
 });
+
+// ---------------------------------------------------------------------------
+// Items Payon Stories reworked after our bundled scrape (2026-03-24).
+//
+// Found by sweeping all 2,755 weapons/armour/cards we serve against the live PS
+// item API on 2026-10-04 and diffing each one's effect text against the scrape.
+// The scrape carries NO stats at all (atk is null for all 6,237 entries), so a PS
+// rework is invisible to this calculator unless it is hand-curated — which is how
+// the Wrench (1531) stayed wrong.
+// ---------------------------------------------------------------------------
+test("items PS reworked since the 2026-03 scrape", () => {
+  loader.setProfile(PS);
+  const { parseScript } = require("../src/engine/itemScriptParser");
+  const descOf = (id) => parseScript(loader.getItem(id).script).map((b) => b.description).join(" ");
+
+  // --- Hunter Fly Card: PS raised the leech proc 3% -> 12% ------------------
+  const hunterFly = loader.getItem(4115);
+  assert.match(hunterFly.script, /bHPDrainRate,120,15/,
+    "PS: 12% chance of 15% of damage as HP — rate is in tenths, so 120");
+  assert.match(descOf(4115), /12% chance to recover 15% of the damage dealt as HP/);
+
+  // bHPDrainRate is DESCRIPTION-ONLY in this engine — no field, so nothing reads
+  // it. Asserted so the limit is recorded rather than assumed: if someone later
+  // models leech, this line fails and they update the claim deliberately.
+  const { BONUS2 } = require("../src/engine/bonusDefinitions");
+  assert.equal(BONUS2.bHPDrainRate.field, null,
+    "leech is still unmodelled; correcting the rate fixes the tooltip, not a number");
+
+  // The old wording ("Drains 15 HP per 30 physical hits") misread BOTH arguments.
+  // Two untouched vanilla items prove the formula, not just the one we edited.
+  assert.match(descOf(4367), /5% chance to recover 20% of the damage dealt as HP/); // Sniper Card 50,20
+  assert.match(descOf(5208), /5% chance to recover 8% of the damage dealt as HP/);  // Rideword Hat 50,8
+  assert.match(descOf(5208), /1% chance to recover 4% of the damage dealt as SP/);  // and its SP half
+
+  // --- Sunflower: flagged by the sweep, but nothing to fix -----------------
+  // PS's text gained "Unrefineable"; vanilla ALREADY had refineable=false, so the
+  // two agree and only the stale description moved. Asserted on both profiles so
+  // nobody later "fixes" a difference that does not exist.
+  assert.equal(loader.getItem(2253).refineable, false, "PS marks Sunflower Unrefineable");
+
+  // --- Alligator / Noxious: text clarified, script deliberately UNCHANGED ---
+  // PS now says "long ranged physical AND magical". `bLongAtkDef` already does
+  // both: pre-renewal applies the defender's LONG ranged-def rate to incoming
+  // magic (battle.c:1132-1156), implemented at cardFix.js:143. These assertions
+  // exist to stop a well-meaning future edit from "adding" the magic half twice.
+  assert.match(loader.getItem(4252).script, /bonus bLongAtkDef,5;/);
+  assert.match(loader.getItem(4334).script, /bonus bLongAtkDef,10;/);
+  assert.ok(!/bMagicDefRate/.test(loader.getItem(4252).script),
+    "the magic half is already covered by the ranged rate — do not add it again");
+  assert.ok(!/bMagicDefRate/.test(loader.getItem(4334).script));
+
+  // --- Greatest General: SP refund is description-only ----------------------
+  // It happens after the cast, so it cannot move the damage of the cast we price.
+  assert.match(loader.getItem(4283).script, /MO_CALLSPIRITS/);
+  assert.ok(!/SPrate|bSPrecov/.test(loader.getItem(4283).script));
+
+  // --- descriptions now carry PS's own text --------------------------------
+  for (const [id, needle] of [[4115, /12% chance/i], [2253, /unrefineable/i],
+                              [4252, /physical and magical/i], [4334, /physical and magical/i],
+                              [4283, /asura strike refunds/i]]) {
+    const d = (loader.getItemDescription(id) || {}).description || "";
+    assert.match(d.replace(/<[^>]+>/g, " "), needle, `item ${id} should show PS's current text`);
+  }
+
+  // --- a vanilla server keeps vanilla's items ------------------------------
+  loader.setProfile(getProfile("standard"));
+  assert.match(loader.getItem(4115).script, /bHPDrainRate,30,15/, "standard profile keeps 3%");
+  // Sunflower is deliberately NOT asserted to differ here — vanilla already matched
+  // PS, which is exactly why it carries no stat override.
+  assert.equal(loader.getItem(2253).refineable, false, "vanilla agrees, unchanged");
+  loader.setProfile(PS);
+});

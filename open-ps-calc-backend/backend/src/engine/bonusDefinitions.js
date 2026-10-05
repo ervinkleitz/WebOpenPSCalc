@@ -234,10 +234,13 @@ const BONUS2 = {
   bSPGainRace: def((r, v) => `Gains ${v} SP per kill of ${race(r)}.`),
   bAddItemHealRate: def((_id, v) => `Increases healing from items by ${v}%.`),
   bWeaponComaRace: def((r, v) => `${Math.floor(v / 100)}% chance to inflict Coma on ${race(r)} per hit.`),
-  bHPDrainRate: def((v1, v2) => `Drains ${v2} HP per ${v1} physical hits.`),
+  // n is a rate in TENTHS of a percent and x is a share of the damage dealt —
+  // not a hit counter and a flat amount. PS's own text for Hunter Fly (120,15),
+  // Sniper Card (50,20) and Rideword Hat (50,8) all read this way.
+  bHPDrainRate: def((v1, v2) => `${v1 / 10}% chance to recover ${v2}% of the damage dealt as HP.`),
   bHPLossRate: def((v1, v2) => `Loses ${v1} HP every ${Math.round(v2 / 1000)} seconds.`),
   bAddMonsterDropItem: def((_id, v) => `Monsters drop an item at ${(v / 100).toFixed(2)}% rate.`),
-  bSPDrainRate: def((v1, v2) => `Drains ${v2} SP per ${v1} physical hits.`),
+  bSPDrainRate: def((v1, v2) => `${v1 / 10}% chance to recover ${v2}% of the damage dealt as SP.`),
   bAddSkillBlow: def((sk, v) => `${sk} knocks enemies back ${v} cells.`),
 };
 
@@ -250,7 +253,7 @@ const BONUS3 = {
   bAddMonsterDropItem: def((_id, v, _ty) => `Monsters drop an item at ${(v / 100).toFixed(2)}% rate (type-conditional).`),
   bAddClassDropItem: def((c, v, _ty) => `${cls(c)} drop an item at ${(v / 100).toFixed(2)}% rate.`),
   bAddEffWhenHit: def((scKey, v1, _flag) => `[Conditional] ${Math.floor(v1 / 100)}% chance to inflict ${sc(scKey)} when hit.`),
-  bSPDrainRate: def((v1, v2, _flag) => `Drains ${v2} SP per ${v1} hits (conditional).`),
+  bSPDrainRate: def((v1, v2, _flag) => `${v1 / 10}% chance to recover ${v2}% of the damage dealt as SP (conditional).`),
 };
 
 const BONUS4 = {
