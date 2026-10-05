@@ -7455,7 +7455,16 @@ Butcher is the only damage-significant one and is NOT fixed yet.
   misread both arguments as "Drains 15 HP per 30 physical hits". Corroborated against
   PS's own wording for three items: Hunter Fly (120,15), Sniper Card (50,20) and
   Rideword Hat (50,8 HP / 10,4 SP). **bHPDrainRate is description-only in this engine**
-  - no field, no consumer - so this fixes the tooltip and the data, not a number.
+  - no field, no consumer - so this fixes the data, not a number.
+
+  Checked afterwards, and worth recording: the corrected FORMULA is not visible to
+  players either. Item tooltips call `fetchItemTooltip`, which renders
+  `item.description` (PS's own text) and nothing else - BuildEditor.tsx:1991-2004. The
+  strings built from bonusDefinitions.js feed only `active_combo_descriptions`, and no
+  frontend component consumes that field. So the formula fix is correct but currently
+  unrendered; what a player actually gains on this card is PS's refreshed description,
+  which now reads 12% where our six-month-old copy said 3%. Do not assume editing a
+  bonus description changes anything on screen.
   Modelling leech would touch all 8 items that use it and is not bundled in here.
 - **Alligator Card (4252)** and **Noxious Card (4334)** - text now says "long ranged
   physical **and magical**". **Script deliberately unchanged.** `bLongAtkDef` already

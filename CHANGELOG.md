@@ -10,12 +10,10 @@ instead of release version. Dates are taken from actual git commit history.
 ### Fixed
 
 - **Hunter Fly Card leeches four times as often as we were showing.** Payon Stories
-  gives it a 12% chance to recover 15% of the damage you deal; the card was still
-  described with the old 3%. Its tooltip was also plain wrong about what the card does
-  — it read "Drains 15 HP per 30 physical hits", which is neither the chance nor the
-  amount. Both are fixed, and the same wording fix corrects Sniper Card, Rideword Hat,
-  Solar Sword and the other items that leech. Note the calculator still doesn't fold
-  leech into any number it shows; this corrects what the card says it does.
+  gives it a 12% chance to recover 15% of the damage you deal; the card still described
+  the old 3%, because our copy of the Payon Stories item text was six months out of
+  date. Its description is current again. The calculator doesn't fold leech into any
+  number it shows, so this corrects what the card tells you, not your damage.
 
 - **Alligator Card and Noxious Card describe their magic protection properly now.**
   Payon Stories updated their text to say they cut long-ranged *magical* damage as well
