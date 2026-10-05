@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-05 | wiki.payonstories.com/Battle_Mastery vs client text | Wiki over client | Battle Mastery / ASPD on books |
 | 2026-10-05 | PS item API, weekly audit (scripts/audit-ps-items.mjs) | First-party | Standing item-data check |
 | 2026-10-05 | Hercules pc.c SP_ATK1 + status.c SCB_WATK | Source | Dual wield / which hand gets watk |
 | 2026-10-04 | PS item API — full catalogue sweep (2,755 items) | First-party | All equipment/cards verified |
@@ -7691,3 +7692,40 @@ Over 184 job/skill pairs that leaves exactly two, both correct: Double Strafing 
 our Rogue and Stalker panels because a Rogue can PLAGIARISE it, and their planner rightly
 does not offer it as learnable. Re-run this after any PS rework rather than trusting the
 round-trip.
+
+## 2026-10-05 - Battle Mastery: the wiki and the client text disagree about books
+
+Raised as "battle mastery is missing in priest buffs" while testing the planner
+import. It is not missing - it is a PASSIVE, so it sits in the Passive skills panel
+and not in Buffs, and it imports correctly (PS uses the same constant we do,
+`PR_MACEMASTERY`, id 65). But checking it turned up a real disagreement between PS's
+own two sources, and there was no entry here for the skill at all.
+
+| source | ATK | ASPD at Lv10 |
+|---|---|---|
+| client description (id 65) | "Maces and Books", +4/lv | "by 12% **on Maces**" |
+| wiki.payonstories.com/Battle_Mastery | "mace and book class weapons" | "increases ASPD with **books and maces** by 12%" |
+
+We model `PR_MACEMASTERY: { lv10_rate: { Mace: -120, Book: -120 } }` plus
+`PR_MACEMASTERY_EXPANDED_WEAPON_TYPES` for the ATK half - i.e. **both weapons for
+both halves**, which follows the wiki.
+
+**Kept as-is.** The client tooltip is the narrower of the two and omits books from the
+ASPD line only; the wiki states books explicitly and is the page a player reads. Under
+the source precedence here (maintainer ruling > rework PDF > live wiki > stale
+ps_skill_db > vanilla) the wiki wins over a client string. Recorded because the next
+person to compare us against the in-game tooltip will see the same mismatch and should
+not "fix" it without this.
+
+Worth an in-game check if a Priest is willing: equip a Book at Battle Mastery 10 and
+read ASPD with and without the skill maxed. If books really do not get the 12%, drop
+`Book: -120` from PS_ASPD_BUFFS and note it here.
+
+### Related, not a bug
+
+The Buffs panel tells a Priest "No self-cast buffs modeled for this job yet" and lists
+Blessing, Increase Agility, Gloria and Angelus under **Party buffs -> PRIEST**. Those
+are the same buffs a Priest casts on themselves, so a solo Priest does have them - they
+are just filed under who can cast them rather than under "yourself". That grouping is
+deliberate (any class can stand in a Priest's range) but it is what makes a Priest's own
+buffs look absent.

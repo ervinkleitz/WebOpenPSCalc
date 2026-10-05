@@ -509,6 +509,12 @@ const PS_MECHANIC_FLAGS = new Set([
   "GS_CANNOT_BE_ENDOWED",
   // PS Throw Shuriken does not ignore flee
   "NJ_SYURIKEN_FLEE_IGNORE_DISABLED",
+  // Battle Mastery (PR_MACEMASTERY) covers BOOKS as well as maces on PS -
+  // "Grants bonus mastery damage with mace and book class weapons"
+  // (wiki.payonstories.com/Battle_Mastery). Routes a Book swing to this mastery
+  // in masteryFix. The Lv10 ASPD half is in PS_ASPD_BUFFS and also covers both;
+  // the in-client tooltip names only maces there, and the wiki is followed - see
+  // PS_SOURCES 2026-10-05.
   "PR_MACEMASTERY_EXPANDED_WEAPON_TYPES",
   "MO_EXTREMITYFIST_PS_SP_REWORK",  // PS rework: SP consumed = floor(MaxSP × 0.2 × SkillLv)
   // PS Asura does NOT ignore the target's DEF (unlike vanilla, whose skill DB
