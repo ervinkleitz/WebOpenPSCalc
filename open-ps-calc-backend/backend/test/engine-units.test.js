@@ -6474,3 +6474,37 @@ test("imported skill levels actually reach the damage numbers", () => {
   const without = dmg({});
   assert.equal(withMastery - without, 40, `Blade Mastery 10 is +40 ATK, got +${withMastery - without}`);
 });
+
+// ---------------------------------------------------------------------------
+// scripts/check-ps-skills.mjs — the chunk parser.
+//
+// The poll's whole job is to notice when Payon Stories changes its skill list, and
+// it can only do that if it can read the list. Their data is a JAVASCRIPT chunk, not
+// JSON: description strings contain \' sequences that are valid JS and invalid JSON,
+// so JSON.parse fails on most of the job trees and the pairs have to be read out of
+// the literal source. That regex is the fragile part, so it is pinned here — if PS
+// changes their format this test fails before the weekly job starts reporting
+// "0 skills" and quietly looking fine.
+// ---------------------------------------------------------------------------
+test("PS skill poll: reads the skill list out of their JS chunk", async () => {
+  const { parseSkillPairs } = await import("../scripts/check-ps-skills.mjs");
+
+  // Shaped like the real chunk: id -> [name, ...description lines].
+  const chunk = 'x={"1":["Basic Skill","Max Level: 9"],"2":["Sword Mastery","+4 ATK"],'
+    + '"514":["Wounding Shot","Bleeding"]};';
+  assert.deepEqual(parseSkillPairs(chunk), {
+    1: "Basic Skill", 2: "Sword Mastery", 514: "Wounding Shot",
+  });
+
+  // The apostrophe case that defeats JSON.parse — this is why it is a regex.
+  const awkward = 'y={"270":["Snap","Teleports to the target\\\'s side"]};';
+  assert.throws(() => JSON.parse(awkward.slice(2, -1)), "the fixture really is invalid JSON");
+  assert.equal(parseSkillPairs(awkward)["270"], "Snap");
+
+  // Colour codes are part of their markup, not the name.
+  assert.equal(parseSkillPairs('z={"28":["^0000FFHeal^000000","..."]};')["28"], "Heal");
+
+  // A format we no longer recognise must yield nothing, so the script's own
+  // "parsed 0 skills" guard fires instead of a confident empty diff.
+  assert.deepEqual(parseSkillPairs('{"skills":[{"id":1,"name":"Basic Skill"}]}'), {});
+});

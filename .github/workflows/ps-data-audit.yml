@@ -1,0 +1,71 @@
+# Weekly check that our Payon Stories data still matches theirs.
+#
+# Two independent questions, so two jobs — a failing item check must not hide a
+# skill-list change:
+#
+#   items   ps_item_db.json carries no stats and is a point-in-time scrape, so every
+#           number we serve comes from the vanilla pre-renewal record. A PS rework is
+#           invisible until a player reports it — that is how the Wrench (1531) served
+#           vanilla's item for six months.
+#   skills  psToolsImport.js maps PS's skill constants onto ours, and that mapping is
+#           only correct for the skill list PS had when it was written. A round trip
+#           through our own constants can only prove self-consistency; it cannot notice
+#           that PS repurposed Overcharge into Tool Mastery. Asking them can.
+#
+# Deliberately NOT part of deploy.yml: these talk to a third party, can fail for
+# reasons unrelated to the commit, and must never block a push.
+#
+# Each job fails only on changes that are NOT in its committed baseline/snapshot, so
+# both stay quiet until Payon Stories actually changes something.
+name: PS data audit
+
+on:
+  schedule:
+    # Mondays, 04:00 UTC. Weekly rather than daily: the item pass is ~2,755 requests
+    # at 4 in flight against someone else's server, and PS does not rework daily.
+    - cron: "0 4 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ps-data-audit
+  cancel-in-progress: false
+
+jobs:
+  items:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install backend deps
+        working-directory: open-ps-calc-backend/backend
+        run: npm ci
+      - name: Compare our item data against the live PS API
+        working-directory: open-ps-calc-backend/backend
+        run: npm run ps:audit-items
+      # Keep the report even when the step failed — that is the run worth reading.
+      - name: Upload the item report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ps-item-audit-report
+          path: open-ps-calc-backend/backend/scripts/ps-item-audit-report.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  skills:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install backend deps
+        working-directory: open-ps-calc-backend/backend
+        run: npm ci
+      - name: Has the PS skill list changed?
+        working-directory: open-ps-calc-backend/backend
+        run: npm run ps:check-skills
