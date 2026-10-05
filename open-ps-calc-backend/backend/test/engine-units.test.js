@@ -6582,3 +6582,42 @@ test("a PS planner import records the ranks the character actually has", () => {
   });
   assert.deepEqual(plain.known_skill_levels, {});
 });
+
+// A planner import also records the rank each self-buff would run at, keyed by
+// status change, because the editor's toggles are keyed by SC rather than by skill
+// constant. Same rule as the spellbook: it records a rank, it does not switch
+// anything on.
+test("a planner import records the rank each self-buff would run at", () => {
+  const zlib3 = require("zlib");
+  const { importPsToolsSkills: imp, SC_SOURCE_SKILL } = require("../src/engine/psToolsImport");
+  loader.setProfile(PS);
+  const mkLink = (job, levels) =>
+    "https://tools.payonstories.com/skill?state=" + encodeURIComponent(
+      zlib3.deflateSync(Buffer.from(JSON.stringify({ job, levels }), "utf8")).toString("base64"));
+
+  const kn = imp(mkLink("Knight", { KN_TWOHANDQUICKEN: 3, SM_AUTOBERSERK: 1, KN_PIERCE: 5 }), PS);
+  assert.equal(kn.known_buff_levels.SC_TWOHANDQUICKEN, 3,
+    "Two-Hand Quicken at 3 must switch on at 3, not at the buff's max");
+  assert.equal(kn.known_buff_levels.SC_AUTOBERSERK, 1);
+  // An attack skill has no status change, so it is not a buff rank.
+  assert.ok(!("SC_PIERCE" in kn.known_buff_levels));
+
+  // The handful of SCs the skill DB does not attribute to a skill are bridged
+  // explicitly. SC_ADRENALINE_SELF is our self-cast split of SC_ADRENALINE.
+  const bs = imp(mkLink("Blacksmith", { BS_ADRENALINE: 3, BS_MAXIMIZE: 5 }), PS);
+  assert.equal(bs.known_buff_levels.SC_ADRENALINE, 3);
+  assert.equal(bs.known_buff_levels.SC_ADRENALINE_SELF, 3,
+    `SC_SOURCE_SKILL should bridge the self-cast variant (${JSON.stringify(SC_SOURCE_SKILL)})`);
+  assert.equal(bs.known_buff_levels.SC_MAXIMIZEPOWER, 5);
+
+  // Nothing is switched on by importing — the engine reads active_status_levels,
+  // and this map is not it.
+  const b = buildFromSaveSchema({
+    server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 },
+    known_buff_levels: kn.known_buff_levels,
+  });
+  assert.deepEqual(b.active_status_levels, {},
+    "importing a tree must not activate any buff");
+  assert.equal(b.known_buff_levels.SC_TWOHANDQUICKEN, 3, "but the rank is carried");
+});

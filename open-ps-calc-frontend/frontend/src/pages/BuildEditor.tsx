@@ -725,6 +725,7 @@ const Z3_KEYS: string[] = [
   // keeps them. Nothing is priced from this directly — see known_skill_levels in
   // buildManager.js.
   "known_skill_levels",
+  "known_buff_levels",
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -1247,6 +1248,7 @@ export default function BuildEditor() {
   const handleSkillsImported = useCallback((res: {
     job_id: number; job_name: string; mastery_levels: Record<string, number>;
     known_skill_levels?: Record<string, number>;
+    known_buff_levels?: Record<string, number>;
   }) => {
     statsApi.trackFeature("ps_tools_skill_import");
     setData((prev) => {
@@ -1261,6 +1263,7 @@ export default function BuildEditor() {
         // skills the new tree does not take, which is how you end up with a Knight
         // who still "knows" the Wizard build you imported before it.
         known_skill_levels: { ...(res.known_skill_levels || {}) },
+        known_buff_levels: { ...(res.known_buff_levels || {}) },
       };
     });
     // The old numbers describe the old skill levels.
@@ -3263,7 +3266,16 @@ export default function BuildEditor() {
                                 <input
                                   type="checkbox"
                                   checked={active}
-                                  onChange={(e) => updateBuffField("active_buffs", b.key, e.target.checked ? b.max : 0)}
+                                  onChange={(e) => {
+                                    // Switch a buff on at the rank this character
+                                    // actually has, when a PS planner import told us.
+                                    // Before this every buff started at its max, so a
+                                    // Knight with Two-Hand Quicken 3 was given the
+                                    // Lv10 bonus the moment they ticked the box.
+                                    const known = (data.known_buff_levels || {})[b.key];
+                                    const lv = known != null && known > 0 ? Math.min(known, b.max) : b.max;
+                                    updateBuffField("active_buffs", b.key, e.target.checked ? lv : 0);
+                                  }}
                                 />
                                 <span>{b.label}</span>
                               </label>

@@ -94,6 +94,24 @@ function decodePsToolsSkillUrl(input) {
 }
 
 /**
+ * Status changes whose source skill the skill DB does not declare, so they cannot be
+ * resolved from `status_change` alone. Kept tiny and explicit rather than guessed.
+ *
+ * Two self-buffs in the editor have no learnable source on a 2nd job and are
+ * deliberately absent:
+ *   SC_AMPLIFYMAGICPOWER — a High Wizard skill (maintainer ruling, 2026-09-22), and
+ *     this calculator models base and 2nd jobs only.
+ *   SC_PS_ZENYPINCHER — a PS-custom passive; it arrives through mastery_levels, not
+ *     as a rank you pick when toggling a buff.
+ */
+const SC_SOURCE_SKILL = {
+  // Our synthetic "self-cast" variant of SC_ADRENALINE. The DB declares
+  // BS_ADRENALINE -> SC_ADRENALINE; the editor splits the self-cast case out so a
+  // Blacksmith's own Adrenaline Rush is separable from a party member's.
+  SC_ADRENALINE_SELF: "BS_ADRENALINE",
+};
+
+/**
  * Our mastery_levels map is keyed by MASTERY KEY, which is the skill constant for
  * almost everything but differs where PS merged two skills (SM_TWOHAND is stored as
  * SM_TWOHANDSWORD, the Blade Mastery key). The passive panel is the authority on
@@ -147,6 +165,14 @@ function importPsToolsSkills(input, profile = null) {
   // everyone's damage the moment they imported. The editor uses these as the level a
   // skill takes when YOU pick it or switch it on.
   const knownSkillLevels = {};
+  // The same ranks again, keyed by STATUS CHANGE, for the editor's self-buff
+  // toggles. Two-Hand Quicken, Adrenaline Rush, Providence, Energy Coat and the rest
+  // are switched on by SC key, so without this the toggle has no idea the character
+  // only has the skill at rank 3 and starts it at the buff's max.
+  //
+  // Same rule as the spellbook above: this records the rank a buff WOULD run at, it
+  // does not switch anything on.
+  const knownBuffLevels = {};
   const applied = [];
   // Two very different reasons to skip something, and a player cares about only one
   // of them. Their planner hands every class the whole platinum skill list at Lv1, so
@@ -168,7 +194,11 @@ function importPsToolsSkills(input, profile = null) {
     if (known) {
       const onTree = loader.filterMasteryLevelsForJob(jobEntry.id, { [ourConstant]: level });
       if (!onTree.dropped.length) {
-        knownSkillLevels[ourConstant] = Math.min(level, known.max_level || level);
+        const capped = Math.min(level, known.max_level || level);
+        knownSkillLevels[ourConstant] = capped;
+        for (const sc of [].concat(known.status_change || [])) {
+          if (sc) knownBuffLevels[sc] = capped;
+        }
       }
     }
 
@@ -200,6 +230,14 @@ function importPsToolsSkills(input, profile = null) {
     mastery_levels: masteryLevels,
     // What the character knows, for the skill picker and the buff toggles.
     known_skill_levels: knownSkillLevels,
+    known_buff_levels: (() => {
+      // Fold in the handful of SCs the DB does not attribute to a skill.
+      const out = { ...knownBuffLevels };
+      for (const [sc, constant] of Object.entries(SC_SOURCE_SKILL)) {
+        if (knownSkillLevels[constant] != null) out[sc] = knownSkillLevels[constant];
+      }
+      return out;
+    })(),
     applied,
     // Skills this character really has that no damage formula here reads.
     not_modelled: notModelled,
@@ -208,4 +246,4 @@ function importPsToolsSkills(input, profile = null) {
   };
 }
 
-module.exports = { importPsToolsSkills, decodePsToolsSkillUrl, CONSTANT_ALIASES };
+module.exports = { importPsToolsSkills, decodePsToolsSkillUrl, CONSTANT_ALIASES, SC_SOURCE_SKILL };

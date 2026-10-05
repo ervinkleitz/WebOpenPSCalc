@@ -402,3 +402,55 @@ test("Rogue Strips are modelled: DEF/MDEF outgoing, ATK/INT incoming, never on b
     assert.ok(new RegExp(`"${key}"`).test(editor), `${key} must be offered and in the share dictionary`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Every self-buff toggle must have a known source skill, or be deliberately
+// exempt. A PS planner import sets the rank a buff switches on at, via
+// known_buff_levels keyed by status change — so a buff whose SC nothing maps to
+// silently falls back to its MAX, which is the bug this whole thing fixes.
+//
+// This fails when someone adds a SELF_BUFFS entry without deciding how its rank
+// is resolved, rather than letting it quietly default.
+// ---------------------------------------------------------------------------
+test("every self-buff resolves to a skill, or is a documented exception", () => {
+  const src = read("src", "pages", "BuildEditor.tsx");
+  const start = src.indexOf("const SELF_BUFFS = [");
+  const end = src.indexOf("const PARTY_BUFFS = [");
+  assert.ok(start > 0 && end > start, "could not find the SELF_BUFFS table");
+  // Party buffs and songs come from OTHER players, so your own rank is irrelevant
+  // to them — only the self-cast table is in scope here.
+  const keys = [...new Set([...src.slice(start, end).matchAll(/key:\s*"(SC_[A-Z0-9_]+)"/g)].map((m) => m[1]))];
+  assert.ok(keys.length > 15, `expected the self-buff table, found ${keys.length} keys`);
+
+  const { loader } = require("../src/engine/dataLoader");
+  const { getProfile } = require("../src/engine/serverProfiles");
+  loader.setProfile(getProfile("payon_stories"));
+  const { SC_SOURCE_SKILL } = require("../src/engine/psToolsImport");
+
+  const declared = new Set();
+  for (const sk of loader.getAllSkills()) {
+    for (const sc of [].concat(sk.status_change || [])) if (sc) declared.add(sc);
+  }
+
+  // No learnable source on a base or 2nd job — this calculator models no further.
+  const EXEMPT = {
+    SC_AMPLIFYMAGICPOWER: "a High Wizard skill (maintainer ruling 2026-09-22); trans classes are unmodelled",
+    SC_PS_ZENYPINCHER: "a PS-custom passive — it arrives via mastery_levels, not as a toggled rank",
+    // The SP bracket selector that rides alongside the Energy Coat toggle, not a buff.
+    SC_ENERGYCOAT_sp_pct: "a UI field, not a status change",
+  };
+
+  const orphans = keys.filter((k) => !declared.has(k) && !(k in SC_SOURCE_SKILL) && !(k in EXEMPT));
+  assert.deepEqual(orphans, [],
+    `these self-buffs have no source skill: ${orphans.join(", ")}. Either the skill DB `
+    + "declares the status change, or add it to SC_SOURCE_SKILL in psToolsImport.js, or "
+    + "document it as exempt here — otherwise an imported character's rank is ignored "
+    + "and the buff switches on at its max.");
+
+  // And the exemptions must stay honest: if a skill ever does declare one, the
+  // exemption is stale and should go.
+  for (const k of Object.keys(EXEMPT)) {
+    assert.ok(!declared.has(k),
+      `${k} is now declared by a skill — drop it from the exempt list so imports use the real rank`);
+  }
+});

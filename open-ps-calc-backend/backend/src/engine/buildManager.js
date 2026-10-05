@@ -200,6 +200,8 @@ function buildFromSaveSchema(data) {
     // the editor to pick the level a skill or buff starts at; the engine itself does
     // not price anything from this map — a known skill is not an active one.
     known_skill_levels: data.known_skill_levels || {},
+    // The same ranks keyed by status change, for the editor's buff toggles.
+    known_buff_levels: data.known_buff_levels || {},
     is_ranged_override: flags.is_ranged_override ?? null,
     is_riding_peco: flags.is_riding_peco ?? false,
     no_sizefix: flags.no_sizefix ?? false,
