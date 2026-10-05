@@ -11,7 +11,9 @@
     "test:gen-goldens": "node test/gen-goldens.js",
     "kill-port": "node scripts/kill-port.mjs",
     "stats:backfill-regions": "node src/scripts/backfill-regions.js",
-    "stats:refilter-bots": "node src/scripts/refilter-bots.js"
+    "stats:refilter-bots": "node src/scripts/refilter-bots.js",
+    "ps:audit-items": "node scripts/audit-ps-items.mjs",
+    "ps:audit-items:accept": "node scripts/audit-ps-items.mjs --accept"
   },
   "dependencies": {
     "cors": "^2.8.5",

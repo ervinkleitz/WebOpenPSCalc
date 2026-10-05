@@ -6270,3 +6270,57 @@ test("equipment bAtk is right-hand only, but Impositio buffs both hands", () => 
   // — which is why it is never a clean +20. Poring is MEDIUM, so a dagger does 75%.
   assert.equal(loader.getMonster(PORING).size, "Medium");
 });
+
+// ---------------------------------------------------------------------------
+// scripts/audit-ps-items.mjs — the comparison rules, not the fetching.
+//
+// The audit is only useful if its report is believable, and the first version of
+// this comparison reported 174 differences of which roughly 120 were two encoding
+// artifacts and nothing else. Those two rules are the whole value of the script, so
+// they are pinned here rather than left to be rediscovered.
+// ---------------------------------------------------------------------------
+test("PS item audit: the comparison ignores encoding artifacts, not real differences", async () => {
+  const { numericDiffs, effectText } = await import("../scripts/audit-ps-items.mjs");
+  const ps = (s) => ({ description: s, slots: null });
+  const fields = (ours, live) => numericDiffs(ours, live).map((d) => d.field);
+
+  // --- artifact 1: vanilla stores "no level requirement" as 0, PS prints 1 -----
+  assert.deepEqual(
+    fields({ equip_level: 0 }, ps("Level Requirement:<font> 1</font>")), [],
+    "0 and 1 both mean 'no requirement'");
+  // ...but a real gate must still surface. Sheep Hat (5133) is the live example.
+  assert.deepEqual(
+    fields({ equip_level: 0 }, ps("Level Requirement:<font> 50</font>")), ["equip_level"]);
+
+  // --- artifact 2: weight is stored in TENTHS; PS prints a truncated whole kg --
+  // 1 (0.1 kg) prints as 0, and 44 (4.4 kg) prints as 4. Comparing ps*10 to ours
+  // flagged every item under a kilo.
+  assert.deepEqual(fields({ weight: 1 }, ps("Weight:<font> 0</font>")), []);
+  assert.deepEqual(fields({ weight: 44 }, ps("Weight:<font> 4</font>")), []);
+  assert.deepEqual(fields({ weight: 2500 }, ps("Weight:<font> 250</font>")), []);
+  // A genuine retune still shows: Hunter Bow, 150.0 kg here vs 110 on PS.
+  assert.deepEqual(fields({ weight: 1500 }, ps("Weight:<font> 110</font>")), ["weight_kg"]);
+
+  // --- the real differences this found in the wild -----------------------------
+  // Butcher (13158): two card slots on PS, none here. The damage-relevant one.
+  assert.deepEqual(
+    numericDiffs({ slots: 0 }, { description: "", slots: 2 }),
+    [{ field: "slots", ours: 0, ps: 2 }]);
+  // Wrench (1531) before it was fixed: PS 45, vanilla 55.
+  assert.deepEqual(
+    fields({ equip_level: 55 }, ps("Level Requirement:<font> 45</font>")), ["equip_level"]);
+
+  // --- a field PS does not print is not a difference ---------------------------
+  assert.deepEqual(fields({ atk: 115, def: 3, weight: 2500 }, ps("A heavy tool.")), [],
+    "silence in the description is not a disagreement");
+
+  // --- drift detection compares the EFFECT half, not the stat block ------------
+  // A stat-block-only change must not read as a rework...
+  assert.equal(
+    effectText("Reduces damage from Insect monsters by 10%.<br/>Class: Headgear<br/>Weight: 10"),
+    effectText("Reduces damage from Insect monsters by 10%.<br/>Class: Headgear<br/>Weight: 20"));
+  // ...while a real wording change must. This is the Alligator Card case.
+  assert.notEqual(
+    effectText("Receive 5% less damage from long ranged physical attack.<br/>Class: Card"),
+    effectText("Receive 5% less damage from Long Ranged Physical and Magical Attacks.<br/>Class: Card"));
+});

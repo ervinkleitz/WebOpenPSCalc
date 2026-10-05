@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-05 | PS item API, weekly audit (scripts/audit-ps-items.mjs) | First-party | Standing item-data check |
 | 2026-10-05 | Hercules pc.c SP_ATK1 + status.c SCB_WATK | Source | Dual wield / which hand gets watk |
 | 2026-10-04 | PS item API — full catalogue sweep (2,755 items) | First-party | All equipment/cards verified |
 | 2026-10-04 | PS item API (tools.payonstories.com/api/pc/item) | First-party | Wrench 1531 / reworked item |
@@ -7580,3 +7581,68 @@ A dagger does 75% to a Medium target, and Poring (1002) is Medium, so +20 become
 before mastery and +18 after a Lv5 right-hand factor of 1.20. Against a genuinely Small
 target it would be +24, which is the figure Metan expected. Pinning his exact +22 needs
 his Right Hand Mastery level and the actual monster - not guessed here.
+
+## 2026-10-05 - A standing audit against the live PS item catalogue
+
+The 2026-10-04 sweep established the root cause: `ps_item_db.json` carries **no stats**
+(`atk` is null for all 6,237 entries) and is a point-in-time scrape, so every number we
+serve comes from the vanilla pre-renewal record and a PS rework is invisible until a
+player reports it. Curating items one at a time does not fix that. This does.
+
+`scripts/audit-ps-items.mjs` - `npm run ps:audit-items` - compares every weapon, armour
+and card we serve against the live PS item API and reports only what is NEW since the
+last accepted run. `.github/workflows/ps-item-audit.yml` runs it weekly (Mondays 04:00
+UTC) and fails the job on new findings, with the report uploaded as an artifact. It is
+deliberately separate from deploy.yml: it talks to a third party and must never block a
+push.
+
+### Three rules that make the report believable
+
+**The two encoding artifacts.** A naive comparison reported 174 differences of which
+roughly 120 were these and nothing else:
+- level requirement - vanilla stores "none" as 0, PS prints it as 1;
+- weight - the DB stores TENTHS and PS prints a TRUNCATED whole number, so our 1
+  (0.1 kg) shows as 0 and our 44 (4.4 kg) shows as 4. The test is
+  `ps === floor(ours / 10)`, never `ps * 10 === ours`.
+
+**The drop check aborts rather than passing silently.** An absent id is protected if it
+is hand-curated, already hidden, in a combo, or dropped by a monster. The first version
+of that check called `loader.getMonster()`, which returns combat stats with NO drops -
+it found zero dropped items and duly cleared Doom Slayer (1370), a real drop the
+2026-09-26 sweep had already identified. Drops live in the raw `mob_db.json` keyed by
+AEGIS NAME. The script now refuses to run if the drop set comes back empty, because a
+broken check and a clean database look identical in the output.
+
+**A committed baseline.** `ps_item_audit_baseline.json` holds the differences we have
+looked at and chosen not to act on, so the weekly job stays silent until PS actually
+changes something. Without it every run re-reports the same 548 absent items forever
+and nobody reads it.
+
+### What the first full run found
+
+2,755 items fetched, 0 failures. 66 numeric differences, 26 text drifts, 548 absent
+(12 protected). It found **six gaps the manual sweep a day earlier had missed** -
+a second slots case (Used Book 1578), a fourth DEF gap (Twin Red Ribbon 5187) and three
+more ungated level requirements (Ramen Hat 5293, RJC Flower Hairband 5547, Mercury Riser
+18597).
+
+### Deliberately left un-accepted
+
+A baseline is for differences we have decided not to act on - **not a place to bury real
+bugs**. `--accept` swept everything in, so the eleven genuine gaps were taken back out
+by hand and are listed under `_deliberately_not_accepted` in the baseline. The weekly
+job will keep reporting them until they are fixed:
+
+| id | item | gap |
+|---|---|---|
+| 13158 | Butcher | 2 card slots on PS, 0 here |
+| 1578 | Used Book | 2 card slots on PS, 0 here |
+| 5187 | Twin Red Ribbon | DEF 3 vs 0 |
+| 5294 / 5332 / 5405 | Whisper Mask / Loki Mask / Filir Hat | DEF 1 / 2 / 2 vs 0 |
+| 5133 / 5288 / 5293 / 5547 / 18597 | Sheep Hat / Red Glasses / Ramen Hat / RJC Flower Hairband / Mercury Riser | level 50 / 10 / 30 / 71 / 70, ungated here |
+
+Accepted and therefore quiet: the 60 weight differences (weight reaches damage only
+through Shield Boomerang, and several are PS display quirks - Pole Axe prints 0 for a
+48 kg weapon), the 26 text drifts (the five that mattered were fixed on 2026-10-04), and
+the 548 absent items (a sized backlog awaiting a decision, where a NEW one appearing is
+the thing worth hearing about).
