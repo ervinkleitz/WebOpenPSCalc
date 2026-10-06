@@ -90,7 +90,42 @@ function decodePsToolsSkillUrl(input) {
   if (!json || typeof json !== "object" || typeof json.job !== "string" || typeof json.levels !== "object") {
     throw new Error("That link does not carry a skill build.");
   }
-  return { job: json.job, levels: json.levels || {} };
+  return { job: json.job, levels: normaliseLevels(json.levels) };
+}
+
+/**
+ * PS's planner emits `levels` in MORE THAN ONE SHAPE, and the difference is invisible
+ * until you count what came through.
+ *
+ *   object  { "AL_DEMONBANE": 5, "AL_HEAL": 10, ... }
+ *   array   [ { "AL_DEMONBANE": 5 }, { "AL_HEAL": 10 }, ... ]
+ *
+ * Both are `typeof === "object"`, so the guard above passes either way. But
+ * Object.entries() on the array form yields ["0", {AL_DEMONBANE: 5}] — the key is the
+ * index and the value is an object — so every level reads as NaN, every skill is
+ * skipped as unallocated, and the import reports "none of these affect damage here"
+ * while quietly holding a full tree.
+ *
+ * Reported by the maintainer 2026-10-05: three links from the same planner session,
+ * two in the object form (which worked) and one in the array form (which silently
+ * imported nothing). Flattening here means the rest of the importer only ever sees a
+ * plain map.
+ */
+function normaliseLevels(levels) {
+  if (!levels || typeof levels !== "object") return {};
+  if (!Array.isArray(levels)) return levels;
+  const out = {};
+  for (const item of levels) {
+    if (!item || typeof item !== "object") continue;
+    for (const [constant, level] of Object.entries(item)) {
+      // A list of {name, level} pairs would be a third shape; it is not one PS has
+      // been seen to emit, and guessing at it would risk inventing skills. Only the
+      // {CONSTANT: level} form is accepted, and anything else is left out rather
+      // than mis-read.
+      if (typeof constant === "string" && Number.isFinite(Number(level))) out[constant] = Number(level);
+    }
+  }
+  return out;
 }
 
 /**
@@ -274,4 +309,4 @@ function importPsToolsSkills(input, profile = null) {
   };
 }
 
-module.exports = { importPsToolsSkills, decodePsToolsSkillUrl, CONSTANT_ALIASES, SC_SOURCE_SKILL };
+module.exports = { importPsToolsSkills, decodePsToolsSkillUrl, normaliseLevels, CONSTANT_ALIASES, SC_SOURCE_SKILL };

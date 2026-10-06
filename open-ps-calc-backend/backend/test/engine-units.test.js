@@ -6621,3 +6621,54 @@ test("a planner import records the rank each self-buff would run at", () => {
     "importing a tree must not activate any buff");
   assert.equal(b.known_buff_levels.SC_TWOHANDQUICKEN, 3, "but the rank is carried");
 });
+
+// ---------------------------------------------------------------------------
+// PS's planner emits `levels` in more than one shape.
+//
+//   object  { "AL_DEMONBANE": 5, ... }
+//   array   [ { "AL_DEMONBANE": 5 }, ... ]
+//
+// Both are typeof "object", so the decoder's guard passes either way — but
+// Object.entries() on the array yields ["0", {AL_DEMONBANE: 5}], so every level
+// reads as NaN, every skill is skipped as unallocated, and the import reports
+// "none of these affect damage here" while holding a full tree.
+//
+// Reported by the maintainer 2026-10-05 with three links from one planner session:
+// two object-form (which worked) and one array-form (which silently imported
+// nothing). The array link below is that third one, verbatim.
+// ---------------------------------------------------------------------------
+test("a planner link whose levels are an ARRAY imports the same as an object", () => {
+  const zlib4 = require("zlib");
+  const { importPsToolsSkills: imp, decodePsToolsSkillUrl: dec, normaliseLevels } =
+    require("../src/engine/psToolsImport");
+  loader.setProfile(PS);
+  const mk = (payload) =>
+    "https://tools.payonstories.com/skill?state=" + encodeURIComponent(
+      zlib4.deflateSync(Buffer.from(JSON.stringify(payload), "utf8")).toString("base64"));
+
+  // --- the shapes, in isolation ---------------------------------------------
+  assert.deepEqual(normaliseLevels({ AL_DEMONBANE: 5 }), { AL_DEMONBANE: 5 });
+  assert.deepEqual(normaliseLevels([{ AL_DEMONBANE: 5 }, { AL_HEAL: 10 }]),
+    { AL_DEMONBANE: 5, AL_HEAL: 10 });
+  // Several keys in one element, and junk entries, are handled without inventing
+  // skills out of a shape we have not actually seen.
+  assert.deepEqual(normaliseLevels([{ A: 1, B: 2 }, null, 7, { C: "3" }]),
+    { A: 1, B: 2, C: 3 });
+  assert.deepEqual(normaliseLevels(null), {});
+
+  // --- the two shapes must import identically -------------------------------
+  const asObject = { job: "Priest", levels: { AL_DEMONBANE: 5, PR_MACEMASTERY: 10, AL_DP: 5 } };
+  const asArray = { job: "Priest", levels: [{ AL_DEMONBANE: 5 }, { PR_MACEMASTERY: 10 }, { AL_DP: 5 }] };
+  const a = imp(mk(asObject), PS);
+  const b = imp(mk(asArray), PS);
+  assert.deepEqual(b.mastery_levels, a.mastery_levels,
+    "the array form must produce the same build as the object form");
+  assert.equal(b.mastery_levels.AL_DEMONBANE, 5);
+  assert.ok(b.applied.length > 0, "the array form must not import an empty tree");
+
+  // The empty-tree case must still report empty rather than being papered over.
+  const empty = imp(mk({ job: "Priest", levels: [] }), PS);
+  assert.equal(empty.applied.length, 0);
+  assert.equal(empty.link_summary.allocated, 0,
+    "an genuinely empty link should still say so");
+});
