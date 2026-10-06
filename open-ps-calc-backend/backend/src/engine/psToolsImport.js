@@ -243,6 +243,34 @@ function importPsToolsSkills(input, profile = null) {
     not_modelled: notModelled,
     // Everything their planner hands out that this class cannot learn.
     off_tree_count: offTree,
+    // What was in the link at all, for when nothing lands. "None of the skills in
+    // that link affect damage here" is true but useless on its own: it cannot tell
+    // an empty tree from a job mismatch from a skill we failed to map. Reported by
+    // the maintainer 2026-10-05 after an import of a Priest tree with Demon Bane in
+    // it came back with nothing applied.
+    link_summary: {
+      // Skills with at least one point, before any of our filtering.
+      allocated: Object.values(levels).filter((v) => Number(v) > 0).length,
+      // Their constants, so a mismatch against ours is visible at a glance.
+      sample: Object.entries(levels)
+        .filter(([, v]) => Number(v) > 0)
+        .slice(0, 12)
+        .map(([k, v]) => `${k} Lv${v}`),
+    },
+    // What was in the link at all, for when nothing lands. "None of the skills in
+    // that link affect damage here" is true but useless on its own: it cannot tell
+    // an empty tree from a job mismatch from a skill we failed to map. Reported by
+    // the maintainer 2026-10-05 after an import of a Priest tree with Demon Bane in
+    // it came back with nothing applied.
+    link_summary: {
+      // Skills with at least one point, before any of our filtering.
+      allocated: Object.values(levels).filter((v) => Number(v) > 0).length,
+      // Their constants, so a mismatch against ours is visible at a glance.
+      sample: Object.entries(levels)
+        .filter(([, v]) => Number(v) > 0)
+        .slice(0, 12)
+        .map(([k, v]) => `${k} Lv${v}`),
+    },
   };
 }
 

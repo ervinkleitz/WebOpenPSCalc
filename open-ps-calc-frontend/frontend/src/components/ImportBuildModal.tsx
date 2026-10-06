@@ -23,6 +23,9 @@ type SkillImport = {
   applied: { constant: string; display: string; level: number; requested?: number }[];
   not_modelled: { constant: string; display: string; level: number }[];
   off_tree_count: number;
+  /** What the link carried at all — shown when nothing lands, so a zero-result
+   *  import can be diagnosed from the screen rather than by decoding the URL. */
+  link_summary?: { allocated: number; sample: string[] };
 };
 
 interface Props {
@@ -101,9 +104,23 @@ export default function ImportBuildModal({ open, onClose, server, onImported, on
                   ))}
                 </ul>
               ) : (
-                <p className="error-text">
-                  None of the skills in that link affect damage here, so nothing changed.
-                </p>
+                <>
+                  <p className="error-text">
+                    None of the skills in that link affect damage here, so nothing changed.
+                  </p>
+                  {skills.link_summary && (
+                    <p className="hint-text" style={{ marginTop: "0.4rem", color: "var(--text-faint)" }}>
+                      {skills.link_summary.allocated === 0
+                        ? "The link carries no skill with any points in it — allocate your tree in the planner, then copy the link again."
+                        : <>The link carried <strong>{skills.link_summary.allocated}</strong> skill
+                          {skills.link_summary.allocated === 1 ? "" : "s"} with points:{" "}
+                          {skills.link_summary.sample.join(", ")}
+                          {skills.link_summary.allocated > skills.link_summary.sample.length ? ", …" : ""}.
+                          {" "}If one of those should have come through, send the link along — it means we are
+                          naming that skill differently from the planner.</>}
+                    </p>
+                  )}
+                </>
               )}
               {skills.not_modelled.length > 0 && (
                 <p className="hint-text" style={{ marginTop: "0.6rem", color: "var(--text-faint)" }}>
