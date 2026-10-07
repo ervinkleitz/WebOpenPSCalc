@@ -6381,3 +6381,64 @@ test("'All except Novice' gear excludes the Novice line, including Super Novice"
     "the standard profile keeps the item_db record as shipped");
   loader.setProfile(PS);
 });
+
+// ---------------------------------------------------------------------------
+// A restriction is only as good as the duplicate next to it.
+//
+// The "All except Novice" rule reads PS's own tooltip, so it can only fire on items
+// PS has. Thirteen _C / _I variants shadow an item PS does have, are absent from PS
+// themselves, and therefore stayed unrestricted — so a Super Novice searching
+// "Safety Ring" still found a wearable copy and the reported bug survived the fix.
+//
+// Found by QA rather than reported, which is why it is pinned by name here: the
+// failure mode is a restricted item sitting in the picker beside an identical-looking
+// one that is not restricted.
+// ---------------------------------------------------------------------------
+test("a restricted item has no unrestricted twin left in the picker", () => {
+  loader.setProfile(PS);
+
+  // Every equipment name, with the copies the player would see offered.
+  const visible = {};
+  for (let id = 1; id < 32000; id++) {
+    const it = loader.getItem(id);
+    if (!it || !it.loc || !it.loc.length) continue;
+    if (loader.isItemHidden(id)) continue;          // not offered, so not confusing
+    (visible[it.name] = visible[it.name] || []).push(it);
+  }
+
+  // The rule's output is a 34-long job list: every class we model but the Novice line.
+  const restricted = (it) => (it.job || []).length === 34;
+  const unrestricted = (it) => !Array.isArray(it.job) || it.job.length === 0;
+
+  // An unrestricted twin is only a problem when it is a GHOST — an id PS does not
+  // have, so no tooltip exists to restrict it from. Seven names legitimately carry
+  // both: PS marks those copies "All", "Male Only" or "Female Only", which are real
+  // rules of their own and must not be overwritten with a job restriction.
+  const psdb2 = require("../src/engine/data/ps/ps_item_db.json");
+  const manual2 = require("../src/engine/data/ps/ps_item_manual.json");
+  const overrides2 = require("../src/engine/data/ps/ps_item_overrides.json");
+  const psKnows = (id) => !!(psdb2[String(id)] || manual2[String(id)] || overrides2[String(id)]);
+
+  const offenders = [];
+  for (const [name, list] of Object.entries(visible)) {
+    if (list.length < 2) continue;
+    if (!list.some(restricted)) continue;
+    const ghosts = list.filter((it) => unrestricted(it) && !psKnows(it.id));
+    if (ghosts.length) {
+      offenders.push(`${name} (restricted ${list.filter(restricted).map((i) => i.id).join(",")} `
+        + `vs ghost ${ghosts.map((i) => i.id).join(",")})`);
+    }
+  }
+  assert.deepEqual(offenders, [],
+    "these names offer both a class-restricted copy and an unrestricted one, so the "
+    + "restriction can be sidestepped by picking the other row:\n  " + offenders.join("\n  "));
+
+  // The reported case, by name, so a regression says what broke rather than just a count.
+  assert.equal(loader.isItemHidden(2695), true, "the Safety Ring duplicate (Safety_Ring_C) is hidden");
+  assert.equal(loader.isItemHidden(2615), false, "the real Safety Ring stays in the picker");
+  assert.equal(loader.getItem(2615).job.length, 34, "and keeps its All-except-Novice restriction");
+
+  // The hidden ones are still READABLE — hiding is a picker filter, not a deletion, so
+  // an old share link that equipped one still resolves instead of breaking.
+  assert.ok(loader.getItem(2695), "a hidden item must still load by id for old links");
+});

@@ -16,6 +16,14 @@ instead of release version. Dates are taken from actual git commit history.
   calculator read as no restriction at all. 181 pieces of gear are affected. Reported
   by a player.
 
+- **Thirteen duplicate accessories and hats are gone from the pickers.** Searching for
+  Safety Ring, Rosary, Critical Ring, Elven Ears, Ring, Earring, Necklace, Glove,
+  Brooch, Odin's Blessing, Grand Circlet, Helmet of Orc Hero or Ulle's Cap turned up
+  two entries: the real one and a copy Payon Stories doesn't have. The copies were
+  also the ones that slipped past the class restriction above — a Super Novice
+  searching "Safety Ring" still found a wearable one. Only the real items remain; a
+  build that already had a copy equipped still loads.
+
 - **Changing class no longer leaves stat bonuses from your old one.** A Sage with
   Dragonology who switched to Acolyte kept the +5 INT, even though the passive list
   beside it correctly stopped offering the skill — so the stats on screen disagreed
