@@ -25,3 +25,8 @@ tools/audit/__pycache__/
 # committed on purpose — it is what makes a scheduled run quiet until PS changes.
 open-ps-calc-backend/backend/scripts/.cache-ps-items.json
 open-ps-calc-backend/backend/scripts/ps-item-audit-report.json
+
+# e2e screenshots: the scripts write a .png beside themselves for eyeballing a
+# failure. They are run output, not source, and a 380 KB binary per run has no
+# business in history.
+tools/e2e/*.png
