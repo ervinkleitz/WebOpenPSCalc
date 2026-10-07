@@ -9,11 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
-- **Clan membership has its own section now.** It used to sit at the very bottom of
-  Buffs, below every song and party buff, which both buried it and made it look
-  temporary — a clan is a one-off visit to an NPC in Prontera that grants a permanent
-  +1 to two stats, not something you keep refreshed. It's panel 07 now, between Buffs
-  and Skill, with the same options and the same effect on your stats.
+- **Clan membership has its own section now, up with Pet.** It used to sit at the very
+  bottom of Buffs, below every song and party buff, which both buried it and made it
+  look temporary — a clan is a one-off visit to an NPC in Prontera that grants a
+  permanent +1 to two stats, not something you keep refreshed. It's section 04 now,
+  straight after Pet, with the same options and the same effect on your stats.
 
 ## 2026-10-05
 
