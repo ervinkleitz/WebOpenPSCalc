@@ -3555,31 +3555,38 @@ export default function BuildEditor() {
                       ))}
                     </>
                   )}
-
-                  <div className="buff-section-header">Clan</div>
-                  <div className="passive-grid">
-                    <div className="field">
-                      <label>Clan membership</label>
-                      <select
-                        value={data.clan ?? ""}
-                        onChange={(e) => updateField(["clan"], e.target.value || undefined)}
-                      >
-                        <option value="">None</option>
-                        <option value="sword_clan">Sword Clan (STR+1, VIT+1)</option>
-                        <option value="arch_wand_clan">Arch Wand Clan (INT+1, DEX+1)</option>
-                        <option value="golden_mace_clan">Golden Mace Clan (INT+1, VIT+1)</option>
-                        <option value="crossbow_clan">Crossbow Clan (DEX+1, AGI+1)</option>
-                        <option value="artisan_clan">Artisan Clan (DEX+1, LUK+1)</option>
-                        <option value="vile_wind_clan">Vile Wind Clan (STR+1, AGI+1)</option>
-                      </select>
-                    </div>
-                  </div>
                 </>
               );
             })()}
           </Panel>
 
-          <Panel eyebrow="07" title="Skill">
+          <Panel eyebrow="07" title="Clan">
+            <p className="hint-text" style={{ marginTop: 0 }}>
+              Joining a clan in Prontera grants a permanent +1 to two stats. It costs
+              nothing and never expires, so most characters are in one — it is not a buff
+              you keep up, which is why it has its own section rather than sitting with
+              Impositio and the songs.
+            </p>
+            <div className="passive-grid">
+              <div className="field">
+                <label>Clan membership</label>
+                <select
+                  value={data.clan ?? ""}
+                  onChange={(e) => updateField(["clan"], e.target.value || undefined)}
+                >
+                  <option value="">None</option>
+                  <option value="sword_clan">Sword Clan (STR+1, VIT+1)</option>
+                  <option value="arch_wand_clan">Arch Wand Clan (INT+1, DEX+1)</option>
+                  <option value="golden_mace_clan">Golden Mace Clan (INT+1, VIT+1)</option>
+                  <option value="crossbow_clan">Crossbow Clan (DEX+1, AGI+1)</option>
+                  <option value="artisan_clan">Artisan Clan (DEX+1, LUK+1)</option>
+                  <option value="vile_wind_clan">Vile Wind Clan (STR+1, AGI+1)</option>
+                </select>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel eyebrow="08" title="Skill">
             <div className="selected-pill" style={{ marginBottom: "0.6rem" }}>
               <span>{skill.label}{skill.id !== 0 ? ` Lv.${skill.level}` : ""}</span>
               {skill.id !== 0 && (
@@ -3668,7 +3675,7 @@ export default function BuildEditor() {
             )}
           </Panel>
 
-          <Panel eyebrow="08" title="Target">
+          <Panel eyebrow="09" title="Target">
             <div className="tabs">
               <button className={targetMode === "monster" ? "active" : ""} onClick={() => setTargetMode("monster")}>Monster</button>
               <button className={targetMode === "custom" ? "active" : ""} onClick={() => setTargetMode("custom")}>Custom stats</button>
