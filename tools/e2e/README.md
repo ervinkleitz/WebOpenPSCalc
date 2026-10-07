@@ -39,6 +39,15 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **wildcard-mode-roundtrip.mjs** — which slots are in wildcard mix is the player's
+  choice, so it has to travel with the build. It used to be inferred from
+  wildcard_slots, and the inference cannot represent the ordinary case: switching to a
+  wildcard mix deliberately leaves the real cards equipped so switching back restores
+  them, and a slot with real cards reads as "not in wildcard mode". A build shared or
+  saved mid-experiment came back with the cards — 100 HIT on a Phreeoni Card. Covers
+  the share link, Save/Load and pins, plus a link carrying no wildcard_mode, which must
+  still be inferred so links players already sent keep working.
+
 - **wildcard-stat-readout.mjs** — the stats panel must track the Cards / Wildcard mix
   toggle. A weapon carded with a Mummy Card kept its +20 HIT in the readout after the
   slot was switched to a wildcard mix, because the damage request built its own

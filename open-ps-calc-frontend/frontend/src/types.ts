@@ -40,6 +40,13 @@ export interface BuildData {
   selected_pet?: string;
   clan?: string;
   wildcard_slots?: Record<string, WildcardSlot[]>;
+  /** Which slots the player put in wildcard (custom card mix) mode. Stored, so it
+   *  survives a share link, a save and a pin; absent on builds made before the
+   *  field existed, which fall back to inference (see deriveWildcardMode). */
+  wildcard_mode?: Record<string, boolean>;
+  /** Aggregated wildcard damage bonuses, computed for a request from wildcard_slots
+   *  (see effectiveBuild). Never stored on a build the player saves. */
+  wildcard_bonuses?: Record<string, number>;
 }
 
 export interface ConsumableBuffs {

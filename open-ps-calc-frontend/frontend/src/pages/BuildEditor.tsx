@@ -721,6 +721,7 @@ const Z3_KEYS: string[] = [
   "hypothermia", // targetMods.hypothermia — −10 DEX on the monster (its HIT)
   // Energy Coat (active_buffs): the toggle and which SP bracket you are in
   "SC_ENERGYCOAT", "SC_ENERGYCOAT_sp_pct",
+  "wildcard_mode", // which slots are in wildcard mix (build.wildcard_mode)
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -804,15 +805,30 @@ function decodeState(encoded: string): UrlEditorState | null {
 // the whole app unmounts to a blank page — the Load button looked like it did
 // nothing. Merging over the defaults also back-fills fields added since a build was
 // saved, which a bare ?? cannot do.
-// Which slots are in wildcard (custom card mix) mode is DERIVED state, not stored
-// state: it is read off the build at mount. So every path that swaps the build has
-// to re-derive it, or the previous build's wildcard flags keep applying to the new
-// one and the damage number silently prices cards that are not equipped. Mount did
-// this; loading a saved build and loading a pinned build did not.
+// Which slots are in wildcard (custom card mix) mode. `build.wildcard_mode` stores
+// the player's actual choice, so it travels with a share link, a save and a pin.
+//
+// It did not used to be stored at all — it was inferred from wildcard_slots, and the
+// inference cannot represent the ordinary case: switching a slot to wildcard mix
+// deliberately LEAVES the real cards equipped so that switching back restores them,
+// and a slot with real cards in it reads as "not in wildcard mode". So a build shared
+// or saved mid-experiment came back with the cards instead of the mix — silently, and
+// worth 100 HIT on a Phreeoni Card. Reported by nobody; found QA'ing the 2026-10-06
+// stat-readout fix, which shares the root cause.
+//
+// The inference is kept for builds that predate the field: links players already
+// shared, and saves already in their browsers.
 function deriveWildcardMode(build: Partial<BuildData> | null | undefined): Record<string, boolean> {
-  const slots = build?.wildcard_slots ?? {};
   const equipped = build?.equipped ?? {};
   const init: Record<string, boolean> = {};
+  const stored = build?.wildcard_mode;
+  if (stored && typeof stored === "object") {
+    // Still gated on something being equipped: the mode means nothing on an empty
+    // slot, and the engine ignores cards on one either way.
+    for (const [k, v] of Object.entries(stored)) if (v && equipped[k] != null) init[k] = true;
+    return init;
+  }
+  const slots = build?.wildcard_slots ?? {};
   for (const [k, v] of Object.entries(slots)) {
     if (!Array.isArray(v) || v.length === 0 || equipped[k] == null) continue;
     // Don't default to wildcard mode when the slot actually has real cards
@@ -895,11 +911,13 @@ export default function BuildEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Which equipment slot groups are in wildcard (custom card mix) mode.
-  // Auto-enable only for slots that have both wildcard data AND an item actually equipped there.
-  const [wildcardMode, setWildcardMode] = useState<Record<string, boolean>>(
-    () => deriveWildcardMode(hydrated.build),
-  );
+  // Which equipment slot groups are in wildcard (custom card mix) mode — read off
+  // the build rather than tracked alongside it. Holding it in separate state meant
+  // every path that swapped the build had to remember to re-derive it, and loading a
+  // pinned build and loading a saved build both forgot, so the previous build's
+  // wildcard flags kept pricing cards that were not equipped. Deriving it removes the
+  // chance to forget.
+  const wildcardMode = useMemo(() => deriveWildcardMode(data), [data]);
 
   // One-shot: the slot whose search input should grab focus because the user just
   // clicked Unequip there — so a replacement can be typed immediately. Cleared by
@@ -1227,7 +1245,6 @@ export default function BuildEditor() {
     const snap = pin.snapshot as Partial<{ data: BuildData } & UrlEditorState>;
     const next = hydrateState({ ...snap, build: snap?.data ?? snap?.build });
     setData(next.build);
-    setWildcardMode(deriveWildcardMode(next.build));
     setTemplateHint(null); // it described the template this build just replaced
     setSkill(next.skill);
     setTargetMode(next.targetMode);
@@ -1904,7 +1921,6 @@ export default function BuildEditor() {
   function onLoadSavedState(state: UrlEditorState) {
     const next = hydrateState(state);
     setData(next.build);
-    setWildcardMode(deriveWildcardMode(next.build));
     setTemplateHint(null); // it described the template this build just replaced
     setSkill(next.skill);
     setTargetMode(next.targetMode);
@@ -2827,14 +2843,18 @@ export default function BuildEditor() {
                             <button
                               className={!wildcardMode[slot.key] ? "active" : ""}
                               onClick={() => {
-                                setWildcardMode((prev) => ({ ...prev, [slot.key]: false }));
-                                // Drop the slot's wildcard mix so it isn't persisted and
-                                // wrongly re-selected as wildcard mode on the next load.
                                 setData((prev) => {
-                                  if (!prev.wildcard_slots?.[slot.key]) return prev;
-                                  const next = { ...prev.wildcard_slots };
-                                  delete next[slot.key];
-                                  return { ...prev, wildcard_slots: next };
+                                  const wildcard_mode = { ...(prev.wildcard_mode || {}) };
+                                  delete wildcard_mode[slot.key];
+                                  const next = { ...prev, wildcard_mode };
+                                  // Drop the slot's wildcard mix too, so an older client
+                                  // reading this build does not infer wildcard mode from it.
+                                  if (prev.wildcard_slots?.[slot.key]) {
+                                    const ws = { ...prev.wildcard_slots };
+                                    delete ws[slot.key];
+                                    next.wildcard_slots = ws;
+                                  }
+                                  return next;
                                 });
                               }}
                             >
@@ -2843,17 +2863,22 @@ export default function BuildEditor() {
                             <button
                               className={wildcardMode[slot.key] ? "active" : ""}
                               onClick={() => {
-                                setWildcardMode((prev) => ({ ...prev, [slot.key]: true }));
-                                if (!data.wildcard_slots?.[slot.key]?.length) {
-                                  const defaults = Array.from({ length: cardSlotCount }, () => ({
-                                    type: "race" as const,
-                                    bonus: 20,
-                                  }));
-                                  setData((prev) => ({
+                                setData((prev) => {
+                                  const next = {
                                     ...prev,
-                                    wildcard_slots: { ...(prev.wildcard_slots || {}), [slot.key]: defaults },
-                                  }));
-                                }
+                                    wildcard_mode: { ...(prev.wildcard_mode || {}), [slot.key]: true },
+                                  };
+                                  if (!prev.wildcard_slots?.[slot.key]?.length) {
+                                    next.wildcard_slots = {
+                                      ...(prev.wildcard_slots || {}),
+                                      [slot.key]: Array.from({ length: cardSlotCount }, () => ({
+                                        type: "race" as const,
+                                        bonus: 20,
+                                      })),
+                                    };
+                                  }
+                                  return next;
+                                });
                               }}
                             >
                               Wildcard mix

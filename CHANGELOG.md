@@ -9,6 +9,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **A Wildcard mix now survives a share link, a save and a pin.** If you switched a
+  weapon to a wildcard mix while real cards were still in it, sending the link to
+  someone — or saving the build and loading it back — quietly returned it to the
+  cards. With a Phreeoni Card in the weapon that was a 100 HIT difference between
+  what you saw and what they saw. Which slots are in wildcard mix is now stored with
+  the build; links and saved builds made before this still open the way they did.
+
 - **Switching a weapon to a Wildcard mix now updates the stats beside it.** A weapon
   carded with a Mummy Card kept its +20 HIT in the character stats after the slot was
   switched to a wildcard mix, and the same went for any stat a replaced card granted.

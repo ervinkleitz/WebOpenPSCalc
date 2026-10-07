@@ -206,14 +206,33 @@ test("mount and load hydrate editor state through the same helper", () => {
   assert.ok(/hydrateState\(/.test(pin[1]),
     "handleLoadPin no longer routes through hydrateState");
 
-  // wildcardMode is DERIVED from the build, so every path that swaps the build has
-  // to re-derive it — otherwise the previous build's wildcard flags keep pricing
-  // cards the new build does not have equipped.
+  // Which slots are in wildcard mix is READ OFF the build, not tracked beside it.
+  //
+  // It used to live in its own useState, which every path that swapped the build had
+  // to remember to re-sync; loading a saved build and loading a pinned build both
+  // forgot, and the previous build's wildcard flags kept pricing cards the new build
+  // did not have equipped. This asserted that both paths called setWildcardMode.
+  //
+  // Deriving it removes the chance to forget, so the guarantee is now stronger: there
+  // is no separate state to drift. Assert THAT instead — re-introducing the state is
+  // what would bring the bug back.
   assert.ok(/function deriveWildcardMode\(/.test(src), "deriveWildcardMode() is gone");
-  for (const [name, body] of [["onLoadSavedState", load[1]], ["handleLoadPin", pin[1]]]) {
-    assert.ok(/setWildcardMode\(deriveWildcardMode\(/.test(body),
-      `${name} does not re-derive wildcardMode — stale wildcard slots will price the new build`);
-  }
+  assert.ok(/const wildcardMode = useMemo\(\(\) => deriveWildcardMode\(data\), \[data\]\);/.test(src),
+    "wildcardMode is no longer derived from the build on every render");
+  assert.ok(!/setWildcardMode/.test(src),
+    "wildcardMode is held in separate state again — every build swap must now remember "
+    + "to re-sync it, which is exactly how stale wildcard slots priced a loaded build");
+
+  // ...and the choice itself is STORED, so it survives a share link, a save and a pin.
+  // Inferring it from wildcard_slots cannot represent the ordinary case: switching to
+  // a wildcard mix leaves the real cards equipped so switching back restores them, and
+  // a slot with real cards reads as "not in wildcard mode" — so a build shared or
+  // saved mid-experiment came back with the cards, worth 100 HIT on a Phreeoni Card.
+  assert.ok(/wildcard_mode/.test(src),
+    "build.wildcard_mode is gone — wildcard mix will not survive a share link or a save");
+  const z3 = src.match(/const Z3_KEYS: string\[\] = \[([\s\S]*?)\n\];/);
+  assert.ok(z3 && /"wildcard_mode"/.test(z3[1]),
+    "wildcard_mode is not in Z3_KEYS, so share links cannot carry it");
 });
 
 // ---------------------------------------------------------------------------
