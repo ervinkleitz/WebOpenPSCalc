@@ -1453,6 +1453,18 @@ export default function BuildEditor() {
       JSON.stringify(data.base_stats), data.job_id, data.job_level, data.base_level,
       JSON.stringify(data.bonus_stats), data.selected_pet]);
 
+  // The mastery ranks that belong to the CURRENT job, keyed the way the stat helper
+  // expects. Empty while the passive list is still loading, which is the honest
+  // reading — we do not yet know what this job can have.
+  const jobMasteryLevels = useMemo(() => {
+    const allowed = new Set(passiveSkills.map((p) => p.mastery_key));
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(data.mastery_levels || {})) {
+      if (allowed.has(k)) out[k] = v;
+    }
+    return out;
+  }, [passiveSkills, data.mastery_levels]);
+
   useEffect(() => {
     const base = data.base_stats;
     // Box of Gloom casts Improve Concentration Lv1 (SC_CONCENTRATION), which the
@@ -1474,7 +1486,20 @@ export default function BuildEditor() {
         agi: (base.agi ?? 1) + (jobBonusStats.agi ?? 0) + (equipBonusStats.agi ?? 0) - (equipBonusStats.ic_excluded_agi ?? 0),
         dex: (base.dex ?? 1) + (jobBonusStats.dex ?? 0) + (equipBonusStats.dex ?? 0) - (equipBonusStats.ic_excluded_dex ?? 0),
       },
-      (data.mastery_levels || {}) as Record<string, unknown>,
+      // ONLY the passives this job can actually have.
+      //
+      // mastery_levels is deliberately not pruned when you change class, so that
+      // switching away and back does not wipe the ranks you typed. The stat readout
+      // must still ignore the ones the new class cannot learn, or it keeps adding a
+      // bonus with no visible source: a Sage with Dragonology 10 who becomes an
+      // Acolyte kept +5 INT, while the Passive skills panel beside it — correctly —
+      // no longer listed Dragonology at all.
+      //
+      // The ENGINE already does this (playerStateBuilder calls
+      // filterMasteryLevelsForJob), so before this the displayed stats disagreed with
+      // the damage they were supposedly feeding. passiveSkills is the same per-job
+      // list the panel is built from, which keeps the two in step by construction.
+      jobMasteryLevels,
       data.clan ?? "",
       snNeverDied,
     ));

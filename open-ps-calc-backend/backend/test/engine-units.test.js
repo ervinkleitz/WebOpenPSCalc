@@ -6324,3 +6324,60 @@ test("PS item audit: the comparison ignores encoding artifacts, not real differe
     effectText("Receive 5% less damage from long ranged physical attack.<br/>Class: Card"),
     effectText("Receive 5% less damage from Long Ranged Physical and Magical Attacks.<br/>Class: Card"));
 });
+
+// ---------------------------------------------------------------------------
+// "All except Novice" gear is not wearable by a Novice OR a Super Novice.
+//
+// Hercules' Job field is a bitmask, and the conversion that produced item_db.json
+// collapsed "every job" and "every job but one" alike into an EMPTY array — which
+// every equip gate reads as "no restriction". 785 pieces of equipment carry that
+// empty array, so a Novice could wear a Valkyrie Shield here.
+//
+// Payon Stories keeps the distinction in its own tooltips (542 equipment items say
+// "Jobs: All", 186 say "Jobs: All except Novice") and that text is bundled, so the
+// rule is recovered from data rather than invented.
+//
+// Reported by Beerbelly Slinger via Frennetix, 2026-10-06: Eye of Dullahan and
+// Safety Ring were offered to a Super Novice.
+// ---------------------------------------------------------------------------
+test("'All except Novice' gear excludes the Novice line, including Super Novice", () => {
+  loader.setProfile(PS);
+  // The same test the equip gates use, in both the editor and the /items route.
+  const jobMatch = (job, jobId) => job.includes(jobId) || (jobId === 23 && job.includes(0));
+  const canWear = (itemId, jobId) => {
+    const job = loader.getItem(itemId).job;
+    if (!Array.isArray(job) || job.length === 0) return true; // no restriction
+    return jobMatch(job, jobId);
+  };
+
+  // The two items in the report, plus two more PS marks the same way.
+  for (const [id, name] of [[2614, "Eye of Dullahan"], [2615, "Safety Ring"],
+                            [2626, "Rosary"], [2114, "Stone Buckler"]]) {
+    assert.equal(canWear(id, 0), false, `a Novice must not wear ${name}`);
+    assert.equal(canWear(id, 23), false,
+      `a Super Novice must not wear ${name} — PS never writes "except Super Novice", `
+      + "and job 23 appears in no item job array, so a Super Novice is only ever "
+      + "admitted through the Novice bit");
+    assert.equal(canWear(id, 7), true, `a Knight must still wear ${name}`);
+    assert.equal(canWear(id, 12), true, `an Assassin must still wear ${name}`);
+  }
+
+  // The control that keeps this honest: PS says plain "All" for Balmung, so it must
+  // stay unrestricted. Without this the rule could be "restrict everything" and the
+  // assertions above would still pass.
+  assert.deepEqual(loader.getItem(1161).job, [],
+    "an item PS calls plain 'All' must keep an empty job list");
+  assert.equal(canWear(1161, 0), true, "including for a Novice");
+
+  // An item with its OWN job list is more specific than the blanket rule and must be
+  // left alone — otherwise this would overwrite real restrictions with a weaker one.
+  const explicit = loader.getItem(1522); // Mace: Acolyte/Merchant line
+  assert.ok(Array.isArray(explicit.job) && explicit.job.length > 0);
+  assert.ok(explicit.job.length < 30, "a class-specific item keeps its narrow list");
+
+  // And a vanilla server is untouched — this is a PS tooltip talking, not Hercules.
+  loader.setProfile(getProfile("standard"));
+  assert.deepEqual(loader.getItem(2614).job, [],
+    "the standard profile keeps the item_db record as shipped");
+  loader.setProfile(PS);
+});

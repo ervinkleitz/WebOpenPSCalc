@@ -7,6 +7,22 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-06
 
+### Fixed
+
+- **Gear marked "all jobs except Novice" is no longer offered to Novices or Super
+  Novices.** Items like Eye of Dullahan, Safety Ring and Rosary looked wearable by
+  anyone here, because the job restriction was lost when the item data was converted —
+  "every job" and "every job but one" both ended up as a blank list, which the
+  calculator read as no restriction at all. 181 pieces of gear are affected. Reported
+  by a player.
+
+- **Changing class no longer leaves stat bonuses from your old one.** A Sage with
+  Dragonology who switched to Acolyte kept the +5 INT, even though the passive list
+  beside it correctly stopped offering the skill — so the stats on screen disagreed
+  with the damage underneath, which was already ignoring it. Your typed ranks are
+  still kept when you switch away and back; they're just no longer counted while you
+  are a class that can't learn them. Reported by a player.
+
 ### Changed
 
 - **Clan membership has its own section now, up with Pet.** It used to sit at the very
