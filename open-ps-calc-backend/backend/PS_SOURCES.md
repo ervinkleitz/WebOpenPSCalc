@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-06 | Hercules pc.c pc_isequip (job bitmask) | Source | "All except Novice" excludes Super Novice |
 | 2026-10-05 | PS item API, weekly audit (scripts/audit-ps-items.mjs) | First-party | Standing item-data check |
 | 2026-10-05 | Hercules pc.c SP_ATK1 + status.c SCB_WATK | Source | Dual wield / which hand gets watk |
 | 2026-10-04 | PS item API — full catalogue sweep (2,755 items) | First-party | All equipment/cards verified |
@@ -7646,3 +7647,58 @@ through Shield Boomerang, and several are PS display quirks - Pole Axe prints 0 
 48 kg weapon), the 26 text drifts (the five that mattered were fixed on 2026-10-04), and
 the 548 absent items (a sized backlog awaiting a decision, where a NEW one appearing is
 the thing worth hearing about).
+
+## 2026-10-06 - "All except Novice" really does exclude Super Novice (Hercules source)
+
+The 2026-10-06 equip fix rested on an inference: that a Super Novice is excluded by a
+restriction worded "All except Novice". That was flagged here as the change's one
+unverified assumption, because getting it wrong removes 181 items from a class that
+should have them. The maintainer then pointed out that the item description says
+exactly "Jobs: All Except Novice" - which is the question, not the answer, since the
+phrase names only Novice.
+
+**Hercules settles it.** `pc_isequip` (herc-pc.c:1169-1173):
+
+```c
+uint64 mask_job  = 1ULL << (sd->job & MAPID_BASEMASK);
+uint64 mask_item = item->class_base[((sd->job & JOBL_2_1) != 0) ? 1 : (((sd->job & JOBL_2_2) != 0) ? 2 : 0)];
+
+if ((mask_job & mask_item) == 0) // Not equipable by class. [Skotlex]
+    return 0;
+```
+
+The bit a character is tested with is `1 << (job & MAPID_BASEMASK)` - the **base**
+mapid, with the job-level bits masked off. Super Novice's mapid is MAPID_NOVICE plus a
+JOBL_2 bit, so its base mapid is MAPID_NOVICE and **its bit is the Novice bit**. Two
+other lines in the same file confirm the shape: `pc_jobid2mapid`-based tests identify
+Super Novice through `sd->job & MAPID_UPPERMASK` (pc.c:1962, 6766, 8140), and the
+Play Dead check at pc.c:11417 compares `mapid & (MAPID_BASEMASK | JOBL_2)` against
+MAPID_NOVICE precisely because the base mask alone cannot tell the two apart.
+
+There is **no Super Novice bit** in the item job mask. So an item whose mask clears the
+Novice bit clears it in every tier of `class_base`, and a Super Novice - tested with
+that same bit against `class_base[1]` - fails the check. "All except Novice" excludes
+Super Novice in the server's own code.
+
+This also explains the other half, which the fix had to preserve: an item that INCLUDES
+the Novice bit is wearable by a Super Novice, which is why Novice-line gear works for
+them (121 items, asserted in the tests) and why every equip gate here carries
+`jobId === 23 && job.includes(0)`.
+
+The `/data/items` route already said as much in a comment written before any of this:
+"the vanilla Hercules item DB has no SN bit - the game's equip check uses its BASE class
+mask, which is Novice". That comment also notes PS CUSTOM gear sometimes lists job 23
+explicitly, occasionally without the Novice bit (Guardian's Skull). Those items carry
+their own job list, so the "All except Novice" rule never fires on them - Super Novice
+eligibility is not purely "via Novice" on PS customs, which is worth knowing before
+anyone generalises the rule further.
+
+### Why the rule parses prose
+
+The maintainer asked whether this could come from the PS item DB directly. It does -
+that is exactly what `_psJobsLine` reads - but only as TEXT. Checked on 2026-10-06:
+`api/pc/item` returns name, refine, slots, description, droppingMobs and lastUpdated
+and **no job field**, the item page is JS-rendered with nothing in its HTML, and none
+of the 30 chunks it loads carries a per-item job list. The "Jobs:" line inside the
+description is the only place Payon Stories publishes the restriction, so a regex over
+that line is the best source available rather than a shortcut.
