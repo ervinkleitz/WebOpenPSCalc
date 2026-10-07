@@ -39,6 +39,14 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **wildcard-stat-readout.mjs** — the stats panel must track the Cards / Wildcard mix
+  toggle. A weapon carded with a Mummy Card kept its +20 HIT in the readout after the
+  slot was switched to a wildcard mix, because the damage request built its own
+  card override while the status, the equip-bonus badges and the breakpoints read the
+  un-overridden build. Drives the real toggle both ways and compares the shown HIT
+  against the same /calculate/status the hit chance comes from, so the test states the
+  property (panel agrees with the build it prices) rather than a total.
+
 - **pin-load-visible.mjs** — clicking Load on a pinned build must visibly take you to
   that build. State assertions all passed while this was broken: the build loaded, and
   then `onCalculate` pulled the results panel back into view, so the user was scrolled

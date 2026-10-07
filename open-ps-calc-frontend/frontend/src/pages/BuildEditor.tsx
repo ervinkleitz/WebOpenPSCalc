@@ -981,16 +981,57 @@ export default function BuildEditor() {
     return { ...data, equipped };
   }, [data, invalidSlots]);
 
+  // The build AS SHOWN, with the Cards / Wildcard mix toggle applied.
+  //
+  // Wildcard mode is React state rather than part of `data` (see wildcardMode), so a
+  // build in wildcard mode still carries the real card ids. The damage request built
+  // its own override and stripped them; the status readout, the gear stat bonuses and
+  // the breakpoints all read sanitizedBuild and did not — so a weapon carded with a
+  // Mummy Card kept its +20 HIT in the stat panel after switching to a wildcard mix,
+  // while the hit chance underneath was correctly computed without it. Reported by a
+  // player 2026-10-06.
+  //
+  // One definition, used by every reader, so the panel and the calculation cannot
+  // disagree again.
+  const effectiveBuild = useMemo(() => {
+    const WILDCARD_DEFAULT: WildcardSlot = { type: "race", bonus: 20 };
+    const wildcard_bonuses: Record<string, number> = {};
+    const equipped = { ...sanitizedBuild.equipped };
+    let touched = false;
+    for (const [slotKey, active] of Object.entries(wildcardMode)) {
+      if (!active) continue;
+      const equippedId = equipped[slotKey];
+      if (equippedId == null) continue; // empty slot — nothing to replace
+      touched = true;
+      for (let i = 1; i <= 4; i++) delete equipped[`${slotKey}_card${i}`];
+      const stored = data.wildcard_slots?.[slotKey] || [];
+      // The weapon's REAL slot count. Presence in the cache distinguishes "not loaded
+      // yet" from "loaded and genuinely unslotted" — an unslotted weapon has slots 0,
+      // which is falsy, and falling through to the stored rows would keep applying the
+      // previous weapon's wildcards.
+      const cached = itemCache[equippedId as number];
+      const slotCount = cached ? (cached.slots ?? 0) : stored.length;
+      for (let i = 0; i < slotCount; i++) {
+        const ws = stored[i] ?? WILDCARD_DEFAULT;
+        const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : ws.type === "family" ? "Type_All" : "Ele_All";
+        wildcard_bonuses[key] = (wildcard_bonuses[key] || 0) + ws.bonus;
+        if (ws.type === "size") wildcard_bonuses["_batk"] = (wildcard_bonuses["_batk"] || 0) + 5;
+      }
+    }
+    if (!touched) return sanitizedBuild;
+    return { ...sanitizedBuild, equipped, wildcard_bonuses };
+  }, [sanitizedBuild, wildcardMode, data.wildcard_slots, itemCache]);
+
   // Payload for the on-demand Breakpoints readout: current build + selected skill
   // (for cast breakpoints) + target (for hit breakpoints).
   const breakpointPayload = useMemo(() => ({
-    build: sanitizedBuild,
+    build: effectiveBuild,
     skill: { id: skill.id, level: skill.level },
     target: targetMode === "monster" ? { mob_id: data.target_mob_id } : customTarget,
     // The HIT rows are quoted against the target's flee, so they need the same monster
     // the damage panel is hitting — Quagmired, blinded, or under its own self-buffs.
     target_mods: targetMods,
-  }), [sanitizedBuild, skill.id, skill.level, targetMode, data.target_mob_id, customTarget, targetMods]);
+  }), [effectiveBuild, skill.id, skill.level, targetMode, data.target_mob_id, customTarget, targetMods]);
 
   // Signum Crucis only works on Undead and Demon targets.
   // Rust-Worn Apparatus (81012): "[Base INT >= 70] Freezing Trap applies Slow instead
@@ -1444,12 +1485,13 @@ export default function BuildEditor() {
     const hasEquipped = Object.values(data.equipped).some((v) => v != null);
     if (!hasEquipped) { setEquipBonusStats(zero); return; }
     const timer = setTimeout(() => {
-      api.getGearStatBonuses(sanitizedBuild).then(setEquipBonusStats).catch(() => setEquipBonusStats(zero));
+      api.getGearStatBonuses(effectiveBuild).then(setEquipBonusStats).catch(() => setEquipBonusStats(zero));
     }, 300);
     return () => clearTimeout(timer);
   // JSON.stringify lets us deep-compare the objects that actually drive gear scripts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(sanitizedBuild.equipped), JSON.stringify(data.refine), data.server,
+  }, [JSON.stringify(effectiveBuild.equipped), JSON.stringify(effectiveBuild.wildcard_bonuses),
+      JSON.stringify(data.refine), data.server,
       JSON.stringify(data.base_stats), data.job_id, data.job_level, data.base_level,
       JSON.stringify(data.bonus_stats), data.selected_pet]);
 
@@ -1513,13 +1555,13 @@ export default function BuildEditor() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const timer = setTimeout(() => {
-      api.getCharacterStatus(sanitizedBuild)
+      api.getCharacterStatus(effectiveBuild)
         .then(setCharStatus)
         .catch(() => setCharStatus(null));
     }, 300);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(sanitizedBuild)]);
+  }, [JSON.stringify(effectiveBuild)]);
 
   // What that ASPD number actually buys you, as a hover note on the ASPD stat card.
   // A normal attack lands every attack-delay = 2 × (2000 − ASPD×10) ms, i.e.
@@ -1735,42 +1777,12 @@ export default function BuildEditor() {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
         : customTarget;
-      // Aggregate wildcard slot bonuses and strip real card entries for those slots.
-      // The rendered wildcard rows track the equipped weapon's live card-slot
-      // count (item.slots, from the async itemCache), but the stored
-      // wildcard_slots array lags behind after a weapon switch -- it can be
-      // shorter (extra rows show unsaved ?? defaults) or longer (stale rows from
-      // the previous weapon). Iterate the weapon's actual slot count with the
-      // same fallback default the UI uses (see the wildcard-slots render) so the
-      // pipeline applies exactly what's on screen, not the drifted stored array.
-      const WILDCARD_DEFAULT: WildcardSlot = { type: "race", bonus: 20 };
-      const wildcardBonuses: Record<string, number> = {};
-      const equippedOverride = { ...sanitizedBuild.equipped };
-      for (const [slotKey, active] of Object.entries(wildcardMode)) {
-        if (!active) continue;
-        const equippedId = equippedOverride[slotKey];
-        if (equippedId == null) continue; // slot is empty — skip
-        for (let i = 1; i <= 4; i++) delete equippedOverride[`${slotKey}_card${i}`];
-        const stored = data.wildcard_slots?.[slotKey] || [];
-        // Weapon's real slot count; fall back to the stored length ONLY while the
-        // item's data hasn't reached the cache yet, so nothing is dropped mid-switch.
-        // This used to be `(cached?.slots ?? 0) || stored.length`, which could not
-        // tell "not loaded yet" from "loaded, and it genuinely has zero slots": an
-        // unslotted weapon has slots === 0, which is falsy, so `||` fell through to
-        // the stale rows from the PREVIOUS weapon and kept applying its wildcards.
-        // Presence in the cache is the real signal, so test that instead.
-        const cached = itemCache[equippedId];
-        const slotCount = cached ? (cached.slots ?? 0) : stored.length;
-        for (let i = 0; i < slotCount; i++) {
-          const ws = stored[i] ?? WILDCARD_DEFAULT;
-          const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : ws.type === "family" ? "Type_All" : "Ele_All";
-          wildcardBonuses[key] = (wildcardBonuses[key] || 0) + ws.bonus;
-          if (ws.type === "size") wildcardBonuses["_batk"] = (wildcardBonuses["_batk"] || 0) + 5;
-        }
-      }
+      // The wildcard override lives in `effectiveBuild`, so the numbers on screen
+      // and the numbers in this request come from one definition. It used to be built
+      // here only, which is exactly how the stat panel drifted from the damage.
       const buildWithFlags = fp
-        ? { ...sanitizedBuild, equipped: equippedOverride, flags: { ...(sanitizedBuild.flags || {}), force_procs: true }, wildcard_bonuses: wildcardBonuses }
-        : { ...sanitizedBuild, equipped: equippedOverride, wildcard_bonuses: wildcardBonuses };
+        ? { ...effectiveBuild, flags: { ...(effectiveBuild.flags || {}), force_procs: true } }
+        : effectiveBuild;
       const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target, target_mods: targetMods };
       const skillPayload  = { build: buildWithFlags, skill: { id: skill.id, level: skill.level }, target,
         target_mods: tuN > 0 ? { ...targetMods, tu_failed_casts: tuN } : targetMods };

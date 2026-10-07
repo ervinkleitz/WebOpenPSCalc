@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Switching a weapon to a Wildcard mix now updates the stats beside it.** A weapon
+  carded with a Mummy Card kept its +20 HIT in the character stats after the slot was
+  switched to a wildcard mix, and the same went for any stat a replaced card granted.
+  The damage and hit chance underneath were always right — it was the readout that
+  still counted cards the build was no longer being priced with. Reported by a player.
+
 - **Gear marked "all jobs except Novice" is no longer offered to Novices or Super
   Novices.** Items like Eye of Dullahan, Safety Ring and Rosary looked wearable by
   anyone here, because the job restriction was lost when the item data was converted —
