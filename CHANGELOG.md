@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-08
+
+### Added
+
+- **You can now start a custom target from a real monster.** A monster’s own stats
+  are the game’s and can’t be edited, so asking “what if this thing had more DEF”
+  meant typing all twelve fields in by hand. Pick the monster, switch to **Custom
+  stats**, and hit **Copy ‹monster›’s stats** — DEF, MDEF, VIT, level, AGI, LUK, size,
+  race, element and boss flag all come across, and you edit from there. It copies the
+  monster’s base stats: debuffs like Quagmire and the monster’s own self-buffs are
+  applied on top of whatever target you set, so folding them in would count them
+  twice.
+
 ## 2026-10-07
 
 ### Fixed

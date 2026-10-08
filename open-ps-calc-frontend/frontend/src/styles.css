@@ -1613,6 +1613,15 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 }
 .cmp-btn-mini:hover:not(:disabled) { border-color: var(--accent-dim); color: var(--text); }
 .cmp-btn-mini:disabled { opacity: 0.5; cursor: not-allowed; }
+/* "Copy <monster>'s stats" above the custom-target fields. A real monster's stats
+   cannot be edited, so this seeds the custom target from one and you change it from
+   there. Sits on its own row above the fields it fills. */
+.custom-target-seed {
+  display: flex; align-items: center; gap: 0.5rem;
+  flex-wrap: wrap; margin-bottom: 0.6rem;
+}
+.custom-target-seed-hint { font-size: 0.7rem; color: var(--text-dim); }
+
 .cmp-btn-pin { color: var(--accent); border-color: var(--accent-dim); }
 .cmp-btn-x { color: var(--crit); }
 .cmp-btn-x:hover { border-color: var(--crit); }

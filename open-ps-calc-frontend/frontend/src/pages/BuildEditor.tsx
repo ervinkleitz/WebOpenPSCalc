@@ -580,6 +580,46 @@ const DEFAULT_CUSTOM_TARGET: CustomTarget = {
   element: 0, element_level: 1, is_boss: false, luk: 0, agi: 0, int_: 0,
 };
 
+/**
+ * A monster's own stats, shaped as a custom target.
+ *
+ * You cannot edit a real monster's stats — they are the game's — so the way to ask
+ * "what if this thing had 50 more DEF" is to start a custom target from it and change
+ * the numbers. This is that starting point.
+ *
+ * It copies the monster's BASE stats on purpose. The engine applies target_mods
+ * (Quagmire, Blind, the monster's own self-buffs) on top of whatever target it is
+ * handed, so copying the buffed figures the Target panel displays would count those
+ * twice. Two field names differ from the endpoint's: `mdef` -> `mdef_`, and the
+ * stat block's `int` -> `int_`.
+ *
+ * `race` needs no translation: /data/mobs normalises vanilla's "DemiHuman" to the
+ * hyphenated "Demi-Human" the race dropdown and every race bonus use
+ * (MOB_RACE_ALIASES in dataLoader) — checked on both profiles.
+ */
+function customTargetFromMob(m: {
+  level?: number; def_?: number; mdef?: number; size?: string; race?: string;
+  element?: number; element_level?: number; is_boss?: boolean;
+  stats?: { vit: number; agi: number; luk: number; int: number };
+} | null): CustomTarget {
+  if (!m) return DEFAULT_CUSTOM_TARGET;
+  const st = m.stats;
+  return {
+    def_: m.def_ ?? DEFAULT_CUSTOM_TARGET.def_,
+    mdef_: m.mdef ?? DEFAULT_CUSTOM_TARGET.mdef_,
+    vit: st?.vit ?? DEFAULT_CUSTOM_TARGET.vit,
+    level: m.level ?? DEFAULT_CUSTOM_TARGET.level,
+    size: m.size ?? DEFAULT_CUSTOM_TARGET.size,
+    race: m.race ?? DEFAULT_CUSTOM_TARGET.race,
+    element: m.element ?? DEFAULT_CUSTOM_TARGET.element,
+    element_level: m.element_level ?? DEFAULT_CUSTOM_TARGET.element_level,
+    is_boss: !!m.is_boss,
+    luk: st?.luk ?? DEFAULT_CUSTOM_TARGET.luk,
+    agi: st?.agi ?? DEFAULT_CUSTOM_TARGET.agi,
+    int_: st?.int ?? DEFAULT_CUSTOM_TARGET.int_,
+  };
+}
+
 // Defensive element each self element-change buff switches the monster to. The backend
 // reads this from the skill DB (targetSelfBuffs.js); mirrored here only so the Target
 // panel's Element chip agrees with the calculation.
@@ -3785,6 +3825,31 @@ export default function BuildEditor() {
 
             {targetMode === "custom" && (
               <>
+                {/* Start from a real monster rather than typing twelve fields in.
+                    The monster stays selected when you switch tabs, so whatever was
+                    picked on the Monster tab is still here to copy. */}
+                <div className="custom-target-seed">
+                  <button
+                    className="cmp-btn-mini"
+                    disabled={!mobInfo}
+                    title={mobInfo
+                      ? `Fill these fields with ${mobInfo.name}'s own stats, then change whatever you like. `
+                        + `Copies its base stats — debuffs and its self-buffs are applied on top of this, `
+                        + `so they are not folded in.`
+                      : "Pick a monster on the Monster tab first, then come back and copy it here"}
+                    onClick={() => {
+                      setCustomTarget(customTargetFromMob(mobInfo));
+                      statsApi.trackFeature("custom_target_copy_mob");
+                    }}
+                  >
+                    {mobInfo ? `Copy ${mobInfo.name}'s stats` : "Copy a monster's stats"}
+                  </button>
+                  <span className="custom-target-seed-hint">
+                    {mobInfo
+                      ? "then edit anything below"
+                      : "select one on the Monster tab first"}
+                  </span>
+                </div>
                 <div className="field-row">
                   <div className="field">
                     <label>DEF</label>

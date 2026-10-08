@@ -39,6 +39,14 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **custom-target-copy-mob.mjs** — copying the selected monster into the custom
+  target must land every field on what the monster actually has, checked against the
+  same /data/mobs the editor reads. Orc Warrior on purpose: its race is “DemiHuman” in
+  the vanilla mob DB and “Demi-Human” in the dropdown and every race bonus, so if the
+  copy ever bypasses the loader’s alias the select lands on a value it has no option
+  for and reads blank. Also prices both ways — a copied target must deal exactly the
+  damage the monster it came from does.
+
 - **mounted-spear-size.mjs** — a spear does 75% to Medium targets on foot and 100% mounted (status.c:1856 copies the Large column over the Medium one). That rule was never implemented, and because the Riding Peco Peco checkbox already drove the ASPD penalty and Spear Mastery’s mounted ATK, ticking it moved numbers and hid the gap. Drives the real checkbox and reads the breakdown: the 75% row is there on foot and gone mounted, the damage rises, and a two-handed sword is unaffected either way.
 
 - **ardent-helm.mjs** — Ardent Helm (8417) is a PS custom the item API has no entry
