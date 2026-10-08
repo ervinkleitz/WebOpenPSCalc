@@ -17,7 +17,7 @@ import { summaryMetrics, type ComparePin } from "../components/CompareView";
 import { BreakpointsView } from "../components/BreakpointsView";
 import starterBuildsJson from "../data/starterBuilds.json";
 import {
-  BuildData, SkillState, CustomTarget, TargetMode, TargetMods,
+  BuildData, SkillState, CustomTarget, TargetMode, TargetMods, ManualEnemyEdits,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
   WildcardSlot,
 } from "../types";
@@ -638,7 +638,27 @@ const SELF_BUFF_ELEMENTS: Record<string, number> = {
   NPC_CHANGEPOISON: 5, NPC_CHANGEHOLY: 6, NPC_CHANGEDARKNESS: 7, NPC_CHANGETELEKINESIS: 8,
 };
 
+const DEFAULT_MANUAL_ENEMY: ManualEnemyEdits = {
+  agi: 0, vit: 0, int: 0, dex: 0, luk: 0,
+  max_hp: 0, max_hp_pct: 0,
+  def: 0, mdef: 0, hit: 0, flee: 0, atk: 0, matk: 0,
+  res_ele1: { ele: 0, pct: 0 }, res_ele2: { ele: 0, pct: 0 },
+  res_race: 0, res_size: 0, res_long: 0, res_atk: 0, res_matk: 0,
+};
+
+/** Which manual edits are actually set — drives the "N active" badge and the tracking. */
+function activeManualEdits(m: ManualEnemyEdits | undefined): string[] {
+  if (!m) return [];
+  const on: string[] = [];
+  for (const [k, v] of Object.entries(m)) {
+    if (k === "res_ele1" || k === "res_ele2") { if ((v as any)?.pct) on.push(k); continue; }
+    if (v) on.push(k);
+  }
+  return on;
+}
+
 const DEFAULT_TARGET_MODS: TargetMods = {
+  manual: DEFAULT_MANUAL_ENEMY,
   element_status: "",
   element_change: "",
   lex_aeterna: false,
@@ -776,6 +796,10 @@ const Z3_KEYS: string[] = [
   // codes from base_stats — the encoder is keyed by NAME, and sharing one across two
   // different objects is correct.
   "atk_min", "atk_max", "hp",
+  // Manual edits on the enemy (targetMods.manual.*). "agi"/"vit"/"int"/"dex"/"luk"
+  // and "size"/"race"/"element" already have codes and are reused by name.
+  "manual", "max_hp", "max_hp_pct", "def", "mdef", "matk",
+  "res_ele1", "res_ele2", "res_race", "res_size", "res_long", "res_atk", "res_matk", "pct",
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -901,6 +925,7 @@ function hydrateState(state: Partial<UrlEditorState> | null | undefined): UrlEdi
     skill: { ...DEFAULT_SKILL, ...(state?.skill ?? {}) },
     targetMode: state?.targetMode ?? "monster",
     customTarget: { ...DEFAULT_CUSTOM_TARGET, ...(state?.customTarget ?? {}) },
+    // targetMods gains `manual` for builds that predate it.
     targetMods: { ...DEFAULT_TARGET_MODS, ...(state?.targetMods ?? {}) },
   };
 }
@@ -1854,6 +1879,14 @@ export default function BuildEditor() {
       const buildWithFlags = fp
         ? { ...effectiveBuild, flags: { ...(effectiveBuild.flags || {}), force_procs: true } }
         : effectiveBuild;
+      // How much the manual-enemy layer is actually used: once per session for the
+      // feature as a whole, and once per session per field, so the dashboard shows
+      // both "did anyone touch it" and "which of the twenty inputs earn their place".
+      // trackFeatureOnce because these fire on every Calculate, not on a click.
+      for (const f of activeManualEdits(targetMods.manual)) {
+        statsApi.trackFeatureOnce("target_manual_edit");
+        statsApi.trackFeatureOnce(`target_manual_edit:${f}`);
+      }
       const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target, target_mods: targetMods };
       const skillPayload  = { build: buildWithFlags, skill: { id: skill.id, level: skill.level }, target,
         target_mods: tuN > 0 ? { ...targetMods, tu_failed_casts: tuN } : targetMods };
@@ -4264,6 +4297,105 @@ export default function BuildEditor() {
                 ))}
               </div>
             )}
+
+            {/* Manual edits on the enemy. Everything above models a real skill; this is
+                the "what if" layer, and it works on a real monster as much as a custom
+                one — which is the point, since a monster's own stats cannot be edited. */}
+            {(() => {
+              const me = targetMods.manual ?? DEFAULT_MANUAL_ENEMY;
+              const activeEdits = activeManualEdits(me);
+              const setMe = (patch: Partial<ManualEnemyEdits>) => setTargetMods((m) => ({
+                ...m, manual: { ...(m.manual ?? DEFAULT_MANUAL_ENEMY), ...patch },
+              }));
+              const numField = (label: string, key: keyof ManualEnemyEdits, title: string, suffix?: string) => (
+                <div className="field">
+                  <label title={title}>{suffix ? `${label} ${suffix}` : label}</label>
+                  <input
+                    className="mono" type="number" value={(me[key] as number) ?? 0}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setMe({ [key]: Number(e.target.value) } as Partial<ManualEnemyEdits>)}
+                  />
+                </div>
+              );
+              const resEle = (slot: "res_ele1" | "res_ele2") => (
+                <div className="field">
+                  <label title="Percent of YOUR damage of that element the enemy shrugs off — the enemy-side mirror of a resist card.">% vs element</label>
+                  <div className="manual-enemy-res-row">
+                    <input
+                      className="mono" type="number" style={{ width: "4.2rem" }} value={me[slot]?.pct ?? 0}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setMe({ [slot]: { ele: me[slot]?.ele ?? 0, pct: Number(e.target.value) } } as Partial<ManualEnemyEdits>)}
+                    />
+                    <select
+                      value={me[slot]?.ele ?? 0}
+                      onChange={(e) => setMe({ [slot]: { ele: Number(e.target.value), pct: me[slot]?.pct ?? 0 } } as Partial<ManualEnemyEdits>)}
+                    >
+                      {ELEMENT_NAMES.map((n, i) => <option key={i} value={i}>{n}</option>)}
+                    </select>
+                  </div>
+                </div>
+              );
+              return (
+                <>
+                  <div className="manual-enemy-head">
+                    <span className="manual-enemy-title">Manual edits on the enemy</span>
+                    {activeEdits.length > 0 && (
+                      <span className="manual-enemy-count">{activeEdits.length} active</span>
+                    )}
+                    {activeEdits.length > 0 && (
+                      <button
+                        className="cmp-btn-mini"
+                        onClick={() => { setMe(DEFAULT_MANUAL_ENEMY); statsApi.trackFeature("target_manual_edit_reset"); }}
+                      >Reset</button>
+                    )}
+                  </div>
+                  <div className="manual-enemy-sub">
+                    Straight adjustments on top of whatever target is selected, monster or custom.
+                    They stack with the debuffs above.
+                  </div>
+
+                  <div className="manual-enemy-group">Its stats</div>
+                  <div className="field-row">
+                    {numField("AGI", "agi", "Its AGI feeds its FLEE — how hard it is for you to hit.")}
+                    {numField("VIT", "vit", "Its VIT is its soft DEF.")}
+                    {numField("INT", "int", "Its INT is its soft MDEF, and its MATK when it casts at you.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("DEX", "dex", "Its DEX is its HIT (level + DEX) — how often it lands on you.")}
+                    {numField("LUK", "luk", "Its LUK.")}
+                    {numField("DEF", "def", "Hard DEF, the percentage cut applied before soft DEF subtracts.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("MDEF", "mdef", "Hard MDEF.")}
+                    {numField("FLEE", "flee", "Flat FLEE on top of what its AGI gives — your hit chance is 80 + your HIT − its FLEE.")}
+                    {numField("HIT", "hit", "Flat HIT on top of level + DEX — how often it lands on you.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("Max HP", "max_hp", "Flat Max HP, for time-to-kill and Poison damage-over-time.")}
+                    {numField("Max HP", "max_hp_pct", "Percent of Max HP, applied after the flat edit above.", "%")}
+                    {numField("ATK", "atk", "Flat ATK, shifting both ends of its attack range — how hard it hits you.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("MATK", "matk", "Flat MATK on top of what its INT gives — how hard its spells hit you.")}
+                  </div>
+
+                  <div className="manual-enemy-group">Its damage reductions</div>
+                  <div className="field-row">
+                    {resEle("res_ele1")}
+                    {resEle("res_ele2")}
+                  </div>
+                  <div className="field-row">
+                    {numField("Racial", "res_race", "Percent it resists YOUR race (Demi-Human).", "%")}
+                    {numField("Size", "res_size", "Percent it resists YOUR size (Medium).", "%")}
+                    {numField("Long-range", "res_long", "Percent it resists ranged attacks.", "%")}
+                  </div>
+                  <div className="field-row">
+                    {numField("All physical", "res_atk", "Percent it resists ATK-based damage, at any range.", "%")}
+                    {numField("All magic", "res_matk", "Percent it resists MATK-based damage.", "%")}
+                  </div>
+                </>
+              );
+            })()}
           </Panel>
 
       </div>

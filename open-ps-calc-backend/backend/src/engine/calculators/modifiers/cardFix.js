@@ -63,7 +63,11 @@ function calculateCardFix(build, gearBonuses, atkElement, target, isRanged, pmf,
     if (bonus) pmf = scaleFloor(pmf, 100 + bonus, 100);
   }
 
-  if (target.is_pc) {
+  // Defender-side reductions. Hercules has none for a monster (tsd is NULL), which is
+  // why this is gated — but `manual_reductions` is the player explicitly asking "what
+  // if this thing resisted me", a deliberate hypothetical rather than a claim about
+  // monsters. Nothing sets it unless an enemy resistance was typed in.
+  if (target.is_pc || target.manual_reductions) {
     const tEle = (target.sub_ele[atkEleKey] || 0) + (target.sub_ele.Ele_All || 0);
     const tSize = target.sub_size.Size_Medium || 0;
     const tRace = target.sub_race.RC_DemiHuman || 0;
@@ -125,7 +129,7 @@ function calculateCardFixMagic(target, magicEleName, pmf, result, gearBonuses = 
   }
 
   let [mn, mx, av] = pmfStats(pmf);
-  if (!target.is_pc) {
+  if (!target.is_pc && !target.manual_reductions) {
     const multiplier = avIn ? av / avIn : 1.0;
     result.add_step({ name: "Card Fix (Magic)", value: av, min_value: mn, max_value: mx, multiplier, note: (raceBonus || bossBonus || eleBonus) ? `MagicRace ${raceRc}+${raceBonus}%  MagicEle ${targetEleKey}+${eleBonus}%` : "no magic card bonuses", formula: "dmg × race/boss/ele factors", hercules_ref: "battle.c:1072-1085" });
     return pmf;

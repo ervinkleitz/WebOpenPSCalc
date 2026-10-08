@@ -124,6 +124,144 @@ function applyBreakingCloak(br: any, isAutoAttack: boolean, isSonicBlow: boolean
  * Everything here touches only the target — the player-side skill_params that the same
  * target_mods can set (Performing, Zeny Pincher, ...) stay in the /calculate handler.
  */
+/**
+ * Manual edits on the enemy (`target_mods.manual`).
+ *
+ * The named debuffs above model real skills. This is the other thing people need: a
+ * "what if this thing had 50 more DEF / resisted Fire / hit twice as hard" knob that
+ * works on ANY target, a real monster included, without having to rebuild it as a
+ * custom one. Everything defaults to 0, so a build that sets none of it is byte-for-
+ * byte unchanged.
+ *
+ * The edits are deltas, applied after the real debuffs, so Quagmire and a manual
+ * -10 AGI stack rather than one overwriting the other.
+ */
+type ManualEnemyEdits = {
+  agi?: number; vit?: number; int?: number; dex?: number; luk?: number;
+  max_hp?: number; max_hp_pct?: number;
+  def?: number; mdef?: number; hit?: number; flee?: number; atk?: number; matk?: number;
+  res_ele1?: { ele?: number; pct?: number }; res_ele2?: { ele?: number; pct?: number };
+  res_race?: number; res_size?: number; res_long?: number; res_atk?: number; res_matk?: number;
+};
+
+const ELE_KEYS = [
+  "Ele_Neutral", "Ele_Water", "Ele_Earth", "Ele_Fire",
+  "Ele_Wind", "Ele_Poison", "Ele_Holy", "Ele_Dark", "Ele_Ghost", "Ele_Undead",
+];
+
+const num = (v: any) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
+/** True when any edit is actually set — used to keep the no-edit path untouched. */
+function hasManualEdits(m: ManualEnemyEdits | null | undefined): boolean {
+  if (!m || typeof m !== "object") return false;
+  for (const [k, v] of Object.entries(m)) {
+    if (k === "res_ele1" || k === "res_ele2") { if (num((v as any)?.pct)) return true; continue; }
+    if (num(v)) return true;
+  }
+  return false;
+}
+
+/**
+ * The DEFENCE side: what the enemy is like to hit. Applied to the resolved outgoing
+ * target, so it works identically for a real monster and a custom one.
+ */
+function applyManualEditsOutgoing(target: any, m: ManualEnemyEdits) {
+  // Stats. VIT is the target's soft DEF and INT its soft MDEF (defenseFix), AGI feeds
+  // its FLEE, so these reach the damage through the same paths the real debuffs use.
+  target.agi = Math.max(0, num(target.agi) + num(m.agi));
+  target.vit = Math.max(0, num(target.vit) + num(m.vit));
+  target.int_ = Math.max(0, num(target.int_) + num(m.int));
+  target.dex = Math.max(0, num(target.dex) + num(m.dex));
+  target.luk = Math.max(0, num(target.luk) + num(m.luk));
+
+  target.def_ = Math.max(0, num(target.def_) + num(m.def));
+  target.mdef_ = Math.max(0, num(target.mdef_) + num(m.mdef));
+  if (num(m.flee)) target.flee = Math.max(0, num(target.flee) + num(m.flee));
+
+  // Max HP: the flat delta first, then the percentage, so "+1000 and +50%" reads the
+  // way it is written rather than depending on evaluation order.
+  const baseHp = num((target as any).max_hp);
+  if (baseHp > 0 || num(m.max_hp)) {
+    let hp = baseHp + num(m.max_hp);
+    if (num(m.max_hp_pct)) hp = Math.floor(hp * (100 + num(m.max_hp_pct)) / 100);
+    (target as any).max_hp = Math.max(0, hp);
+    if ((target as any).hp != null) (target as any).hp = (target as any).max_hp;
+  }
+
+  // Damage reductions. The target shape already carries these — they are how a PLAYER
+  // defender resists, and cardFix reads them behind an `is_pc` gate because Hercules
+  // has no defender-side reductions for a monster (tsd is NULL). That gate stays; this
+  // sets an explicit opt-in beside it, because "what if this thing resisted Fire" is a
+  // deliberate hypothetical rather than a claim about monsters.
+  //
+  // Race and size resist against the ATTACKER, who is always the player here, so they
+  // land on the Demi-Human / Medium keys cardFix looks up.
+  const red = (e?: { ele?: number; pct?: number }) => {
+    if (!e || !num(e.pct)) return;
+    const key = ELE_KEYS[num(e.ele)] || "Ele_Neutral";
+    target.sub_ele = { ...(target.sub_ele || {}) };
+    target.sub_ele[key] = num(target.sub_ele[key]) + num(e.pct);
+  };
+  red(m.res_ele1);
+  red(m.res_ele2);
+  if (num(m.res_race)) {
+    target.sub_race = { ...(target.sub_race || {}) };
+    target.sub_race.RC_DemiHuman = num(target.sub_race.RC_DemiHuman) + num(m.res_race);
+  }
+  if (num(m.res_size)) {
+    target.sub_size = { ...(target.sub_size || {}) };
+    target.sub_size.Size_Medium = num(target.sub_size.Size_Medium) + num(m.res_size);
+  }
+  if (num(m.res_long)) target.long_attack_def_rate = num(target.long_attack_def_rate) + num(m.res_long);
+  // "% ATK-based damage on any target" is range-agnostic, so it goes on BOTH the near
+  // and long rates — cardFix picks one by range and would otherwise apply it to half
+  // of the attacks it is supposed to cover.
+  if (num(m.res_atk)) {
+    target.near_attack_def_rate = num(target.near_attack_def_rate) + num(m.res_atk);
+    target.long_attack_def_rate = num(target.long_attack_def_rate) + num(m.res_atk);
+  }
+  if (num(m.res_matk)) target.magic_def_rate = num(target.magic_def_rate) + num(m.res_matk);
+
+  const anyReduction = num(m.res_ele1?.pct) || num(m.res_ele2?.pct) || num(m.res_race)
+    || num(m.res_size) || num(m.res_long) || num(m.res_atk) || num(m.res_matk);
+  if (anyReduction) target.manual_reductions = true;
+}
+
+/**
+ * The OFFENCE side: what the enemy does to you. Mirrors the above on the raw monster
+ * record the incoming pipelines read.
+ */
+function applyManualEditsIncoming(mob: any, m: ManualEnemyEdits): any {
+  if (!mob) return mob;
+  const stats = { ...(mob.stats || {}) };
+  stats.agi = Math.max(0, num(stats.agi) + num(m.agi));
+  stats.vit = Math.max(0, num(stats.vit) + num(m.vit));
+  stats.int = Math.max(0, num(stats.int) + num(m.int));
+  stats.dex = Math.max(0, num(stats.dex) + num(m.dex));
+  stats.luk = Math.max(0, num(stats.luk) + num(m.luk));
+
+  const out: any = { ...mob, stats };
+  // Its ATK is a range; a flat edit shifts both ends so the spread is preserved.
+  if (num(m.atk)) {
+    out.atk_min = Math.max(0, num(out.atk_min) + num(m.atk));
+    out.atk_max = Math.max(out.atk_min, num(out.atk_max) + num(m.atk));
+  }
+  if (num(m.def)) out.def_ = Math.max(0, num(out.def_) + num(m.def));
+  if (num(m.mdef)) out.mdef = Math.max(0, num(out.mdef) + num(m.mdef));
+  // Its HIT drives how often it lands on you. DEX already moved it via level + DEX
+  // below, so a manual HIT is an additional flat shift on top.
+  if (num(m.hit)) out.hit = Math.max(0, num(out.hit || ((out.level || 0) + num(stats.dex))) + num(m.hit));
+  // A flat MATK add: the magic pipeline derives MATK from INT, so this is carried as
+  // an explicit floor/offset it adds afterwards.
+  if (num(m.matk)) out.matk_flat = num(out.matk_flat) + num(m.matk);
+  if (num(m.max_hp) || num(m.max_hp_pct)) {
+    let hp = num(out.hp) + num(m.max_hp);
+    if (num(m.max_hp_pct)) hp = Math.floor(hp * (100 + num(m.max_hp_pct)) / 100);
+    out.hp = Math.max(0, hp);
+  }
+  return out;
+}
+
 function applyOutgoingTargetMods(target: any, targetModsInput: any, build: any, profile: any): any {
 
   // The monster's OWN self-buffs, before anything the player does to it: it buffs
@@ -333,6 +471,11 @@ function applyOutgoingTargetMods(target: any, targetModsInput: any, build: any, 
       target.agi = Math.max(0, target.agi - agiCut);
       target.flee = Math.max(0, target.flee - agiCut);
     }
+    // Manual edits last: they are deltas on whatever the real debuffs left behind,
+    // so a Quagmire and a hand-typed -10 AGI stack instead of one clobbering the other.
+    if (hasManualEdits(targetModsInput.manual)) {
+      applyManualEditsOutgoing(target, targetModsInput.manual as ManualEnemyEdits);
+    }
   }
   return target;
 }
@@ -463,6 +606,9 @@ function applyIncomingTargetMods(mob: any, targetModsInput: any): any {
   // reported Quagmire's DEX reduction as unimplemented (2026-09-22). Bosses are
   // immune, as they are for Quagmire on the offensive side and for the Strips.
   mob = applyIncomingDebuffs(mob, targetModsInput);
+  if (mob && hasManualEdits(targetModsInput?.manual)) {
+    mob = applyManualEditsIncoming(mob, targetModsInput.manual as ManualEnemyEdits);
+  }
   if (!mob || !targetModsInput?.offensive_blessing) return mob;
   const undeadOrDemon = mob.element === 9 || mob.race === "Demon" || mob.race === "Undead";
   if (!undeadOrDemon) return mob;
@@ -548,7 +694,13 @@ router.post("/incoming", (req: Request, res: Response) => {
     // Debuff it once, then use that same object for every figure below and hand it
     // back in the response, so the damage, the mob-skill pricing and the client's
     // own derived numbers (its HIT, and therefore your dodge %) all agree.
-    const mob = applyIncomingTargetMods(rawMob, targetModsInput);
+    // Copy before anything writes to it. loader.getMonsterData returns a SHARED cached
+    // record, and the HIT stamp below mutates whatever it is handed — so one request
+    // with no debuffs left `hit` on the cache, and because the stamp is guarded on
+    // `hit == null` every later request kept that value no matter what happened to the
+    // monster's DEX. Found building the manual enemy edits: +50 DEX moved stats.dex and
+    // left HIT where it was, but only on the second call for a given monster.
+    const mob = applyIncomingTargetMods(customTarget ? rawMob : { ...rawMob, stats: { ...(rawMob.stats || {}) } }, targetModsInput);
     // Its effective HIT, computed once here rather than re-derived client-side: Power Up
     // doubles it outright, so `level + DEX` is no longer the whole story.
     if (mob && mob.hit == null) mob.hit = (mob.level || 0) + ((mob.stats || {}).dex || 0);

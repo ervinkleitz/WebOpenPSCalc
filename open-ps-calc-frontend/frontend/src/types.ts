@@ -134,7 +134,31 @@ export interface SearchResult {
 
 export type TargetMode = "monster" | "custom";
 
+/**
+ * Hand-typed adjustments to the enemy, on top of whatever target is selected.
+ *
+ * The rest of TargetMods models real skills. This is the "what if" layer: it works on
+ * a real monster as well as a custom one, which is the point — you cannot edit a
+ * monster's stats, and rebuilding it as a custom target just to add 50 DEF is a lot of
+ * typing. Every field is a delta and defaults to 0, so a build that sets none of them
+ * calculates exactly as before.
+ */
+export interface ManualEnemyEdits {
+  // Stats. VIT is the enemy's soft DEF, INT its soft MDEF, AGI its FLEE, DEX its HIT.
+  agi: number; vit: number; int: number; dex: number; luk: number;
+  // Sub-stats.
+  max_hp: number; max_hp_pct: number;
+  def: number; mdef: number; hit: number; flee: number; atk: number; matk: number;
+  // Damage reductions, in % — these cut what YOU do to it. Two element slots, each
+  // with its own element, mirroring how resist gear is actually stacked.
+  res_ele1: { ele: number; pct: number };
+  res_ele2: { ele: number; pct: number };
+  res_race: number; res_size: number; res_long: number; res_atk: number; res_matk: number;
+}
+
 export interface TargetMods {
+  /** Optional so builds saved before manual edits existed still load. */
+  manual?: ManualEnemyEdits;
   element_status: string;
   element_change: string; // Sage Elemental Change: override target element to Water/Earth/Fire/Wind ("" = off). No effect on MVP/boss.
   lex_aeterna: boolean;

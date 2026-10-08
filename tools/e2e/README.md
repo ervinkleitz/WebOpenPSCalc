@@ -39,6 +39,13 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **manual-enemy-edits.mjs** — the hand-typed enemy adjustments, driven against a REAL
+  monster because that is the case they exist for. Checks a flat DEF edit and a
+  percentage resistance both cut damage, that the resistance cuts it by about half at
+  50%, that the badge counts the active edits, that a share link carries them, and —
+  the one that matters most — that with everything back at 0 the damage is exactly the
+  pre-feature number.
+
 - **custom-target-copy-mob.mjs** — copying the selected monster into the custom
   target must land every field on what the monster actually has, checked against the
   same /data/mobs the editor reads. Orc Warrior on purpose: its race is “DemiHuman” in

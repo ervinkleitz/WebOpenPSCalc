@@ -1637,6 +1637,22 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 .surv-empty-title { font-size: 0.72rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
 .surv-empty-msg { font-size: 0.78rem; color: var(--text-dim); }
 
+/* Manual edits on the enemy — a "what if" layer over whatever target is selected. */
+.manual-enemy-head {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  margin: 1rem 0 0.1rem; padding-top: 0.7rem; border-top: 1px solid var(--border);
+}
+.manual-enemy-title { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+.manual-enemy-count {
+  font-size: 0.66rem; color: var(--accent); background: var(--accent-soft);
+  padding: 0.05rem 0.42rem; border-radius: 999px;
+}
+.manual-enemy-sub { font-size: 0.68rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+.manual-enemy-group { font-size: 0.7rem; font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.04em; margin: 0.6rem 0 0.25rem; }
+.manual-enemy-res-row { display: flex; align-items: flex-end; gap: 0.4rem; }
+.manual-enemy-res-row select { flex: 1 1 auto; min-width: 0; }
+
 .cmp-btn-pin { color: var(--accent); border-color: var(--accent-dim); }
 .cmp-btn-x { color: var(--crit); }
 .cmp-btn-x:hover { border-color: var(--crit); }

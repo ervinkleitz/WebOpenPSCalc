@@ -218,8 +218,11 @@ function calculateIncomingMagicDamage(mobId, build, status, gearBonuses, weapon,
 
   let mobInt = (mob.stats || {}).int || 0;
   if (mobIntBonusRate) mobInt = Math.floor(mobInt * (100 + mobIntBonusRate) / 100);
-  const matkMin = mobInt + Math.floor(mobInt / 7) ** 2;
-  const matkMax = mobInt + Math.floor(mobInt / 5) ** 2;
+  // A monster's MATK is derived from its INT alone, so a hand-typed "+N MATK" on the
+  // enemy has nowhere else to go: it is a flat shift on both ends of that range.
+  const matkFlat = Math.max(0, Number(mob.matk_flat) || 0);
+  const matkMin = mobInt + Math.floor(mobInt / 7) ** 2 + matkFlat;
+  const matkMax = mobInt + Math.floor(mobInt / 5) ** 2 + matkFlat;
 
   let pmf = matkMax > matkMin ? uniformPmf(matkMin, matkMax - 1) : { [matkMin]: 1.0 };
   if (mobMatkBonusRate) pmf = scaleFloor(pmf, 100 + mobMatkBonusRate, 100);
@@ -227,7 +230,7 @@ function calculateIncomingMagicDamage(mobId, build, status, gearBonuses, weapon,
   const [mn0, mx0, av0] = pmfStats(pmf);
   result.add_step({
     name: "Mob Base MATK", value: av0, min_value: mn0, max_value: mx0,
-    note: `${mob.name}: INT ${mobInt} → MATK [${matkMin},${matkMax}]`,
+    note: `${mob.name}: INT ${mobInt} → MATK [${matkMin},${matkMax}]${matkFlat ? ` (includes +${matkFlat} manual)` : ""}`,
     formula: "int+(int/7)² to int+(int/5)²", hercules_ref: "status.c status_calc_matk",
   });
 
