@@ -9,6 +9,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **A custom target can now hit back, so Survivability keeps working on one.** A
+  custom target had no ATK, DEX or HP, so the moment you switched to one the
+  Survivability panel disappeared without a word — which made copying a monster to
+  tweak it feel broken. Copying now brings its ATK, STR, DEX and Max HP across too,
+  and the panel prices the copy exactly like the monster it came from. There are
+  fields for all four if you would rather invent a monster outright, and if you leave
+  ATK at 0 the panel says what is missing instead of quoting zero damage.
+
 - **You can now start a custom target from a real monster.** A monster’s own stats
   are the game’s and can’t be edited, so asking “what if this thing had more DEF”
   meant typing all twelve fields in by hand. Pick the monster, switch to **Custom

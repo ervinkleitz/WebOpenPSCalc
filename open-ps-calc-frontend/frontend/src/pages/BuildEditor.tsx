@@ -578,6 +578,9 @@ const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack", max
 const DEFAULT_CUSTOM_TARGET: CustomTarget = {
   def_: 0, mdef_: 0, vit: 1, level: 1, size: "Medium", race: "Formless",
   element: 0, element_level: 1, is_boss: false, luk: 0, agi: 0, int_: 0,
+  // Offensive side, all zero by default: a target you invented does not hit back
+  // until you say how hard. The Survivability panel says so rather than quoting 0.
+  atk_min: 0, atk_max: 0, str: 0, dex: 0, hp: 0,
 };
 
 /**
@@ -600,7 +603,8 @@ const DEFAULT_CUSTOM_TARGET: CustomTarget = {
 function customTargetFromMob(m: {
   level?: number; def_?: number; mdef?: number; size?: string; race?: string;
   element?: number; element_level?: number; is_boss?: boolean;
-  stats?: { vit: number; agi: number; luk: number; int: number };
+  hp?: number; atk_min?: number; atk_max?: number;
+  stats?: { vit: number; agi: number; luk: number; int: number; str?: number; dex?: number };
 } | null): CustomTarget {
   if (!m) return DEFAULT_CUSTOM_TARGET;
   const st = m.stats;
@@ -617,6 +621,12 @@ function customTargetFromMob(m: {
     luk: st?.luk ?? DEFAULT_CUSTOM_TARGET.luk,
     agi: st?.agi ?? DEFAULT_CUSTOM_TARGET.agi,
     int_: st?.int ?? DEFAULT_CUSTOM_TARGET.int_,
+    // What it does to you, so Survivability keeps working on the copy.
+    atk_min: m.atk_min ?? 0,
+    atk_max: m.atk_max ?? 0,
+    str: st?.str ?? 0,
+    dex: st?.dex ?? 0,
+    hp: m.hp ?? 0,
   };
 }
 
@@ -762,6 +772,10 @@ const Z3_KEYS: string[] = [
   // Energy Coat (active_buffs): the toggle and which SP bracket you are in
   "SC_ENERGYCOAT", "SC_ENERGYCOAT_sp_pct",
   "wildcard_mode", // which slots are in wildcard mix (build.wildcard_mode)
+  // Custom target's offensive side (customTarget.*). "str" and "dex" already have
+  // codes from base_stats — the encoder is keyed by NAME, and sharing one across two
+  // different objects is correct.
+  "atk_min", "atk_max", "hp",
 ];
 const Z3_ENC: Record<string, string> = {};
 const Z3_DEC: Record<string, string> = {};
@@ -1843,21 +1857,34 @@ export default function BuildEditor() {
       const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target, target_mods: targetMods };
       const skillPayload  = { build: buildWithFlags, skill: { id: skill.id, level: skill.level }, target,
         target_mods: tuN > 0 ? { ...targetMods, tu_failed_casts: tuN } : targetMods };
-      // Survivability: how hard the selected monster's weapon attacks hit YOU. Monster
-      // mode only. A monster's BASIC melee attack is Neutral element — NOT its property
+      // Survivability: how hard the target's weapon attacks hit YOU.
+      //
+      // A custom target counts too, as long as it has been given an attack. You cannot
+      // edit a real monster's stats, so "what if this thing hit harder" means copying
+      // it into a custom target — and this panel used to vanish silently the moment you
+      // did, which made the copy feature feel broken. A custom target with no ATK at all
+      // is not priced: it would quote 0 and read like a bug, so the panel says so
+      // instead (see `survivabilityNote`).
+      //
+      // A monster's BASIC melee attack is Neutral element — NOT its property
       // (its "Element" field is defensive only; Hercules keeps attack `rhw.ele` and
       // `def_ele` separate, which is why Raydric/Ghostring tank most monsters). So the
       // basic hit is Neutral (and reduced by Raydric etc.); elemental NPC_*ATTACK skills
       // add their own elements on top. Compute one incoming hit per distinct element.
       // Other cast skills (bolts, AoE, ailments) are listed by name only.
       const mobId = targetMode === "monster" ? data.target_mob_id : null;
+      // A custom target stands in for a monster only once it can actually hit you.
+      const customHits = targetMode === "custom"
+        && ((customTarget.atk_max ?? 0) > 0 || (customTarget.atk_min ?? 0) > 0);
+      const incomingTarget: { mob_id: number } | { custom: unknown } | null =
+        mobId != null ? { mob_id: mobId } : (customHits ? { custom: customTarget } : null);
       const mobSkills = mobInfo?.skills ?? [];
       // Each elemental line IS a monster skill (an NPC_*ATTACK — that is what sets
       // `ele`), so price it as that skill at the level the monster casts it. Pricing
       // them as a plain re-coloured basic attack understated them by the skill's
       // ratio: Stormy Knight's Wind Attribute Attack Lv4 is 400% of its ATK, and the
       // panel showed 100% (reported 2026-09-22). Only the Neutral line is the basic hit.
-      const eleLines: { ele: number; skill?: { id: number; lv: number; d: string } }[] = mobId != null
+      const eleLines: { ele: number; skill?: { id: number; lv: number; d: string } }[] = incomingTarget != null
         ? [{ ele: 0 /* Neutral basic melee */ }]
         : [];
       const seenEle = new Set<number>([0]);
@@ -1876,10 +1903,10 @@ export default function BuildEditor() {
           // A skill we cannot price (no ratio) falls back to the elemental basic hit,
           // so the line still tells you what that element does to you.
           if (line.skill) {
-            const r = await api.calculateIncomingSkill(buildWithFlags, mobId!, line.skill.id, line.skill.lv, targetMods).catch(() => null);
+            const r = await api.calculateIncomingSkill(buildWithFlags, incomingTarget!, line.skill.id, line.skill.lv, targetMods).catch(() => null);
             if (r && r.result) return { ...r, skill_label: line.skill.d, skill_lv: line.skill.lv, estimated: r.skill?.estimated };
           }
-          return api.calculateIncoming(buildWithFlags, mobId!, "physical", { ele_override: line.ele }, targetMods).catch(() => null);
+          return api.calculateIncoming(buildWithFlags, incomingTarget!, "physical", { ele_override: line.ele }, targetMods).catch(() => null);
         }),
       ]);
       const elements = eleLines
@@ -1895,12 +1922,19 @@ export default function BuildEditor() {
         normal_attack: normalRes,
         skill: skillRes,
         selected_skill: { id: skill.id, level: skill.level, label: skill.label },
-        target_hp: targetMode === "monster" ? (mobInfo?.hp ?? null) : null,
+        // A custom target carries its own Max HP now, so time-to-kill works on one.
+        target_hp: targetMode === "monster" ? (mobInfo?.hp ?? null) : ((customTarget.hp ?? 0) || null),
         // Base / job EXP the kill awards, for the EXP-per-hit readout. Straight from
         // the mob DB (`/mobs/:id` already returns them) — monster mode only, since a
         // custom target has no EXP to divide.
         target_exp: targetMode === "monster" ? (mobInfo?.exp ?? null) : null,
         target_job_exp: targetMode === "monster" ? (mobInfo?.jexp ?? null) : null,
+        // Why the Survivability panel is empty, when it is. A custom target with no
+        // ATK would otherwise quote 0 damage, which reads as a bug rather than as
+        // "you have not told me how hard this thing hits".
+        incoming_note: (!elements.length && targetMode === "custom")
+          ? "Give your custom target an ATK (min/max) and this will show how hard it hits you."
+          : null,
         incoming: elements.length ? {
           elements,
           // The mob's other cast skills (non-elemental-attack). Clickable in the UI:
@@ -1908,7 +1942,7 @@ export default function BuildEditor() {
           // Damage-dealing cast skills only (exclude the mob's buffs/summons/heals
           // and its elemental attacks, which are the element lines above).
           kit: mobSkills.filter((s) => s.ele == null && s.id != null && s.dmg).map((s) => ({ id: s.id, d: s.d, lv: s.lv })).slice(0, 16),
-          mob_name: mobInfo?.name ?? null,
+          mob_name: mobId != null ? (mobInfo?.name ?? null) : "your custom target",
           // Take the monster's DEX from what the backend actually used, not from the
           // undebuffed mobInfo: offensive Blessing halves it, and HIT = level + DEX
           // drives the dodge chance shown next to these lines.
@@ -1924,9 +1958,12 @@ export default function BuildEditor() {
         // Poison ailment DoT: the target loses 2%/s of its Max HP on Payon Stories
         // (1%/s vanilla). Surfaced so time-to-kill folds it in. Monster mode only
         // (Max HP known); the DEF cut itself is applied server-side.
-        poison_dot_per_sec: targetMode === "monster" && targetMods.element_status === "Poison" && mobInfo?.hp
-          ? Math.floor(mobInfo.hp * (data.server === "payon_stories" ? 2 : 1) / 100)
-          : null,
+        poison_dot_per_sec: (() => {
+          const hp = targetMode === "monster" ? (mobInfo?.hp ?? 0) : (customTarget.hp ?? 0);
+          return targetMods.element_status === "Poison" && hp
+            ? Math.floor(hp * (data.server === "payon_stories" ? 2 : 1) / 100)
+            : null;
+        })(),
       });
     } catch (e: any) {
       setCalcError(e.message);
@@ -3912,6 +3949,41 @@ export default function BuildEditor() {
                     <select value={customTarget.is_boss ? "yes" : "no"} onChange={(e) => setCustomTarget((t) => ({ ...t, is_boss: e.target.value === "yes" }))}>
                       <option value="no">No</option><option value="yes">Yes</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* What the target does to YOU. Everything above describes how hard it
+                    is to hurt; these are what the Survivability panel prices. A target
+                    you invented does not hit back until you fill ATK in — copying a
+                    monster fills all of this for you. */}
+                <div className="custom-target-offence">
+                  <span className="custom-target-offence-head">What it does to you</span>
+                  <span className="custom-target-offence-hint">
+                    for the Survivability panel — leave ATK at 0 if you only care about your own damage
+                  </span>
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <label title="The low end of its weapon attack. With both ATK fields at 0 the target deals no damage and the Survivability panel says so instead of quoting 0.">ATK min</label>
+                    <input className="mono" type="number" min={0} value={customTarget.atk_min ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, atk_min: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label title="The high end of its weapon attack.">ATK max</label>
+                    <input className="mono" type="number" min={0} value={customTarget.atk_max ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, atk_max: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label title="Its STR adds to the damage it deals: STR + (STR/10)², the same formula monsters use.">STR</label>
+                    <input className="mono" type="number" min={0} value={customTarget.str ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, str: Number(e.target.value) }))} />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <label title="Its DEX is its HIT (level + DEX) — how often it lands on you, and so the Flee you need to dodge it.">DEX</label>
+                    <input className="mono" type="number" min={0} value={customTarget.dex ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, dex: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label title="Its Max HP, for time-to-kill and for Poison damage-over-time (a % of the target's Max HP per second).">Max HP</label>
+                    <input className="mono" type="number" min={0} value={customTarget.hp ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, hp: Number(e.target.value) }))} />
                   </div>
                 </div>
               </>

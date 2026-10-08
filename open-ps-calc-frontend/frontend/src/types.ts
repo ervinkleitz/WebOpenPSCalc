@@ -84,6 +84,16 @@ export interface CustomTarget {
   luk: number;
   agi: number;
   int_: number;
+  /** What the target does to YOU. Without these the Survivability panel has nothing
+   *  to price, which is why it used to disappear the moment you left Monster mode.
+   *  atk_min/atk_max and str are its physical hit, dex its HIT (so your dodge
+   *  chance), hp its effective-HP and Poison damage-over-time. Optional so builds
+   *  saved before they existed still load. */
+  atk_min?: number;
+  atk_max?: number;
+  str?: number;
+  dex?: number;
+  hp?: number;
 }
 
 export interface PassiveSkill {

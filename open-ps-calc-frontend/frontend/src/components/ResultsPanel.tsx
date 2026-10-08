@@ -53,6 +53,15 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
           {calcResult?.incoming && !calculating && !error && (
             <SurvivabilityView incoming={calcResult.incoming} />
           )}
+          {/* No incoming lines, but we know why — say it rather than rendering nothing.
+              A silently missing panel is what made copying a monster into a custom
+              target feel broken. */}
+          {!calcResult?.incoming && calcResult?.incoming_note && !calculating && !error && (
+            <div className="surv-empty">
+              <span className="surv-empty-title">Survivability</span>
+              <span className="surv-empty-msg">{calcResult.incoming_note}</span>
+            </div>
+          )}
           {calcResult && !calculating && !error && (
             <div className="support-card">
               <span className="support-card-emoji">🍵</span>

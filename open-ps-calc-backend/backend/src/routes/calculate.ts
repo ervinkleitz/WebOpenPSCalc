@@ -478,6 +478,48 @@ function applyIncomingTargetMods(mob: any, targetModsInput: any): any {
   };
 }
 
+/**
+ * A custom target, shaped as the monster record the incoming pipelines expect.
+ *
+ * You cannot edit a real monster's stats, so the way to ask "what if this thing hit
+ * harder" is to copy it into a custom target and change the numbers. Before this, a
+ * custom target had no ATK, STR, DEX or HP at all and the Survivability panel simply
+ * vanished the moment you switched to one — silently, which is the worse half.
+ *
+ * Only the fields the two pipelines actually read are filled: atk_min/atk_max and
+ * stats.str drive its physical hit, stats.int its MATK, stats.dex its HIT (and so
+ * your dodge chance), and race/size/element/is_boss feed your resists. `id` is null
+ * on purpose — a custom monster has no mob id, so per-mob card bonuses (bAddClass)
+ * and race2 "Bane" families correctly do not apply; both call sites guard on
+ * `mob_id != null`. `skills` is empty: a made-up monster has no skill list, so the
+ * panel shows its basic attack and nothing else.
+ */
+function mobFromCustomTarget(ct: any) {
+  const num = (v: any, dflt = 0) => (Number.isFinite(Number(v)) ? Number(v) : dflt);
+  const atkMin = Math.max(0, num(ct.atk_min));
+  return {
+    id: null,
+    name: "Custom target",
+    level: Math.max(1, num(ct.level, 1)),
+    hp: Math.max(0, num(ct.hp)),
+    atk_min: atkMin,
+    atk_max: Math.max(atkMin, num(ct.atk_max)),
+    def_: num(ct.def_),
+    mdef: num(ct.mdef_),
+    size: ct.size || "Medium",
+    race: ct.race || "Formless",
+    element: num(ct.element),
+    element_level: Math.max(1, num(ct.element_level, 1)),
+    is_boss: !!ct.is_boss,
+    stats: {
+      str: Math.max(0, num(ct.str)), agi: Math.max(0, num(ct.agi)),
+      vit: Math.max(0, num(ct.vit)), int: Math.max(0, num(ct.int_)),
+      dex: Math.max(0, num(ct.dex)), luk: Math.max(0, num(ct.luk)),
+    },
+    skills: [],
+  };
+}
+
 router.post("/incoming", (req: Request, res: Response) => {
   try {
     const {
@@ -485,7 +527,11 @@ router.post("/incoming", (req: Request, res: Response) => {
       target_mods: targetModsInput,
     } = req.body || {};
     if (!buildData) return res.status(400).json({ error: "build is required" });
-    if (!targetInput || targetInput.mob_id == null) return res.status(400).json({ error: "target.mob_id is required" });
+    // Either a real monster by id, or a custom target standing in for one.
+    const customTarget = targetInput && targetInput.mob_id == null ? targetInput.custom : null;
+    if (!targetInput || (targetInput.mob_id == null && !customTarget)) {
+      return res.status(400).json({ error: "target.mob_id or target.custom is required" });
+    }
 
     const build = buildFromSaveSchema(buildData);
     const profile = getProfile(build.server);
@@ -494,8 +540,10 @@ router.post("/incoming", (req: Request, res: Response) => {
     const config = createBattleConfig();
     const [gearBonuses, effBuild, weapon, status] = resolvePlayerState(build, config, profile);
 
-    const mobId = Number(targetInput.mob_id);
-    const rawMob = loader.getMonsterData(mobId);
+    // null for a custom target: it has no mob id, and every consumer guards on that
+    // (race2 lookup, per-mob card bonuses).
+    const mobId = customTarget ? null : Number(targetInput.mob_id);
+    const rawMob = customTarget ? mobFromCustomTarget(customTarget) : loader.getMonsterData(mobId);
     if (!rawMob) return res.status(404).json({ error: "Monster not found" });
     // Debuff it once, then use that same object for every figure below and hand it
     // back in the response, so the damage, the mob-skill pricing and the client's

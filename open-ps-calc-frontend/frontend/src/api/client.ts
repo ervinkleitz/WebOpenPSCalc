@@ -81,15 +81,18 @@ export const api = {
   // direction "physical" (basic attack) or "magic" (INT-based MATK, for casters).
   // `targetMods` carries the debuffs that change what the MONSTER does (offensive
   // Blessing halves its INT and DEX, so its magic damage drops and you dodge more).
-  calculateIncoming: (build: unknown, mobId: number, direction: "physical" | "magic", opts: Record<string, unknown> = {}, targetMods?: unknown) =>
-    request("/calculate/incoming", { method: "POST", body: { build, target: { mob_id: mobId }, direction, opts, target_mods: targetMods } }) as Promise<{
+  // `target` is either a real monster by id or a custom one standing in for it — the
+  // latter so the Survivability panel keeps working after you copy a monster into the
+  // custom target and start changing its numbers.
+  calculateIncoming: (build: unknown, target: { mob_id: number } | { custom: unknown }, direction: "physical" | "magic", opts: Record<string, unknown> = {}, targetMods?: unknown) =>
+    request("/calculate/incoming", { method: "POST", body: { build, target, direction, opts, target_mods: targetMods } }) as Promise<{
       status: { max_hp: number; flee: number; [k: string]: any };
       mob: any;
       result: { min_damage: number; max_damage: number; avg_damage: number; steps: any[] };
     }>,
   // Damage a specific mob skill would do to the player (survivability "which skill hits me").
-  calculateIncomingSkill: (build: unknown, mobId: number, skillId: number, level: number, targetMods?: unknown) =>
-    request("/calculate/incoming", { method: "POST", body: { build, target: { mob_id: mobId }, mob_skill: { id: skillId, level }, target_mods: targetMods } }) as Promise<{
+  calculateIncomingSkill: (build: unknown, target: { mob_id: number } | { custom: unknown }, skillId: number, level: number, targetMods?: unknown) =>
+    request("/calculate/incoming", { method: "POST", body: { build, target, mob_skill: { id: skillId, level }, target_mods: targetMods } }) as Promise<{
       status: { max_hp: number; [k: string]: any };
       modeled: boolean;
       skill: { name: string; desc: string; attackType: string; elementInt: number; hits: number; ratio: number; hasNumber: boolean; estimated: boolean; damageType: "damage" | "status"; level: number };

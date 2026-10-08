@@ -123,6 +123,59 @@ console.log(`    damage vs the copied custom target: ${custom} | vs the monster 
 check(custom != null && custom === real,
   "a copied target prices identically to the monster it came from");
 
+// --- the copy must keep the Survivability panel working ---------------------
+// A custom target used to carry nothing about what it does to YOU, so switching to
+// one made the whole panel vanish without a word. A copied monster now brings its
+// ATK, STR, DEX and Max HP across, and must hit for exactly what the real one does.
+const survText = () => page.evaluate(() => {
+  const n = document.querySelector(".surv-view, .surv-empty");
+  return n ? n.textContent.replace(/\s+/g, " ").trim().slice(0, 240) : null;
+});
+const incomingAvg = async () => {
+  await page.getByRole("button", { name: "Calculate damage" }).click();
+  await page.waitForTimeout(5200);
+  // The Effective HP chip inside the Survivability panel itself. Matching on text
+  // alone picks up the landing page's feature list, which mentions "Survivability
+  // panel ... effective HP" — that made this check pass against itself.
+  return page.evaluate(() => {
+    const chip = [...document.querySelectorAll(".surv-chip")]
+      .find((e) => /Effective HP/i.test(e.textContent || ""));
+    return chip ? chip.textContent.replace(/\s+/g, " ").trim() : null;
+  });
+};
+
+// Still on Monster mode from the parity check above.
+const realSurv = await incomingAvg();
+await page.getByRole("button", { name: "Custom stats" }).click();
+await page.waitForTimeout(1200);
+await page.getByRole("button", { name: new RegExp(`Copy ${mob.name}'s stats`) }).first().click();
+await page.waitForTimeout(1500);
+check(await fieldVal("ATK min") === String(mob.atk_min), `ATK min copied (${await fieldVal("ATK min")} vs ${mob.atk_min})`);
+check(await fieldVal("ATK max") === String(mob.atk_max), `ATK max copied (${await fieldVal("ATK max")} vs ${mob.atk_max})`);
+check(await fieldVal("DEX") === String(mob.stats.dex), `DEX copied (${await fieldVal("DEX")} vs ${mob.stats.dex})`);
+check(await fieldVal("Max HP") === String(mob.hp), `Max HP copied (${await fieldVal("Max HP")} vs ${mob.hp})`);
+check(await fieldVal("STR") === String(mob.stats.str), `STR copied (${await fieldVal("STR")} vs ${mob.stats.str})`);
+
+const copySurv = await incomingAvg();
+console.log(`    Effective HP vs the real monster : ${realSurv}`);
+console.log(`    ...vs the copied custom target   : ${copySurv}`);
+check(copySurv != null && copySurv === realSurv,
+  "the Survivability panel prices a copied target exactly like the monster it came from");
+
+// --- and a target with no attack explains itself ----------------------------
+// Zeroing ATK must not quote 0 damage; it must say what is missing.
+const atkMin = page.locator(".field", { has: page.locator("label", { hasText: "ATK min" }) }).locator("input");
+const atkMax = page.locator(".field", { has: page.locator("label", { hasText: "ATK max" }) }).locator("input");
+await atkMin.fill("0");
+await atkMax.fill("0");
+await page.waitForTimeout(800);
+await page.getByRole("button", { name: "Calculate damage" }).click();
+await page.waitForTimeout(5200);
+const note = await survText();
+console.log(`    with ATK 0: ${JSON.stringify(note)}`);
+check(note != null && /ATK/i.test(note) && /Survivability/i.test(note),
+  "a custom target with no ATK says why there is nothing to show");
+
 check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
 await page.screenshot({ path: "custom-target-copy-mob.png" });
 console.log(ok ? "\nPASS - a monster's stats can be copied into the custom target." : "\nsee failures above");
