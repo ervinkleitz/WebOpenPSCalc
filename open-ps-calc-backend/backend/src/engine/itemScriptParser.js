@@ -16,6 +16,84 @@ const { BONUS1, BONUS2, BONUS3, BONUS4, ELE_STR_TO_INT, resolveBonusType } = req
 const { createItemEffect, createSCEffect } = require("./models");
 
 // ---------------------------------------------------------------------
+// Job constants and the two derived job variables
+// ---------------------------------------------------------------------
+// Item scripts gate bonuses on the wearer's class: Poring Dagger gives its +8% ASPD
+// only `if(BaseJob==Job_Novice||BaseJob==Job_SuperNovice)`, Thief Figure its +3% only
+// to Thieves, and so on across 51 items.
+//
+// None of those names existed here. `BaseJob` was declared on the context but never
+// populated by anything, `BaseClass` was not declared at all, and no Job_* constant
+// was defined -- so every one of those conditions threw "Unknown variable", which
+// safeEvalInt turns into null, which evalConditionals FAILS OPEN on. The gate became
+// "always true" and the calculator handed class-restricted bonuses to every class.
+// Reported by a player for Poring Dagger, 2026-10-07.
+//
+// Ids are Aegis job ids, the same ones build.job_id carries, cross-checked against
+// pre-re/tables/job_db.json (the table this engine already keys jobs by).
+const JOB_CONSTANTS = {
+  Job_Novice: 0,
+  Job_Swordman: 1, Job_Mage: 2, Job_Archer: 3, Job_Acolyte: 4, Job_Merchant: 5, Job_Thief: 6,
+  Job_Knight: 7, Job_Priest: 8, Job_Wizard: 9, Job_Blacksmith: 10, Job_Hunter: 11,
+  Job_Assassin: 12, Job_Crusader: 14, Job_Monk: 15, Job_Sage: 16, Job_Rogue: 17,
+  Job_Alchemist: 18, Job_Bard: 19, Job_Dancer: 20,
+  Job_SuperNovice: 23, Job_Gunslinger: 24, Job_Ninja: 25,
+  Job_Lord_Knight: 4008, Job_High_Priest: 4009, Job_High_Wizard: 4010, Job_Whitesmith: 4011,
+  Job_Sniper: 4012, Job_Assassin_Cross: 4013, Job_Paladin: 4015, Job_Champion: 4016,
+  Job_Professor: 4017, Job_Stalker: 4018, Job_Creator: 4019, Job_Clown: 4020, Job_Gypsy: 4021,
+  // Referenced by item scripts but NOT selectable in this calculator (it models base
+  // and 2nd classes only -- see the job list in job_db.json). Their real ids are kept
+  // so the comparison is honest rather than rigged; a condition naming them is simply
+  // false for every job a build here can be.
+  Job_Novice_High: 4001, Job_Taekwon: 4046, Job_Soul_Linker: 4049,
+  // Third classes. This is a pre-renewal calculator and has no job id for them at all,
+  // so instead of guessing a renewal id that nothing can be compared against, they get
+  // a value no job id can equal. If third classes are ever added, give them real ids.
+  Job_Guillotine_Cross: -1, Job_Guillotine_Cross_T: -1,
+};
+
+// BaseClass -- the first-tier class, i.e. Hercules `mapid2jobid(job & MAPID_BASEMASK)`
+// (herc-pc.c:8376). Knight and Lord Knight are both Swordman; Super Novice is Novice,
+// because its base mapid IS MAPID_NOVICE (the same fact the "All except Novice" equip
+// rule rests on -- see PS_SOURCES 2026-10-06).
+const BASE_CLASS_OF = {
+  0: 0, 23: 0,
+  1: 1, 7: 1, 14: 1, 4008: 1, 4015: 1,
+  2: 2, 9: 2, 16: 2, 4010: 2, 4017: 2,
+  3: 3, 11: 3, 19: 3, 20: 3, 4012: 3, 4020: 3, 4021: 3,
+  4: 4, 8: 4, 15: 4, 4009: 4, 4016: 4,
+  5: 5, 10: 5, 18: 5, 4011: 5, 4019: 5,
+  6: 6, 12: 6, 17: 6, 4013: 6, 4018: 6,
+  24: 24, 25: 25,
+};
+
+// BaseJob -- the job with the upper/baby bits stripped but the 2nd-class identity kept,
+// i.e. `mapid2jobid(job & MAPID_UPPERMASK)` (herc-pc.c:8374). Lord Knight is Knight.
+// Super Novice stays Super Novice: MAPID_UPPERMASK preserves the JOBL_2 bit that tells
+// it apart from Novice, which is why herc-pc.c compares `job & MAPID_UPPERMASK` against
+// MAPID_SUPER_NOVICE in six places (1962, 6766, 8140, 8897, 9679, 12617). Anything not
+// listed is its own base job.
+const BASE_JOB_OF = {
+  4008: 7, 4009: 8, 4010: 9, 4011: 10, 4012: 11, 4013: 12,
+  4015: 14, 4016: 15, 4017: 16, 4018: 17, 4019: 18, 4020: 19, 4021: 20,
+};
+
+/** The first-tier class for a job id, or null when it is not one we know. */
+function baseClassOf(jobId) {
+  if (jobId == null) return null;
+  const v = BASE_CLASS_OF[jobId];
+  return v === undefined ? null : v;
+}
+
+/** The job id with trans/baby stripped, keeping the 2nd-class identity. */
+function baseJobOf(jobId) {
+  if (jobId == null) return null;
+  if (BASE_JOB_OF[jobId] !== undefined) return BASE_JOB_OF[jobId];
+  // A job we recognise is already its own base job; one we don't, we won't guess at.
+  return BASE_CLASS_OF[jobId] === undefined ? null : jobId;
+}
+
+// ---------------------------------------------------------------------
 // ItemScriptContext factory
 // ---------------------------------------------------------------------
 function createItemScriptContext(overrides = {}) {
@@ -26,7 +104,10 @@ function createItemScriptContext(overrides = {}) {
     job_level: null,
     str_: null, agi: null, vit: null, int_: null, dex: null, luk: null,
     hp: null, sp: null, max_hp: null, max_sp: null,
-    class_: null, base_job: null,
+    class_: null,
+    // Derived from class_ when not given (see the varContext build below). Kept
+    // overridable so a caller with a job the tables don't cover can supply them.
+    base_job: null, base_class: null,
     weapon_level: null,
     // Right-hand weapon_type string ("Rifle", "Revolver", "Grenade", …) for
     // isweapontype(). null = unknown, which makes the predicate false.
@@ -356,7 +437,11 @@ function preprocessScript(script, ctx = null) {
     script = script.replace(/\bgetequipweaponlv\s*\(\s*\w*\s*\)/g, String(ctx.weapon_level));
   }
 
-  const varContext = {};
+  // Job_* are constants, so they are always in scope. Without them a condition like
+  // `Class==Job_Novice` cannot resolve even though Class itself is known, and an
+  // unresolvable condition fails open -- which is how class-gated bonuses were being
+  // handed to every class.
+  const varContext = { ...JOB_CONSTANTS };
   const varFields = [
     ["BaseLevel", ctx.base_level],
     ["JobLevel", ctx.job_level],
@@ -365,7 +450,8 @@ function preprocessScript(script, ctx = null) {
     ["Sp", ctx.sp],
     ["MaxSp", ctx.max_sp],
     ["Class", ctx.class_],
-    ["BaseJob", ctx.base_job],
+    ["BaseJob", ctx.base_job != null ? ctx.base_job : baseJobOf(ctx.class_)],
+    ["BaseClass", ctx.base_class != null ? ctx.base_class : baseClassOf(ctx.class_)],
   ];
   for (const [name, val] of varFields) {
     if (val !== null && val !== undefined) varContext[name] = val;
@@ -517,6 +603,9 @@ function parseScStart(script, ctx = null) {
 }
 
 module.exports = {
+  JOB_CONSTANTS,
+  baseClassOf,
+  baseJobOf,
   createItemScriptContext,
   preprocessScript,
   parseScript,

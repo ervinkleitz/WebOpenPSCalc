@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-07 | Hercules pc.c pc_readparam SP_BASEJOB/SP_BASECLASS + PS item API | Source + First-party | Class-gated item bonuses, and Poring Dagger's Novice/Super Novice gate |
 | 2026-10-06 | Hercules pc.c pc_isequip (job bitmask) | Source | "All except Novice" excludes Super Novice |
 | 2026-10-05 | PS item API, weekly audit (scripts/audit-ps-items.mjs) | First-party | Standing item-data check |
 | 2026-10-05 | Hercules pc.c SP_ATK1 + status.c SCB_WATK | Source | Dual wield / which hand gets watk |
@@ -7702,3 +7703,57 @@ and **no job field**, the item page is JS-rendered with nothing in its HTML, and
 of the 30 chunks it loads carries a per-item job list. The "Jobs:" line inside the
 description is the only place Payon Stories publishes the restriction, so a regex over
 that line is the best source available rather than a shortcut.
+
+## 2026-10-07 - Class-gated item bonuses: what BaseJob and BaseClass mean
+
+A player reported that Poring Dagger's attack speed bonus was not limited to Super
+Novices. It was not limited to anyone: the item script carries the gate
+`if(BaseJob==Job_Novice||BaseJob==Job_SuperNovice)`, but none of those three names
+existed in the script evaluator, so the condition threw, `safeEvalInt` returned null,
+and `evalConditionals` FAILED OPEN and kept the body. 50 of the 51 job-gated items in
+the DB were handing their bonus to every class. Measured live before the fix, a Thief
+holding a Poring Dagger had ASPD 171.5 against 169.0 with a plain Main Gauche.
+
+**What Payon Stories says.** `api/pc/item?id=8165`: "If equipped by Novice or Super
+Novice, increases attack speed slightly." So the gate covers BOTH, and our item data
+already did. PS does NOT publish a number - "slightly" is all it says. The 8% in
+`ps_item_manual.json` is unsourced and predates any note; it is left as-is because
+changing it would be swapping one guess for another, but it is NOT verified. The same
+entry's Jobs line ("Novice, Swordman, Mage, Archer, Merchant, Thief Classes, Soul
+Linker and Ninja" - no Acolyte line) does match our job array.
+
+**What the two job variables mean**, from `pc_readparam` (herc-pc.c:8374-8376):
+
+```c
+case SP_BASEJOB:   val = pc->mapid2jobid(sd->job & MAPID_UPPERMASK, sd->status.sex); break;
+case SP_CLASS:     val = sd->status.class_; break;
+case SP_BASECLASS: val = pc->mapid2jobid(sd->job & MAPID_BASEMASK,  sd->status.sex); break;
+```
+
+- `Class` is the literal job id.
+- `BaseJob` masks with MAPID_UPPERMASK, which strips the trans/baby bits but KEEPS the
+  2nd-class identity: Lord Knight -> Knight, Stalker -> Rogue. Super Novice stays
+  Super Novice, because UPPERMASK preserves the JOBL_2 bit that separates it from
+  Novice - which is why herc-pc.c compares `job & MAPID_UPPERMASK` against
+  MAPID_SUPER_NOVICE in six places (1962, 6766, 8140, 8897, 9679, 12617).
+- `BaseClass` masks with MAPID_BASEMASK, giving the first-tier class: Knight and Lord
+  Knight are both Swordman, and Super Novice is **Novice** - the same fact the
+  "All except Novice" equip rule rests on (see the 2026-10-06 entry).
+
+That Super Novice split is the whole reason this item needs `BaseJob` and not
+`BaseClass`: on BaseClass a Super Novice and a Novice are the same thing, but so is
+nothing else, whereas Byorgue Card's `BaseJob == Job_Rogue` has to reach a Stalker and
+must NOT reach the Thief the Rogue came from.
+
+**Deliberately still fail-open.** Fail-open is right for conditions we genuinely
+cannot model, and it stays: `readparam()` (Golden Tiara gates on base DEX), `gettime`,
+`checkmount`, `getpartnerid` and map-name checks (`PC_MAP == "job3_war02"`). What
+changed is only that a condition about CLASS is now answerable. Third-class constants
+(`Job_Guillotine_Cross`) are defined as a value no job id can equal rather than a
+guessed renewal id, because this calculator has no third classes to compare against;
+give them real ids if that ever changes.
+
+A test asserts that every `Job_*` constant named anywhere in the item DBs is defined,
+and that no job-gated condition is unevaluable. An undefined constant does not read as
+false - it throws, and the gate silently opens for everyone, so it has to fail loudly
+in the suite rather than quietly in the numbers.

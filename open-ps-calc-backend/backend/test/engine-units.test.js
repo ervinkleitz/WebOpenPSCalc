@@ -6442,3 +6442,111 @@ test("a restricted item has no unrestricted twin left in the picker", () => {
   // an old share link that equipped one still resolves instead of breaking.
   assert.ok(loader.getItem(2695), "a hidden item must still load by id for old links");
 });
+
+// ---------------------------------------------------------------------------
+// Class-gated item bonuses must actually be gated
+// ---------------------------------------------------------------------------
+test("job-gated item bonuses apply only to the classes that qualify", () => {
+  // "Poring dagger's aspd bonus is not limited to SN in the calc" -- a player, via
+  // Frennetix, 2026-10-07. Payon Stories' own description: "If equipped by Novice or
+  // Super Novice, increases attack speed slightly."
+  //
+  // The item data had the gate all along. What was missing was every name in it:
+  // `BaseJob` was declared on the script context but never populated, `BaseClass` was
+  // not declared at all, and no Job_* constant existed. Each made the condition throw
+  // "Unknown variable" -> safeEvalInt returns null -> evalConditionals FAILS OPEN and
+  // keeps the body. 50 of the 51 job-gated items in the DB handed their bonus to every
+  // class; measured live, a Thief got Poring Dagger's +8% ASPD (169 -> 171.5).
+  const { parseScript, preprocessScript, createItemScriptContext, safeEvalInt,
+          JOB_CONSTANTS, baseJobOf, baseClassOf } = require("../src/engine/itemScriptParser");
+
+  const ctxFor = (jobId) => createItemScriptContext({ base_level: 99, job_level: 50, class_: jobId });
+  const applies = (script, jobId, marker) =>
+    new RegExp(marker).test(preprocessScript(script, ctxFor(jobId)));
+
+  // The reported item, verbatim from ps_item_manual.json.
+  const PORING_DAGGER = "bonus2 bAddRace,RC_Formless,20; "
+    + "if(BaseJob==Job_Novice||BaseJob==Job_SuperNovice) { bonus bAspdRate,8; }";
+  for (const job of [0, 23]) {
+    assert.ok(applies(PORING_DAGGER, job, "bAspdRate"),
+      `Poring Dagger's ASPD bonus must apply to job ${job} (Novice / Super Novice)`);
+  }
+  for (const job of [6, 7, 12, 9, 4008]) {
+    assert.ok(!applies(PORING_DAGGER, job, "bAspdRate"),
+      `Poring Dagger's ASPD bonus must NOT apply to job ${job}`);
+  }
+  // The unconditional half is untouched by any of this.
+  assert.ok(applies(PORING_DAGGER, 9, "bAddRace"), "the Formless bonus is not gated and applies to all");
+
+  // BaseClass is the first-tier class, so a gate on it covers the whole branch:
+  // Thief Figure reaches Assassin and Rogue, and no further. (herc-pc.c:8376)
+  const THIEF_FIGURE = "bonus bAgi,1; if(BaseClass==Job_Thief) bonus bAspdRate,3;";
+  for (const job of [6, 12, 17]) assert.ok(applies(THIEF_FIGURE, job, "bAspdRate"), `Thief Figure covers job ${job}`);
+  for (const job of [1, 9, 4008]) assert.ok(!applies(THIEF_FIGURE, job, "bAspdRate"), `Thief Figure must skip job ${job}`);
+
+  // BaseJob keeps the 2nd-class identity and strips only trans/baby, so a Rogue gate
+  // reaches Stalker but NOT the Thief the Rogue came from. (herc-pc.c:8374)
+  const BYORGUE = "if (BaseJob == Job_Rogue) { bonus bMatkRate,10; }";
+  assert.ok(applies(BYORGUE, 17, "bMatkRate"), "Byorgue Card applies to a Rogue");
+  assert.ok(applies(BYORGUE, 4018, "bMatkRate"), "Byorgue Card applies to a Stalker (BaseJob is Rogue)");
+  assert.ok(!applies(BYORGUE, 6, "bMatkRate"), "Byorgue Card must not apply to a plain Thief");
+
+  // Super Novice is its own BaseJob but a Novice BaseClass -- the distinction the
+  // Hercules mapid masks draw, and the one this bug turned on.
+  assert.equal(baseJobOf(23), 23, "BaseJob of a Super Novice is Super Novice");
+  assert.equal(baseClassOf(23), 0, "BaseClass of a Super Novice is Novice");
+  assert.equal(baseJobOf(4008), 7, "BaseJob of a Lord Knight is Knight");
+  assert.equal(baseClassOf(4008), 1, "BaseClass of a Lord Knight is Swordman");
+
+  // Every Job_* constant the item DB actually names must be defined. An undefined one
+  // does not read as false -- it throws, and the gate silently opens for everyone, so
+  // a new item referencing a new constant has to fail HERE rather than in the numbers.
+  const dbs = [
+    require("../src/engine/data/pre-re/db/item_db.json").items,
+    (d => d.items || d)(require("../src/engine/data/ps/ps_item_db.json")),
+    (d => d.items || d)(require("../src/engine/data/ps/ps_item_overrides.json")),
+    (d => d.items || d)(require("../src/engine/data/ps/ps_item_manual.json")),
+  ];
+  const referenced = new Set();
+  for (const db of dbs) {
+    for (const it of Object.values(db)) {
+      if (!it || typeof it !== "object") continue;
+      for (const m of String(it.script || "").matchAll(/\bJob_[A-Za-z0-9_]+/g)) referenced.add(m[0]);
+    }
+  }
+  assert.ok(referenced.size >= 20, "expected the item DB to reference a pile of Job_* constants");
+  const undef = [...referenced].filter((k) => !(k in JOB_CONSTANTS)).sort();
+  assert.deepEqual(undef, [], "item scripts name Job_* constants that are not defined, so their "
+    + "gates fail open and apply to every class: " + undef.join(", "));
+
+  // And no job-gated condition may be unevaluable, for the same reason. readparam() is
+  // the one genuinely unsupported call left (Golden Tiara gates on base DEX), so it is
+  // allowed to stay fail-open rather than be faked.
+  const jobVars = { ...JOB_CONSTANTS, BaseLevel: 99, JobLevel: 50,
+                    Class: 9, BaseJob: baseJobOf(9), BaseClass: baseClassOf(9) };
+  const stillOpen = [];
+  for (const db of dbs) {
+    for (const [id, it] of Object.entries(db)) {
+      if (!it || typeof it !== "object") continue;
+      const script = String(it.script || "");
+      if (!/\bif\s*\(/.test(script)) continue;
+      for (const m of script.matchAll(/if\s*\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)/g)) {
+        const cond = m[1];
+        if (!/BaseJob|BaseClass|Job_/.test(cond)) continue;
+        if (/readparam|gettime|checkmount|getpartnerid|strcharinfo/.test(cond)) continue;
+        if (safeEvalInt(cond, jobVars) === null) stillOpen.push(`${id} ${it.name || it.aegis_name}: ${cond}`);
+      }
+    }
+  }
+  assert.deepEqual(stillOpen, [], "these job gates cannot be evaluated, so they apply to every "
+    + "class:\n  " + stillOpen.join("\n  "));
+
+  // parseScript is the path the aggregator uses -- make sure the gate survives the
+  // whole pipeline, not just the preprocessor.
+  const hasAspd = (jobId) => parseScript(PORING_DAGGER, ctxFor(jobId))
+    .some((eff) => eff && eff.bonus_type === "bAspdRate");
+  assert.ok(hasAspd(0), "parseScript gives a Novice the ASPD bonus");
+  assert.ok(hasAspd(23), "parseScript gives a Super Novice the ASPD bonus");
+  assert.ok(!hasAspd(9), "parseScript must NOT give a Wizard the ASPD bonus");
+  assert.ok(!hasAspd(12), "parseScript must NOT give an Assassin the ASPD bonus");
+});

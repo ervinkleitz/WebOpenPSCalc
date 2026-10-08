@@ -5,6 +5,22 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-07
+
+### Fixed
+
+- **Bonuses that only one class should get are no longer given to every class.** Item
+  effects written for a specific class — Poring Dagger’s attack speed for Novices and
+  Super Novices, Thief Figure’s, Wild Rose Card’s and Mobster Card’s for the Thief
+  line, Lude and Quve Cards for Novices, the Taekwon masks, Silver Tiara, Echio,
+  Banshee, Byorgue, Seal, Aliot and about forty more — were being applied no matter
+  what class you picked. The calculator could not read the class condition in the item
+  and, rather than ignore the bonus, it granted it.
+
+  **If your build used one of those items on a class it was not meant for, its numbers
+  will now be lower.** That drop is the correction, not a nerf — those bonuses were
+  never yours in game. Reported by a player for Poring Dagger.
+
 ## 2026-10-06
 
 ### Fixed

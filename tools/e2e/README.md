@@ -39,6 +39,13 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **job-gated-bonuses.mjs** — item effects written for one class must not reach the
+  others. Poring Dagger gives its attack speed only to a Novice or Super Novice, but
+  the evaluator could not resolve `BaseJob`, `BaseClass` or any `Job_*` constant, and
+  an unresolvable condition FAILS OPEN — so 50 of the 51 job-gated items in the DB
+  applied to every class. Reads the ASPD a player sees, Poring Dagger against a plain
+  Main Gauche (same Knife type, so any difference is the item), across six classes.
+
 - **wildcard-mode-roundtrip.mjs** — which slots are in wildcard mix is the player's
   choice, so it has to travel with the build. It used to be inferred from
   wildcard_slots, and the inference cannot represent the ordinary case: switching to a
