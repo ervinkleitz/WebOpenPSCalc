@@ -4362,7 +4362,7 @@ export default function BuildEditor() {
                   </div>
                   <div className="field-row">
                     {numField("DEX", "dex", "Its DEX is its HIT (level + DEX) — how often it lands on you.")}
-                    {numField("LUK", "luk", "Its LUK.")}
+                    {numField("LUK", "luk", "Its LUK raises its Perfect Dodge (how often it shrugs off a hit outright). On Payon Stories that is all it does to you — PS disabled the crit shield, so enemy LUK no longer cuts your critical rate the way it does on vanilla.")}
                     {numField("DEF", "def", "Hard DEF, the percentage cut applied before soft DEF subtracts.")}
                   </div>
                   <div className="field-row">

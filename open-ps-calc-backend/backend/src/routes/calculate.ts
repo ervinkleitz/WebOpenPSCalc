@@ -168,7 +168,15 @@ function hasManualEdits(m: ManualEnemyEdits | null | undefined): boolean {
 function applyManualEditsOutgoing(target: any, m: ManualEnemyEdits) {
   // Stats. VIT is the target's soft DEF and INT its soft MDEF (defenseFix), AGI feeds
   // its FLEE, so these reach the damage through the same paths the real debuffs use.
-  target.agi = Math.max(0, num(target.agi) + num(m.agi));
+  // AGI and FLEE have to move together. A monster's flee is baked in as `level + agi`
+  // when the target is built, so changing agi alone does nothing to how hard it is to
+  // hit -- which is the entire reason someone types a number into the AGI box. Both
+  // Quagmire and Decrease AGI shift flee alongside for exactly this reason (1 AGI is
+  // 1 flee pre-renewal); so does this. Found in QA: +400 AGI left hit chance at 100%.
+  const agiBefore = num(target.agi);
+  target.agi = Math.max(0, agiBefore + num(m.agi));
+  const agiDelta = target.agi - agiBefore;
+  if (agiDelta) target.flee = Math.max(0, num(target.flee) + agiDelta);
   target.vit = Math.max(0, num(target.vit) + num(m.vit));
   target.int_ = Math.max(0, num(target.int_) + num(m.int));
   target.dex = Math.max(0, num(target.dex) + num(m.dex));

@@ -93,6 +93,26 @@ check(withRes != null && withRes < baseline,
 check(Math.abs(withRes - Math.floor(baseline / 2)) <= 2,
   `and cuts it by about half (${withRes} vs ~${Math.floor(baseline / 2)})`);
 
+// --- AGI has to move FLEE with it -------------------------------------------
+// A monster's flee is baked in as `level + agi` when the target is built, so editing
+// agi alone does nothing to how hard it is to hit -- which is the only reason anyone
+// types into the AGI box. Found in QA: +400 AGI left hit chance at 100%.
+await setEdit("All physical %", 0);
+await setEdit("AGI", 400);
+await damage();
+const hitAfterAgi = await page.evaluate(() => {
+  for (const c of document.querySelectorAll(".sec-stat-card, .metric")) {
+    const lab = c.querySelector(".label, .sec-stat-label")?.textContent?.trim();
+    if (lab === "Hit chance") return c.querySelector(".value")?.textContent?.trim() ?? null;
+  }
+  return null;
+});
+console.log(`    +400 AGI on the enemy -> hit chance ${hitAfterAgi}`);
+check(hitAfterAgi != null && parseFloat(hitAfterAgi) < 100,
+  "editing the enemy's AGI moves its FLEE, so your hit chance drops");
+await setEdit("AGI", 0);
+await setEdit("All physical %", 50);
+
 // --- it survives a share link ------------------------------------------------
 await page.getByRole("button", { name: /^Menu$|^☰$/ }).first().click().catch(() => {});
 await page.waitForTimeout(500);
