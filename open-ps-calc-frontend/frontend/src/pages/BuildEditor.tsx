@@ -3373,7 +3373,7 @@ export default function BuildEditor() {
                         )}
                         {isKnightLine && (
                           <div className="field field-checkbox" key="__riding_peco">
-                            <label title="Riding a Peco Peco (Knight/Crusader line): mounting adds an attack-speed penalty, reduced by one rank's worth per level of Cavalier Mastery and fully removed at Cavalier Mastery 5. Also raises Spear Mastery ATK per level (higher while mounted).">
+                            <label title="Riding a Peco Peco (Knight/Crusader line): mounting adds an attack-speed penalty, reduced by one rank's worth per level of Cavalier Mastery and fully removed at Cavalier Mastery 5. Also raises Spear Mastery ATK per level (higher while mounted), and removes a spear's size penalty against Medium targets (75% to 100%).">
                               <input type="checkbox" checked={!!data.flags?.is_riding_peco} onChange={(e) => setData((prev) => ({ ...prev, flags: { ...(prev.flags || {}), is_riding_peco: e.target.checked } }))} />
                               <span>Riding Peco Peco</span>
                             </label>

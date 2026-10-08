@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-07 | Hercules status.c:1856 + PS wiki Peco Peco Ride | Source + Live wiki | A mounted spear loses its Medium-size penalty |
 | 2026-10-07 | Hercules pc.c pc_readparam SP_BASEJOB/SP_BASECLASS + PS item API | Source + First-party | Class-gated item bonuses, and Poring Dagger's Novice/Super Novice gate |
 | 2026-10-06 | Hercules pc.c pc_isequip (job bitmask) | Source | "All except Novice" excludes Super Novice |
 | 2026-10-05 | PS item API, weekly audit (scripts/audit-ps-items.mjs) | First-party | Standing item-data check |
@@ -7757,3 +7758,48 @@ A test asserts that every `Job_*` constant named anywhere in the item DBs is def
 and that no job-gated condition is unevaluable. An undefined constant does not read as
 false - it throws, and the gate silently opens for everyone, so it has to fail loudly
 in the suite rather than quietly in the numbers.
+
+## 2026-10-07 - Mounted spears and the Medium-size penalty
+
+A player reported that riding a Peco Peco with a spear was not giving 100% damage to
+Medium monsters. It was not: the rule had never been implemented. What made it hard to
+spot is that `is_riding_peco` WAS plumbed through and did work - it drives the mounted
+ASPD penalty (statusCalculator, +500 amotion less 100 per Cavalier Mastery level) and
+Spear Mastery's mounted ATK - so ticking the box visibly moved numbers while leaving
+the size modifier at 75%.
+
+**Hercules** (herc-status.c:1856-1861), in `status_calc_pc_` right after the weapon
+size modifiers are copied out of the size_fix table:
+
+```c
+if ((pc_isridingpeco(sd) || pc_isridingdragon(sd)) && (sd->weapontype == W_1HSPEAR || sd->weapontype == W_2HSPEAR)) {
+    //When Riding with spear, damage modifier to mid-class becomes
+    //same as versus large size.
+    sd->right_weapon.atkmods[1] = sd->right_weapon.atkmods[2];
+    sd->left_weapon.atkmods[1] = sd->left_weapon.atkmods[2];
+}
+```
+
+Note what it does: Medium takes the **Large** column, not a flat 100. Spears are
+75/75/100, so it lands on 100% - which is how PS states it on the wiki (Peco Peco
+Ride): "The size modifier for Spear weapons on Medium monsters becomes 100% instead of
+75%." The implementation reads the Large column rather than hardcoding 100, so the two
+cannot drift if the table ever changes.
+
+Scope, asserted by the tests: only spears (1HSpear/2HSpear), only the Medium column,
+only while mounted. Small and Large are untouched, non-spear weapons are untouched,
+and Weapon Perfection / bNoSizeFix still win outright (they zero the penalty for every
+weapon, so the mounted branch never runs under them). Crusaders get it as well as
+Knights - the wiki lists Peco Peco Ride under both. Dragons are the other mount in the
+Hercules condition; this calculator has no third classes, so Rune Knight never reaches
+it.
+
+### A nearby value that is NOT wrong
+
+The same Peco Peco Ride page says Spear Mastery "gains an additional +1 ATK per Spear
+Mastery level" while mounted, which contradicts the profile's `KN_SPEARMASTERY: [5, 7]`
+(+2 per level). The dedicated **Spear Mastery** page wins: it says "+2 ATK per skill
+level" and carries a full table ending at Lv10 = 50 / **70** on Peco, which is exactly
+what the engine produces. The "+1" is the vanilla figure left behind on the riding
+page. Do not "correct" [5, 7] to [5, 6] on the strength of it. (That table also has an
+arithmetic typo of its own at Lv7, printing 47 where +7/level gives 49.)

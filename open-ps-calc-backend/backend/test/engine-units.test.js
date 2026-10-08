@@ -6607,3 +6607,65 @@ test("Ardent Helm turns Magnum Break's lingering weapon buff Holy, not just its 
   assert.ok(!/name: "Magnum Break \(lingering fire\)"/.test(src),
     "the step label is hardcoded to fire again, so a Holy conversion would be mislabelled");
 });
+
+// ---------------------------------------------------------------------------
+// Mounted spears and the Medium-size penalty
+// ---------------------------------------------------------------------------
+test("riding a Peco Peco lifts a spear's size penalty against Medium targets", () => {
+  // "being mounted on a pecopeco with a spear doesn't give me 100% dmg to medium
+  // size monsters" -- a player via Frennetix, 2026-10-07. It didn't:
+  //
+  //   if ((pc_isridingpeco(sd) || pc_isridingdragon(sd))
+  //    && (sd->weapontype == W_1HSPEAR || sd->weapontype == W_2HSPEAR))
+  //       sd->right_weapon.atkmods[1] = sd->right_weapon.atkmods[2];   // status.c:1856
+  //
+  // ...was never implemented. is_riding_peco WAS wired up -- for the ASPD penalty and
+  // Spear Mastery's mounted ATK -- so ticking the box moved those numbers and left
+  // this one at 75%, which is what made it look deliberate rather than missing.
+  //
+  // PS says the same in its own words: "The size modifier for Spear weapons on Medium
+  // monsters becomes 100% instead of 75%" (wiki, Peco Peco Ride).
+  const { runScenarioRaw } = require("./engineRunner");
+  const { loader } = require("../src/engine/dataLoader");
+
+  // What "same as Large" resolves to is the table's business, not a hardcoded 100.
+  for (const spear of ["1HSpear", "2HSpear"]) {
+    assert.equal(loader.getSizeFixMultiplier(spear, "Medium"), 75, `${spear} is 75% vs Medium on foot`);
+    assert.equal(loader.getSizeFixMultiplier(spear, "Large"), 100, `${spear} is 100% vs Large -- the column riding copies`);
+  }
+
+  const LANCE = 1410, PIKE = 1408, TWOH_SWORD = 1163;
+  const PORING = 1002;            // Medium
+  const sizeMult = (weapon, riding, mob = PORING, job = 7) => {
+    const res = runScenarioRaw({
+      build: {
+        job_id: job, base_level: 99, job_level: 50,
+        base_stats: { str: 90, agi: 40, vit: 50, int: 10, dex: 50, luk: 10 },
+        equipped: { right_hand: weapon },
+        flags: { is_riding_peco: riding },
+      },
+      target: mob,   // no skill = a normal attack
+    });
+    // runScenarioRaw normalises result.*.steps down to bare names; the full step
+    // objects (with multipliers) are on the raw branch.
+    const step = res.raw.normal.steps.find((x) => x.name === "Size Fix");
+    return step ? Math.round(step.multiplier * 100) : null;
+  };
+
+  // The report.
+  for (const [w, label] of [[LANCE, "2HSpear"], [PIKE, "1HSpear"]]) {
+    assert.equal(sizeMult(w, false), 75, `${label} takes the Medium penalty on foot`);
+    assert.equal(sizeMult(w, true), 100, `${label} must lose the Medium penalty while mounted`);
+  }
+
+  // A Crusader rides too -- the wiki lists Peco Peco Ride under both classes.
+  assert.equal(sizeMult(LANCE, true, PORING, 14), 100, "a mounted Crusader gets it as well");
+
+  // ...and nothing else moves. Hercules rewrites ONLY the Medium column, and only
+  // for spears, so each of these would be an over-application.
+  assert.equal(sizeMult(TWOH_SWORD, false), sizeMult(TWOH_SWORD, true),
+    "riding must not touch a two-handed sword's size modifier");
+  const SCORPION = 1001;          // Small
+  assert.equal(sizeMult(LANCE, false, SCORPION), sizeMult(LANCE, true, SCORPION),
+    "riding must not touch a spear's Small-size modifier");
+});

@@ -9,6 +9,8 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Riding a Peco Peco with a spear now removes the size penalty against Medium monsters.** A spear normally does 75% damage to Medium targets; mounted, it does 100%. The calculator was still charging the 75% even with Riding Peco Peco ticked — the box already changed attack speed and Spear Mastery’s ATK, so it looked like it was doing its job. Knights and Crusaders, on normal attacks and on every spear skill: roughly a 10% damage increase against Medium. Reported by a player.
+
 - **Ardent Helm has its card slot, and the rest of its stats.** The helm is a Payon
   Stories custom the item database has no entry for, so it was typed in by hand from
   the wiki and came out with no card slot at all — and with no Defense or weight

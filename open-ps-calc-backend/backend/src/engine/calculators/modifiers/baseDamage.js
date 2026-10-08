@@ -217,15 +217,43 @@ function calculateBaseDamage(status, weapon, build, target, skill, result, opts 
     sizeNote = `size penalty nullified (Weapon Perfection) → 100%`;
   } else {
     sizeMult = loader.getSizeFixMultiplier(weapon.weapon_type, target.size);
+    // Riding a Peco Peco with a spear lifts the penalty against Medium targets:
+    //
+    //   if ((pc_isridingpeco(sd) || pc_isridingdragon(sd))
+    //    && (sd->weapontype == W_1HSPEAR || sd->weapontype == W_2HSPEAR)) {
+    //       //When Riding with spear, damage modifier to mid-class becomes
+    //       //same as versus large size.
+    //       sd->right_weapon.atkmods[1] = sd->right_weapon.atkmods[2];
+    //
+    // (status.c:1856-1861). Note what it actually does: Medium takes the LARGE
+    // column, not a flat 100. Spears are 75/75/100, so it lands on 100% — which is
+    // how the PS wiki states it ("The size modifier for Spear weapons on Medium
+    // monsters becomes 100% instead of 75%", Peco Peco Ride). Read from the table
+    // rather than hardcoded so the two cannot drift apart.
+    //
+    // Reported by a player 2026-10-07: the flag was already wired up for the ASPD
+    // penalty and Spear Mastery's mounted ATK, so ticking the box moved those
+    // numbers and left this one at 75%, which is what made it look deliberate.
+    // Dragons are the other mount in the Hercules condition; this calculator has
+    // no third classes, so Rune Knight never reaches here.
+    const isSpear = weapon.weapon_type === "1HSpear" || weapon.weapon_type === "2HSpear";
+    const mountedSpear = !!build.is_riding_peco && isSpear && target.size === "Medium";
+    if (mountedSpear) sizeMult = loader.getSizeFixMultiplier(weapon.weapon_type, "Large");
     pmf = scaleFloor(pmf, sizeMult, 100);
-    sizeNote = `${weapon.weapon_type} vs ${target.size} target → ${sizeMult}%`;
+    sizeNote = mountedSpear
+      ? `${weapon.weapon_type} vs Medium while riding a Peco Peco → ${sizeMult}% `
+        + `(a mounted spear uses the Large-size modifier)`
+      : `${weapon.weapon_type} vs ${target.size} target → ${sizeMult}%`;
   }
 
   const [sMin, sMax, sAvg] = pmfStats(pmf);
   result.add_step({
     name: "Size Fix", value: sAvg, min_value: sMin, max_value: sMax, multiplier: sizeMult / 100,
     note: sizeNote,
-    formula: `weapon_atk * ${sizeMult} // 100`, hercules_ref: "battle.c lines 659-664",
+    formula: `weapon_atk * ${sizeMult} // 100`,
+    hercules_ref: /riding a Peco Peco/.test(sizeNote)
+      ? "status.c:1856-1861 (atkmods[1] = atkmods[2]); battle.c lines 659-664"
+      : "battle.c lines 659-664",
   });
 
   pmf = addFlat(pmf, status.batk);
