@@ -13,7 +13,9 @@
     "stats:backfill-regions": "node src/scripts/backfill-regions.js",
     "stats:refilter-bots": "node src/scripts/refilter-bots.js",
     "ps:audit-items": "node scripts/audit-ps-items.mjs",
-    "ps:audit-items:accept": "node scripts/audit-ps-items.mjs --accept"
+    "ps:audit-items:accept": "node scripts/audit-ps-items.mjs --accept",
+    "ps:audit-skills": "node scripts/audit-ps-skills.mjs",
+    "ps:audit-skills:accept": "node scripts/audit-ps-skills.mjs --accept"
   },
   "dependencies": {
     "cors": "^2.8.5",

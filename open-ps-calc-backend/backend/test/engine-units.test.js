@@ -6669,3 +6669,95 @@ test("riding a Peco Peco lifts a spear's size penalty against Medium targets", (
   assert.equal(sizeMult(LANCE, false, SCORPION), sizeMult(LANCE, true, SCORPION),
     "riding must not touch a spear's Small-size modifier");
 });
+
+// ---------------------------------------------------------------------------
+// Skill descriptions come from Payon Stories under the PS profile
+// ---------------------------------------------------------------------------
+test("the PS profile serves PS's own skill text, not vanilla's", () => {
+  // Spear Mastery is the case that surfaced this. The planner tooltip reads
+  // "[Lv 1]: Damage +5 / Mounted Damage +7" and the engine computes exactly that
+  // ([5, 7] in serverProfiles), but the description served beside those numbers was
+  // vanilla's: "[Lv 1]: Damage +4" and "when riding a pecopeco, the bonus damage
+  // increased by 1 per level". We had PS's text all along -- ps_skill_db.json carries
+  // the description AND the per-level table, scraped from the planner -- and read it
+  // only for display names. The maintainer pointed at the tooltip, 2026-10-07.
+  const { loader } = require("../src/engine/dataLoader");
+  const { getProfile } = require("../src/engine/serverProfiles");
+
+  const read = (profileName, constant) => {
+    loader.setProfile(getProfile(profileName));
+    return loader.getSkillDescription(constant);
+  };
+
+  const ps = read("payon_stories", "KN_SPEARMASTERY");
+  assert.ok(ps && ps.description, "the PS profile must serve a Spear Mastery description");
+  assert.match(ps.description, /Damage \+5 \/ Mounted Damage \+7/,
+    "PS's own per-level table must be the one served");
+  assert.ok(!/Damage \+4\b/.test(ps.description), "vanilla's +4 table must be gone");
+  assert.ok(!/increased by 1 per level/i.test(ps.description),
+    "vanilla's '+1 per level while riding' line must be gone -- it is the figure that "
+    + "sent two separate investigations chasing a contradiction");
+
+  // Vanilla must be untouched: this is a profile-scoped correction, not a data edit.
+  const van = read("vanilla", "KN_SPEARMASTERY");
+  assert.ok(van && /Damage \+4\b/.test(van.description), "the vanilla profile keeps vanilla's text");
+
+  // The name is deliberately NOT taken from PS here -- getSkillDisplayName already
+  // resolves names via use_ps_skill_names, and two sources for one field is how
+  // things drift.
+  assert.equal(ps.name, van.name, "the description swap must not change the skill's name");
+
+  // A skill PS has no text for must fall back rather than come back blank.
+  loader.setProfile(getProfile("payon_stories"));
+  const vanillaFile = require("../src/engine/data/pre-re/db/skill_descriptions.json").skills || {};
+  let fellBack = 0, blanked = [];
+  for (const k of Object.keys(vanillaFile)) {
+    const d = loader.getSkillDescription(k);
+    assert.ok(d, `${k} must still resolve under the PS profile`);
+    // Preferring PS must never REMOVE text. (Seven vanilla entries ship with an
+    // empty description of their own -- WZ_FIREIVY and friends -- so the test is
+    // "nothing got blanked", not "everything has text".)
+    if (vanillaFile[k].description && !d.description) blanked.push(k);
+    if (d.description === vanillaFile[k].description) fellBack++;
+  }
+  assert.deepEqual(blanked, [], "preferring PS text blanked these descriptions instead of correcting them");
+  assert.ok(fellBack > 0, "expected at least some skills to fall back to vanilla text");
+
+  loader.setProfile(getProfile("payon_stories"));
+});
+
+test("the PS skill audit can parse the planner's chunk format", () => {
+  // The audit reads PS's JS chunks with regexes (their strings contain \' escapes
+  // that are valid JS and invalid JSON, so JSON.parse fails on most job trees). If
+  // their build layout changes the parser silently returns nothing, and "PS deleted
+  // every skill" would look identical to "our regex broke" -- so the script aborts on
+  // a thin parse, and these pin the shapes it depends on.
+  const { parseTooltips, parseTree, shapeTooltip, clean } =
+    require("../scripts/audit-ps-skills.mjs");
+
+  const TOOLTIP = '"55":["Spear Mastery","Max Level: 10","Skill Form: ^6666CCPassive ^000000",'
+    + '"Description: ^777777Increases damage with Spear class","weapons. When riding a PecoPeco, the damage",'
+    + '"is increased. ^000000"," ","[Lv 1]:^777777 Damage +5 / Mounted Damage +7 ^000000",'
+    + '"[Lv 10]:^777777 Damage +50 / Mounted Damage +70 ^000000"]';
+  const tips = parseTooltips(TOOLTIP);
+  assert.ok(tips["55"], "the tooltip block must be found by skill id");
+  const shaped = shapeTooltip(tips["55"]);
+  assert.equal(shaped.name, "Spear Mastery");
+  assert.equal(shaped.max_level, 10);
+  assert.equal(shaped.skill_form, "Passive");
+  assert.equal(shaped.description,
+    "Increases damage with Spear class weapons. When riding a PecoPeco, the damage is increased.",
+    "the description wraps across several array entries and must be rejoined");
+  assert.deepEqual(shaped.levels, [
+    { level: 1, effect: "Damage +5 / Mounted Damage +7" },
+    { level: 10, effect: "Damage +50 / Mounted Damage +70" },
+  ]);
+
+  const TREE = '{"skid":55,"id":"KN_SPEARMASTERY","name":"Spear Mastery","desc":"","job":"Crusader",'
+    + '"icon":"/skills/KN_SPEARMASTERY.bmp","row":1,"col":4,"max":10,"prereq":{},"auto":false}';
+  assert.deepEqual(parseTree(TREE)["55"], { constant: "KN_SPEARMASTERY", name: "Spear Mastery", max: 10 });
+
+  // Colour codes and escaped quotes must not survive into stored text.
+  assert.equal(clean("^777777Fire   Bolt ^000000"), "Fire Bolt");
+  assert.equal(clean("caster\\'s HP"), "caster's HP");
+});

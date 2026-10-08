@@ -992,10 +992,49 @@ class DataLoader {
     return Object.keys(base).length ? base : null;
   }
 
+  /**
+   * Payon Stories' own tooltip text for a skill, rebuilt in the same shape the
+   * vanilla description file uses. Returns null when we have nothing from PS.
+   *
+   * ps_skill_db.json already carries this - `description` plus a per-level `levels`
+   * array of { level, effect } - scraped from their planner's tooltip. It was only
+   * ever read for display NAMES, so every description we served was vanilla's.
+   */
+  _psSkillDescriptionText(ps) {
+    if (!ps) return null;
+    const lines = [];
+    if (ps.max_level != null) lines.push(`Max Level: ${ps.max_level}`);
+    if (ps.skill_form) lines.push(`Skill Form: ${ps.skill_form}`);
+    if (ps.description) lines.push(`Description: ${ps.description}`);
+    for (const lv of Array.isArray(ps.levels) ? ps.levels : []) {
+      if (!lv || lv.effect == null) continue;
+      lines.push(`[Lv ${lv.level}]: ${lv.effect}`);
+    }
+    // A bare name with no description and no table is not worth preferring over
+    // vanilla's text - it would blank out a description rather than correct it.
+    return lines.length > 1 ? lines.join("\n") : null;
+  }
+
   getSkillDescription(skillConstant) {
     try {
       const data = this._loadJson("db/skill_descriptions.json");
-      return (data.skills || {})[skillConstant] || null;
+      const vanilla = (data.skills || {})[skillConstant] || null;
+
+      // Under the Payon Stories profile PS's own text wins, because for a reworked
+      // skill the vanilla text contradicts the numbers this engine computes beside
+      // it. Spear Mastery is the case that surfaced it: PS gives +5 per level and
+      // +7 mounted - which is what we calculate - while this file still read
+      // "[Lv 1]: Damage +4" and "when riding a pecopeco, the bonus damage increased
+      // by 1 per level". The maintainer pointed at the planner tooltip, 2026-10-07.
+      //
+      // The name is deliberately left alone: getSkillDisplayName already resolves
+      // PS names through use_ps_skill_names, and taking it from two places would be
+      // one more thing that can disagree.
+      if (this._profile && this._profile.use_ps_data) {
+        const text = this._psSkillDescriptionText(this.getPsSkill(skillConstant));
+        if (text) return { ...(vanilla || {}), description: text };
+      }
+      return vanilla;
     } catch {
       return null;
     }

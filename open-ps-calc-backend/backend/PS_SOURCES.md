@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-07 | PS skill planner tooltips (tools.payonstories.com/skill) | First-party | Skill text and per-level effects; standing weekly audit |
 | 2026-10-07 | Hercules status.c:1856 + PS wiki Peco Peco Ride | Source + Live wiki | A mounted spear loses its Medium-size penalty |
 | 2026-10-07 | Hercules pc.c pc_readparam SP_BASEJOB/SP_BASECLASS + PS item API | Source + First-party | Class-gated item bonuses, and Poring Dagger's Novice/Super Novice gate |
 | 2026-10-06 | Hercules pc.c pc_isequip (job bitmask) | Source | "All except Novice" excludes Super Novice |
@@ -7803,3 +7804,81 @@ level" and carries a full table ending at Lv10 = 50 / **70** on Peco, which is e
 what the engine produces. The "+1" is the vanilla figure left behind on the riding
 page. Do not "correct" [5, 7] to [5, 6] on the strength of it. (That table also has an
 arithmetic typo of its own at Lv7, printing 47 where +7/level gives 49.)
+
+## 2026-10-07 - The PS skill planner is the skill authority, and it is now checked weekly
+
+Asked to settle Spear Mastery, the maintainer pointed at the planner's tooltip. It is
+the best skill source available - better than the wiki, which contradicted itself on
+this exact skill - and it turned out we were already carrying it and not using it.
+
+**What the tooltip says** (tools.payonstories.com/skill, Spear Mastery):
+
+```
+Description: Increases damage with Spear class weapons. When riding a PecoPeco,
+the damage is increased.
+[Lv 1]:  Damage +5 / Mounted Damage +7
+[Lv 7]:  Damage +35 / Mounted Damage +49
+[Lv 10]: Damage +50 / Mounted Damage +70
+```
+
+That settles three things at once:
+
+1. `KN_SPEARMASTERY: [5, 7]` is right. Third independent confirmation.
+2. The wiki's Spear Mastery table printing **47** at Lv7 is a typo; it is 49.
+3. The "+1 ATK per level while riding" on the wiki's Peco Peco Ride page is vanilla's
+   figure - and the SAME vanilla wording was sitting in our own
+   `db/skill_descriptions.json`, which is what sent two investigations chasing a
+   contradiction that did not exist.
+
+**What changed.** `getSkillDescription` now prefers PS's text under the PS profile,
+rebuilt from `ps_skill_db.json`'s `description` + `levels[]` (which we scrape from
+these very tooltips and previously read only for display NAMES). 543 of 569 skills now
+serve PS text rather than vanilla's. The skill NAME is deliberately still resolved by
+`getSkillDisplayName` via `use_ps_skill_names` - one field, one source. Vanilla profile
+is untouched.
+
+Nothing renders these descriptions today, so no displayed number changed; this is
+reference data being made to agree with the numbers the engine computes beside it.
+
+### The standing check: `npm run ps:audit-skills`
+
+`scripts/audit-ps-skills.mjs` compares every skill we know against the live planner
+weekly (`.github/workflows/ps-skill-audit.yml`, Tuesdays, a day after the item audit so
+the two never contend for their server). Baseline + `--accept`, exit 1 on anything new,
+exactly like the item audit.
+
+Their data is in two page chunks whose names carry a build hash, so they are discovered
+from the HTML: one holds `"<skid>":["<name>","Max Level: N",...,"[Lv 1]:^777777 ..."]`,
+the other the tree records `{"skid":55,"id":"KN_SPEARMASTERY",...}` that map a numeric
+skid onto the constant we key by. The chunks are JavaScript, not JSON - descriptions
+contain `\'` which is valid JS and invalid JSON - so both are read by regex. The script
+ABORTS if it parses fewer than 200 of either, because "our regex broke" and "PS deleted
+every skill" must never look the same.
+
+### The 437 findings in the baseline are a real backlog, not noise
+
+The first run found 437 differences, all accepted so the audit is quiet going forward.
+They are NOT all fixed. The ones worth coming back to:
+
+- **MAXLV (14).** PS caps several skills lower than our scrape says: Decrease AGI,
+  Signum Crucis and Angelus at 5 (we say 10), Sanctuary at 7 (we say 10), and the
+  Blacksmith weapon researches at 4 (we say 3). `_psScrapedMaxLevel` feeds the skill
+  picker's rank cap off these, so they are player-visible.
+- **EFFECT (158).** Per-level text drift. Decrease AGI is the clearest: ours reads
+  "Decreases AGI by 3/4/5/6", live reads "3/6/9/12, Duration 40s/60s/80s/100s". The
+  ENGINE already uses 3/level and is right; the stored text is stale.
+- **NAME (33).** Barter (was Discount), Tool Mastery (was Overcharge), Transmutation
+  (was Axe Mastery) and spelling fixes (Crementia, Highness Heal, Frosty Misty).
+- **NEW (135).** Skills the planner has and we do not, mostly third-class, which this
+  calculator does not model by design - see [[project_no_trans_classes]].
+- **DESC (97).** Mostly rewording; SM_SWORD/SM_TWOHAND look alarming but are explained
+  by `MASTERY_KEY_OVERRIDE` - PS renamed SM_TWOHAND to "Blade Mastery" and our override
+  is keyed on the mastery key, not the tree constant.
+
+### Why there is no bulk `--refresh`
+
+The script has one, and it should NOT be run casually. `_psScrapedMaxLevel` returns the
+PS cap only when `levels.length === max_level`, so rewriting `levels` can silently flip
+a skill's rank cap in the picker, and rewriting `name` moves display names that
+`ps_skill_desc_overrides` was written to correct. Refreshing is a data migration that
+needs its own review and its own test run - not a side effect of an audit.
