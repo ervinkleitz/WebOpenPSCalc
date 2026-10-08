@@ -76,6 +76,15 @@ await page.getByRole("button", { name: "Custom stats" }).click();
 await page.waitForTimeout(1200);
 check(await panelShown() === 1, "Custom stats does");
 
+// The twenty fields are collapsed by default -- they are almost always all zero, and
+// an always-expanded block made the Target panel tall enough to cost the editor its
+// fourth column at full width (reported 2026-10-09). Open it to drive the fields.
+check(await page.locator(".manual-enemy-group").count() === 0,
+  "the fields start collapsed, keeping the panel short");
+await page.getByRole("button", { name: /^Manual edits/ }).click();
+await page.waitForTimeout(900);
+check(await page.locator(".manual-enemy-group").count() === 2, "the toggle opens them");
+
 // Start from the real monster so the numbers mean something.
 await page.getByRole("button", { name: /Copy .*'s stats/ }).first().click();
 await page.waitForTimeout(1500);

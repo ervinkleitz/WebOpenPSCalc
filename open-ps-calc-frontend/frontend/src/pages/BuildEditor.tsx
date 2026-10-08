@@ -1450,6 +1450,13 @@ export default function BuildEditor() {
   const [featuresBannerHidden, setFeaturesBannerHidden] = useState(() => localStorage.getItem("featuresBannerHidden") === "1");
   // The per-class PS rework detail is collapsed under the "class reworks" feature line.
   const [classReworksOpen, setClassReworksOpen] = useState(false);
+  // Manual edits on the target: twenty inputs that are almost always all zero, so
+  // they are collapsed by default and remember the choice. Not only tidiness — the
+  // editor is a CSS multi-column layout, and one panel taller than the balanced
+  // column height makes the browser raise that height until the last column has
+  // nothing left to hold. Expanded, this block took the Target panel to 2433px and
+  // the fourth column disappeared at 1920px wide. Reported 2026-10-09.
+  const [manualEditsOpen, setManualEditsOpen] = useState(() => localStorage.getItem("manualEditsOpen") === "1");
   // Manual stat bonuses: a niche override, collapsed by default (remembers the user's choice).
   const [manualStatsOpen, setManualStatsOpen] = useState(() => localStorage.getItem("manualStatsOpen") === "1");
   // Collapse the per-source stat bonus badges (+job +gear +buff +manual) into a
@@ -4073,7 +4080,22 @@ export default function BuildEditor() {
                 return (
                   <>
                     <div className="manual-enemy-head">
-                      <span className="manual-enemy-title">Manual edits</span>
+                      <button
+                        type="button"
+                        className="reworks-detail-toggle manual-enemy-toggle"
+                        onClick={() => {
+                          const next = !manualEditsOpen;
+                          setManualEditsOpen(next);
+                          localStorage.setItem("manualEditsOpen", next ? "1" : "0");
+                          if (next) statsApi.trackFeature("target_manual_edit_open");
+                        }}
+                        aria-expanded={manualEditsOpen}
+                      >
+                        Manual edits
+                        <span className="reworks-detail-chevron">{manualEditsOpen ? "▾" : "▸"}</span>
+                      </button>
+                      {/* The count stays visible while collapsed: an edit that is changing
+                          your numbers must never be hidden behind a closed section. */}
                       {activeEdits.length > 0 && (
                         <span className="manual-enemy-count">{activeEdits.length} active</span>
                       )}
@@ -4084,12 +4106,15 @@ export default function BuildEditor() {
                         >Reset</button>
                       )}
                     </div>
+                    {manualEditsOpen && (
                     <div className="manual-enemy-sub">
                       Plus or minus on top of the stats above — handy right after copying a
                       monster in — and resistances, which have no field of their own up there.
                       They stack with the target debuffs.
                     </div>
+                    )}
 
+                    {manualEditsOpen && (<>
                     <div className="manual-enemy-group">Stat adjustments (+/-)</div>
                     <div className="field-row">
                       {numField("AGI", "agi", "Its AGI feeds its FLEE — how hard it is for you to hit.")}
@@ -4129,6 +4154,7 @@ export default function BuildEditor() {
                       {numField("All physical", "res_atk", "Percent it resists ATK-based damage, at any range.", "%")}
                       {numField("All magic", "res_matk", "Percent it resists MATK-based damage.", "%")}
                     </div>
+                    </>)}
                   </>
                 );
               })()}

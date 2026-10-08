@@ -1643,6 +1643,8 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
   margin: 1rem 0 0.1rem; padding-top: 0.7rem; border-top: 1px solid var(--border);
 }
 .manual-enemy-title { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+/* The header doubles as the collapse toggle; keep it reading as a heading. */
+.manual-enemy-toggle { font-size: 0.78rem; font-weight: 600; color: var(--text); padding: 0; }
 .manual-enemy-count {
   font-size: 0.66rem; color: var(--accent); background: var(--accent-soft);
   padding: 0.05rem 0.42rem; border-radius: 999px;

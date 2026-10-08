@@ -39,6 +39,15 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **editor-columns.mjs** — the editor is a CSS multi-column layout, and multicol
+  balances by HEIGHT: one unbreakable panel taller than the balanced height forces
+  that height up until the last column has nothing left to hold. Expanding the
+  manual-edit fields took the Target panel to 2433px and the fourth column emptied at
+  1920px. Asserts that switching to Custom stats never costs a column, at 1800 /
+  1920 / 2560, and that the fields start collapsed — which is what keeps the panel
+  short. Measure with a FRESH context per width: the collapse choice lives in
+  localStorage and reusing one gives a contaminated reading (it gave me a wrong one).
+
 - **manual-enemy-edits.mjs** — the hand-typed enemy adjustments, which live inside
   Custom stats. Copies a real monster in first so the numbers mean something, then
   checks a flat DEF delta and a percentage resistance both cut damage, that AGI drags

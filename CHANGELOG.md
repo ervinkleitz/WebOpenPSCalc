@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-09
+
+### Fixed
+
+- **Opening Custom stats no longer costs a column on a wide screen.** The editor lays
+  its panels out in up to four columns, and a single panel taller than the others
+  pushes the whole layout to match it — the Target panel with the manual-edit fields
+  showing was tall enough that the fourth column emptied. Those fields are now
+  collapsed behind a **Manual edits** heading you click to open, which is where
+  twenty almost-always-zero inputs belong anyway. The count of active edits stays
+  visible while collapsed, so nothing that is changing your numbers is ever hidden.
+
 ## 2026-10-08
 
 ### Added
