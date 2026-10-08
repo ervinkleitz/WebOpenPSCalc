@@ -1,29 +1,24 @@
 // "hitting custom stats removes the 4th column in full width (browser)" — the
-// maintainer, 2026-10-09, at 1920px.
+// maintainer, 2026-10-09, at 1920px. Then, one click later: "clicking on manual edits
+// does the same thing."
 //
 // The editor is a CSS multi-column layout (`columns: 4` at >=1800px). Multicol
 // balances by HEIGHT: it picks a column height that fits the content, and a single
-// unbreakable panel taller than the balanced height forces that height up until the
-// remaining panels no longer need the last column. Adding the manual-edit fields took
-// the Target panel to 2433px and the fourth column emptied.
+// panel taller than that height drags it up until the remaining panels no longer need
+// the last column. A panel cannot be split to relieve it either — panels have a border
+// and a background, so a box cut across a column boundary looks broken.
 //
-// The fix is that those twenty almost-always-zero inputs are collapsed by default, so
-// the common case stays short. This pins the reported case.
+// Two fixes were not enough. Collapsing the manual-edit fields by default fixed the
+// default state but not opening them. Packing the fields tighter did not reach it
+// either: the budget SHRINKS as the viewport grows, because every other panel gets
+// shorter, and at 2560px no packing fit.
 //
-// Measured cleanly (a fresh browser context per width — the collapse choice lives in
-// localStorage and reusing one context contaminates the reading):
+// So the manual edits are their own panel. Two panels of moderate height can sit in
+// different columns; one tall panel cannot.
 //
-//   width   monster   custom   custom + manual edits EXPANDED
-//   1800     4/4       4/4      3/4
-//   1920     4/4       4/4      3/4
-//   2200     4/4       4/4      3/4
-//   2560     4/4       4/4      3/4
-//
-// So the default state is sound at every width, and the fourth column only empties
-// when someone deliberately opens the twenty-field block — at which point the Target
-// panel is genuinely taller than a quarter of the content and multicol has nowhere
-// else to put it. The test asserts CUSTOM IS NO WORSE THAN MONSTER at the same width,
-// which is the reported complaint, and does not assert the expanded case.
+// Measure with a FRESH browser context per width. The collapse choice lives in
+// localStorage, and reusing one context carried it between widths and gave me a
+// reading I reported as a finding before noticing it was an artefact.
 import { chromium } from "playwright-core";
 
 const URL_BASE = process.argv[2] || "http://localhost:5173/";
@@ -32,13 +27,10 @@ let ok = true;
 const check = (c, m) => { if (!c) { console.error("FAIL: " + m); ok = false; } else console.log("ok  " + m); };
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
-const ctx = await browser.newContext({ viewport: { width: 1920, height: 1100 } });
-const page = await ctx.newPage();
 const errors = [];
-page.on("pageerror", (e) => errors.push(e.message));
 
 /** How many of the declared columns actually hold a panel. */
-const columns = () => page.evaluate(() => {
+const columnsOf = (page) => page.evaluate(() => {
   const g = document.querySelector(".editor-grid");
   if (!g) return null;
   const lefts = new Set();
@@ -51,37 +43,49 @@ const columns = () => page.evaluate(() => {
   return { declared: Number(getComputedStyle(g).columnCount), occupied: lefts.size, tallest };
 });
 
-for (const width of [1920, 1800, 2560]) {
-  await page.setViewportSize({ width, height: 1100 });
+for (const width of [1800, 1920, 2200, 2560]) {
+  const ctx = await browser.newContext({ viewport: { width, height: 1100 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(URL_BASE, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(6000);
 
-  const mon = await columns();
+  const mon = await columnsOf(page);
   await page.getByRole("button", { name: "Custom stats" }).click();
   await page.waitForTimeout(1600);
-  const cus = await columns();
+  const cus = await columnsOf(page);
+  await page.getByRole("button", { name: /Show the fields/ }).click();
+  await page.waitForTimeout(1600);
+  const exp = await columnsOf(page);
 
-  console.log(`    ${width}px: monster ${mon.occupied}/${mon.declared} (tallest ${mon.tallest}px) `
-    + `-> custom ${cus.occupied}/${cus.declared} (tallest ${cus.tallest}px)`);
+  console.log(`    ${width}px: monster ${mon.occupied}/${mon.declared} -> custom ${cus.occupied}/${cus.declared}`
+    + ` -> fields open ${exp.occupied}/${exp.declared}   (tallest panel ${mon.tallest} / ${cus.tallest} / ${exp.tallest}px)`);
   check(cus.occupied >= mon.occupied,
-    `${width}px: switching to Custom stats does not cost a column (${mon.occupied} -> ${cus.occupied})`);
+    `${width}px: switching to Custom stats costs no column (${mon.occupied} -> ${cus.occupied})`);
+  // The one that regressed twice.
+  check(exp.occupied >= mon.occupied,
+    `${width}px: opening the manual-edit fields costs no column either (${mon.occupied} -> ${exp.occupied})`);
+  await ctx.close();
 }
 
-// And the block is collapsed to begin with — that is what keeps the panel short.
-await page.setViewportSize({ width: 1920, height: 1100 });
-await page.goto(URL_BASE, { waitUntil: "domcontentloaded" });
-await page.waitForTimeout(6000);
-await page.getByRole("button", { name: "Custom stats" }).click();
-await page.waitForTimeout(1600);
-const fieldsHidden = await page.locator(".manual-enemy-group").count();
-check(fieldsHidden === 0, "the manual-edit fields start collapsed");
-const toggle = page.getByRole("button", { name: /^Manual edits/ });
-check(await toggle.count() === 1, "and there is a toggle to open them");
-await toggle.click();
-await page.waitForTimeout(1200);
-check(await page.locator(".manual-enemy-group").count() === 2, "which opens both groups");
+// The fields still start collapsed — twenty almost-always-zero inputs should not be
+// the first thing in the panel, and it keeps the panel short regardless.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1920, height: 1100 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(URL_BASE, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(6000);
+  await page.getByRole("button", { name: "Custom stats" }).click();
+  await page.waitForTimeout(1600);
+  check(await page.locator(".manual-enemy-group").count() === 0, "the fields start collapsed");
+  await page.getByRole("button", { name: /Show the fields/ }).click();
+  await page.waitForTimeout(1200);
+  check(await page.locator(".manual-enemy-group").count() === 2, "and the toggle opens both groups");
+  await ctx.close();
+}
 
 check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
-console.log(ok ? "\nPASS - Custom stats never costs a column." : "\nsee failures above");
+console.log(ok ? "\nPASS - neither Custom stats nor opening the fields costs a column." : "\nsee failures above");
 await browser.close();
 process.exit(ok ? 0 : 1);

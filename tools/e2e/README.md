@@ -40,13 +40,16 @@ node wildcard-carryover.mjs https://openpscalc.com/
   nothing happened.
 
 - **editor-columns.mjs** — the editor is a CSS multi-column layout, and multicol
-  balances by HEIGHT: one unbreakable panel taller than the balanced height forces
-  that height up until the last column has nothing left to hold. Expanding the
-  manual-edit fields took the Target panel to 2433px and the fourth column emptied at
-  1920px. Asserts that switching to Custom stats never costs a column, at 1800 /
-  1920 / 2560, and that the fields start collapsed — which is what keeps the panel
-  short. Measure with a FRESH context per width: the collapse choice lives in
-  localStorage and reusing one gives a contaminated reading (it gave me a wrong one).
+  balances by HEIGHT: one panel taller than the balanced height drags that height up
+  until the last column has nothing left to hold, and a panel cannot be split to
+  relieve it (border + background, so a split box looks broken). The manual-edit
+  fields inside the Target panel cost the fourth column at full width. Collapsing them
+  fixed the default but not opening them; packing them tighter did not reach it either,
+  because the budget shrinks as the viewport grows. They are their own panel now.
+  Asserts 4 columns for monster, custom, AND custom-with-fields-open at 1800 / 1920 /
+  2200 / 2560 — the expanded case especially, since it regressed twice. Measure with a
+  FRESH context per width: the collapse choice lives in localStorage and reusing one
+  gives a contaminated reading (it gave me one I reported before catching it).
 
 - **manual-enemy-edits.mjs** — the hand-typed enemy adjustments, which live inside
   Custom stats. Copies a real monster in first so the numbers mean something, then

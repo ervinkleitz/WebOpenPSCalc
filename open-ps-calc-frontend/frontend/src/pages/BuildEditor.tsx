@@ -4037,127 +4037,6 @@ export default function BuildEditor() {
                     <input className="mono" type="number" min={0} value={customTarget.hp ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, hp: Number(e.target.value) }))} />
                   </div>
                 </div>
-                {/* Manual edits, as part of the custom target. The fields above describe
-                  the enemy; these are deltas on top of them, which is what you want
-                  right after copying a monster in — "that, but 50 more DEF" — plus the
-                  damage reductions, which have no field of their own above. Custom
-                  mode only: a hidden edit quietly moving a monster's numbers is the
-                  same trap the wildcard-mix state used to be. */}
-              {(() => {
-                const me = targetMods.manual ?? DEFAULT_MANUAL_ENEMY;
-                const activeEdits = activeManualEdits(me);
-                const setMe = (patch: Partial<ManualEnemyEdits>) => setTargetMods((m) => ({
-                  ...m, manual: { ...(m.manual ?? DEFAULT_MANUAL_ENEMY), ...patch },
-                }));
-                const numField = (label: string, key: keyof ManualEnemyEdits, title: string, suffix?: string) => (
-                  <div className="field">
-                    <label title={title}>{suffix ? `${label} ${suffix}` : label}</label>
-                    <input
-                      className="mono" type="number" value={(me[key] as number) ?? 0}
-                      onFocus={(e) => e.target.select()}
-                      onChange={(e) => setMe({ [key]: Number(e.target.value) } as Partial<ManualEnemyEdits>)}
-                    />
-                  </div>
-                );
-                const resEle = (slot: "res_ele1" | "res_ele2") => (
-                  <div className="field">
-                    <label title="Percent of YOUR damage of that element the enemy shrugs off — the enemy-side mirror of a resist card.">% vs element</label>
-                    <div className="manual-enemy-res-row">
-                      <input
-                        className="mono" type="number" style={{ width: "4.2rem" }} value={me[slot]?.pct ?? 0}
-                        onFocus={(e) => e.target.select()}
-                        onChange={(e) => setMe({ [slot]: { ele: me[slot]?.ele ?? 0, pct: Number(e.target.value) } } as Partial<ManualEnemyEdits>)}
-                      />
-                      <select
-                        value={me[slot]?.ele ?? 0}
-                        onChange={(e) => setMe({ [slot]: { ele: Number(e.target.value), pct: me[slot]?.pct ?? 0 } } as Partial<ManualEnemyEdits>)}
-                      >
-                        {ELEMENT_NAMES.map((n, i) => <option key={i} value={i}>{n}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                );
-                return (
-                  <>
-                    <div className="manual-enemy-head">
-                      <button
-                        type="button"
-                        className="reworks-detail-toggle manual-enemy-toggle"
-                        onClick={() => {
-                          const next = !manualEditsOpen;
-                          setManualEditsOpen(next);
-                          localStorage.setItem("manualEditsOpen", next ? "1" : "0");
-                          if (next) statsApi.trackFeature("target_manual_edit_open");
-                        }}
-                        aria-expanded={manualEditsOpen}
-                      >
-                        Manual edits
-                        <span className="reworks-detail-chevron">{manualEditsOpen ? "▾" : "▸"}</span>
-                      </button>
-                      {/* The count stays visible while collapsed: an edit that is changing
-                          your numbers must never be hidden behind a closed section. */}
-                      {activeEdits.length > 0 && (
-                        <span className="manual-enemy-count">{activeEdits.length} active</span>
-                      )}
-                      {activeEdits.length > 0 && (
-                        <button
-                          className="cmp-btn-mini"
-                          onClick={() => { setMe(DEFAULT_MANUAL_ENEMY); statsApi.trackFeature("target_manual_edit_reset"); }}
-                        >Reset</button>
-                      )}
-                    </div>
-                    {manualEditsOpen && (
-                    <div className="manual-enemy-sub">
-                      Plus or minus on top of the stats above — handy right after copying a
-                      monster in — and resistances, which have no field of their own up there.
-                      They stack with the target debuffs.
-                    </div>
-                    )}
-
-                    {manualEditsOpen && (<>
-                    <div className="manual-enemy-group">Stat adjustments (+/-)</div>
-                    <div className="field-row">
-                      {numField("AGI", "agi", "Its AGI feeds its FLEE — how hard it is for you to hit.")}
-                      {numField("VIT", "vit", "Its VIT is its soft DEF.")}
-                      {numField("INT", "int", "Its INT is its soft MDEF, and its MATK when it casts at you.")}
-                    </div>
-                    <div className="field-row">
-                      {numField("DEX", "dex", "Its DEX is its HIT (level + DEX) — how often it lands on you.")}
-                      {numField("LUK", "luk", "Its LUK raises its Perfect Dodge (how often it shrugs off a hit outright). On Payon Stories that is all it does to you — PS disabled the crit shield, so enemy LUK no longer cuts your critical rate the way it does on vanilla.")}
-                      {numField("DEF", "def", "Hard DEF, the percentage cut applied before soft DEF subtracts.")}
-                    </div>
-                    <div className="field-row">
-                      {numField("MDEF", "mdef", "Hard MDEF.")}
-                      {numField("FLEE", "flee", "Flat FLEE on top of what its AGI gives — your hit chance is 80 + your HIT − its FLEE.")}
-                      {numField("HIT", "hit", "Flat HIT on top of level + DEX — how often it lands on you.")}
-                    </div>
-                    <div className="field-row">
-                      {numField("Max HP", "max_hp", "Flat Max HP, for time-to-kill and Poison damage-over-time.")}
-                      {numField("Max HP", "max_hp_pct", "Percent of Max HP, applied after the flat edit above.", "%")}
-                      {numField("ATK", "atk", "Flat ATK, shifting both ends of its attack range — how hard it hits you.")}
-                    </div>
-                    <div className="field-row">
-                      {numField("MATK", "matk", "Flat MATK on top of what its INT gives — how hard its spells hit you.")}
-                    </div>
-
-                    <div className="manual-enemy-group">Damage reductions</div>
-                    <div className="field-row">
-                      {resEle("res_ele1")}
-                      {resEle("res_ele2")}
-                    </div>
-                    <div className="field-row">
-                      {numField("Racial", "res_race", "Percent it resists YOUR race (Demi-Human).", "%")}
-                      {numField("Size", "res_size", "Percent it resists YOUR size (Medium).", "%")}
-                      {numField("Long-range", "res_long", "Percent it resists ranged attacks.", "%")}
-                    </div>
-                    <div className="field-row">
-                      {numField("All physical", "res_atk", "Percent it resists ATK-based damage, at any range.", "%")}
-                      {numField("All magic", "res_matk", "Percent it resists MATK-based damage.", "%")}
-                    </div>
-                    </>)}
-                  </>
-                );
-              })()}
               </>
             )}
 
@@ -4438,6 +4317,145 @@ export default function BuildEditor() {
             )}
 
           </Panel>
+
+          {/* Manual edits live with the custom target — only offered there, only
+              applied there — but in their own panel rather than inside the Target
+              one. The editor is a CSS multi-column layout and multicol balances by
+              HEIGHT: a panel taller than the balanced column height drags that
+              height up until the last column has nothing left to hold, and panels
+              cannot be split across a column (they have a border and a background,
+              so a split box looks broken). Nested, this block cost the editor its
+              fourth column at full width however tightly it was packed. As its own
+              panel the layout can simply place it in another column. */}
+          {targetMode === "custom" && (
+            <Panel eyebrow="10" title="Target — manual edits">
+              {/* Manual edits, as part of the custom target. The fields above describe
+                the enemy; these are deltas on top of them, which is what you want
+                right after copying a monster in — "that, but 50 more DEF" — plus the
+                damage reductions, which have no field of their own above. Custom
+                mode only: a hidden edit quietly moving a monster's numbers is the
+                same trap the wildcard-mix state used to be. */}
+            {(() => {
+              const me = targetMods.manual ?? DEFAULT_MANUAL_ENEMY;
+              const activeEdits = activeManualEdits(me);
+              const setMe = (patch: Partial<ManualEnemyEdits>) => setTargetMods((m) => ({
+                ...m, manual: { ...(m.manual ?? DEFAULT_MANUAL_ENEMY), ...patch },
+              }));
+              const numField = (label: string, key: keyof ManualEnemyEdits, title: string, suffix?: string) => (
+                <div className="field">
+                  <label title={title}>{suffix ? `${label} ${suffix}` : label}</label>
+                  <input
+                    className="mono" type="number" value={(me[key] as number) ?? 0}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setMe({ [key]: Number(e.target.value) } as Partial<ManualEnemyEdits>)}
+                  />
+                </div>
+              );
+              const resEle = (slot: "res_ele1" | "res_ele2") => (
+                <div className="field">
+                  <label title="Percent of YOUR damage of that element the enemy shrugs off — the enemy-side mirror of a resist card.">Ele %</label>
+                  <div className="manual-enemy-res-row">
+                    <input
+                      className="mono" type="number" style={{ width: "4.2rem" }} value={me[slot]?.pct ?? 0}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setMe({ [slot]: { ele: me[slot]?.ele ?? 0, pct: Number(e.target.value) } } as Partial<ManualEnemyEdits>)}
+                    />
+                    <select
+                      value={me[slot]?.ele ?? 0}
+                      onChange={(e) => setMe({ [slot]: { ele: Number(e.target.value), pct: me[slot]?.pct ?? 0 } } as Partial<ManualEnemyEdits>)}
+                    >
+                      {ELEMENT_NAMES.map((n, i) => <option key={i} value={i}>{n}</option>)}
+                    </select>
+                  </div>
+                </div>
+              );
+              return (
+                <>
+                  <div className="manual-enemy-head">
+                    <button
+                      type="button"
+                      className="reworks-detail-toggle manual-enemy-toggle"
+                      onClick={() => {
+                        const next = !manualEditsOpen;
+                        setManualEditsOpen(next);
+                        localStorage.setItem("manualEditsOpen", next ? "1" : "0");
+                        if (next) statsApi.trackFeature("target_manual_edit_open");
+                      }}
+                      aria-expanded={manualEditsOpen}
+                    >
+                      Show the fields
+                      <span className="reworks-detail-chevron">{manualEditsOpen ? "▾" : "▸"}</span>
+                    </button>
+                    {/* The count stays visible while collapsed: an edit that is changing
+                        your numbers must never be hidden behind a closed section. */}
+                    {activeEdits.length > 0 && (
+                      <span className="manual-enemy-count">{activeEdits.length} active</span>
+                    )}
+                    {activeEdits.length > 0 && (
+                      <button
+                        className="cmp-btn-mini"
+                        onClick={() => { setMe(DEFAULT_MANUAL_ENEMY); statsApi.trackFeature("target_manual_edit_reset"); }}
+                      >Reset</button>
+                    )}
+                  </div>
+                  {manualEditsOpen && (
+                  <div className="manual-enemy-sub">
+                    Plus or minus on top of the custom target's stats — handy right after
+                    copying a monster in — and resistances, which it has no field for.
+                    They stack with the target debuffs.
+                  </div>
+                  )}
+
+                  {manualEditsOpen && (<div className="manual-enemy-wrap"><div className="manual-enemy-body">
+                  <div className="manual-enemy-col">
+                  <div className="manual-enemy-group">Stat adjustments (+/-)</div>
+                  <div className="field-row">
+                    {numField("AGI", "agi", "Its AGI feeds its FLEE — how hard it is for you to hit.")}
+                    {numField("VIT", "vit", "Its VIT is its soft DEF.")}
+                    {numField("INT", "int", "Its INT is its soft MDEF, and its MATK when it casts at you.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("DEX", "dex", "Its DEX is its HIT (level + DEX) — how often it lands on you.")}
+                    {numField("LUK", "luk", "Its LUK raises its Perfect Dodge (how often it shrugs off a hit outright). On Payon Stories that is all it does to you — PS disabled the crit shield, so enemy LUK no longer cuts your critical rate the way it does on vanilla.")}
+                    {numField("DEF", "def", "Hard DEF, the percentage cut applied before soft DEF subtracts.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("MDEF", "mdef", "Hard MDEF.")}
+                    {numField("FLEE", "flee", "Flat FLEE on top of what its AGI gives — your hit chance is 80 + your HIT − its FLEE.")}
+                    {numField("HIT", "hit", "Flat HIT on top of level + DEX — how often it lands on you.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("Max HP", "max_hp", "Flat Max HP, for time-to-kill and Poison damage-over-time.")}
+                    {numField("HP", "max_hp_pct", "Percent of Max HP, applied after the flat edit above.", "%")}
+                    {numField("ATK", "atk", "Flat ATK, shifting both ends of its attack range — how hard it hits you.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("MATK", "matk", "Flat MATK on top of what its INT gives — how hard its spells hit you.")}
+                  </div>
+
+                  </div>
+                  <div className="manual-enemy-col">
+                  <div className="manual-enemy-group">Damage reductions</div>
+                  <div className="field-row">
+                    {resEle("res_ele1")}
+                    {resEle("res_ele2")}
+                  </div>
+                  <div className="field-row">
+                    {numField("Race", "res_race", "Percent it resists YOUR race (Demi-Human).", "%")}
+                    {numField("Size", "res_size", "Percent it resists YOUR size (Medium).", "%")}
+                    {numField("Range", "res_long", "Percent it resists ranged attacks.", "%")}
+                  </div>
+                  <div className="field-row">
+                    {numField("Physical", "res_atk", "Percent it resists ATK-based damage, at any range.", "%")}
+                    {numField("Magic", "res_matk", "Percent it resists MATK-based damage.", "%")}
+                  </div>
+                  </div>
+                  </div></div>)}
+                </>
+              );
+            })()}
+            </Panel>
+          )}
 
       </div>
       </div>

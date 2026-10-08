@@ -9,13 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
-- **Opening Custom stats no longer costs a column on a wide screen.** The editor lays
-  its panels out in up to four columns, and a single panel taller than the others
-  pushes the whole layout to match it — the Target panel with the manual-edit fields
-  showing was tall enough that the fourth column emptied. Those fields are now
-  collapsed behind a **Manual edits** heading you click to open, which is where
-  twenty almost-always-zero inputs belong anyway. The count of active edits stays
-  visible while collapsed, so nothing that is changing your numbers is ever hidden.
+- **Custom stats no longer costs a column on a wide screen.** The editor lays its
+  panels out in up to four columns, and a single panel taller than the others pushes
+  the whole layout to match it — the Target panel with the manual-edit fields in it was
+  tall enough that the fourth column emptied, whether you had the fields showing or
+  not. Manual edits now sit in their own **Target — manual edits** panel, which appears
+  only on the Custom stats tab and applies only there, so the layout can place it
+  wherever it fits. The fields start collapsed behind **Show the fields**; the count of
+  active edits stays visible while they are closed, so nothing that is changing your
+  numbers is ever hidden.
 
 ## 2026-10-08
 

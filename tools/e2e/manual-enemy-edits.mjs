@@ -81,7 +81,7 @@ check(await panelShown() === 1, "Custom stats does");
 // fourth column at full width (reported 2026-10-09). Open it to drive the fields.
 check(await page.locator(".manual-enemy-group").count() === 0,
   "the fields start collapsed, keeping the panel short");
-await page.getByRole("button", { name: /^Manual edits/ }).click();
+await page.getByRole("button", { name: /Show the fields/ }).click();
 await page.waitForTimeout(900);
 check(await page.locator(".manual-enemy-group").count() === 2, "the toggle opens them");
 
@@ -102,14 +102,14 @@ check(await badge() === "1 active", `the badge counts it (${await badge()})`);
 
 // --- a reduction, which has no field of its own above -----------------------
 await setEdit("DEF", 0);
-await setEdit("All physical %", 50);
+await setEdit("Physical %", 50);
 const withRes = await damage();
 console.log(`    50% physical resist : ${copied} -> ${withRes}`);
 check(withRes != null && Math.abs(withRes - Math.floor(copied / 2)) <= 2,
   `an enemy physical resistance halves your damage (${withRes} vs ~${Math.floor(copied / 2)})`);
 
 // --- AGI must drag FLEE with it (it was inert; QA 2026-10-09) ---------------
-await setEdit("All physical %", 0);
+await setEdit("Physical %", 0);
 await setEdit("AGI", 400);
 await damage();
 const hitAfterAgi = await page.evaluate(() => {
@@ -132,7 +132,7 @@ check(hitAfterAgi != null && parseFloat(hitAfterAgi) < 100,
 // and the comparison below is on damage, so a leak would have slipped through. (It
 // did — the mutation run caught this assertion passing against a deliberate leak.)
 await setEdit("AGI", 0);
-await setEdit("All physical %", 50);
+await setEdit("Physical %", 50);
 await page.getByRole("button", { name: "Monster" }).first().click();
 await page.waitForTimeout(1200);
 check(await panelShown() === 0, "the panel is gone again in Monster mode");

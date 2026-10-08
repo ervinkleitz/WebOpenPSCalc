@@ -1655,6 +1655,56 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 .manual-enemy-res-row { display: flex; align-items: flex-end; gap: 0.4rem; }
 .manual-enemy-res-row select { flex: 1 1 auto; min-width: 0; }
 
+/* Compact layout for the twenty manual-edit inputs.
+ *
+ * Not only tidiness. The editor is a CSS multi-column layout and multicol balances by
+ * HEIGHT: one panel taller than the balanced column height forces that height up until
+ * the last column has nothing left to hold. Measured at 1920px, the Target panel may be
+ * about 2150px before the fourth column empties; collapsed it is 1779px, so this block
+ * has roughly 370px to live in. Stacked label-over-input it was 654px and the column
+ * went. Label beside input halves the row height and brings it inside the budget.
+ *
+ * Scoped to .manual-enemy-body so the ordinary stacked fields everywhere else, which
+ * have room, are untouched. */
+.manual-enemy-body .field-row { gap: 0.35rem 0.6rem; margin-bottom: 0.1rem; }
+.manual-enemy-body .field {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-bottom: 0.25rem; min-width: 0;
+}
+.manual-enemy-body .field > label {
+  flex: 1 1 auto; min-width: 0; margin: 0;
+  font-size: 0.64rem; line-height: 1.15; overflow-wrap: anywhere;
+}
+.manual-enemy-body .field > input { flex: 0 0 4.4rem; width: 4.4rem; padding: 0.2rem 0.35rem; }
+/* Three per row, no wrapping: letting them reflow packed 2+1 and read as ragged.
+   The labels are kept short enough to fit instead. */
+.manual-enemy-body .field-row > .field { flex: 1 1 0; min-width: 0; }
+.manual-enemy-body .field > input { flex: 0 0 3.6rem; width: 3.6rem; }
+/* The element resists keep their picker, so they get the full cell and wrap inside it. */
+.manual-enemy-body .manual-enemy-res-row { flex: 0 0 auto; gap: 0.3rem; }
+.manual-enemy-body .manual-enemy-res-row input { flex: 0 0 3rem; width: 3rem; padding: 0.2rem 0.35rem; }
+.manual-enemy-body .manual-enemy-res-row select { flex: 0 1 6.5rem; padding: 0.2rem 0.3rem; font-size: 0.72rem; }
+.manual-enemy-body .manual-enemy-group { margin: 0.45rem 0 0.2rem; }
+.manual-enemy-sub { margin-bottom: 0.35rem; }
+/* The two groups sit side by side ONLY when the column they are in is wide enough.
+ *
+ * This has to be a CONTAINER query, not a media query. The editor is a multi-column
+ * layout, so the column is roughly a quarter of the viewport: at 1800px wide the
+ * column is ~420px, and halving that makes every field wrap and the block taller,
+ * not shorter. Keying off the viewport did exactly that and cost the fourth column at
+ * 1800 and 1920 — the widths it was meant to help.
+ *
+ * Why halve at all: on a very wide screen every other panel gets shorter, so the
+ * Target panel runs out of budget soonest there (2560px: 1733px collapsed, 2072px
+ * expanded, fourth column gone). Side by side the block is as tall as its taller
+ * half rather than their sum, which is what buys it back. */
+.manual-enemy-wrap { container-type: inline-size; }
+.manual-enemy-body { display: grid; grid-template-columns: 1fr; gap: 0 0.9rem; }
+@container (min-width: 500px) {
+  .manual-enemy-body { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+.manual-enemy-col { min-width: 0; }
+
 .cmp-btn-pin { color: var(--accent); border-color: var(--accent-dim); }
 .cmp-btn-x { color: var(--crit); }
 .cmp-btn-x:hover { border-color: var(--crit); }
