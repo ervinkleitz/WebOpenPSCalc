@@ -6550,3 +6550,60 @@ test("job-gated item bonuses apply only to the classes that qualify", () => {
   assert.ok(!hasAspd(9), "parseScript must NOT give a Wizard the ASPD bonus");
   assert.ok(!hasAspd(12), "parseScript must NOT give an Assassin the ASPD bonus");
 });
+
+// ---------------------------------------------------------------------------
+// Ardent Helm (8417)
+// ---------------------------------------------------------------------------
+test("Ardent Helm matches the in-game tooltip, slot included", () => {
+  // "Ardent helm doesn't give me card option" -- a player via Frennetix, 2026-10-07,
+  // with a client screenshot. The item API returns "No data" for 8417, so this entry
+  // was hand-written from the wiki and came out with slots: 0. The wiki had said
+  // "Ardent Helm [1]" all along and the client's item lookup agrees.
+  //
+  // Values here are the client tooltip verbatim. Weight is stored in tenths: the
+  // client reads 80, the DB holds 800 (Apple of Archer reads 20 and holds 200).
+  const manual = require("../src/engine/data/ps/ps_item_manual.json");
+  const helm = (manual.items || manual)["8417"];
+
+  assert.equal(helm.name, "Ardent Helm");
+  assert.equal(helm.slots, 1, "the client calls it \"Ardent Helm [1]\" -- one card slot");
+  assert.equal(helm.def, 3, "tooltip: Defense 3");
+  assert.equal(helm.weight, 800, "tooltip: Weight 80, stored in tenths");
+  assert.deepEqual(helm.loc, ["EQP_HEAD_TOP"], "tooltip: Position Upper");
+  assert.ok(/bonus bMdef,2/.test(helm.script), "tooltip: Mdef +2");
+  assert.ok(/bonus bMagnumEle,Ele_Holy/.test(helm.script), "tooltip: Magnum Break becomes Holy");
+  // No Level Requirement line in the client, and the Apple of Archer tooltip beside
+  // it DOES show one -- so its absence is real, not a cropped screenshot.
+  assert.ok(helm.equip_level == null, "the client shows no level requirement");
+
+  // Crusader only (Paladin is the trans Crusader and was already listed).
+  assert.ok(helm.job.includes(14), "a Crusader can wear it");
+  for (const job of [0, 1, 7, 9, 12, 23]) {
+    assert.ok(!helm.job.includes(job), `job ${job} must not be able to wear a Crusader-only helm`);
+  }
+
+  // The script has to actually parse into the two bonuses, on a Crusader.
+  const { parseScript, createItemScriptContext } = require("../src/engine/itemScriptParser");
+  const effects = parseScript(helm.script, createItemScriptContext({ base_level: 99, job_level: 50, class_: 14 }));
+  const types = effects.map((e) => e && e.bonus_type);
+  assert.ok(types.includes("bMagnumEle"), "the Magnum Break conversion survives parsing");
+  assert.ok(types.includes("bMdef"), "the Mdef bonus survives parsing");
+});
+
+test("Ardent Helm turns Magnum Break's lingering weapon buff Holy, not just its hit", () => {
+  // The tooltip reads "Converts Magnum Break damage AND WEAPON BUFF element to Holy".
+  // battlePipeline.js used to convert only the skill's own hit and left the lingering
+  // enchant (SC_SUB_WEAPONPROPERTY, Fire in Hercules) alone, with a comment saying no
+  // source confirmed it either way. The client screenshot is that source.
+  const src = require("fs").readFileSync(
+    require("path").join(__dirname, "..", "src", "engine", "calculators", "battlePipeline.js"), "utf8");
+
+  // The lingering term must take its element from the gear bonus, not a hardcoded Fire.
+  assert.ok(/const lingerEle = gearBonuses\.magnum_element != null \? gearBonuses\.magnum_element : ELE_FIRE;/.test(src),
+    "the lingering enchant no longer follows bMagnumEle -- Ardent Helm converts the buff too");
+  assert.ok(/calculateAttrFix\(weapon, target, add, scratch, build, lingerEle\)/.test(src),
+    "the lingering damage must be elemented by lingerEle, not ELE_FIRE");
+  // And the readout must not keep saying "fire" when it is Holy.
+  assert.ok(!/name: "Magnum Break \(lingering fire\)"/.test(src),
+    "the step label is hardcoded to fire again, so a Holy conversion would be mislabelled");
+});

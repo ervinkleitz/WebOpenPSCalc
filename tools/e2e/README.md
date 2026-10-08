@@ -39,6 +39,13 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **ardent-helm.mjs** — Ardent Helm (8417) is a PS custom the item API has no entry
+  for, so it was hand-written from the wiki and shipped with slots: 0, which is what
+  the player hit: no card option. Checks the helm contributes exactly one card slot
+  (by delta, so the weapon’s own slots cannot mask it), that its Defense 3 and Mdef +2
+  reach the stat panel, and that Magnum Break’s lingering weapon buff reads Holy with
+  the helm and Fire without — the half of its description the engine used to skip.
+
 - **job-gated-bonuses.mjs** — item effects written for one class must not reach the
   others. Poring Dagger gives its attack speed only to a Novice or Super Novice, but
   the evaluator could not resolve `BaseJob`, `BaseClass` or any `Job_*` constant, and

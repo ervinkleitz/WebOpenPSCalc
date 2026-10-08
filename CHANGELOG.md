@@ -9,6 +9,19 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Ardent Helm has its card slot, and the rest of its stats.** The helm is a Payon
+  Stories custom the item database has no entry for, so it was typed in by hand from
+  the wiki and came out with no card slot at all — and with no Defense or weight
+  either. It is **Ardent Helm [1]**: one card slot, Defense 3, Mdef +2, Weight 80,
+  Crusader only. Reported by a player, who sent the in-game tooltip.
+
+- **Ardent Helm now turns the Magnum Break weapon buff Holy too, not just the hit.**
+  The helm’s own description says it converts “Magnum Break damage and weapon buff
+  element”, but only the skill’s hit was being converted here; the lingering enchant
+  Magnum Break leaves on your weapon stayed Fire. It follows the helm now, on Magnum
+  Break and on the auto attacks that carry the buff — which is a damage increase
+  against anything that resists Fire.
+
 - **Bonuses that only one class should get are no longer given to every class.** Item
   effects written for a specific class — Poring Dagger’s attack speed for Novices and
   Super Novices, Thief Figure’s, Wild Rose Card’s and Mobster Card’s for the Thief
