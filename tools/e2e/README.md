@@ -39,12 +39,16 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
-- **manual-enemy-edits.mjs** — the hand-typed enemy adjustments, driven against a REAL
-  monster because that is the case they exist for. Checks a flat DEF edit and a
-  percentage resistance both cut damage, that the resistance cuts it by about half at
-  50%, that the badge counts the active edits, that a share link carries them, and —
-  the one that matters most — that with everything back at 0 the damage is exactly the
-  pre-feature number.
+- **manual-enemy-edits.mjs** — the hand-typed enemy adjustments, which live inside
+  Custom stats. Copies a real monster in first so the numbers mean something, then
+  checks a flat DEF delta and a percentage resistance both cut damage, that AGI drags
+  FLEE with it (it was inert when first shipped), that the badge counts the active
+  edits, and two things that matter most: that edits set here do NOT follow you back
+  to the Monster tab — hidden state must never move a number — and that with
+  everything at 0 the damage is exactly the un-edited figure. The leak assertion is
+  deliberately made against a DAMAGE-affecting edit: an earlier version left only AGI
+  set, which moves hit chance, and a mutation run showed it passing against a real
+  leak.
 
 - **custom-target-copy-mob.mjs** — copying the selected monster into the custom
   target must land every field on what the monster actually has, checked against the

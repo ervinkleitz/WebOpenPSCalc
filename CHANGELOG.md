@@ -9,15 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
-- **Manual edits on the enemy.** A new block at the bottom of the Target panel lets
-  you adjust the enemy directly — AGI, VIT, INT, DEX, LUK, DEF, MDEF, FLEE, HIT, ATK,
-  MATK and Max HP (flat or %) — plus its own damage reductions: two element resists,
-  racial, size, long-range, all-physical and all-magic. It works on a **real monster**,
-  not just a custom target, which is the point: a monster’s stats aren’t yours to
-  change, and rebuilding one from scratch to ask “what if it had 50 more DEF” is a lot
-  of typing. Edits stack on top of the debuffs above rather than replacing them, they
-  travel in share links, and there’s a Reset. Everything defaults to 0, so a build that
-  touches none of it calculates exactly as it did before.
+- **Manual edits, inside Custom stats.** Under the custom target’s own fields there is
+  now an adjustments block: plus-or-minus on AGI, VIT, INT, DEX, LUK, DEF, MDEF, FLEE,
+  HIT, ATK, MATK and Max HP (flat or %), plus damage reductions that have no field of
+  their own up there — two element resists, racial, size, long-range, all-physical and
+  all-magic. It pairs with **Copy ‹monster›’s stats**: bring a real monster in, then ask
+  “that, but 50 more DEF” without retyping it. Edits stack with the target debuffs,
+  travel in share links, and have a Reset. They belong to the custom target, so they
+  are not applied while you are on the Monster tab — and with everything at 0 the
+  numbers are exactly what they were before.
 
 - **A custom target can now hit back, so Survivability keeps working on one.** A
   custom target had no ATK, DEX or HP, so the moment you switched to one the
