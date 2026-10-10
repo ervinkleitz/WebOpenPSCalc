@@ -7,7 +7,7 @@ import InfoTooltip from "./InfoTooltip";
 // straight off the calc result the backend already returns.
 
 export interface CompareMetrics {
-  label: string;        // the output being compared: skill name or "Normal attack"
+  label: string;        // the output being compared: skill name or "Auto attack"
   dps: number | null;   // effective DPS (null when the skill has no valid DPS)
   avg: number;          // average damage per hit
   min: number;
@@ -40,7 +40,7 @@ export function summaryMetrics(cr: any): CompareMetrics | null {
   const avg = res.normal.avg_damage ?? 0;
   const hitsToKill = cr.target_hp && avg > 0 ? Math.ceil(cr.target_hp / avg) : null;
   return {
-    label: usingSkill ? (cr.selected_skill.label || "Skill") : "Normal attack",
+    label: usingSkill ? (cr.selected_skill.label || "Skill") : "Auto attack",
     dps,
     avg,
     min: res.normal.min_damage ?? 0,

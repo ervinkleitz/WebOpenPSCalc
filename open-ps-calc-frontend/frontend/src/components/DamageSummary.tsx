@@ -196,7 +196,7 @@ const STEP_LABELS: Record<string, string> = {
   "Final Damage": "Final damage",
 };
 // "Skill Ratio (Bash Lv10)" → "Skill ratio — Bash Lv10". The engine already puts
-// the skill's display name (or "Normal attack") in the brackets.
+// the skill's display name (or "Auto attack") in the brackets.
 function stepLabel(name: string): string {
   const m = /^Skill Ratio \((.+)\)$/.exec(name);
   if (m) return `Skill ratio — ${m[1]}`;
@@ -876,9 +876,9 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
     activeBranch === "crit" ? "Critical hit"
     : activeBranch === "katar" ? "Katar 2nd hit"
     : activeBranch === "falcon" ? "Falcon"
-    : activeBranch === "normal" ? "Normal attack"
+    : activeBranch === "normal" ? "Auto attack"
     : hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}`
-    : "Normal attack";
+    : "Auto attack";
   const finalRange = killMin != null && killMax != null && Math.round(killMin) !== Math.round(killMax);
 
   return (
@@ -1099,16 +1099,25 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         <button
           className={`branch-skill-pill${activeBranch === "skill" && hasSkill ? " active" : ""}${!hasSkill && activeBranch === "normal" ? " active" : ""}`}
           onClick={() => { setBranch(hasSkill ? "skill" : "normal"); if (tuAttempt > 0) onTuAttempt?.(0); }}
+          title={hasSkill
+            ? `${selected_skill.label} Lv ${selected_skill.level} — one cast that does not crit`
+            : "Your weapon's ordinary swing, no skill"}
         >
-          {hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}` : "Normal Attack"}
+          {hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}` : "Auto attack"}
         </button>
 
+        {/* The auto attack, offered alongside the skill so you can see whether the
+            skill is worth casting at all. It is a DIFFERENT attack, not the skill's
+            non-crit hit — which is exactly what "Normal hit" was read as: a player
+            reported the skill ratio "not applying" here, and it never should have.
+            Reported 2026-10-10. */}
         {hasSkill && (
           <button
             className={activeBranch === "normal" ? "active" : ""}
             onClick={() => setBranch("normal")}
+            title="Your weapon's ordinary swing, with no skill — a different attack, so the skill's damage multiplier does not apply here. For comparison against the skill."
           >
-            Normal hit
+            Auto attack
           </button>
         )}
 
@@ -1116,6 +1125,9 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           <button
             className={activeBranch === "crit" ? "active" : ""}
             onClick={() => setBranch("crit")}
+            title={hasSkill
+              ? `${selected_skill.label} Lv ${selected_skill.level} when it lands a critical — the same attack as the skill, so its damage multiplier still applies`
+              : "Your auto attack when it lands a critical"}
           >
             Critical hit
           </button>

@@ -39,6 +39,16 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **damage-branch-labels.mjs** — the damage buttons must say what they compute. With a
+  skill selected they read *Skill / Normal hit / Critical hit*, and two of those looked
+  like a pair and were not: “Normal hit” was the AUTO ATTACK (different attack, no
+  skill ratio) while “Critical hit” was the SKILL critting (same attack, ratio
+  applied) — Sonic Blow Lv10 read 2936 / 296 / 2936. The load-bearing assertion is that
+  the button now called “Auto attack” shows the same damage as selecting no skill at
+  all (296 = 296), which is what makes the label honest rather than merely different.
+  Uses Sonic Blow, not Shadow Slash from the report: Shadow Slash cannot crit, so it
+  only ever renders two buttons.
+
 - **editor-columns.mjs** — the editor is a CSS multi-column layout, and multicol
   balances by HEIGHT: one panel taller than the balanced height drags that height up
   until the last column has nothing left to hold, and a panel cannot be split to

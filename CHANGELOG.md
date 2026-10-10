@@ -5,6 +5,21 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-10
+
+### Fixed
+
+- **“Normal hit” is now called “Auto attack”, because that is what it was.** With a
+  skill selected the damage buttons read *Skill / Normal hit / Critical hit*, which
+  looked like three versions of the same attack. They were not: **Normal hit** was
+  your plain auto attack — a different attack, so the skill’s damage multiplier
+  correctly never applied — while **Critical hit** was that skill critting, multiplier
+  and all. Reading them side by side, “Normal hit” looked like it should be the
+  skill’s non-crit hit, and players reported the skill ratio “not applying”. It is
+  **Auto attack** now, and it keeps that name whether or not a skill is selected — it
+  used to be called “Normal Attack” with no skill and “Normal hit” with one. Every
+  number was always correct; only the label was wrong. Reported by a player.
+
 ## 2026-10-09
 
 ### Fixed
