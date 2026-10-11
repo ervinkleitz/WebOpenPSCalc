@@ -9,6 +9,21 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **“Hits to kill” now also answers “…and if every hit were this one?”** Switching to
+  Critical hit never changed the hit count, because that figure deliberately folds in
+  your crit rate, procs and attack speed — it is the realistic one, and it is what
+  Time to kill agrees with. Useful, but not the question you are asking the moment you
+  click Critical hit. There is now an **All crits** count beside it (6 where the mixed
+  figure says 7, on the build this was reported with), and the same for whichever
+  branch you are viewing. The realistic count and Time to kill are unchanged.
+
+- **Shadow Slash says why it has no Critical hit option.** On Payon Stories it cannot
+  crit unless **Shadow's Within** is active, so its damage buttons simply ended —
+  which reads as “this skill never crits” rather than “turn the buff on”. The row now
+  says *crits with Shadow's Within*, and the note disappears once you tick it. Skills
+  that genuinely cannot crit still show nothing, because for them there is nothing to
+  explain. Both reported by a player.
+
 - **Triple Attack now shows its critical hit under Critical Explosion.** It has always
   been critting — the wiki’s “Triple Attack can critically hit while Critical
   Explosion is active” is modelled, and your DPS already went up accordingly (390 → 434

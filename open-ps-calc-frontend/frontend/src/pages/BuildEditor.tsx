@@ -574,6 +574,9 @@ function computeBuffStatBonuses(
 }
 
 const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack", max_level: 10 };
+// NJ_KIRIKAGE (Shadow Slash) — the one skill whose crit is gated on a buff rather
+// than on the skill itself, so the results panel explains its missing crit branch.
+const NJ_KIRIKAGE_ID = 530;
 
 const DEFAULT_CUSTOM_TARGET: CustomTarget = {
   def_: 0, mdef_: 0, vit: 1, level: 1, size: "Medium", race: "Formless",
@@ -1973,6 +1976,16 @@ export default function BuildEditor() {
         normal_attack: normalRes,
         skill: skillRes,
         selected_skill: { id: skill.id, level: skill.level, label: skill.label },
+        // Shadow Slash is the one skill whose crit is behind a switch: on Payon
+        // Stories it "has no capability to land critical strikes" unless Shadow's
+        // Within is up (wiki). Without a word on the branch row, "no Critical hit
+        // button" reads as "this skill cannot crit" rather than "tick the buff".
+        crit_unavailable_reason: (skill.id === NJ_KIRIKAGE_ID
+          && !(data.support_buffs as Record<string, unknown> | undefined)?.shadows_within)
+          ? { short: "crits with Shadow's Within",
+              detail: "Shadow Slash cannot land criticals on Payon Stories unless Shadow's Within is active. "
+                + "Tick it under Buffs and a Critical hit branch appears here." }
+          : null,
         // A custom target carries its own Max HP now, so time-to-kill works on one.
         target_hp: targetMode === "monster" ? (mobInfo?.hp ?? null) : ((customTarget.hp ?? 0) || null),
         // Base / job EXP the kill awards, for the EXP-per-hit readout. Straight from

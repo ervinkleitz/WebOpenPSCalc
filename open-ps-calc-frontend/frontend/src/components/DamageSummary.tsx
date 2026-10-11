@@ -112,6 +112,10 @@ interface SingleResult {
 
 interface CalcResult {
   normal_attack: SingleResult;
+  /** Why the selected skill shows no Critical hit branch, when the answer is a
+   *  toggle rather than "it never crits". Set by the editor, which knows the
+   *  buffs; the engine only reports whether a crit branch exists. */
+  crit_unavailable_reason?: { short: string; detail: string } | null;
   skill: SingleResult | null;
   selected_skill: { id: number; level: number; label: string };
   target_hp?: number | null; // monster HP (monster-mode only) for hits-to-kill / time-to-kill
@@ -643,6 +647,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const hasSkill = skillResult !== null && selected_skill.id !== 0;
   const primary = hasSkill ? skillResult! : normal_attack;
   const hasCrit = !!primary.result.crit;
+  const critUnavailableReason = calcResult.crit_unavailable_reason ?? null;
   const falcon = (skillResult ?? normal_attack)?.falcon;
   const hasFalcon = !!falcon;
   const hasKatar = !!normal_attack.result.katar_second;
@@ -865,6 +870,18 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const hitsBest = isInstaKill ? null : hitsToKill(expPerHit != null ? expPerHit * hiRatio : null);   // fewest hits — best-case rolls
   const hitsAvg = isInstaKill ? tuCastsRounded : hitsToKill(expPerHit);
   const hitsWorst = isInstaKill ? null : hitsToKill(expPerHit != null ? expPerHit * loRatio : null);  // most hits — worst-case rolls
+  // "...and if every hit were THIS one?" — the count for the branch on screen, with
+  // no crit/proc mix folded in. The figures above answer "how long will this actually
+  // take", which is the right default and is what Time to kill agrees with; this
+  // answers "how many of these would it take", which is the question you are asking
+  // the moment you click Critical hit. A player reported the averaged count as not
+  // very useful for exactly that reason (2026-10-10).
+  //
+  // Shown only when it differs from the expected count — on the default branch of a
+  // build with no crit and no procs the two coincide, and printing the same number
+  // twice is worse than printing it once.
+  const hitsThisBranch = isInstaKill ? null : hitsToKill(killAvg);
+  const showBranchHits = hitsThisBranch != null && hitsAvg != null && hitsThisBranch !== hitsAvg;
 
   // EXP per hit = what the kill awards ÷ how many hits it takes. The headline number
   // uses the SAME expected-hits basis as "Hits to kill" and "Time to kill" (expected
@@ -902,6 +919,14 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
 
   // Header + prominent-total support for the breakdown card.
   const nfmt = (v: number) => Math.round(v).toLocaleString();
+  // Short noun for the "All <x>" count above: "All crits", "All auto attacks", ...
+  const branchNoun =
+    activeBranch === "crit" ? "crits"
+    : activeBranch === "katar" ? "katar hits"
+    : activeBranch === "falcon" ? "falcon hits"
+    : activeBranch === "normal" ? "auto attacks"
+    : hasSkill ? "casts"
+    : "auto attacks";
   const breakdownLabel =
     activeBranch === "crit" ? "Critical hit"
     : activeBranch === "katar" ? "Katar 2nd hit"
@@ -1028,6 +1053,15 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             </div>
           </div>
         )}
+        {/* The count for the branch you are looking at, unaveraged. */}
+        {!isInstaKill && showBranchHits && (
+          <div className="metric" title={`How many of THIS hit alone would kill the ${target_hp!.toLocaleString()}-HP target `
+            + `(${Math.round(killAvg!).toLocaleString()} damage each). The count beside it is the realistic one — it folds in `
+            + `crit rate, procs and ASPD, and is what Time to kill agrees with. This one assumes every hit lands like the branch on screen.`}>
+            <div className="label">All {branchNoun}</div>
+            <div className="value">{hitsThisBranch}<span className="unit">hits</span></div>
+          </div>
+        )}
         {isInstaKill && hitsAvg != null && (
           <div className="metric" title={`Expected casts to kill the ${target_hp!.toLocaleString()}-HP target, folding in the instant-kill success chance (and chip damage on failed rolls).`}>
             <div className="label">Casts to kill</div>
@@ -1149,6 +1183,15 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           >
             Auto attack
           </button>
+        )}
+
+        {/* A skill that could crit but for a switch the player has not flipped. Without
+            this the branch row just ends, and "this skill cannot crit" is
+            indistinguishable from "you have not turned the thing on". */}
+        {!hasCrit && critUnavailableReason && (
+          <span className="branch-note" title={critUnavailableReason.detail}>
+            {critUnavailableReason.short}
+          </span>
         )}
 
         {hasCrit && (

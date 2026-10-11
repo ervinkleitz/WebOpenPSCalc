@@ -39,6 +39,17 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **branch-hits-to-kill.mjs** — two things from one report. “Hits to kill” is
+  deliberately branch-independent (it shares a basis with Time to kill so the two
+  cannot contradict — an older version made a big-crit build show fewer hits but a
+  slower time), which is why clicking Critical hit told you nothing; there is now an
+  “All crits” count beside it. And Shadow Slash, which cannot crit without Shadow's
+  Within, now says so instead of just ending its branch row. Asserts the per-branch
+  count is LOWER than the mixed one, that Time to kill does NOT move with it, and that
+  the note appears, disappears when the buff is ticked, and never shows on a skill that
+  simply cannot crit. Parse the range as its first number: “7 min – 7 max” stripped of
+  non-digits reads 77, which made the comparison pass against any value at all.
+
 - **triple-attack-crit.mjs** — Critical Explosion is the one thing on PS that lets a
   Triple Attack proc crit, and the engine has modelled it for a while; the panel just
   never printed the crit, so the number read identically with the buff on and off while
