@@ -1,6 +1,7 @@
 import { useState } from "react";
 import HoverNote from "./HoverNote";
 import AttackRateNote from "./AttackRateNote";
+import { swingDamage, killMetrics, type Range } from "../lib/killMetrics";
 
 interface Step {
   name: string;
@@ -659,7 +660,6 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const dwLhNormal = normal_attack.result.dw_lh_normal ?? null;
   const dwLhCrit = normal_attack.result.dw_lh_crit ?? null;
   const dwPsBonusPct = normal_attack.result.dw_ps_bonus_pct ?? 0;
-  const dwPsBonusMult = 1 + dwPsBonusPct / 100;
 
   // Vanilla DPS: recompute single-weapon DPS from period_ms
   const periodMs = normal_attack.result.period_ms ?? 0;
@@ -798,12 +798,12 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   // paid out per critical hit. Shown under the breakdown, clearly marked as healing.
   const critHeal = activeBranch === "crit" ? (primary.result.crit?.crit_heal ?? null) : null;
 
-  // Combined DW damage range for the headline (PS mode, normal/crit branch)
-  const showDwCombined = hasDualWield && dwMode === "ps" && !!dwLhNormal && (activeBranch === "normal" || activeBranch === "crit");
+  // The two weapons of a PS dual-wield land in ONE swing, so the headline damage is
+  // their total, not the right hand's share. Worked out in lib/killMetrics, which the
+  // pinned Compare columns go through as well — they used to do their own arithmetic
+  // and showed the right-hand hit alone beside a breakdown ending on the full swing.
   const dwRhBranch = activeBranch === "crit" ? (normal_attack.result.crit ?? normal_attack.result.normal) : normal_attack.result.normal;
   const dwLhBranch = activeBranch === "crit" ? (dwLhCrit ?? dwLhNormal!) : dwLhNormal!;
-  const combinedMin = showDwCombined ? Math.round((2 * dwRhBranch.min_damage * dwRhFactor + dwLhBranch.min_damage * dwLhFactor) * dwPsBonusMult) : null;
-  const combinedMax = showDwCombined ? Math.round((2 * dwRhBranch.max_damage * dwRhFactor + dwLhBranch.max_damage * dwLhFactor) * dwPsBonusMult) : null;
 
   // DPS: combined PS DPS in PS mode, single-weapon recomputed in Vanilla mode
   const displayDps = hasDualWield && dwMode === "vanilla" ? vanillaDps : result.dps;
@@ -811,65 +811,37 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
     ? (vanillaDps !== null && isFinite(vanillaDps))
     : result.dps_valid;
 
-  // Hits to kill (min/avg/max) and time to kill vs a monster's HP. Per-hit damage
-  // uses the displayed branch (or the combined dual-wield total); time-to-kill uses
-  // the estimated DPS, which already folds in ASPD / crit mix / procs (and cast +
-  // after-cast delay for skills). Only shown in monster mode, where HP is known.
-  const killMin = showDwCombined ? combinedMin : activeDamage?.min_damage ?? null;
-  const killAvg = showDwCombined ? Math.round(((combinedMin ?? 0) + (combinedMax ?? 0)) / 2) : activeDamage?.avg_damage ?? null;
-  const killMax = showDwCombined ? combinedMax : activeDamage?.max_damage ?? null;
-  const hitsToKill = (dmg: number | null | undefined) =>
-    target_hp != null && dmg != null && dmg > 0 ? Math.ceil(target_hp / dmg) : null;
-
-  // Turn Undead is an instant-kill skill: each cast has `success_chance` to kill
-  // outright, and on failure deals `killAvg` chip damage. Expected casts to kill
-  // = E[min(Geom(p), nChip)] = (1 − (1−p)^nChip) / p, where nChip = casts to kill
-  // by chip damage alone (handles the p→0 limit, where it degrades to nChip). Time
-  // to kill = expected casts × cast period. This is what folds the success chance
-  // into the hits/duration metrics.
-  const successChance = result.success_chance ?? null;
-  const isInstaKill = successChance != null;
-  let tuCasts: number | null = null;
-  if (isInstaKill && target_hp != null) {
-    const p = Math.max(0, Math.min(1, (successChance as number) / 100));
-    const nChip = killAvg != null && killAvg > 0 ? Math.ceil(target_hp / killAvg) : Infinity;
-    if (p > 0) {
-      const survive = Math.pow(1 - p, isFinite(nChip) ? nChip : 1e9);
-      tuCasts = (1 - survive) / p;
-    } else if (isFinite(nChip)) {
-      tuCasts = nChip;
-    }
-  }
-  const tuCastsRounded = tuCasts != null ? Math.max(1, Math.round(tuCasts)) : null;
-  const periodS = (result.period_ms ?? 0) / 1000;
+  // The damage ONE attack lands, as displayed: the dual-wield swing total where that
+  // applies, otherwise the branch on screen. Everything below — the damage range, the
+  // breakdown's final line, the kill metrics — reads this single figure.
+  const showDwCombined = hasDualWield && dwMode === "ps" && !!dwLhNormal
+    && (activeBranch === "normal" || activeBranch === "crit");
+  const swing: Range | null = swingDamage(normal_attack.result, activeDamage, {
+    dw: showDwCombined,
+    crit: activeBranch === "crit",
+  });
+  const killMin = swing?.min ?? null;
+  const killAvg = swing?.avg ?? null;
+  const killMax = swing?.max ?? null;
 
   // Poison ailment damage-over-time (per second), added to the attack DPS so the
   // target dies sooner. Constant since it's a fraction of Max HP, so it folds in
   // as a flat +DPS term. Only present in monster mode with the Poison status on.
   const poisonDot = poison_dot_per_sec != null && poison_dot_per_sec > 0 ? poison_dot_per_sec : 0;
-  const killDps = (displayDpsValid && displayDps != null ? displayDps : 0) + poisonDot;
 
-  // Hits-to-kill and time-to-kill share ONE basis so they can't disagree: the
-  // expected damage per attack cycle = DPS × period, which folds in crit RATE,
-  // procs and ASPD exactly as the DPS/time do. (Using the displayed branch's
-  // per-hit damage for the hit count assumed 100% of that branch — e.g. all crits —
-  // so a big-crit / low-crit-rate build showed FEWER hits yet a SLOWER time.) The
-  // min/max envelope applies the displayed branch's roll spread around that value.
-  // A branch with no meaningful rate (Killing Stroke, Fling, Reflect Shield) reports
-  // dps_valid:false, which zeroes killDps — but "how many casts to kill" is still a
-  // real question there, and it was coming out blank. Those branches are a single
-  // deterministic hit with no crit or proc mix, so the per-hit damage IS the expected
-  // damage per cast and the reason for the DPS×period basis doesn't apply. Time to
-  // kill stays blank: without a rate there is no honest duration to quote.
-  const noRateHit = !isInstaKill && !displayDpsValid && killAvg != null && killAvg > 0;
-  const expPerHit = !isInstaKill && killDps > 0 && periodS > 0 ? killDps * periodS
-    : noRateHit ? killAvg
-    : null;
-  const hiRatio = killAvg != null && killAvg > 0 && killMax != null ? killMax / killAvg : 1;
-  const loRatio = killAvg != null && killAvg > 0 && killMin != null ? killMin / killAvg : 1;
-  const hitsBest = isInstaKill ? null : hitsToKill(expPerHit != null ? expPerHit * hiRatio : null);   // fewest hits — best-case rolls
-  const hitsAvg = isInstaKill ? tuCastsRounded : hitsToKill(expPerHit);
-  const hitsWorst = isInstaKill ? null : hitsToKill(expPerHit != null ? expPerHit * loRatio : null);  // most hits — worst-case rolls
+  // Hits and time to kill, from lib/killMetrics — the same call the pinned Compare
+  // columns make, so a column and the panel under it cannot quote different numbers.
+  const kill = killMetrics({
+    targetHp: target_hp,
+    damage: swing,
+    dps: displayDps,
+    dpsValid: displayDpsValid,
+    periodMs: result.period_ms ?? 0,
+    poisonDotPerSec: poison_dot_per_sec,
+    successChance: result.success_chance ?? null,
+  });
+  const { isInstaKill, noRateHit, hitsBest, hitsAvg, hitsWorst, timeToKill } = kill;
+  const successChance = result.success_chance ?? null;
   // "...and if every hit were THIS one?" — the count for the branch on screen, with
   // no crit/proc mix folded in. The figures above answer "how long will this actually
   // take", which is the right default and is what Time to kill agrees with; this
@@ -880,7 +852,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   // Shown only when it differs from the expected count — on the default branch of a
   // build with no crit and no procs the two coincide, and printing the same number
   // twice is worse than printing it once.
-  const hitsThisBranch = isInstaKill ? null : hitsToKill(killAvg);
+  const hitsThisBranch = kill.hitsThisBranch;
   const showBranchHits = hitsThisBranch != null && hitsAvg != null && hitsThisBranch !== hitsAvg;
 
   // EXP per hit = what the kill awards ÷ how many hits it takes. The headline number
@@ -907,9 +879,6 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const expRangeNote = (lo: number | null, hi: number | null) =>
     lo != null && hi != null && expFmt(lo) !== expFmt(hi) ? ` Best-to-worst damage rolls: ${expFmt(hi)} – ${expFmt(lo)}.` : "";
 
-  const timeToKill = isInstaKill
-    ? (tuCasts != null && periodS > 0 ? tuCasts * periodS : null)
-    : (target_hp != null && killDps > 0 ? target_hp / killDps : null);
   // For an instant-kill skill, "DPS" as chip-damage throughput is misleading next
   // to the kill metrics (they'd imply far less than the target's HP). Show the
   // effective throughput (HP ÷ expected time) so the panel stays self-consistent;
@@ -1010,25 +979,16 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             <div className="value">{status.aspd.toFixed(1)}</div>
           </div>
         )}
-        {showDwCombined ? (
+        {swing && isFinite(swing.min) && isFinite(swing.max) && (
           <div className="metric metric-range">
             <div className="label">Damage range</div>
             <div className="value range">
-              {combinedMin}<span className="unit">min</span>
+              {Math.round(swing.min)}<span className="unit">min</span>
               {" – "}
-              {combinedMax}<span className="unit">max</span>
+              {Math.round(swing.max)}<span className="unit">max</span>
             </div>
           </div>
-        ) : activeDamage && activeDamage.min_damage != null && activeDamage.max_damage != null ? (
-          <div className="metric metric-range">
-            <div className="label">Damage range</div>
-            <div className="value range">
-              {Math.round(activeDamage.min_damage)}<span className="unit">min</span>
-              {" – "}
-              {Math.round(activeDamage.max_damage)}<span className="unit">max</span>
-            </div>
-          </div>
-        ) : null}
+        )}
         <div className="metric" title={displayDpsValid
           ? undefined
           : "No DPS for this branch: it has no repeat rate to quote. Killing Stroke drops you to 1 HP and cancels the Ninja Aura it needs; Fling spends your coins; Reflect Shield fires on the enemy's attacks, not yours. The per-hit damage is the meaningful number."}>

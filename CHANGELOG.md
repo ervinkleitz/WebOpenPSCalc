@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Pinned builds were quoting one weapon's hit as the whole swing.** On a
+  dual-wielding Assassin, Compare showed *Damage / hit 1,625* while the breakdown
+  right below it ended on *Final damage 5,074–5,327*. The columns were reading the
+  first sub-table — the right hand — but a PS dual-wield lands two right-hand hits
+  and a left-hand one in a single swing, so the pin was showing roughly a third of
+  the damage. **Hits to kill** was wrong by the same factor (88 where the panel said
+  65). Both now come from the same place the breakdown does, so a column and the
+  panel under it cannot disagree. Reported by a player.
+
 - **“Hits to kill” now also answers “…and if every hit were this one?”** Switching to
   Critical hit never changed the hit count, because that figure deliberately folds in
   your crit rate, procs and attack speed — it is the realistic one, and it is what
