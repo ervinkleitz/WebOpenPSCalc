@@ -84,6 +84,9 @@ function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weap
     is_ranged: isRanged = false, mob_atk_bonus_rate: mobAtkBonusRate = 0,
     ele_override: eleOverride = null, ratio_override: ratioOverride = null,
     ignore_def: ignoreDef = false,
+    // A flat ATK the SKILL adds before its ratio, outside the ratio system: Spiral
+    // Pierce's (STR/10)². See MOB_SKILL_FLAT_ATK in mobSkillRatios.js.
+    flat_atk_add: flatAtkAdd = 0, flat_atk_note: flatAtkNote = "",
     // A debuffed copy of the monster (offensive Blessing halves its STR/INT/DEX).
     // The caller applies the debuff so that the SAME object is used for the damage
     // and handed back to the client, instead of the two drifting apart.
@@ -96,18 +99,32 @@ function calculateIncomingPhysicalDamage(mobId, build, status, gearBonuses, weap
 
   const atkMin = mob.atk_min ?? 0;
   const atkMax = Math.max(atkMin, mob.atk_max ?? 0);
-  const mobStr = (mob.stats || {}).str || 0;
-  const batk = mobStr + Math.floor(mobStr / 10) ** 2;
 
+  // A monster's hit is its mob_db ATK roll and nothing else.
+  //
+  // This used to add the PLAYER's base-ATK formula on top — str + (str/10)², worth
+  // +171 on a Drill — citing "status.c mob status calc". A monster does not have it:
+  // status_base_atk() opens with `if (!(bl->type & battle_config.enable_baseatk))
+  // return 0;` (status.c:3788) and that config defaults to BL_PC|BL_HOM
+  // (battle.c:7718), so `st->batk` is 0 for a mob and battle_calc_base_damage2's
+  // closing `damage += st->batk` adds nothing. A player reported taking 765×5 from
+  // Drill's Clashing Spiral where this panel called 833 the MINIMUM — impossible by
+  // 90 per hit, exactly the stray STR term (2026-10-10).
+  //
+  // The roll itself is `rnd()%(atkmax-atkmin)+atkmin`, i.e. [atk_min, atk_max-1].
   let pmf = atkMax > atkMin ? uniformPmf(atkMin, atkMax - 1) : { [atkMin]: 1.0 };
-  pmf = addFlat(pmf, batk);
   if (mobAtkBonusRate) pmf = scaleFloor(pmf, 100 + mobAtkBonusRate, 100);
+  // Flat ATK a skill adds in its own battle.c case, before the ratio.
+  if (flatAtkAdd) pmf = addFlat(pmf, flatAtkAdd);
 
   const [mn0, mx0, av0] = pmfStats(pmf);
   result.add_step({
     name: "Mob Base ATK", value: av0, min_value: mn0, max_value: mx0,
-    note: `${mob.name}: atk[${atkMin},${atkMax}] + STR ${mobStr} + (STR//10)²=${Math.floor(mobStr / 10) ** 2}`,
-    formula: "rnd(atk_min,atk_max-1) + str + (str//10)²", hercules_ref: "status.c mob status calc",
+    note: `${mob.name}: atk[${atkMin},${atkMax}]`
+      + (mobAtkBonusRate ? ` ×${(100 + mobAtkBonusRate) / 100}` : "")
+      + (flatAtkAdd ? ` + ${flatAtkNote || `${flatAtkAdd} (skill)`}` : ""),
+    formula: "rnd(atk_min, atk_max-1)" + (flatAtkAdd ? " + skill ATK bonus" : ""),
+    hercules_ref: "battle.c battle_calc_base_damage2 (mob: rolls [atk,atk2-1]; st->batk is 0 — enable_baseatk defaults to BL_PC|BL_HOM)",
   });
 
   // Skill ratio for a mob-cast physical skill (e.g. Bash, Brandish): scale the mob's

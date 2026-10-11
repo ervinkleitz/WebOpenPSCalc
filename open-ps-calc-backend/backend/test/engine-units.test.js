@@ -5028,8 +5028,13 @@ test("perfect hit, HIT%, DEF% and the defensive bonuses change the numbers they 
   assert.ok(inc({ right_hand: 1408 }, 1320, true) > 0, "Owl Duke's magic should normally hurt");
   assert.equal(inc({ right_hand: 1408, left_hand: 2101, left_hand_card1: 4128 }, 1320, true), 0, "Golden Thiefbug Card: immune to magic");
   const without = inc({ right_hand: 1408, left_hand: 2101 }, 1285, false);
-  assert.equal(inc({ right_hand: 1408, left_hand: 2101, left_hand_card1: 4231 }, 1285, false), without / 2,
-    "Mi Gao Card: -50% from Guardians (Archer Guardian)");
+  const halved = inc({ right_hand: 1408, left_hand: 2101, left_hand_card1: 4231 }, 1285, false);
+  // Within 1: these are averages over a per-roll FLOORED distribution, so halving an
+  // odd-average hit lands half a point low. (It read as exact only while the mob's
+  // damage happened to be even — it stopped being so when the stray player base-ATK
+  // term came off a monster's hit.)
+  assert.ok(Math.abs(halved - without / 2) <= 1,
+    `Mi Gao Card: -50% from Guardians (Archer Guardian) — ${without} -> ${halved}`);
 
   // bAddDefClass: by monster id, straight through the card fix.
   const { calculateIncomingPhysical } = require("../src/engine/calculators/modifiers/cardFix");
@@ -6760,4 +6765,71 @@ test("the PS skill audit can parse the planner's chunk format", () => {
   // Colour codes and escaped quotes must not survive into stored text.
   assert.equal(clean("^777777Fire   Bolt ^000000"), "Fire Bolt");
   assert.equal(clean("caster\\'s HP"), "caster's HP");
+});
+
+// A monster's physical hit is its mob_db ATK roll — nothing is added on top.
+//
+// "Drill's Spiral Pierce seems to be hitting me for less... I just got hit for
+// 765 x 5 (3825) when the calculated value says 4165 should be the minimum" —
+// Laila Braveheart via Frennetix, 2026-10-10. The panel was adding the PLAYER's
+// base-ATK formula, str + (str/10)², to every monster attack: +171 on a Drill,
+// which put its stated minimum above a hit the player had actually taken.
+//
+// status_base_atk() returns 0 for anything outside battle_config.enable_baseatk,
+// whose default is BL_PC|BL_HOM (battle.c:7718) — a monster has no base ATK, and
+// battle_calc_base_damage2's closing `damage += st->batk` adds nothing for one.
+test("a monster's hit is its ATK roll, with no player base-ATK on top", () => {
+  const { calculateIncomingPhysicalDamage } = require("../src/engine/calculators/incomingPipeline");
+  const { resolveMobSkillDamage } = require("../src/engine/mobSkillRatios");
+  const PS_PROFILE = getProfile("payon_stories");
+  loader.setProfile(PS_PROFILE);
+  const cfg = createBattleConfig();
+  const b = buildFromSaveSchema({ server: "payon_stories", job_id: 12, base_level: 99, job_level: 50,
+    base_stats: { str: 83, agi: 89, vit: 10, int: 10, dex: 59, luk: 1 } });
+  const [gb, eff, w, s] = resolvePlayerState(b, cfg, PS_PROFILE);
+
+  // DRILL (25017): ATK 810–1250, STR 90 — the monster from the report. Its STR is
+  // high enough that the stray term was worth +171, far outside rounding.
+  const DRILL = 25017;
+  const mob = loader.getMonsterData(DRILL);
+  assert.equal(mob.atk_min, 810, "fixture check: Drill's ATK floor");
+  assert.equal(mob.stats.str, 90, "fixture check: Drill's STR (the size of the old error)");
+
+  const basic = calculateIncomingPhysicalDamage(DRILL, eff, s, gb, w, cfg, {});
+  const roll = basic.steps[0];
+  assert.equal(roll.name, "Mob Base ATK");
+  // rnd()%(atkmax-atkmin)+atkmin, i.e. [atk, atk2-1] — and no more.
+  assert.equal(roll.min_value, mob.atk_min, "a monster rolls from its mob_db ATK floor");
+  assert.equal(roll.max_value, mob.atk_max - 1, "...up to one below its ATK ceiling");
+
+  // Spiral Pierce is the exception, and only by its own hardcoded term: the
+  // pre-renewal LK_SPIRALPIERCE/ML_SPIRALPIERCE case does `i = str/10; i*=i;
+  // ATK_ADD(i)` OUTSIDE the `if (sd)` weapon-weight branch, so a mob caster gets
+  // it. 90/10 = 9, squared = 81.
+  const spec = resolveMobSkillDamage(8218, 5, PS_PROFILE, mob);
+  assert.equal(spec.name, "ML_SPIRALPIERCE");
+  assert.equal(spec.flatAtk, 81, "Spiral Pierce adds (STR//10)² to its caster's ATK");
+  assert.equal(spec.hits, 5);
+  assert.equal(spec.ignoreDef, true, "and goes straight through the defender's DEF");
+
+  const sp = calculateIncomingPhysicalDamage(DRILL, eff, s, gb, w, cfg, {
+    ele_override: spec.elementInt, ratio_override: spec.ratio,
+    ignore_def: spec.ignoreDef, flat_atk_add: spec.flatAtk,
+  });
+  assert.equal(sp.steps[0].min_value, mob.atk_min + 81, "the STR term lands before the ratio");
+  assert.equal(sp.steps[0].max_value, mob.atk_max - 1 + 81);
+
+  // The player's 765-per-hit must be reachable. Their gear cut 15% of it, so the
+  // model has to be able to produce 900 before resists — it could not before: the
+  // old floor was 810 + 171 + 81 = 1062.
+  assert.ok(sp.steps[0].min_value <= 900,
+    `a 765 hit behind 15% resist (900 raw) must be inside the modelled range, not below it `
+    + `(floor is ${sp.steps[0].min_value})`);
+
+  // A monster with no STR at all must be identical either way — the term is the
+  // caster's, not a constant.
+  const peco = loader.getMonsterData(1019);
+  const pecoHit = calculateIncomingPhysicalDamage(1019, eff, s, gb, w, cfg, {});
+  assert.equal(pecoHit.steps[0].min_value, peco.atk_min,
+    "every monster, not just this one, hits for its own ATK");
 });

@@ -9,6 +9,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Survivability overstated how hard every monster hits you.** A player was taking
+  765×5 from a Drill's Clashing Spiral while this panel called 4,165 the *minimum*.
+  The monster's hit was being built like a player's: its ATK roll plus the player
+  base-ATK formula, STR + (STR÷10)², which on a Drill is a free +171 per hit. A
+  monster does not have that — its damage is the ATK in the monster database and
+  nothing else. Every incoming figure drops accordingly (the Drill's basic melee goes
+  from 652–947 to 538–833, its Clashing Spiral from 4,165–6,035 to 3,785–5,650, which
+  now contains the hit that was reported). Spiral Pierce keeps the (STR÷10)² its own
+  formula adds — that part is real, and it is now shown as its own term in the
+  breakdown. Reported by a player.
+
 - **Pinned builds were quoting one weapon's hit as the whole swing.** On a
   dual-wielding Assassin, Compare showed *Damage / hit 1,625* while the breakdown
   right below it ended on *Final damage 5,074–5,327*. The columns were reading the

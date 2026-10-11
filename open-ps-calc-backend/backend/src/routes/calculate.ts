@@ -748,7 +748,13 @@ router.post("/incoming", (req: Request, res: Response) => {
       }
 
       // Multi-hit skills: the ratio is per hit; scale the priced hit by the count.
-      const skOpts = { ele_override: spec.elementInt, ratio_override: spec.ratio, ignore_def: spec.ignoreDef, mob_override: mob };
+      const skOpts = {
+        ele_override: spec.elementInt, ratio_override: spec.ratio, ignore_def: spec.ignoreDef,
+        // Flat ATK the skill's own battle.c case adds before its ratio (Spiral
+        // Pierce's (STR/10)²) — physical only; no magic skill has one.
+        flat_atk_add: spec.flatAtk || 0, flat_atk_note: spec.flatAtkNote || "",
+        mob_override: mob,
+      };
       let result = spec.attackType === "Magic"
         ? calculateIncomingMagicDamage(mobId, effBuild, status, gearBonuses, weapon, skOpts)
         : calculateIncomingPhysicalDamage(mobId, effBuild, status, gearBonuses, weapon, config, skOpts);

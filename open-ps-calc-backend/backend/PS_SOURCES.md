@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-10 | Laila Braveheart (in-game observation) + Hercules status.c:3788 / battle.c:7718 | Player report + Source | A monster's physical hit is its mob_db ATK roll — it has no base ATK |
 | 2026-10-07 | PS skill planner tooltips (tools.payonstories.com/skill) | First-party | Skill text and per-level effects; standing weekly audit |
 | 2026-10-07 | Hercules status.c:1856 + PS wiki Peco Peco Ride | Source + Live wiki | A mounted spear loses its Medium-size penalty |
 | 2026-10-07 | Hercules pc.c pc_readparam SP_BASEJOB/SP_BASECLASS + PS item API | Source + First-party | Class-gated item bonuses, and Poring Dagger's Novice/Super Novice gate |
@@ -7882,3 +7883,46 @@ PS cap only when `levels.length === max_level`, so rewriting `levels` can silent
 a skill's rank cap in the picker, and rewriting `name` moves display names that
 `ps_skill_desc_overrides` was written to correct. Refreshing is a data migration that
 needs its own review and its own test run - not a side effect of an audit.
+
+## 2026-10-10 - A monster has no base ATK (player report + Hercules source)
+
+**Reported.** Laila Braveheart, relayed by Frennetix: *"Drill's Spiral Pierce seems to be
+hitting me for less... I just got hit for 765 x 5 (3825) when the calculated value says
+4165 should be the minimum."* Metan supplied the build (`openpscalc.com/?s=oY1cMgo`,
+a dual-dagger Assassin vs DRILL 25017) and noted the only in-game differences were base
+level 98, 3 AGI and a +4 Matyr footgear - none of which touch this number, because
+Spiral Pierce ignores DEF and those swaps change no %-resist.
+
+**Finding.** The incoming pipeline built a monster's hit the way it builds a player's: the
+mob_db ATK roll **plus `STR + (STR/10)^2`**, the player base-ATK formula. On a Drill
+(STR 90) that is a flat +171 per hit, and it is what lifted the quoted minimum above a hit
+the player had actually taken.
+
+A monster does not have base ATK:
+
+- `status_base_atk()` opens with `if (!(bl->type & battle_config.enable_baseatk)) return 0;`
+  (status.c:3788), and its own comment reads *"Normally only players have base-atk"*.
+- `enable_baseatk` defaults to `BL_PC|BL_HOM` (battle.c:7718). `BL_MOB` is not in it.
+- `battle_calc_base_damage2()` (battle.c:610) therefore gives a mob
+  `damage = rnd()%(atkmax-atkmin)+atkmin` and closes with `damage += st->batk`, which adds
+  **0**. The mob_db ATK columns ARE the damage.
+
+**Spiral Pierce keeps one STR term, and only one.** The pre-renewal
+`LK_SPIRALPIERCE`/`ML_SPIRALPIERCE` case does `i = sstatus->str/10; i*=i; ATK_ADD(i);
+//Add str bonus.` OUTSIDE the `if (sd)` weapon-weight branch, so a monster caster gets it:
++81 on a Drill. (The `ATK_ADDRATE(50*skill_lv)` beside it is inside the player branch, so a
+mob's cast does not scale that way - our per-level ratio for it comes from kokotewa and a
+player report, recorded 2026-08-13, and is unchanged.)
+
+**Arithmetic.** The player's 765 per hit, behind their 15% Neutral resist, is 900 raw.
+Old model: roll + 171 + 81, floor 1062 - 765 was unreachable. New: roll + 81, floor 891,
+and 900 is a roll of 819 out of [810, 1249]. The panel now quotes 3,785-5,650 for the cast,
+which contains the 3,825 they took.
+
+**Blast radius.** Every incoming figure in the Survivability panel drops by that monster's
+`STR + (STR/10)^2`, before resists. Drill's basic melee went 652-947 -> 538-833. One golden
+moved (`incoming-banshee-physical`, 2035 -> 1998 average).
+
+**Guarded by** `test/engine-units.test.js` ("a monster's hit is its ATK roll, with no player
+base-ATK on top") and `tools/e2e/incoming-mob-atk.mjs`, which replays Laila's build on the
+live page and fails if the quoted minimum rises back above the hit she reported.

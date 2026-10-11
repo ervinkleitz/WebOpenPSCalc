@@ -134,6 +134,18 @@ const MOB_SKILL_RATIOS = {
   LK_SPIRALPIERCE: (lv) => 20 * lv,
 };
 
+// Flat ATK a skill adds in its OWN battle.c case, before any ratio — damage that no
+// percentage can express. Keyed by skill name; the value reads the caster's stats.
+const MOB_SKILL_FLAT_ATK = {
+  // Spiral Pierce: `i = sstatus->str/10; i*=i; ATK_ADD(i); //Add str bonus.`
+  // (battle.c, the pre-renewal LK_SPIRALPIERCE/ML_SPIRALPIERCE case). It sits
+  // OUTSIDE the `if (sd)` weapon-weight branch, so a monster caster gets it too —
+  // it is the one part of a mob's Spiral Pierce that is not just its ATK roll.
+  // On a Drill (STR 90) that is a flat +81 per hit.
+  LK_SPIRALPIERCE: (st) => Math.floor((st.str || 0) / 10) ** 2,
+  ML_SPIRALPIERCE: (st) => Math.floor((st.str || 0) / 10) ** 2,
+};
+
 // Skills whose damage comes from the TARGET's stats rather than the caster's
 // ATK/MATK, so no ratio can express them. The caller reads the player's own
 // status to price these; each entry says which quantity and how much of it.
@@ -450,15 +462,20 @@ function resolveMobSkillDamage(skillId, level, profile, mob) {
     }
   }
 
+  // Flat ATK the skill's own case adds to the caster (Spiral Pierce's (STR/10)²).
+  const flatFn = MOB_SKILL_FLAT_ATK[ratioName];
+  const flatAtk = typeof flatFn === "function" && hasNumber ? (Number(flatFn(mobStats)) || 0) : 0;
+
   return {
     name, desc: sk.description || name, attackType, elementInt, hits, ratio,
     hasNumber: hasNumber || targetStatSpec != null, estimated, damageType, level: lv,
     ignoreDef: ignoreDef || targetStatSpec != null, targetStat: targetStatSpec,
+    flatAtk, flatAtkNote: flatAtk ? `STR bonus (STR//10)²=${flatAtk}` : "",
   };
 }
 
 module.exports = {
   resolveMobSkillDamage,
-  MOB_SKILL_RATIOS, NO_HP_DAMAGE_SKILLS, FLAT_UNMODELED_SKILLS, MOB_SKILL_ALIASES,
+  MOB_SKILL_RATIOS, MOB_SKILL_FLAT_ATK, NO_HP_DAMAGE_SKILLS, FLAT_UNMODELED_SKILLS, MOB_SKILL_ALIASES,
   MOB_SKILL_TARGET_STAT_DAMAGE, MOB_SKILL_ATTACK_TYPE, SELF_CENTRED_AOE,
 };
