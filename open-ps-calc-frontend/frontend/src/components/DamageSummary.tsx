@@ -1004,6 +1004,19 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             </div>
           </div>
         )}
+        {/* The crit/non-crit blend — what one attack does on average, as opposed to
+            the single outcome the selected branch shows. */}
+        {showAvgPerCycle && (
+          <div className="metric" title={`What one ${cycleNoun} does on average: your `
+            + `${result.crit_chance.toFixed(1)}% criticals blended with the ordinary hits`
+            + `${result.hit_chance < 100 ? `, and the ${(100 - result.hit_chance).toFixed(1)}% that miss` : ""}`
+            + `${activeResult.result.proc_chances && Object.keys(activeResult.result.proc_chances).length ? ", plus procs" : ""}. `
+            + `The branch buttons each show ONE outcome; this is the mix, and it is what DPS, `
+            + `Hits to kill and Time to kill are built from (DPS ÷ ${(1000 / (result.period_ms || 1000)).toFixed(2)} per second).`}>
+            <div className="label">Average / {cycleNoun}</div>
+            <div className="value">{Math.round(avgPerCycle!).toLocaleString()}</div>
+          </div>
+        )}
         <div className="metric" title={displayDpsValid
           ? undefined
           : "No DPS for this branch: it has no repeat rate to quote. Killing Stroke drops you to 1 HP and cancels the Ninja Aura it needs; Fling spends your coins; Reflect Shield fires on the enemy's attacks, not yours. The per-hit damage is the meaningful number."}>
@@ -1026,19 +1039,6 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
               {" – "}
               {hitsWorst}<span className="unit">max</span>
             </div>
-          </div>
-        )}
-        {/* The crit/non-crit blend — what one attack does on average, as opposed to
-            the single outcome the selected branch shows. */}
-        {showAvgPerCycle && (
-          <div className="metric" title={`What one ${cycleNoun} does on average: your `
-            + `${result.crit_chance.toFixed(1)}% criticals blended with the ordinary hits`
-            + `${result.hit_chance < 100 ? `, and the ${(100 - result.hit_chance).toFixed(1)}% that miss` : ""}`
-            + `${activeResult.result.proc_chances && Object.keys(activeResult.result.proc_chances).length ? ", plus procs" : ""}. `
-            + `The branch buttons each show ONE outcome; this is the mix, and it is what DPS, `
-            + `Hits to kill and Time to kill are built from (DPS ÷ ${(1000 / (result.period_ms || 1000)).toFixed(2)} per second).`}>
-            <div className="label">Average / {cycleNoun}</div>
-            <div className="value">{Math.round(avgPerCycle!).toLocaleString()}</div>
           </div>
         )}
         {/* The count for the branch you are looking at, unaveraged. */}
