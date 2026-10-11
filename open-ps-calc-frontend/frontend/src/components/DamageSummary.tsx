@@ -82,6 +82,11 @@ interface SingleResult {
     proc_chance?: number;
     double_proc_label?: string | null;
     ta_proc_chance?: number;
+    /** Triple Attack's proc when it CRITS. Only present while Critical Explosion
+     *  is up — that is the one thing on Payon Stories that lets a Triple Attack
+     *  proc crit at all. The engine has always folded it into the DPS; it just
+     *  had nowhere to show. */
+    ta_crit_proc?: DamageBranch | null;
     dps_valid: boolean;
     dps: number;
     period_ms?: number;
@@ -419,11 +424,16 @@ function AutoBlitzView({ branch, chance, dpsAdded }: { branch: DamageBranch; cha
 // chance for a normal attack to become Triple Attack instead. It REPLACES the
 // swing rather than adding a hit, so its expected value is already inside the DPS
 // above; this panel is what one proc actually hits for.
-function TripleAttackView({ branch, chance, label }: { branch: DamageBranch; chance: number; label: string }) {
+function TripleAttackView({ branch, chance, label, crit, critChance }: {
+  branch: DamageBranch; chance: number; label: string;
+  crit?: DamageBranch | null; critChance?: number;
+}) {
   const n = (v: number) => Math.round(v).toLocaleString();
-  const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
-    ? `${n(branch.min_damage)}–${n(branch.max_damage)}`
-    : n(branch.avg_damage);
+  const rng = (b: DamageBranch) => Math.round(b.min_damage) !== Math.round(b.max_damage)
+    ? `${n(b.min_damage)}–${n(b.max_damage)}`
+    : n(b.avg_damage);
+  const range = rng(branch);
+  const critRange = crit ? rng(crit) : null;
   return (
     <div className="breakdown-view">
       <div className="breakdown-head">
@@ -435,9 +445,22 @@ function TripleAttackView({ branch, chance, label }: { branch: DamageBranch; cha
         <span className="breakdown-total-label">Per-proc damage</span>
         <span className="breakdown-total-val">{range}</span>
       </div>
+      {/* Only under Critical Explosion, which is the sole thing that lets a Triple
+          Attack proc crit on Payon Stories. Without it there is no crit row at all,
+          which is itself the answer to "does this crit?". */}
+      {crit && (
+        <div className="breakdown-total">
+          <span className="breakdown-total-label">
+            ...when it crits
+            {critChance ? <span className="breakdown-sub"> {critChance.toFixed(1)}% of procs</span> : null}
+          </span>
+          <span className="breakdown-total-val">{critRange}</span>
+        </div>
+      )}
       <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
         <span className="self-damage-chip muted">replaces the auto-attack</span>
         <span className="self-damage-chip muted">already folded into the DPS above</span>
+        {crit && <span className="self-damage-chip muted">crits because Critical Explosion is up</span>}
       </div>
     </div>
   );
@@ -683,6 +706,13 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         branch: tripleAttackBranch,
         chance: activeResult.result.proc_chances?.triple_attack ?? 0,
         label: activeResult.result.proc_labels?.triple_attack ?? "Triple Attack",
+        // Present only under Critical Explosion. The DPS above already weights this
+        // by the crit chance (battlePipeline splits the TA share crit/non-crit), so
+        // showing it is purely catching the readout up with the maths: a player
+        // turned Critical Explosion on, watched this panel not move, and reported
+        // Triple Attack as not critting. It was; the number was just never rendered.
+        crit: activeResult.result.ta_crit_proc ?? null,
+        critChance: activeResult.result.crit_chance ?? 0,
       }
     : null;
   // Double Attack / Chain Action second hit. Only ever procs on a normal attack, so
@@ -1231,7 +1261,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         />
       )}
 
-      {tripleAttack && <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label} />}
+      {tripleAttack && <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label}
+        crit={tripleAttack.crit} critChance={tripleAttack.critChance} />}
 
       {holyStrike && (
         <CardAutocastView title="Proc" label="Holy Strike" per="melee attack"

@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Triple Attack now shows its critical hit under Critical Explosion.** It has always
+  been critting — the wiki’s “Triple Attack can critically hit while Critical
+  Explosion is active” is modelled, and your DPS already went up accordingly (390 → 434
+  on a Monk hitting an Orc Warrior). But the Triple Attack box only ever printed the
+  non-crit number, so it read identically whether the buff was up or not, and there
+  was no way to tell from it that anything had happened. It now gains a
+  **“…when it crits”** line with the crit damage and how often it lands, and says
+  Critical Explosion is the reason. Reported by a player.
+
 - **“Normal hit” is now called “Auto attack”, because that is what it was.** With a
   skill selected the damage buttons read *Skill / Normal hit / Critical hit*, which
   looked like three versions of the same attack. They were not: **Normal hit** was

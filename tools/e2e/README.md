@@ -39,6 +39,15 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **triple-attack-crit.mjs** — Critical Explosion is the one thing on PS that lets a
+  Triple Attack proc crit, and the engine has modelled it for a while; the panel just
+  never printed the crit, so the number read identically with the buff on and off while
+  DPS quietly moved 390 → 434. Guards the readout: no crit row without the buff (which
+  is itself the answer to “does it crit?”), a crit row with it, carrying crit damage
+  rather than a repeat of the normal figure. Uses Orc Warrior, not Poring — against
+  0 DEF a pre-renewal crit is nearly identical to a normal hit, so the test would have
+  passed on noise.
+
 - **damage-branch-labels.mjs** — the damage buttons must say what they compute. With a
   skill selected they read *Skill / Normal hit / Critical hit*, and two of those looked
   like a pair and were not: “Normal hit” was the AUTO ATTACK (different attack, no
