@@ -114,6 +114,12 @@ export interface KillNumbers {
   tuCasts: number | null;
   /** Expected damage per attack cycle — the basis shared by hits and time. */
   expPerHit: number | null;
+  /** Expected damage of ONE attack, averaging the crit and non-crit outcomes (and
+   *  procs, and misses) the way the DPS does — but without the poison DoT, which is
+   *  damage over time rather than damage per swing. This is the "what do I actually
+   *  hit for" figure: the branch buttons each show one outcome, and a player asked
+   *  for the blend back (2026-10-11). */
+  attackPerCycle: number | null;
   /** DPS including the poison DoT, which is what the duration divides by. */
   killDps: number;
 }
@@ -169,6 +175,13 @@ export function killMetrics(input: KillInput): KillNumbers {
   const hiRatio = killAvg != null && killAvg > 0 && killMax != null ? killMax / killAvg : 1;
   const loRatio = killAvg != null && killAvg > 0 && killMin != null ? killMin / killAvg : 1;
 
+  // The blend, for display. expPerHit is the same quantity with the poison DoT
+  // folded in, because the kill metrics want everything that lowers the target's HP;
+  // a per-swing damage figure wants only what the swing itself does.
+  const attackPerCycle = !isInstaKill && dpsValid && dps != null && dps > 0 && periodS > 0
+    ? dps * periodS
+    : null;
+
   const timeToKill = isInstaKill
     ? (tuCasts != null && periodS > 0 ? tuCasts * periodS : null)
     : (targetHp != null && killDps > 0 ? targetHp / killDps : null);
@@ -183,6 +196,7 @@ export function killMetrics(input: KillInput): KillNumbers {
     noRateHit,
     tuCasts,
     expPerHit,
+    attackPerCycle,
     killDps,
   };
 }

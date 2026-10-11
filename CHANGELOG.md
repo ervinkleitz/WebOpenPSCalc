@@ -5,6 +5,20 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-11
+
+### Added
+
+- **"Average / cast" — what one attack does with your crits folded in.** Each damage
+  button shows one outcome, and the skill button shows the cast that does *not* crit;
+  on a Ninja critting 71% of the time, neither button is what you actually do. The
+  blend now sits beside them: 1,095 between a 983 ordinary cast and a 1,140 crit. It
+  is the same figure on every button, because it is the mix rather than a branch, and
+  it is what DPS, Hits to kill and Time to kill have always been built from — it was
+  just only reachable by dividing the DPS by your cast rate yourself. Builds with a
+  single outcome (a skill that cannot crit, landing every hit) don't show it, since it
+  would only repeat the damage above it. Asked for by a player.
+
 ## 2026-10-10
 
 ### Fixed
