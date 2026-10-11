@@ -6833,3 +6833,60 @@ test("a monster's hit is its ATK roll, with no player base-ATK on top", () => {
   assert.equal(pecoHit.steps[0].min_value, peco.atk_min,
     "every monster, not just this one, hits for its own ATK");
 });
+
+// PS's Sword Quickening grants FLEE as well as CRIT, and only with a sword in hand.
+//
+// "knights sword quickening doesn't seem to increase flee in the calc" — Mihtsuki via
+// Frennetix, 2026-10-11. The PS skill planner's per-level table for KN_TWOHANDQUICKEN
+// reads "+N FLEE, +N% CRIT" at every level; we applied only the CRIT half. The same
+// tooltip gates the whole buff on the weapon — "This skill only works with Sword class
+// weapons and the effect cancels when switching to any other type of weapon" — which
+// the ASPD half already honoured and the stat half did not.
+test("Sword Quickening gives FLEE and CRIT, and only while holding a sword", () => {
+  loader.setProfile(getProfile("payon_stories"));
+  // Knight. 1163 = Claymore (2H sword), 1408 = Pike (a spear) — same character, so
+  // only the weapon differs between the two comparisons.
+  const st = (equipped, buffs) => runScenarioRaw({
+    build: {
+      server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 20, dex: 50, luk: 20 },
+      equipped, active_buffs: buffs || {},
+    },
+    target: 1002,
+  }).rawStatus;
+
+  const CLAYMORE = 1163, PIKE = 1408;
+  const swordOff = st({ right_hand: CLAYMORE });
+  const swordOn = st({ right_hand: CLAYMORE }, { SC_TWOHANDQUICKEN: 10 });
+  assert.equal(swordOn.flee - swordOff.flee, 10, "Lv10 is +1 FLEE per level");
+  // cri is carried on an internal x10 scale, so +1% per level is +100 at Lv10.
+  assert.equal(swordOn.cri - swordOff.cri, 100, "...and +1% CRIT per level, as before");
+
+  const sword1h = st({ right_hand: 1101 }, { SC_TWOHANDQUICKEN: 10 });   // Sword (1H)
+  const sword1hOff = st({ right_hand: 1101 });
+  assert.equal(sword1h.flee - sword1hOff.flee, 10,
+    "a one-handed sword is still a sword — the planner's table has no 1H column for the stats");
+
+  // A spear cancels it outright. Before this, ticking the box with a spear equipped
+  // kept the crit, which is the same mistake in the other direction.
+  const spearOff = st({ right_hand: PIKE });
+  const spearOn = st({ right_hand: PIKE }, { SC_TWOHANDQUICKEN: 10 });
+  assert.equal(spearOn.flee, spearOff.flee, "no FLEE from Sword Quickening while holding a spear");
+  assert.equal(spearOn.cri, spearOff.cri, "and no CRIT either — the buff cancels off a sword");
+
+  // Spear Quicken is the other quicken and keeps its own numbers: PS gave it +1 HIT
+  // and +1 FLEE per level and took its CRIT away. It is a CRUSADER skill there
+  // (CR_SPEARQUICKEN), which is why it is read on job 14 and not on the Knight above.
+  const cr = (buffs) => runScenarioRaw({
+    build: {
+      server: "payon_stories", job_id: 14, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 20, dex: 50, luk: 20 },
+      equipped: { right_hand: PIKE }, active_buffs: buffs || {},
+    },
+    target: 1002,
+  }).rawStatus;
+  const crOff = cr(), crOn = cr({ SC_SPEARQUICKEN: 10 });
+  assert.equal(crOn.flee - crOff.flee, 10, "Spear Quicken: +1 FLEE per level");
+  assert.equal(crOn.hit - crOff.hit, 10, "Spear Quicken: +1 HIT per level");
+  assert.equal(crOn.cri, crOff.cri, "Spear Quicken: no CRIT on PS");
+});

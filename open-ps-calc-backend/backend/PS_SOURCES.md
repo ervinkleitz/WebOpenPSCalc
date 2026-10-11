@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-11 | PS skill planner tooltip, skid 60 (re-checked live) | First-party | Sword Quickening grants FLEE as well as CRIT, and only with a sword |
 | 2026-10-10 | Laila Braveheart (in-game observation) + Hercules status.c:3788 / battle.c:7718 | Player report + Source | A monster's physical hit is its mob_db ATK roll — it has no base ATK |
 | 2026-10-07 | PS skill planner tooltips (tools.payonstories.com/skill) | First-party | Skill text and per-level effects; standing weekly audit |
 | 2026-10-07 | Hercules status.c:1856 + PS wiki Peco Peco Ride | Source + Live wiki | A mounted spear loses its Medium-size penalty |
@@ -7926,3 +7927,42 @@ moved (`incoming-banshee-physical`, 2035 -> 1998 average).
 **Guarded by** `test/engine-units.test.js` ("a monster's hit is its ATK roll, with no player
 base-ATK on top") and `tools/e2e/incoming-mob-atk.mjs`, which replays Laila's build on the
 live page and fails if the quoted minimum rises back above the hit she reported.
+
+## 2026-10-11 - Sword Quickening's FLEE, and the weapon it is gated on
+
+**Reported.** Mihtsuki, relayed by Frennetix: *"knights sword quickening doesn't seem to
+increase flee in the calc."*
+
+**Source.** The PS skill planner, skid 60, `KN_TWOHANDQUICKEN`, name **"Sword
+Quickening"** - re-fetched live on 2026-10-11 and byte-identical to our stored
+`ps_skill_db.json` entry (the weekly audit reports no finding against it):
+
+> Decreases weapon swing delay with Swords by 30%. This skill only works with Sword
+> class weapons and the effect cancels when switching to any other type of weapon.
+> Skill also increases FLEE and CRIT rate for its duration. [...] Works with One-Hand
+> Sword for 30% the effect mentioned.
+
+with every level reading `+N FLEE, +N% CRIT`.
+
+**Two gaps, both in `passive_overrides.SC_TWOHANDQUICKEN`:**
+
+1. It carried `cri_per_lv: 10` and no `flee_per_lv`, so the FLEE half was dropped
+   entirely. `statusCalculator` already read a `flee_per_lv` for this buff - the profile
+   simply never set one, which is why it was a silent no-op rather than an error.
+2. The stat half was not gated on the weapon. The ASPD half already was (it looks the
+   weapon up in `aspd_buffs.SC_TWOHANDQUICKEN.quicken`, which has only `1HSword` and
+   `2HSword` keys), so a Knight holding a spear kept the +10% CRIT while correctly
+   getting no attack speed. Now `weapon_types: ["1HSword", "2HSword"]`.
+
+**Left alone.** The "30% the effect mentioned" clause reads as the swing-delay figure -
+the sentence before it - and the per-level table quotes one FLEE/CRIT column with no 1H
+variant, so the stat half is not scaled on a one-handed sword. The ASPD split
+(`2HSword` 30.0% / `1HSword` 10.0%) is older and separately sourced; untouched here.
+
+**Not the same skill.** PS's **Spear Quicken** is `CR_SPEARQUICKEN`, a CRUSADER skill
+(skid 258): +1 HIT and +1 FLEE per level, "No longer grants Critical Hit". That one was
+already right, and the editor correctly does not offer it to a Knight.
+
+**Guarded by** `test/engine-units.test.js` ("Sword Quickening gives FLEE and CRIT, and
+only while holding a sword") and `tools/e2e/sword-quickening-flee.mjs`, which reads the
+character stat cards on the live page.

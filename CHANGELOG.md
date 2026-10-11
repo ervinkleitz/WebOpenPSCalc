@@ -7,6 +7,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-11
 
+### Fixed
+
+- **Sword Quickening now gives the FLEE it says it does.** The skill grants “+1 FLEE,
+  +1% CRIT” per level — the calculator applied the CRIT and silently dropped the
+  FLEE, so a Knight running it at Lv10 was 10 FLEE short. It also cancels off a
+  sword (“the effect cancels when switching to any other type of weapon”), which the
+  attack-speed half already honoured but the stats did not — ticking it with a spear
+  equipped used to keep the crit. Both now match the skill. Reported by a player.
+
 ### Added
 
 - **"Average / cast" — what one attack does with your crits folded in.** Each damage
