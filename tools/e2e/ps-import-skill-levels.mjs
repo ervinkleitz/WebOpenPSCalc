@@ -14,9 +14,43 @@
 //     reloaded. That is pre-existing — it reproduces on production, which has none of
 //     this change — so each skill gets its own fresh load rather than a workaround.
 import { chromium } from "playwright-core";
+import { createRequire } from "module";
+import { readFileSync } from "fs";
 import zlib from "node:zlib";
 
 const URL_BASE = process.argv[2] || "http://localhost:5173/";
+
+// A build with stats, a weapon and a target to start from. The import merges skills
+// into whatever is on screen, so this also exercises that it leaves gear alone — and
+// it is what makes the damage comparison below mean anything: on the default empty
+// build a Knight's Pierce does 0 at Lv5 and 4 at Lv10, and "4 > 0" proves nothing.
+const FE = new URL("file:///C:/Users/ervin/WebOpenPSCalc/open-ps-calc-frontend/frontend/");
+const LZ = createRequire(new URL("package.json", FE))("lz-string");
+const feSrc = readFileSync(new URL("src/pages/BuildEditor.tsx", FE), "utf8");
+const CARD_SLOTS = ["right_hand", "left_hand", "head_top", "head_mid", "head_low",
+  "armor", "garment", "shoes", "accessory_left", "accessory_right"];
+const z3Block = feSrc.slice(feSrc.indexOf("const Z3_KEYS: string[] = ["), feSrc.indexOf("const Z3_ENC"));
+const z3Keys = [];
+for (const line of z3Block.split(/\r?\n/).slice(1)) {
+  if (line.includes("...Z3_CARD_SLOTS")) {
+    for (const sl of CARD_SLOTS) for (const i of [1, 2, 3, 4]) z3Keys.push(`${sl}_card${i}`);
+    continue;
+  }
+  for (const m of line.replace(/\/\/.*$/, "").matchAll(/"([^"]+)"/g)) z3Keys.push(m[1]);
+}
+const z3Enc = {};
+z3Keys.forEach((k, i) => { if (!(k in z3Enc)) z3Enc[k] = i.toString(36); });
+const ren = (v) => Array.isArray(v) ? v.map(ren) : (v && typeof v === "object")
+  ? Object.fromEntries(Object.entries(v).map(([k, x]) => [z3Enc[k] ?? k, ren(x)])) : v;
+const START = `${URL_BASE}?b=z3_` + LZ.compressToEncodedURIComponent(JSON.stringify(ren({
+  build: {
+    job_id: 7, base_level: 99, job_level: 50,
+    base_stats: { str: 90, agi: 50, vit: 40, int: 20, dex: 70, luk: 20 },
+    equipped: { right_hand: 1408 },  // Pike
+    target_mob_id: 1200,
+  },
+  skill: { id: 0, level: 1, label: "Normal Attack" }, targetMode: "monster",
+})));
 const plannerLink = (job, levels) =>
   "https://tools.payonstories.com/skill?state=" + encodeURIComponent(
     zlib.deflateSync(Buffer.from(JSON.stringify({ job, levels }), "utf8")).toString("base64"));
@@ -38,8 +72,8 @@ const readSkill = async () => ({
 
 /** Fresh load + import, so the picker is in its first-search state. */
 async function loadImported() {
-  await page.goto(URL_BASE, { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(4000);
+  await page.goto(START, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(6000);
   await page.getByRole("button", { name: /^Import$/i }).first().click();
   await page.waitForTimeout(1200);
   await page.locator(".modal-card textarea, .modal-card input[type=text]").first()
@@ -98,8 +132,13 @@ await skillPanel().locator('input[type="number"]').first().fill("10");
 await page.waitForTimeout(800);
 const ten = await calcDamage();
 console.log(`damage: rank 5 -> ${five}, rank 10 -> ${ten}`);
-check(five != null && ten != null && ten > five,
-  `rank 10 should out-damage the imported rank 5 (${five} -> ${ten})`);
+check(five != null && five > 100,
+  `rank 5 should do real damage with a weapon in hand, got ${five} — a near-zero figure `
+  + "makes the comparison below meaningless");
+// Pierce is 100%+10%/level, so Lv10 is ~1.09x Lv5. Assert a PROPORTIONAL gap, not
+// merely "bigger": the old check passed on 0 -> 2.
+check(ten != null && ten > five * 1.03,
+  `rank 10 should out-damage the imported rank 5 by the skill's own step (${five} -> ${ten})`);
 
 // ---- 3. a skill the import did NOT mention still opens at its max -----------
 // Otherwise this would be "always start low" rather than "start at what you know".

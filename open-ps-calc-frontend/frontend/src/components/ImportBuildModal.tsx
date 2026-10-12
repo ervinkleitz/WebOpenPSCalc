@@ -21,6 +21,10 @@ type SkillImport = {
   job_id: number; job_name: string;
   mastery_levels: Record<string, number>;
   applied: { constant: string; display: string; level: number; requested?: number }[];
+  /** Ranks kept for the skill picker and the buff toggles. They change nothing on
+   *  their own, which is why they are not in `applied` — but they ARE part of what
+   *  the import took, and a tree of active skills consists of almost nothing else. */
+  learned?: { constant: string; display: string; level: number; note?: string }[];
   not_modelled: { constant: string; display: string; level: number }[];
   off_tree_count: number;
   /** What the link carried at all — shown when nothing lands, so a zero-result
@@ -92,17 +96,37 @@ export default function ImportBuildModal({ open, onClose, server, onImported, on
                 Skills imported for <strong>{skills.job_name.replace(/_/g, " ")}</strong>. Your stats, gear and cards
                 were left as they were — this link only carries a skill tree.
               </p>
-              {skills.applied.length > 0 ? (
-                <ul className="import-unmapped">
-                  {skills.applied.map((a) => (
-                    <li key={a.constant}>
-                      {a.display} <strong>Lv{a.level}</strong>
-                      {a.requested != null && (
-                        <span className="hint-text"> — capped from Lv{a.requested}, the max here is {a.level}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+              {skills.applied.length > 0 || (skills.learned?.length ?? 0) > 0 ? (
+                <>
+                  {skills.applied.length > 0 && (
+                    <ul className="import-unmapped">
+                      {skills.applied.map((a) => (
+                        <li key={a.constant}>
+                          {a.display} <strong>Lv{a.level}</strong>
+                          {a.requested != null && (
+                            <span className="hint-text"> — capped from Lv{a.requested}, the max here is {a.level}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {(skills.learned?.length ?? 0) > 0 && (
+                    <>
+                      <p className="hint-text" style={{ marginTop: skills.applied.length ? "0.6rem" : 0 }}>
+                        Ranks remembered — these open at the level you have when you pick the skill
+                        or switch the buff on:
+                      </p>
+                      <ul className="import-unmapped">
+                        {skills.learned!.map((a) => (
+                          <li key={a.constant}>
+                            {a.display} <strong>Lv{a.level}</strong>
+                            {a.note && <span className="hint-text"> — {a.note}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </>
               ) : (
                 <>
                   <p className="error-text">
@@ -124,7 +148,8 @@ export default function ImportBuildModal({ open, onClose, server, onImported, on
               )}
               {skills.not_modelled.length > 0 && (
                 <p className="hint-text" style={{ marginTop: "0.6rem", color: "var(--text-faint)" }}>
-                  Also on your tree but not used by any damage formula here, so left out:{" "}
+                  Also on your tree, but nothing here reads {skills.not_modelled.length === 1 ? "it" : "them"} —
+                  no damage bonus, no rank to remember, no buff to switch on:{" "}
                   {skills.not_modelled.map((s) => `${s.display} Lv${s.level}`).join(", ")}.
                 </p>
               )}

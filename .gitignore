@@ -31,3 +31,6 @@ open-ps-calc-backend/backend/scripts/ps-skill-audit-report.json
 # failure. They are run output, not source, and a 380 KB binary per run has no
 # business in history.
 tools/e2e/*.png
+
+# e2e screenshots written next to wherever the script was run from
+/ps-import-*.png

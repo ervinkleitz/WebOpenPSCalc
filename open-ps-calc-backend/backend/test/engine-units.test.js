@@ -6370,8 +6370,13 @@ test("a PS planner link lands on the passive panel's own mastery keys", () => {
   assert.equal(r.mastery_levels.SM_BASH, 9);
   assert.ok(!("SM_TWOHAND" in r.mastery_levels), "the raw constant must not be written");
   assert.deepEqual(r.applied.map((a) => `${a.display} ${a.level}`), ["Bash 9", "Blade Mastery 10"]);
-  // Swordsman skills we do not price are NAMED (the player really has them)...
-  assert.ok(r.not_modelled.some((n) => n.constant === "SM_PROVOKE"));
+  // Swordsman skills that are not passives are NAMED with the rank we kept for them
+  // (the player really has them, and the picker will open them there)...
+  const provoke = r.learned.find((n) => n.constant === "SM_PROVOKE");
+  assert.ok(provoke, "Provoke is on the tree and its rank is kept");
+  assert.equal(provoke.level, 10);
+  assert.ok(!r.not_modelled.some((n) => n.constant === "SM_PROVOKE"),
+    "it is NOT something nothing here reads — that claim is what made a working import look broken");
   // ...while the other classes' quest skills are only counted.
   assert.ok(r.off_tree_count > 20, `expected the platinum noise to be counted, got ${r.off_tree_count}`);
 });
@@ -7236,4 +7241,88 @@ test("Sword Quickening gives FLEE and CRIT, and only while holding a sword", () 
   assert.equal(crOn.flee - crOff.flee, 10, "Spear Quicken: +1 FLEE per level");
   assert.equal(crOn.hit - crOff.hit, 10, "Spear Quicken: +1 HIT per level");
   assert.equal(crOn.cri, crOff.cri, "Spear Quicken: no CRIT on PS");
+});
+
+// A tree of active skills is still an import, and the report has to say so.
+//
+// QA, 2026-10-11: a Ninja whose planner link held Shadow Slash Lv5 was told "None of
+// the skills in that link affect damage here, so nothing changed", with Shadow Slash
+// itself listed under "not used by any damage formula here" — and then the picker
+// opened Shadow Slash at Lv.5, because the import had worked. `applied` only ever
+// counted PASSIVE-panel skills, and the modal's did-anything-land test read that one
+// list. Ranks kept for the picker and the buff toggles now report as `learned`.
+test("an import of active skills reports what it kept, not 'nothing changed'", () => {
+  const PS_PROFILE = getProfile("payon_stories");
+  loader.setProfile(PS_PROFILE);
+  const link = (job, levels) => "https://tools.payonstories.com/skill?state=" +
+    encodeURIComponent(zlib.deflateSync(Buffer.from(JSON.stringify({ job, levels }), "utf8")).toString("base64"));
+
+  // The exact case from the report: one active skill, no passives at all.
+  const ninja = importPsToolsSkills(link("Ninja", { NJ_KIRIKAGE: 5 }), PS_PROFILE);
+  assert.equal(ninja.applied.length, 0, "Shadow Slash is not a passive, so nothing lands on the panel");
+  assert.deepEqual(ninja.learned.map((l) => `${l.display} Lv${l.level}`), ["Shadow Slash Lv5"],
+    "but its rank was kept, and that is what the player is told");
+  assert.equal(ninja.not_modelled.length, 0,
+    "and nothing was dropped — the old report claimed the opposite");
+  assert.equal(ninja.known_skill_levels.NJ_KIRIKAGE, 5, "the rank the picker will open at");
+
+  // A Knight's actives are priced skills too, not casualties.
+  const knight = importPsToolsSkills(link("Knight", {
+    SM_BASH: 10, KN_SPEARMASTERY: 10, KN_PIERCE: 5, KN_BOWLINGBASH: 5, KN_TWOHANDQUICKEN: 7,
+  }), PS_PROFILE);
+  const learned = knight.learned.map((l) => l.display);
+  for (const name of ["Pierce", "Bowling Bash", "Sword Quickening"]) {
+    assert.ok(learned.includes(name), `${name} should be reported as kept, not dropped`);
+  }
+  assert.equal(knight.not_modelled.length, 0, "a Knight's tree has nothing we cannot use");
+});
+
+// Shadow's Within is modelled — through a switch, not a rank.
+//
+// It lives in ps_skill_db but not in the skill DB or the passive panel, so it fell
+// into "not modelled". On Payon Stories it is the ONLY thing that lets Shadow Slash
+// crit, so telling a Ninja it does nothing here is the worst possible miss.
+test("a PS-custom buff the calculator models is reported, not written off", () => {
+  const PS_PROFILE = getProfile("payon_stories");
+  loader.setProfile(PS_PROFILE);
+  const link = "https://tools.payonstories.com/skill?state=" + encodeURIComponent(
+    zlib.deflateSync(Buffer.from(JSON.stringify({
+      job: "Ninja", levels: { NJ_SHADOW_WITHIN: 1, NJ_KIRIKAGE: 5 },
+    }), "utf8")).toString("base64"));
+  const res = importPsToolsSkills(link, PS_PROFILE);
+  const sw = res.learned.find((l) => l.constant === "PS_NJ_SHADOWSWITHIN");
+  assert.ok(sw, "Shadow's Within should come through under our constant");
+  assert.match(sw.note || "", /Buffs/i, "and say where to switch it on");
+  assert.ok(!res.not_modelled.some((n) => /Shadow's Within/.test(n.display)),
+    "it must NOT be reported as something no formula here reads");
+});
+
+// known_buff_levels drives the SELF-buff toggles. A skill's status_change is just as
+// often what it inflicts on the enemy, and those belong to the target panel.
+test("the imported buff ranks are self-buffs only, not enemy ailments", () => {
+  const PS_PROFILE = getProfile("payon_stories");
+  loader.setProfile(PS_PROFILE);
+  const link = "https://tools.payonstories.com/skill?state=" + encodeURIComponent(
+    zlib.deflateSync(Buffer.from(JSON.stringify({
+      job: "Knight", levels: { SM_BASH: 10, SM_PROVOKE: 5, SM_ENDURE: 3, KN_TWOHANDQUICKEN: 7 },
+    }), "utf8")).toString("base64"));
+  const { known_buff_levels: buffs } = importPsToolsSkills(link, PS_PROFILE);
+  assert.equal(buffs.SC_TWOHANDQUICKEN, 7, "a self-buff keeps its rank");
+  assert.equal(buffs.SC_ENDURE, 3, "...and so does Endure");
+  assert.equal(buffs.SC_STUN, undefined, "Bash's SC_STUN is what it does to the TARGET");
+  assert.equal(buffs.SC_PROVOKE, undefined, "and Provoke is a debuff, not a buff you run");
+});
+
+// PS writes class names with underscores; a space or different case is still the
+// class we model, and saying otherwise names a class we support as unsupported.
+test("a job name is matched loosely enough to survive their formatting", () => {
+  const PS_PROFILE = getProfile("payon_stories");
+  loader.setProfile(PS_PROFILE);
+  const link = (job) => "https://tools.payonstories.com/skill?state=" + encodeURIComponent(
+    zlib.deflateSync(Buffer.from(JSON.stringify({ job, levels: { SM_BASH: 5 } }), "utf8")).toString("base64"));
+  for (const spelling of ["Super_Novice", "Super Novice", "super novice", "SUPER_NOVICE"]) {
+    assert.equal(importPsToolsSkills(link(spelling), PS_PROFILE).job_id, 23, `"${spelling}" is Super Novice`);
+  }
+  // A class we really do not model still fails, and names itself.
+  assert.throws(() => importPsToolsSkills(link("Rune_Knight"), PS_PROFILE), /Rune Knight/);
 });

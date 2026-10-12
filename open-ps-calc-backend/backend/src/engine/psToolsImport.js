@@ -63,6 +63,22 @@ const CONSTANT_ALIASES = {
   // reads that pairing off the panel rather than restating it.
 };
 
+/**
+ * PS-custom skills the calculator DOES model, but through a `support_buffs` switch
+ * rather than a learnable rank — so they are absent from the skill DB and from the
+ * passive panel, and the loop below would otherwise file them under "not modelled".
+ *
+ * Shadow's Within is the one that matters: on Payon Stories it is the only thing that
+ * lets Shadow Slash land a critical, and a Ninja importing their tree was told it is
+ * "not used by any damage formula here".
+ *
+ * They are reported as learned, NOT switched on — same rule as every other rank in
+ * here. The note is what the player does next.
+ */
+const SUPPORT_BUFF_SKILLS = {
+  PS_NJ_SHADOWSWITHIN: { key: "shadows_within", display: "Shadow's Within", note: "tick it under Buffs" },
+};
+
 /** Pull the compressed state out of whatever the player pasted. */
 function extractState(input) {
   const raw = String(input || "").trim();
@@ -178,7 +194,11 @@ function skillLabel(constant, profile) {
 function importPsToolsSkills(input, profile = null) {
   const { job, levels } = decodePsToolsSkillUrl(input);
 
-  const jobEntry = (loader.getAllJobs() || []).find((j) => j.name === job);
+  // PS writes class names with underscores ("Super_Novice"), but match loosely: a
+  // space or a different case in their planner should not produce "this calculator
+  // does not model Super Novice builds" about a class we model perfectly well.
+  const normJob = (n) => String(n || "").replace(/[\s_]+/g, "").toLowerCase();
+  const jobEntry = (loader.getAllJobs() || []).find((j) => normJob(j.name) === normJob(job));
   if (!jobEntry) {
     // Baby classes, 3rd jobs, Taekwon/Soul Linker/Summoner and the rest. Name the
     // class rather than failing blankly — the player picked it deliberately.
@@ -208,6 +228,11 @@ function importPsToolsSkills(input, profile = null) {
   // Same rule as the spellbook above: this records the rank a buff WOULD run at, it
   // does not switch anything on.
   const knownBuffLevels = {};
+  // Skills that are not passives but whose RANK we kept: these set the level the
+  // skill opens at when the player picks it, and the rank a self-buff switches on at.
+  // They used to be reported as "not used by any damage formula here", which is the
+  // opposite of true and is what made a working import look like a broken one.
+  const learned = [];
   const applied = [];
   // Two very different reasons to skip something, and a player cares about only one
   // of them. Their planner hands every class the whole platinum skill list at Lv1, so
@@ -231,8 +256,18 @@ function importPsToolsSkills(input, profile = null) {
       if (!onTree.dropped.length) {
         const capped = Math.min(level, known.max_level || level);
         knownSkillLevels[ourConstant] = capped;
-        for (const sc of [].concat(known.status_change || [])) {
-          if (sc) knownBuffLevels[sc] = capped;
+        // ONLY the status changes a skill puts on YOU. A skill's `status_change` is
+        // just as often what it inflicts on the enemy — Bash carries SC_STUN, Provoke
+        // SC_PROVOKE — and those are the target panel's business, not a self-buff
+        // toggle's. Recording them here put "SC_STUN: 10" in a map read by the buff
+        // checkboxes: inert today only because no self-buff happens to share a key
+        // with an ailment.
+        const selfCast = Array.isArray(known.skill_type)
+          && known.skill_type.some((t) => t === "Self" || t === "Friend");
+        if (selfCast) {
+          for (const sc of [].concat(known.status_change || [])) {
+            if (sc) knownBuffLevels[sc] = capped;
+          }
         }
       }
     }
@@ -242,8 +277,19 @@ function importPsToolsSkills(input, profile = null) {
       // Is it on this job's tree at all? filterMasteryLevelsForJob is the same check
       // the engine uses to strip a stale share link, so the two cannot disagree.
       const { dropped } = loader.filterMasteryLevelsForJob(jobEntry.id, { [ourConstant]: level });
+      const support = SUPPORT_BUFF_SKILLS[ourConstant];
       if (dropped.length) offTree++;
-      else notModelled.push({ constant: ourConstant, display: skillLabel(ourConstant, profile), level });
+      else if (knownSkillLevels[ourConstant] != null) {
+        // Rank kept: the picker and the buff toggles read it. Not "left out".
+        learned.push({
+          constant: ourConstant, display: skillLabel(ourConstant, profile),
+          level: knownSkillLevels[ourConstant],
+        });
+      } else if (support) {
+        learned.push({ constant: ourConstant, display: support.display, level, note: support.note });
+      } else {
+        notModelled.push({ constant: ourConstant, display: skillLabel(ourConstant, profile), level });
+      }
       continue;
     }
     const capped = Math.min(level, entry.max_level || level);
@@ -258,11 +304,17 @@ function importPsToolsSkills(input, profile = null) {
 
   const byName = (a, b) => a.display.localeCompare(b.display);
   applied.sort(byName);
+  learned.sort(byName);
   notModelled.sort(byName);
   return {
     job_id: jobEntry.id,
     job_name: jobEntry.name,
     mastery_levels: masteryLevels,
+    // Ranks kept for the picker and the buff toggles. Reported separately from
+    // `applied` because they change nothing on their own — but they ARE part of what
+    // the import took, and counting only `applied` is what made a Ninja whose tree is
+    // all active skills read "nothing changed".
+    learned,
     // What the character knows, for the skill picker and the buff toggles.
     known_skill_levels: knownSkillLevels,
     known_buff_levels: (() => {
@@ -274,24 +326,11 @@ function importPsToolsSkills(input, profile = null) {
       return out;
     })(),
     applied,
-    // Skills this character really has that no damage formula here reads.
+    // Skills this character really has that nothing here reads — no passive bonus,
+    // no rank we can hand the picker, no buff switch. The genuinely dropped ones.
     not_modelled: notModelled,
     // Everything their planner hands out that this class cannot learn.
     off_tree_count: offTree,
-    // What was in the link at all, for when nothing lands. "None of the skills in
-    // that link affect damage here" is true but useless on its own: it cannot tell
-    // an empty tree from a job mismatch from a skill we failed to map. Reported by
-    // the maintainer 2026-10-05 after an import of a Priest tree with Demon Bane in
-    // it came back with nothing applied.
-    link_summary: {
-      // Skills with at least one point, before any of our filtering.
-      allocated: Object.values(levels).filter((v) => Number(v) > 0).length,
-      // Their constants, so a mismatch against ours is visible at a glance.
-      sample: Object.entries(levels)
-        .filter(([, v]) => Number(v) > 0)
-        .slice(0, 12)
-        .map(([k, v]) => `${k} Lv${v}`),
-    },
     // What was in the link at all, for when nothing lands. "None of the skills in
     // that link affect damage here" is true but useless on its own: it cannot tell
     // an empty tree from a job mismatch from a skill we failed to map. Reported by

@@ -281,10 +281,13 @@ instead of release version. Dates are taken from actual git commit history.
   mention keeps the level it has now. The Import box takes either kind of link now and works
   out which is which, so a jaludev build link still imports the way it always did.
 
-  The summary afterwards says what happened rather than leaving you to guess: the skills that
-  were applied and at what level, any skill on your tree that no damage formula here reads
-  (Provoke, Endure and the like) so you know it was seen and skipped, and a count of the quest
-  skills belonging to other classes — the PS planner hands those out whatever class you pick.
+  The summary afterwards says what happened rather than leaving you to guess, in three parts:
+  the passives that were applied and at what level; the ranks it remembered for everything
+  else, which is most of a tree — those set the level a skill opens at when you pick it and
+  the rank a buff switches on at; and a count of the quest skills belonging to other classes,
+  which the PS planner hands out whatever class you pick. Anything genuinely left out is named,
+  and on a Ninja that now includes Shadow's Within being brought across rather than written
+  off — it is the only thing on Payon Stories that lets Shadow Slash crit.
   Requested by a player.
 
   Merchants, Blacksmiths and Alchemists included: Payon Stories turned the old Overcharge

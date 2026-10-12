@@ -473,3 +473,42 @@ test("every self-buff resolves to a skill, or is a documented exception", () => 
       `${k} is now declared by a skill — drop it from the exempt list so imports use the real rank`);
   }
 });
+
+// A Z3 share code is an INDEX into Z3_KEYS, in base 36. Inserting a key anywhere but
+// the end renumbers every key below it, and every share link already in the wild
+// decodes into the wrong fields — silently, because the JSON still parses.
+//
+// This nearly happened on 2026-10-11: the PS-planner-import branch and main had both
+// appended to the list while they were apart, and a merge that put the branch's two
+// keys above main's would have broken every link made since custom targets shipped.
+// The comment in the source says "keep at the end"; this makes it enforceable.
+test("Z3 share keys are append-only — the live ones keep their positions", () => {
+  const src = fs.readFileSync(path.join(FRONTEND, "src", "pages", "BuildEditor.tsx"), "utf8");
+  const block = src.slice(src.indexOf("const Z3_KEYS: string[] = ["), src.indexOf("const Z3_ENC"));
+  assert.ok(block.length > 200, "could not find Z3_KEYS");
+  const keys = [];
+  const CARD_SLOTS = ["right_hand", "left_hand", "head_top", "head_mid", "head_low",
+    "armor", "garment", "shoes", "accessory_left", "accessory_right"];
+  for (const line of block.split("\n").slice(1)) {
+    if (line.includes("...Z3_CARD_SLOTS")) {
+      for (const s of CARD_SLOTS) for (const i of [1, 2, 3, 4]) keys.push(`${s}_card${i}`);
+      continue;
+    }
+    for (const m of line.replace(/\/\/.*$/, "").matchAll(/"([^"]+)"/g)) keys.push(m[1]);
+  }
+
+  // A sample of keys at known positions, taken from the deployed list. Each one is
+  // from a different era of the file, so an insert anywhere trips at least one.
+  const ANCHORS = {
+    build: 0, job_id: 6, right_hand_card1: 71, forge: 111,
+    SC_ENERGYCOAT: 131, wildcard_mode: 133, manual: 137, pct: 150,
+  };
+  for (const [key, index] of Object.entries(ANCHORS)) {
+    assert.equal(keys[index], key,
+      `Z3 key ${index} must stay "${key}" — it is "${keys[index]}". A key was inserted or `
+      + "removed above it, which renumbers every share link already in the wild.");
+  }
+  // And new work goes strictly after them.
+  assert.ok(keys.indexOf("known_skill_levels") > ANCHORS.pct, "the newest keys append last");
+  assert.equal(new Set(keys).size, keys.length, "a duplicate key would shadow the first one's code");
+});
