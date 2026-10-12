@@ -2733,8 +2733,21 @@ export default function BuildEditor() {
                     const extra = (charStatus.refine_atk || 0) + (charStatus.weapon_atk_flat || 0) + buffAtk;
                     return extra ? `+${extra}` : "";
                   })()}` : undefined,
-                  note: charStatus && (charStatus.buff_atk || []).length
-                    ? `Includes ${(charStatus.buff_atk || []).map((b: { label: string; atk: number }) => `${b.label} +${b.atk}`).join(", ")}.`
+                  // Both halves count BOTH hands, the way the game's own ATK window
+                  // does — a dual-wielder seeing their off-hand appear in the number
+                  // should be able to find out why from the number itself.
+                  note: charStatus && ((charStatus.buff_atk || []).length || charStatus.off_hand)
+                    ? [
+                        charStatus.off_hand
+                          ? `Counts both hands: your off-hand ${charStatus.off_hand.label} adds `
+                            + `${charStatus.off_hand.atk} ATK`
+                            + (charStatus.off_hand.refine_atk ? ` and ${charStatus.off_hand.refine_atk} refine` : "")
+                            + `, as the in-game ATK window does.`
+                          : null,
+                        (charStatus.buff_atk || []).length
+                          ? `Includes ${(charStatus.buff_atk || []).map((b: { label: string; atk: number }) => `${b.label} +${b.atk}`).join(", ")}.`
+                          : null,
+                      ].filter(Boolean).join(" ")
                     : undefined },
                 { label: "MATK",     value: charStatus ? `${charStatus.matk_min}–${charStatus.matk_max}` : undefined },
                 { label: "DEF",      value: charStatus ? `${charStatus.hard_def}+${charStatus.soft_def}` : undefined },

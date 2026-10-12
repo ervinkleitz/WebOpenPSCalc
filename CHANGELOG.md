@@ -7,6 +7,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-12
 
+### Fixed
+
+- **The ATK readout was ignoring your off-hand weapon.** A dual-dagger Assassin saw
+  *348+35* here while the game showed *391+49* — the whole difference was a +7 Main
+  Gauche sitting in the left hand: its 43 ATK and its 14 refine. Both halves of the
+  in-game ATK window count both hands, and now so do these. Your damage was never
+  affected; the dual-wield maths has always been separate, which is why the number on
+  the left looked wrong while the damage looked right. Hover the ATK card and it names
+  the off-hand and what it added. A shield in that slot still adds nothing. Reported by
+  a player.
+
 ### Changed
 
 - **One-Hand Quicken is gone, and Sword Quickening now covers one-handed swords in
