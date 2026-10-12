@@ -18,6 +18,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Party buffs run at the level you set.** Ticking Blessing, Increase Agility, Impositio
+  Manus, Angelus, Over Thrust or Crazy Uproar used to apply the skill's maximum and leave
+  it there, on the reasoning that you don't control the caster. Usually you do — it's your
+  own Priest friend, your alt, or yourself, since Blessing and Over Thrust have no
+  self-cast entry of their own. Each of those now gets a level beside it once ticked,
+  still starting at the highest, and the number moves with it: Blessing 4 is +4 STR, INT
+  and DEX rather than the +10 you were being given. Buffs whose level only changes how
+  long they last (Gloria, Adrenaline Rush, Weapon Perfection) keep a plain checkbox.
+
 - **"Average / cast" — what one attack does with your crits folded in.** Each damage
   button shows one outcome, and the skill button shows the cast that does *not* crit;
   on a Ninja critting 71% of the time, neither button is what you actually do. The

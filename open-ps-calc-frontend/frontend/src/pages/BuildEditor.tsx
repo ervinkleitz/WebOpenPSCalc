@@ -1917,6 +1917,54 @@ export default function BuildEditor() {
     });
   }, []);
 
+  // One party buff: a tick to say you have it, and — where the level changes what it
+  // does — a level beside it.
+  //
+  // Ticking used to apply the buff's MAX and leave it there, on the reasoning that you
+  // do not control the caster. In practice you usually do know them: it is your own
+  // Priest friend, your own alt, or yourself (Over Thrust and Blessing have no
+  // self-cast entry, so a Blacksmith or Priest buffing themselves ticks these too).
+  // A Blessing 5 priced as Blessing 10 is +5 STR/INT/DEX that is not there.
+  //
+  // Buffs whose level only sets duration (Gloria, Adrenaline Rush, Weapon Perfection)
+  // are declared max: 1 and keep a plain checkbox — a selector with one entry would
+  // imply a choice that does not exist.
+  const partyBuffField = (b: { key: string; label: string; max: number }) => {
+    const support = (data.support_buffs as Record<string, number> | undefined) || {};
+    const stored = Number(support[b.key] ?? 0);
+    // A build shared before a cap came down (Over Thrust was offered at 10, the real
+    // max is 5) must not show a level the engine will not use — it clamps too.
+    const current = stored > 0 ? Math.min(stored, b.max) : 0;
+    // What a tick turns it on at: the rank a planner import says you have, where that
+    // applies to a buff you cast on yourself, else the highest it goes.
+    const known = (data.known_buff_levels || {})[b.key];
+    const onLevel = known != null && known > 0 ? Math.min(known, b.max) : b.max;
+    const leveled = current > 0 && b.max > 1;
+    return (
+      <div className={`field field-checkbox${leveled ? " field-checkbox--leveled" : ""}`} key={b.key}>
+        <label title={b.key}>
+          <input
+            type="checkbox"
+            checked={current > 0}
+            onChange={(e) => updateBuffField("support_buffs", b.key, e.target.checked ? onLevel : 0)}
+          />
+          <span>{b.label}</span>
+        </label>
+        {leveled && (
+          <select
+            title={`What level the caster has. ${b.label} is ${b.max} ranks; the effect scales with it.`}
+            value={current}
+            onChange={(e) => updateBuffField("support_buffs", b.key, Number(e.target.value))}
+          >
+            {Array.from({ length: b.max }, (_, i) => b.max - i).map((lv) => (
+              <option key={lv} value={lv}>Lv {lv}</option>
+            ))}
+          </select>
+        )}
+      </div>
+    );
+  };
+
   // scrollToResults: the results panel pulls itself into view when a calculation
   // finishes, which is right when the user pressed "Calculate damage" and wrong when
   // the recompute was a side effect of loading a pinned build — there it dragged the
@@ -3636,29 +3684,17 @@ export default function BuildEditor() {
                     <InfoTooltip>
                       Received from a party member, not self-cast — these are never
                       filtered by your own job, since any class can stand in
-                      another player's buff range. Checking a buff applies its
-                      max level (you don't control the caster's actual level).
+                      another player's buff range. Tick one and it starts at the
+                      highest level it has; set the level beside it to match the
+                      caster you actually play with. Buffs whose level only changes
+                      their duration have no selector.
                     </InfoTooltip>
                   </div>
 
                   <div className="buff-group">
                     <span className="buff-group-label">Priest</span>
                     <div className="passive-grid">
-                      {partyBuffsFrom("Priest", data.job_id).map((b) => {
-                        const current = (data.support_buffs as Record<string, number> | undefined)?.[b.key] ?? 0;
-                        return (
-                          <div className="field field-checkbox" key={b.key}>
-                            <label title={b.key}>
-                              <input
-                                type="checkbox"
-                                checked={current > 0}
-                                onChange={(e) => updateBuffField("support_buffs", b.key, e.target.checked ? b.max : 0)}
-                              />
-                              <span>{b.label}</span>
-                            </label>
-                          </div>
-                        );
-                      })}
+                      {partyBuffsFrom("Priest", data.job_id).map(partyBuffField)}
                       {/* PS Gunslinger release notes: "Gunslingers are no longer able to be
                           endowed, nor can they gain the effect of element converters." The
                           engine refuses it either way; disabling the control says why instead
@@ -3684,21 +3720,7 @@ export default function BuildEditor() {
                   <div className="buff-group">
                     <span className="buff-group-label">Blacksmith</span>
                     <div className="passive-grid">
-                      {partyBuffsFrom("Blacksmith", data.job_id).map((b) => {
-                        const current = (data.support_buffs as Record<string, number> | undefined)?.[b.key] ?? 0;
-                        return (
-                          <div className="field field-checkbox" key={b.key}>
-                            <label title={b.key}>
-                              <input
-                                type="checkbox"
-                                checked={current > 0}
-                                onChange={(e) => updateBuffField("support_buffs", b.key, e.target.checked ? b.max : 0)}
-                              />
-                              <span>{b.label}</span>
-                            </label>
-                          </div>
-                        );
-                      })}
+                      {partyBuffsFrom("Blacksmith", data.job_id).map(partyBuffField)}
                     </div>
                   </div>
 
@@ -3708,21 +3730,7 @@ export default function BuildEditor() {
                   <div className="buff-group" hidden={partyBuffsFrom("Merchant", data.job_id).length === 0}>
                     <span className="buff-group-label">Merchant</span>
                     <div className="passive-grid">
-                      {partyBuffsFrom("Merchant", data.job_id).map((b) => {
-                        const current = (data.support_buffs as Record<string, number> | undefined)?.[b.key] ?? 0;
-                        return (
-                          <div className="field field-checkbox" key={b.key}>
-                            <label title={b.key}>
-                              <input
-                                type="checkbox"
-                                checked={current > 0}
-                                onChange={(e) => updateBuffField("support_buffs", b.key, e.target.checked ? b.max : 0)}
-                              />
-                              <span>{b.label}</span>
-                            </label>
-                          </div>
-                        );
-                      })}
+                      {partyBuffsFrom("Merchant", data.job_id).map(partyBuffField)}
                     </div>
                   </div>
 

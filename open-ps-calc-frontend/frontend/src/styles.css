@@ -694,6 +694,13 @@ label {
    instead overflows past the grid column, visually overlapping whatever
    sits next to or below it. */
 .field-checkbox label span { display: inline; margin: 0; flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
+/* A checkbox that also carries a level picker (the party buffs). .field-checkbox is
+   a ROW, so a select dropped into it becomes a second item on that row and squeezes
+   the label down to one letter per line — "IMPOSI / TIO / MANUS" in a grid this
+   narrow. Stack them instead. */
+.field-checkbox--leveled { flex-direction: column; align-items: stretch; gap: 0.3rem; }
+.field-checkbox--leveled label { align-items: flex-start; }
+.field-checkbox--leveled select { width: 100%; }
 /* Leveled target debuffs (Quagmire/Provoke) use a select instead of a checkbox;
    match their label size to the sibling checkbox-debuff rows (0.85rem). */
 .debuff-field label { font-size: 0.85rem; }
