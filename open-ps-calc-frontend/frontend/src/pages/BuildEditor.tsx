@@ -331,7 +331,11 @@ const SELF_BUFFS = [
   { key: "SC_TWOHANDQUICKEN",  label: "Sword Quickening",      max: 10, jobs: [7, 4008] },
   // One rank in both the vanilla and PS skill DBs, and the ASPD it grants doesn't
   // scale with level — presence-only, so offering 10 ranks was meaningless.
-  { key: "SC_ONEHANDQUICKEN",  label: "One-Hand Quicken",      max: 1,  jobs: [7, 4008] },
+  // Does nothing on Payon Stories, so it is not offered there: Sword Quickening was
+  // changed to cover one-handed swords as well and this one was left in the client
+  // unused (Friekshow, CC, 2026-10-12). Still real on the standard pre-renewal
+  // profile, where it is +30% ASPD with a one-handed sword.
+  { key: "SC_ONEHANDQUICKEN",  label: "One-Hand Quicken",      max: 1,  jobs: [7, 4008], psRemoved: true },
   // Crusader / Paladin
   { key: "SC_SPEARQUICKEN",    label: "Spear Quicken",         max: 10, jobs: [14, 4015] },
   { key: "SC_PROVIDENCE",      label: "Providence",            max: 5,  jobs: [14, 4015] },

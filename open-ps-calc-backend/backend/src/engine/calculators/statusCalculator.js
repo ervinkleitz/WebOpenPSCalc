@@ -443,7 +443,14 @@ class StatusCalculator {
     // this a Knight holding a Pike ticked the box and kept +30% ASPD (reported
     // 2026-10-11). Read from the skill's own requirement rather than a hardcoded
     // type, so it follows the data if PS ever widens it.
-    if ("SC_ONEHANDQUICKEN" in activeSc && oneHandQuickenApplies(weapon)) {
+    //
+    // NONE OF THAT APPLIES ON PAYON STORIES, where the skill does nothing at all:
+    // Sword Quickening was made to cover both kinds of sword and this one was left
+    // behind in the client (Friekshow, CC, 2026-10-12). The flag keeps the vanilla
+    // behaviour for the standard pre-renewal profile, where the skill is real.
+    if ("SC_ONEHANDQUICKEN" in activeSc
+      && !profile.mechanic_flags.has("KN_ONEHAND_REMOVED")
+      && oneHandQuickenApplies(weapon)) {
       scAspdMax = Math.max(scAspdMax, 300);
     }
 

@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-12 | Friekshow (CC), relayed by Frennetix | Staff ruling - outranks the planner tooltip | One-Hand Quicken does nothing on PS; Sword Quickening is 30% on BOTH sword types |
 | 2026-10-11 | PS skill planner tooltip, skid 495 + Hercules status.c:8044 | First-party + Source | One-Hand Quicken is +30% ASPD, one-handed swords only |
 | 2026-10-11 | PS skill planner tooltip, skid 60 (re-checked live) | First-party | Sword Quickening grants FLEE as well as CRIT, and only with a sword |
 | 2026-10-10 | Laila Braveheart (in-game observation) + Hercules status.c:3788 / battle.c:7718 | Player report + Source | A monster's physical hit is its mob_db ATK roll — it has no base ATK |
@@ -8025,3 +8026,43 @@ with a one-handed one), which is exactly why a Knight carries both.
 **Guarded by** `test/engine-units.test.js` ("One-Hand Quicken speeds up a one-handed
 sword, and nothing else") and `tools/e2e/one-hand-quicken.mjs`, which reads the ASPD
 card on the live page.
+
+## 2026-10-12 - One-Hand Quicken is dead, and Sword Quickening covers both swords (CC ruling)
+
+**Ruling.** Friekshow (Content Curator), relayed by Frennetix:
+
+> 1 hand sword quickening does nothing, and wont exist in the future either.
+>
+> We made Sword Quickening to flat out work for both types of Swords.
+>
+> Just haven't deleted the old extra spirit link buff.
+
+**Two corrections, and both outrank what the tooling says.**
+
+1. **One-Hand Quicken (`KN_ONEHAND`, skid 495) is inert on PS.** It is still in their
+   client and still in their skill planner - which is exactly why it looked real when
+   this was investigated the day before, and why the calculator offered it as a +30%
+   ASPD checkbox a Knight could tick. It is a leftover they have not removed.
+2. **Sword Quickening is the full 30% with a ONE-handed sword**, not 10%. Their planner
+   tooltip still reads "Works with One-Hand Sword for 30% the effect mentioned", and
+   that sentence is where our `"1HSword": () => 100` came from. A direct CC ruling
+   outranks a tooltip (see "How to use this" at the top of this file): the CCs write
+   these reworks, and this one says the two sword types were deliberately levelled.
+
+The two halves are the same change - Sword Quickening absorbed One-Hand Quicken's job,
+which is why the older skill was left with nothing to do.
+
+**Not vanilla.** On the Standard pre-renewal profile One-Hand Quicken is a real skill
+(+30% ASPD, one-handed swords only), so this is `mechanic_flags.KN_ONEHAND_REMOVED` and
+a `psRemoved` flag on the editor's buff entry, not a deletion. The PS-removed pattern
+already existed for Gunslinger's Increasing Accuracy.
+
+**Stale builds.** A share link or saved build made while the checkbox existed still
+carries `SC_ONEHANDQUICKEN`. The engine now ignores it on PS rather than honouring it,
+so those builds lose an attack speed they never had in game.
+
+**Guarded by** `test/engine-units.test.js` ("Payon Stories: One-Hand Quicken does
+nothing, Sword Quickening covers both swords"), which checks both servers, and
+`tools/e2e/one-hand-quicken.mjs`, which confirms the checkbox is not offered, that a
+build still carrying the buff gains nothing, and that Sword Quickening takes 30% off the
+attack motion with either sword and nothing with a spear.

@@ -5,6 +5,20 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-12
+
+### Changed
+
+- **One-Hand Quicken is gone, and Sword Quickening now covers one-handed swords in
+  full.** A Content Curator confirmed the skill does nothing on Payon Stories and is not
+  coming back — Sword Quickening was changed to work for both kinds of sword, and
+  One-Hand Quicken was simply left behind in the client. The calculator no longer offers
+  it, and a saved build or share link that still carries it gets nothing from it rather
+  than the attack speed it used to add. Sword Quickening with a **one-handed** sword is
+  now the same 30% it gives a two-hander, where this calculator had it at 10%; with a
+  two-handed sword, and with anything that is not a sword, nothing changes. The skill is
+  untouched on the Standard pre-renewal server, where it is still a real skill.
+
 ## 2026-10-11
 
 ### Fixed
@@ -12,10 +26,9 @@ instead of release version. Dates are taken from actual git commit history.
 - **One-Hand Quicken only works with a one-handed sword now.** The skill gives +30%
   attack speed and, as its own description says, “unequipping Sword will cancel this
   skill’s effect” — but the calculator handed the bonus to whatever you had equipped,
-  so a Knight with a spear or an axe was shown an attack speed they cannot reach. The
-  weapon rule comes from the skill’s own data, so it follows Payon Stories if they ever
-  widen it. Its sister skill Sword Quickening is unchanged: 30% with a two-handed
-  sword, 10% with a one-handed one.
+  so a Knight with a spear or an axe was shown an attack speed they cannot reach.
+  *(Superseded the next day: a Content Curator confirmed the skill does nothing on
+  Payon Stories at all — see 2026-10-12.)*
 
 - **Sword Quickening now gives the FLEE it says it does.** The skill grants “+1 FLEE,
   +1% CRIT” per level — the calculator applied the CRIT and silently dropped the
