@@ -9,6 +9,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **One-Hand Quicken only works with a one-handed sword now.** The skill gives +30%
+  attack speed and, as its own description says, “unequipping Sword will cancel this
+  skill’s effect” — but the calculator handed the bonus to whatever you had equipped,
+  so a Knight with a spear or an axe was shown an attack speed they cannot reach. The
+  weapon rule comes from the skill’s own data, so it follows Payon Stories if they ever
+  widen it. Its sister skill Sword Quickening is unchanged: 30% with a two-handed
+  sword, 10% with a one-handed one.
+
 - **Sword Quickening now gives the FLEE it says it does.** The skill grants “+1 FLEE,
   +1% CRIT” per level — the calculator applied the CRIT and silently dropped the
   FLEE, so a Knight running it at Lv10 was 10 FLEE short. It also cancels off a

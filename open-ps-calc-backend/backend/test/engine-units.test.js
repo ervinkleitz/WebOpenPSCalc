@@ -6890,3 +6890,53 @@ test("Sword Quickening gives FLEE and CRIT, and only while holding a sword", () 
   assert.equal(crOn.hit - crOff.hit, 10, "Spear Quicken: +1 HIT per level");
   assert.equal(crOn.cri, crOff.cri, "Spear Quicken: no CRIT on PS");
 });
+
+// One-Hand Quicken is +30% ASPD, and only with a one-handed sword in hand.
+//
+// Asked about on 2026-10-11: the magnitude is Hercules' `case SC_ONEHANDQUICKEN:
+// case SC_TWOHANDQUICKEN: val2 = 300;` — flat, unlevelled (the val1 > 10 branch
+// beside it is for boss-cast copies). The weapon half was missing: statusCalculator
+// applied the 300 unconditionally, so a Knight holding a Pike ticked the box and
+// kept +30% ASPD. The skill DB has required "1HSwords" all along, and the PS planner
+// spells out the consequence — "Unequipping Sword will cancel this skill's effect."
+test("One-Hand Quicken speeds up a one-handed sword, and nothing else", () => {
+  const PS_PROFILE = getProfile("payon_stories");
+  loader.setProfile(PS_PROFILE);
+  const cfg = createBattleConfig();
+  const aspd = (weapon, buffs) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 20, dex: 50, luk: 20 },
+      equipped: { right_hand: weapon }, active_buffs: buffs || {},
+    });
+    return resolvePlayerState(b, cfg, PS_PROFILE)[3].aspd;
+  };
+  const SWORD_1H = 1101, CLAYMORE = 1163, PIKE = 1408, AXE_1H = 1301;
+
+  // The skill's own requirement is the source of the rule, not a hardcoded type.
+  const { allowedWeaponTypes } = require("../src/engine/weaponRequirements");
+  assert.deepEqual(allowedWeaponTypes(loader.getSkillByName("KN_ONEHAND")), ["1HSword"],
+    "fixture check: the skill DB is where the weapon rule comes from");
+
+  const swordOff = aspd(SWORD_1H), swordOn = aspd(SWORD_1H, { SC_ONEHANDQUICKEN: 1 });
+  assert.ok(swordOn > swordOff, `a one-handed sword gets the buff (${swordOff} -> ${swordOn})`);
+  // val2 = 300 is 300 per-mille OFF THE ATTACK MOTION, i.e. the delay drops to 70%.
+  // ASPD is 200 − amotion/10, so check the motion rather than the ASPD number.
+  const motion = (a) => (200 - a) * 10;
+  assert.ok(Math.abs(motion(swordOn) - motion(swordOff) * 0.7) < 1,
+    `it cuts the attack motion by 30% (${motion(swordOff)}ms -> ${motion(swordOn)}ms)`);
+  // Note it is NOT interchangeable with Sword Quickening here: on PS that one gives
+  // 30% with a two-handed sword but only 10% with a one-handed one, which is the
+  // whole reason a Knight carries this skill as well.
+  assert.ok(swordOn > aspd(SWORD_1H, { SC_TWOHANDQUICKEN: 10 }),
+    "and beats Sword Quickening on a one-handed sword, where that one gives 10%");
+
+  for (const [name, weapon] of [["a two-handed sword", CLAYMORE], ["a spear", PIKE], ["an axe", AXE_1H]]) {
+    assert.equal(aspd(weapon, { SC_ONEHANDQUICKEN: 1 }), aspd(weapon),
+      `${name} is not a one-handed sword, so the buff cannot be up`);
+  }
+
+  // It does not stack with the others — the ASPD slot takes the best one.
+  assert.equal(aspd(SWORD_1H, { SC_ONEHANDQUICKEN: 1, SC_TWOHANDQUICKEN: 10 }), swordOn,
+    "two quickens at once are still one +30%");
+});

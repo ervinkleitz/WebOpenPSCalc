@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-11 | PS skill planner tooltip, skid 495 + Hercules status.c:8044 | First-party + Source | One-Hand Quicken is +30% ASPD, one-handed swords only |
 | 2026-10-11 | PS skill planner tooltip, skid 60 (re-checked live) | First-party | Sword Quickening grants FLEE as well as CRIT, and only with a sword |
 | 2026-10-10 | Laila Braveheart (in-game observation) + Hercules status.c:3788 / battle.c:7718 | Player report + Source | A monster's physical hit is its mob_db ATK roll — it has no base ATK |
 | 2026-10-07 | PS skill planner tooltips (tools.payonstories.com/skill) | First-party | Skill text and per-level effects; standing weekly audit |
@@ -7966,3 +7967,61 @@ already right, and the editor correctly does not offer it to a Knight.
 **Guarded by** `test/engine-units.test.js` ("Sword Quickening gives FLEE and CRIT, and
 only while holding a sword") and `tools/e2e/sword-quickening-flee.mjs`, which reads the
 character stat cards on the live page.
+
+## 2026-10-11 - What One-Hand Quicken does, and the weapon it needs
+
+**Asked.** "Find out what one hand quicken does."
+
+**The skill.** `KN_ONEHAND`, id 495, Knight / Lord Knight, ONE rank, active self-buff,
+100 SP. The skill DB's own requirement is `1HSwords`.
+
+**PS's description** (skill planner, skid 495; the weekly text audit reports no drift
+against the live tool, so this is their current wording):
+
+> Increases attack speed when using a One-Handed Sword class weapon. Activating this
+> skill cancels the effect of any potions that have a similar effect, but it is possible
+> to use these potions after One Hand Quicken has been cast. Unequipping Sword will
+> cancel this skill's effect.
+
+It does NOT state the magnitude, and **the PS wiki has no page for it** - a search
+returns Knight, Crusader and Class Rebalance, none of which cover it. The planner
+tooltip is the only first-party source.
+
+**The magnitude comes from Hercules** (status.c:8042-8047):
+
+```c
+case SC_ONEHANDQUICKEN:
+case SC_TWOHANDQUICKEN:
+    val2 = 300;
+    if (val1 > 10) // For boss casted skills [Skotlex]
+        val2 += 20*(val1-10);
+    break;
+```
+
+So **+30% off the attack motion, flat** - it does not scale with level, which is
+consistent with the skill having a single rank. The `val1 > 10` branch is for
+boss-cast copies and cannot be reached by a player. Three further behaviours, all in
+status.c: it shares one "best wins" ASPD slot with Two-Hand Quicken, Spear Quicken,
+Adrenaline Rush and Star Comfort (status_calc_aspd_rate), so they do not stack; it
+ENDS the ASPD potion statuses when it starts (`SC_ATTHASTE_POTION1/2/3/INFINITY`),
+matching the PS text; and it refuses to start while Decrease AGI is on you, and is
+suppressed by Quagmire.
+
+**What was wrong here.** `statusCalculator.js` applied the 300 unconditionally. A
+Knight holding a Pike ticked the box and gained 12.6 ASPD, from a buff that in game
+cannot be up at all without the sword. Measured before the fix: 1H sword 165.2 -> 175.7,
+2H sword 161.7 -> 173.2, spear 158.2 -> 170.8, axe 151.2 -> 165.9. Only the first is
+real.
+
+Hercules does not re-check the weapon inside the ASPD formula because the server ends
+the status the moment the sword comes off (pc.c equip change -> status_change_end). A
+calculator has no such event, so it has to ask - the same shape as the Sword Quickening
+gate added on 2026-10-11, and the rule is read from the skill's own
+`requirements.weapon_types` rather than hardcoded.
+
+**Not changed.** Sword Quickening keeps its PS split (30% with a two-handed sword, 10%
+with a one-handed one), which is exactly why a Knight carries both.
+
+**Guarded by** `test/engine-units.test.js` ("One-Hand Quicken speeds up a one-handed
+sword, and nothing else") and `tools/e2e/one-hand-quicken.mjs`, which reads the ASPD
+card on the live page.
