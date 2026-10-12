@@ -259,7 +259,13 @@ const PS_PASSIVE_OVERRIDES = {
   AS_RIGHT: { rh_factors: [0.80, 0.90, 1.00, 1.10, 1.20] },  // lv 1–5: 80/90/100/110/120%
   AS_LEFT:  { lh_factors: [0.60, 0.70, 0.80, 0.90, 1.00] },  // lv 1–5: 60/70/80/90/100%
   SC_SPEARQUICKEN:   { hit_per_lv: 1, flee_per_lv: 1 },                                        // PS rework: no CRI, +1 HIT/lv, +1 FLEE/lv
-  SC_TWOHANDQUICKEN: { cri_per_lv: 10 },                                                        // PS Knight rework: +1% CRIT/lv (vanilla: +0.8%/lv; internal ×10 scale)
+  // PS "Sword Quickening" (the Knight rework's KN_TWOHANDQUICKEN). The planner's
+  // per-level table reads "+N FLEE, +N% CRIT" at every level, and its description
+  // adds "This skill only works with Sword class weapons and the effect cancels when
+  // switching to any other type of weapon" — so the stat half is gated on a sword,
+  // the way the ASPD half already is. The FLEE was missing entirely (reported by a
+  // player, 2026-10-11). CRIT is on the internal ×10 scale.
+  SC_TWOHANDQUICKEN: { cri_per_lv: 10, flee_per_lv: 1, weapon_types: ["1HSword", "2HSword"] },
   SC_EXPLOSIONSPIRITS: { cri_base: 175, cri_per_lv: 25 },                                      // PS rework: 20%/22.5%/25%/27.5%/30% (was 10%…20%)
   GS_DUST:           { str_to_atk_at_max_lv: 1, str_atk_weapon: "Shotgun", max_level: 10 },     // wiki.payonstories.com/Dust: +1 ATK per STR at Lv10 with a Shotgun
   GS_SINGLEACTION:   { hit_per_lv: 4 },                                                          // wiki.payonstories.com/Single_Action: +4 HIT/lv (+40 at Lv10; vanilla default was +2/lv)

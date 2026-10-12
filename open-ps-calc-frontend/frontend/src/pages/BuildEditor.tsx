@@ -17,7 +17,7 @@ import { summaryMetrics, type ComparePin } from "../components/CompareView";
 import { BreakpointsView } from "../components/BreakpointsView";
 import starterBuildsJson from "../data/starterBuilds.json";
 import {
-  BuildData, SkillState, CustomTarget, TargetMode, TargetMods,
+  BuildData, SkillState, CustomTarget, TargetMode, TargetMods, ManualEnemyEdits,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
   WildcardSlot,
 } from "../types";
@@ -574,11 +574,64 @@ function computeBuffStatBonuses(
 }
 
 const DEFAULT_SKILL: SkillState = { id: 0, level: 1, label: "Normal Attack", max_level: 10 };
+// NJ_KIRIKAGE (Shadow Slash) — the one skill whose crit is gated on a buff rather
+// than on the skill itself, so the results panel explains its missing crit branch.
+const NJ_KIRIKAGE_ID = 530;
 
 const DEFAULT_CUSTOM_TARGET: CustomTarget = {
   def_: 0, mdef_: 0, vit: 1, level: 1, size: "Medium", race: "Formless",
   element: 0, element_level: 1, is_boss: false, luk: 0, agi: 0, int_: 0,
+  // Offensive side, all zero by default: a target you invented does not hit back
+  // until you say how hard. The Survivability panel says so rather than quoting 0.
+  atk_min: 0, atk_max: 0, str: 0, dex: 0, hp: 0,
 };
+
+/**
+ * A monster's own stats, shaped as a custom target.
+ *
+ * You cannot edit a real monster's stats — they are the game's — so the way to ask
+ * "what if this thing had 50 more DEF" is to start a custom target from it and change
+ * the numbers. This is that starting point.
+ *
+ * It copies the monster's BASE stats on purpose. The engine applies target_mods
+ * (Quagmire, Blind, the monster's own self-buffs) on top of whatever target it is
+ * handed, so copying the buffed figures the Target panel displays would count those
+ * twice. Two field names differ from the endpoint's: `mdef` -> `mdef_`, and the
+ * stat block's `int` -> `int_`.
+ *
+ * `race` needs no translation: /data/mobs normalises vanilla's "DemiHuman" to the
+ * hyphenated "Demi-Human" the race dropdown and every race bonus use
+ * (MOB_RACE_ALIASES in dataLoader) — checked on both profiles.
+ */
+function customTargetFromMob(m: {
+  level?: number; def_?: number; mdef?: number; size?: string; race?: string;
+  element?: number; element_level?: number; is_boss?: boolean;
+  hp?: number; atk_min?: number; atk_max?: number;
+  stats?: { vit: number; agi: number; luk: number; int: number; str?: number; dex?: number };
+} | null): CustomTarget {
+  if (!m) return DEFAULT_CUSTOM_TARGET;
+  const st = m.stats;
+  return {
+    def_: m.def_ ?? DEFAULT_CUSTOM_TARGET.def_,
+    mdef_: m.mdef ?? DEFAULT_CUSTOM_TARGET.mdef_,
+    vit: st?.vit ?? DEFAULT_CUSTOM_TARGET.vit,
+    level: m.level ?? DEFAULT_CUSTOM_TARGET.level,
+    size: m.size ?? DEFAULT_CUSTOM_TARGET.size,
+    race: m.race ?? DEFAULT_CUSTOM_TARGET.race,
+    element: m.element ?? DEFAULT_CUSTOM_TARGET.element,
+    element_level: m.element_level ?? DEFAULT_CUSTOM_TARGET.element_level,
+    is_boss: !!m.is_boss,
+    luk: st?.luk ?? DEFAULT_CUSTOM_TARGET.luk,
+    agi: st?.agi ?? DEFAULT_CUSTOM_TARGET.agi,
+    int_: st?.int ?? DEFAULT_CUSTOM_TARGET.int_,
+    // What it does to you, so Survivability keeps working on the copy.
+    atk_min: m.atk_min ?? 0,
+    atk_max: m.atk_max ?? 0,
+    str: st?.str ?? 0,
+    dex: st?.dex ?? 0,
+    hp: m.hp ?? 0,
+  };
+}
 
 // Defensive element each self element-change buff switches the monster to. The backend
 // reads this from the skill DB (targetSelfBuffs.js); mirrored here only so the Target
@@ -588,7 +641,27 @@ const SELF_BUFF_ELEMENTS: Record<string, number> = {
   NPC_CHANGEPOISON: 5, NPC_CHANGEHOLY: 6, NPC_CHANGEDARKNESS: 7, NPC_CHANGETELEKINESIS: 8,
 };
 
+const DEFAULT_MANUAL_ENEMY: ManualEnemyEdits = {
+  agi: 0, vit: 0, int: 0, dex: 0, luk: 0,
+  max_hp: 0, max_hp_pct: 0,
+  def: 0, mdef: 0, hit: 0, flee: 0, atk: 0, matk: 0,
+  res_ele1: { ele: 0, pct: 0 }, res_ele2: { ele: 0, pct: 0 },
+  res_race: 0, res_size: 0, res_long: 0, res_atk: 0, res_matk: 0,
+};
+
+/** Which manual edits are actually set — drives the "N active" badge and the tracking. */
+function activeManualEdits(m: ManualEnemyEdits | undefined): string[] {
+  if (!m) return [];
+  const on: string[] = [];
+  for (const [k, v] of Object.entries(m)) {
+    if (k === "res_ele1" || k === "res_ele2") { if ((v as any)?.pct) on.push(k); continue; }
+    if (v) on.push(k);
+  }
+  return on;
+}
+
 const DEFAULT_TARGET_MODS: TargetMods = {
+  manual: DEFAULT_MANUAL_ENEMY,
   element_status: "",
   element_change: "",
   lex_aeterna: false,
@@ -721,9 +794,23 @@ const Z3_KEYS: string[] = [
   "hypothermia", // targetMods.hypothermia — −10 DEX on the monster (its HIT)
   // Energy Coat (active_buffs): the toggle and which SP bracket you are in
   "SC_ENERGYCOAT", "SC_ENERGYCOAT_sp_pct",
+  "wildcard_mode", // which slots are in wildcard mix (build.wildcard_mode)
+  // Custom target's offensive side (customTarget.*). "str" and "dex" already have
+  // codes from base_stats — the encoder is keyed by NAME, and sharing one across two
+  // different objects is correct.
+  "atk_min", "atk_max", "hp",
+  // Manual edits on the enemy (targetMods.manual.*). "agi"/"vit"/"int"/"dex"/"luk"
+  // and "size"/"race"/"element" already have codes and are reused by name.
+  "manual", "max_hp", "max_hp_pct", "def", "mdef", "matk",
+  "res_ele1", "res_ele2", "res_race", "res_size", "res_long", "res_atk", "res_matk", "pct",
   // The ranks a PS planner import says the character has learned, so a shared build
   // keeps them. Nothing is priced from this directly — see known_skill_levels in
   // buildManager.js.
+  //
+  // THESE TWO ARE LAST ON PURPOSE. Both this branch and main appended to the list
+  // while they were apart; a Z3 code is this array's INDEX in base 36, so putting
+  // them anywhere above main's keys would re-number "wildcard_mode" through "pct"
+  // and silently mis-decode every share link made since those shipped.
   "known_skill_levels",
   "known_buff_levels",
 ];
@@ -809,15 +896,30 @@ function decodeState(encoded: string): UrlEditorState | null {
 // the whole app unmounts to a blank page — the Load button looked like it did
 // nothing. Merging over the defaults also back-fills fields added since a build was
 // saved, which a bare ?? cannot do.
-// Which slots are in wildcard (custom card mix) mode is DERIVED state, not stored
-// state: it is read off the build at mount. So every path that swaps the build has
-// to re-derive it, or the previous build's wildcard flags keep applying to the new
-// one and the damage number silently prices cards that are not equipped. Mount did
-// this; loading a saved build and loading a pinned build did not.
+// Which slots are in wildcard (custom card mix) mode. `build.wildcard_mode` stores
+// the player's actual choice, so it travels with a share link, a save and a pin.
+//
+// It did not used to be stored at all — it was inferred from wildcard_slots, and the
+// inference cannot represent the ordinary case: switching a slot to wildcard mix
+// deliberately LEAVES the real cards equipped so that switching back restores them,
+// and a slot with real cards in it reads as "not in wildcard mode". So a build shared
+// or saved mid-experiment came back with the cards instead of the mix — silently, and
+// worth 100 HIT on a Phreeoni Card. Reported by nobody; found QA'ing the 2026-10-06
+// stat-readout fix, which shares the root cause.
+//
+// The inference is kept for builds that predate the field: links players already
+// shared, and saves already in their browsers.
 function deriveWildcardMode(build: Partial<BuildData> | null | undefined): Record<string, boolean> {
-  const slots = build?.wildcard_slots ?? {};
   const equipped = build?.equipped ?? {};
   const init: Record<string, boolean> = {};
+  const stored = build?.wildcard_mode;
+  if (stored && typeof stored === "object") {
+    // Still gated on something being equipped: the mode means nothing on an empty
+    // slot, and the engine ignores cards on one either way.
+    for (const [k, v] of Object.entries(stored)) if (v && equipped[k] != null) init[k] = true;
+    return init;
+  }
+  const slots = build?.wildcard_slots ?? {};
   for (const [k, v] of Object.entries(slots)) {
     if (!Array.isArray(v) || v.length === 0 || equipped[k] == null) continue;
     // Don't default to wildcard mode when the slot actually has real cards
@@ -836,6 +938,7 @@ function hydrateState(state: Partial<UrlEditorState> | null | undefined): UrlEdi
     skill: { ...DEFAULT_SKILL, ...(state?.skill ?? {}) },
     targetMode: state?.targetMode ?? "monster",
     customTarget: { ...DEFAULT_CUSTOM_TARGET, ...(state?.customTarget ?? {}) },
+    // targetMods gains `manual` for builds that predate it.
     targetMods: { ...DEFAULT_TARGET_MODS, ...(state?.targetMods ?? {}) },
   };
 }
@@ -900,11 +1003,13 @@ export default function BuildEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Which equipment slot groups are in wildcard (custom card mix) mode.
-  // Auto-enable only for slots that have both wildcard data AND an item actually equipped there.
-  const [wildcardMode, setWildcardMode] = useState<Record<string, boolean>>(
-    () => deriveWildcardMode(hydrated.build),
-  );
+  // Which equipment slot groups are in wildcard (custom card mix) mode — read off
+  // the build rather than tracked alongside it. Holding it in separate state meant
+  // every path that swapped the build had to remember to re-derive it, and loading a
+  // pinned build and loading a saved build both forgot, so the previous build's
+  // wildcard flags kept pricing cards that were not equipped. Deriving it removes the
+  // chance to forget.
+  const wildcardMode = useMemo(() => deriveWildcardMode(data), [data]);
 
   // One-shot: the slot whose search input should grab focus because the user just
   // clicked Unequip there — so a replacement can be typed immediately. Cleared by
@@ -986,16 +1091,68 @@ export default function BuildEditor() {
     return { ...data, equipped };
   }, [data, invalidSlots]);
 
+  // The build AS SHOWN, with the Cards / Wildcard mix toggle applied.
+  //
+  // Wildcard mode is React state rather than part of `data` (see wildcardMode), so a
+  // build in wildcard mode still carries the real card ids. The damage request built
+  // its own override and stripped them; the status readout, the gear stat bonuses and
+  // the breakpoints all read sanitizedBuild and did not — so a weapon carded with a
+  // Mummy Card kept its +20 HIT in the stat panel after switching to a wildcard mix,
+  // while the hit chance underneath was correctly computed without it. Reported by a
+  // player 2026-10-06.
+  //
+  // One definition, used by every reader, so the panel and the calculation cannot
+  // disagree again.
+  const effectiveBuild = useMemo(() => {
+    const WILDCARD_DEFAULT: WildcardSlot = { type: "race", bonus: 20 };
+    const wildcard_bonuses: Record<string, number> = {};
+    const equipped = { ...sanitizedBuild.equipped };
+    let touched = false;
+    for (const [slotKey, active] of Object.entries(wildcardMode)) {
+      if (!active) continue;
+      const equippedId = equipped[slotKey];
+      if (equippedId == null) continue; // empty slot — nothing to replace
+      touched = true;
+      for (let i = 1; i <= 4; i++) delete equipped[`${slotKey}_card${i}`];
+      const stored = data.wildcard_slots?.[slotKey] || [];
+      // The weapon's REAL slot count. Presence in the cache distinguishes "not loaded
+      // yet" from "loaded and genuinely unslotted" — an unslotted weapon has slots 0,
+      // which is falsy, and falling through to the stored rows would keep applying the
+      // previous weapon's wildcards.
+      const cached = itemCache[equippedId as number];
+      const slotCount = cached ? (cached.slots ?? 0) : stored.length;
+      for (let i = 0; i < slotCount; i++) {
+        const ws = stored[i] ?? WILDCARD_DEFAULT;
+        const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : ws.type === "family" ? "Type_All" : "Ele_All";
+        wildcard_bonuses[key] = (wildcard_bonuses[key] || 0) + ws.bonus;
+        if (ws.type === "size") wildcard_bonuses["_batk"] = (wildcard_bonuses["_batk"] || 0) + 5;
+      }
+    }
+    if (!touched) return sanitizedBuild;
+    return { ...sanitizedBuild, equipped, wildcard_bonuses };
+  }, [sanitizedBuild, wildcardMode, data.wildcard_slots, itemCache]);
+
+  // The target mods AS APPLIED. Manual edits belong to the custom target, so they are
+  // dropped in Monster mode rather than left to move a monster's numbers from a panel
+  // that is not on screen — exactly the trap the wildcard-mix state used to be, where
+  // state the UI had hidden still priced the damage.
+  const effectiveTargetMods = useMemo(() => {
+    if (targetMode === "custom") return targetMods;
+    if (!targetMods.manual) return targetMods;
+    const { manual, ...rest } = targetMods;
+    return rest as TargetMods;
+  }, [targetMods, targetMode]);
+
   // Payload for the on-demand Breakpoints readout: current build + selected skill
   // (for cast breakpoints) + target (for hit breakpoints).
   const breakpointPayload = useMemo(() => ({
-    build: sanitizedBuild,
+    build: effectiveBuild,
     skill: { id: skill.id, level: skill.level },
     target: targetMode === "monster" ? { mob_id: data.target_mob_id } : customTarget,
     // The HIT rows are quoted against the target's flee, so they need the same monster
     // the damage panel is hitting — Quagmired, blinded, or under its own self-buffs.
-    target_mods: targetMods,
-  }), [sanitizedBuild, skill.id, skill.level, targetMode, data.target_mob_id, customTarget, targetMods]);
+    target_mods: effectiveTargetMods,
+  }), [effectiveBuild, skill.id, skill.level, targetMode, data.target_mob_id, customTarget, targetMods]);
 
   // Signum Crucis only works on Undead and Demon targets.
   // Rust-Worn Apparatus (81012): "[Base INT >= 70] Freezing Trap applies Slow instead
@@ -1191,7 +1348,6 @@ export default function BuildEditor() {
     const snap = pin.snapshot as Partial<{ data: BuildData } & UrlEditorState>;
     const next = hydrateState({ ...snap, build: snap?.data ?? snap?.build });
     setData(next.build);
-    setWildcardMode(deriveWildcardMode(next.build));
     setTemplateHint(null); // it described the template this build just replaced
     setSkill(next.skill);
     setTargetMode(next.targetMode);
@@ -1339,6 +1495,13 @@ export default function BuildEditor() {
   const [featuresBannerHidden, setFeaturesBannerHidden] = useState(() => localStorage.getItem("featuresBannerHidden") === "1");
   // The per-class PS rework detail is collapsed under the "class reworks" feature line.
   const [classReworksOpen, setClassReworksOpen] = useState(false);
+  // Manual edits on the target: twenty inputs that are almost always all zero, so
+  // they are collapsed by default and remember the choice. Not only tidiness — the
+  // editor is a CSS multi-column layout, and one panel taller than the balanced
+  // column height makes the browser raise that height until the last column has
+  // nothing left to hold. Expanded, this block took the Target panel to 2433px and
+  // the fourth column disappeared at 1920px wide. Reported 2026-10-09.
+  const [manualEditsOpen, setManualEditsOpen] = useState(() => localStorage.getItem("manualEditsOpen") === "1");
   // Manual stat bonuses: a niche override, collapsed by default (remembers the user's choice).
   const [manualStatsOpen, setManualStatsOpen] = useState(() => localStorage.getItem("manualStatsOpen") === "1");
   // Collapse the per-source stat bonus badges (+job +gear +buff +manual) into a
@@ -1481,14 +1644,27 @@ export default function BuildEditor() {
     const hasEquipped = Object.values(data.equipped).some((v) => v != null);
     if (!hasEquipped) { setEquipBonusStats(zero); return; }
     const timer = setTimeout(() => {
-      api.getGearStatBonuses(sanitizedBuild).then(setEquipBonusStats).catch(() => setEquipBonusStats(zero));
+      api.getGearStatBonuses(effectiveBuild).then(setEquipBonusStats).catch(() => setEquipBonusStats(zero));
     }, 300);
     return () => clearTimeout(timer);
   // JSON.stringify lets us deep-compare the objects that actually drive gear scripts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(sanitizedBuild.equipped), JSON.stringify(data.refine), data.server,
+  }, [JSON.stringify(effectiveBuild.equipped), JSON.stringify(effectiveBuild.wildcard_bonuses),
+      JSON.stringify(data.refine), data.server,
       JSON.stringify(data.base_stats), data.job_id, data.job_level, data.base_level,
       JSON.stringify(data.bonus_stats), data.selected_pet]);
+
+  // The mastery ranks that belong to the CURRENT job, keyed the way the stat helper
+  // expects. Empty while the passive list is still loading, which is the honest
+  // reading — we do not yet know what this job can have.
+  const jobMasteryLevels = useMemo(() => {
+    const allowed = new Set(passiveSkills.map((p) => p.mastery_key));
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(data.mastery_levels || {})) {
+      if (allowed.has(k)) out[k] = v;
+    }
+    return out;
+  }, [passiveSkills, data.mastery_levels]);
 
   useEffect(() => {
     const base = data.base_stats;
@@ -1511,7 +1687,20 @@ export default function BuildEditor() {
         agi: (base.agi ?? 1) + (jobBonusStats.agi ?? 0) + (equipBonusStats.agi ?? 0) - (equipBonusStats.ic_excluded_agi ?? 0),
         dex: (base.dex ?? 1) + (jobBonusStats.dex ?? 0) + (equipBonusStats.dex ?? 0) - (equipBonusStats.ic_excluded_dex ?? 0),
       },
-      (data.mastery_levels || {}) as Record<string, unknown>,
+      // ONLY the passives this job can actually have.
+      //
+      // mastery_levels is deliberately not pruned when you change class, so that
+      // switching away and back does not wipe the ranks you typed. The stat readout
+      // must still ignore the ones the new class cannot learn, or it keeps adding a
+      // bonus with no visible source: a Sage with Dragonology 10 who becomes an
+      // Acolyte kept +5 INT, while the Passive skills panel beside it — correctly —
+      // no longer listed Dragonology at all.
+      //
+      // The ENGINE already does this (playerStateBuilder calls
+      // filterMasteryLevelsForJob), so before this the displayed stats disagreed with
+      // the damage they were supposedly feeding. passiveSkills is the same per-job
+      // list the panel is built from, which keeps the two in step by construction.
+      jobMasteryLevels,
       data.clan ?? "",
       snNeverDied,
     ));
@@ -1525,13 +1714,13 @@ export default function BuildEditor() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const timer = setTimeout(() => {
-      api.getCharacterStatus(sanitizedBuild)
+      api.getCharacterStatus(effectiveBuild)
         .then(setCharStatus)
         .catch(() => setCharStatus(null));
     }, 300);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(sanitizedBuild)]);
+  }, [JSON.stringify(effectiveBuild)]);
 
   // What that ASPD number actually buys you, as a hover note on the ASPD stat card.
   // A normal attack lands every attack-delay = 2 × (2000 − ASPD×10) ms, i.e.
@@ -1747,60 +1936,51 @@ export default function BuildEditor() {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
         : customTarget;
-      // Aggregate wildcard slot bonuses and strip real card entries for those slots.
-      // The rendered wildcard rows track the equipped weapon's live card-slot
-      // count (item.slots, from the async itemCache), but the stored
-      // wildcard_slots array lags behind after a weapon switch -- it can be
-      // shorter (extra rows show unsaved ?? defaults) or longer (stale rows from
-      // the previous weapon). Iterate the weapon's actual slot count with the
-      // same fallback default the UI uses (see the wildcard-slots render) so the
-      // pipeline applies exactly what's on screen, not the drifted stored array.
-      const WILDCARD_DEFAULT: WildcardSlot = { type: "race", bonus: 20 };
-      const wildcardBonuses: Record<string, number> = {};
-      const equippedOverride = { ...sanitizedBuild.equipped };
-      for (const [slotKey, active] of Object.entries(wildcardMode)) {
-        if (!active) continue;
-        const equippedId = equippedOverride[slotKey];
-        if (equippedId == null) continue; // slot is empty — skip
-        for (let i = 1; i <= 4; i++) delete equippedOverride[`${slotKey}_card${i}`];
-        const stored = data.wildcard_slots?.[slotKey] || [];
-        // Weapon's real slot count; fall back to the stored length ONLY while the
-        // item's data hasn't reached the cache yet, so nothing is dropped mid-switch.
-        // This used to be `(cached?.slots ?? 0) || stored.length`, which could not
-        // tell "not loaded yet" from "loaded, and it genuinely has zero slots": an
-        // unslotted weapon has slots === 0, which is falsy, so `||` fell through to
-        // the stale rows from the PREVIOUS weapon and kept applying its wildcards.
-        // Presence in the cache is the real signal, so test that instead.
-        const cached = itemCache[equippedId];
-        const slotCount = cached ? (cached.slots ?? 0) : stored.length;
-        for (let i = 0; i < slotCount; i++) {
-          const ws = stored[i] ?? WILDCARD_DEFAULT;
-          const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : ws.type === "family" ? "Type_All" : "Ele_All";
-          wildcardBonuses[key] = (wildcardBonuses[key] || 0) + ws.bonus;
-          if (ws.type === "size") wildcardBonuses["_batk"] = (wildcardBonuses["_batk"] || 0) + 5;
-        }
-      }
+      // The wildcard override lives in `effectiveBuild`, so the numbers on screen
+      // and the numbers in this request come from one definition. It used to be built
+      // here only, which is exactly how the stat panel drifted from the damage.
       const buildWithFlags = fp
-        ? { ...sanitizedBuild, equipped: equippedOverride, flags: { ...(sanitizedBuild.flags || {}), force_procs: true }, wildcard_bonuses: wildcardBonuses }
-        : { ...sanitizedBuild, equipped: equippedOverride, wildcard_bonuses: wildcardBonuses };
-      const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target, target_mods: targetMods };
+        ? { ...effectiveBuild, flags: { ...(effectiveBuild.flags || {}), force_procs: true } }
+        : effectiveBuild;
+      // How much the manual-enemy layer is actually used: once per session for the
+      // feature as a whole, and once per session per field, so the dashboard shows
+      // both "did anyone touch it" and "which of the twenty inputs earn their place".
+      // trackFeatureOnce because these fire on every Calculate, not on a click.
+      for (const f of activeManualEdits(effectiveTargetMods.manual)) {
+        statsApi.trackFeatureOnce("target_manual_edit");
+        statsApi.trackFeatureOnce(`target_manual_edit:${f}`);
+      }
+      const normalPayload = { build: buildWithFlags, skill: { id: 0, level: 1 }, target, target_mods: effectiveTargetMods };
       const skillPayload  = { build: buildWithFlags, skill: { id: skill.id, level: skill.level }, target,
-        target_mods: tuN > 0 ? { ...targetMods, tu_failed_casts: tuN } : targetMods };
-      // Survivability: how hard the selected monster's weapon attacks hit YOU. Monster
-      // mode only. A monster's BASIC melee attack is Neutral element — NOT its property
+        target_mods: tuN > 0 ? { ...effectiveTargetMods, tu_failed_casts: tuN } : effectiveTargetMods };
+      // Survivability: how hard the target's weapon attacks hit YOU.
+      //
+      // A custom target counts too, as long as it has been given an attack. You cannot
+      // edit a real monster's stats, so "what if this thing hit harder" means copying
+      // it into a custom target — and this panel used to vanish silently the moment you
+      // did, which made the copy feature feel broken. A custom target with no ATK at all
+      // is not priced: it would quote 0 and read like a bug, so the panel says so
+      // instead (see `survivabilityNote`).
+      //
+      // A monster's BASIC melee attack is Neutral element — NOT its property
       // (its "Element" field is defensive only; Hercules keeps attack `rhw.ele` and
       // `def_ele` separate, which is why Raydric/Ghostring tank most monsters). So the
       // basic hit is Neutral (and reduced by Raydric etc.); elemental NPC_*ATTACK skills
       // add their own elements on top. Compute one incoming hit per distinct element.
       // Other cast skills (bolts, AoE, ailments) are listed by name only.
       const mobId = targetMode === "monster" ? data.target_mob_id : null;
+      // A custom target stands in for a monster only once it can actually hit you.
+      const customHits = targetMode === "custom"
+        && ((customTarget.atk_max ?? 0) > 0 || (customTarget.atk_min ?? 0) > 0);
+      const incomingTarget: { mob_id: number } | { custom: unknown } | null =
+        mobId != null ? { mob_id: mobId } : (customHits ? { custom: customTarget } : null);
       const mobSkills = mobInfo?.skills ?? [];
       // Each elemental line IS a monster skill (an NPC_*ATTACK — that is what sets
       // `ele`), so price it as that skill at the level the monster casts it. Pricing
       // them as a plain re-coloured basic attack understated them by the skill's
       // ratio: Stormy Knight's Wind Attribute Attack Lv4 is 400% of its ATK, and the
       // panel showed 100% (reported 2026-09-22). Only the Neutral line is the basic hit.
-      const eleLines: { ele: number; skill?: { id: number; lv: number; d: string } }[] = mobId != null
+      const eleLines: { ele: number; skill?: { id: number; lv: number; d: string } }[] = incomingTarget != null
         ? [{ ele: 0 /* Neutral basic melee */ }]
         : [];
       const seenEle = new Set<number>([0]);
@@ -1819,10 +1999,10 @@ export default function BuildEditor() {
           // A skill we cannot price (no ratio) falls back to the elemental basic hit,
           // so the line still tells you what that element does to you.
           if (line.skill) {
-            const r = await api.calculateIncomingSkill(buildWithFlags, mobId!, line.skill.id, line.skill.lv, targetMods).catch(() => null);
+            const r = await api.calculateIncomingSkill(buildWithFlags, incomingTarget!, line.skill.id, line.skill.lv, effectiveTargetMods).catch(() => null);
             if (r && r.result) return { ...r, skill_label: line.skill.d, skill_lv: line.skill.lv, estimated: r.skill?.estimated };
           }
-          return api.calculateIncoming(buildWithFlags, mobId!, "physical", { ele_override: line.ele }, targetMods).catch(() => null);
+          return api.calculateIncoming(buildWithFlags, incomingTarget!, "physical", { ele_override: line.ele }, effectiveTargetMods).catch(() => null);
         }),
       ]);
       const elements = eleLines
@@ -1838,12 +2018,29 @@ export default function BuildEditor() {
         normal_attack: normalRes,
         skill: skillRes,
         selected_skill: { id: skill.id, level: skill.level, label: skill.label },
-        target_hp: targetMode === "monster" ? (mobInfo?.hp ?? null) : null,
+        // Shadow Slash is the one skill whose crit is behind a switch: on Payon
+        // Stories it "has no capability to land critical strikes" unless Shadow's
+        // Within is up (wiki). Without a word on the branch row, "no Critical hit
+        // button" reads as "this skill cannot crit" rather than "tick the buff".
+        crit_unavailable_reason: (skill.id === NJ_KIRIKAGE_ID
+          && !(data.support_buffs as Record<string, unknown> | undefined)?.shadows_within)
+          ? { short: "crits with Shadow's Within",
+              detail: "Shadow Slash cannot land criticals on Payon Stories unless Shadow's Within is active. "
+                + "Tick it under Buffs and a Critical hit branch appears here." }
+          : null,
+        // A custom target carries its own Max HP now, so time-to-kill works on one.
+        target_hp: targetMode === "monster" ? (mobInfo?.hp ?? null) : ((customTarget.hp ?? 0) || null),
         // Base / job EXP the kill awards, for the EXP-per-hit readout. Straight from
         // the mob DB (`/mobs/:id` already returns them) — monster mode only, since a
         // custom target has no EXP to divide.
         target_exp: targetMode === "monster" ? (mobInfo?.exp ?? null) : null,
         target_job_exp: targetMode === "monster" ? (mobInfo?.jexp ?? null) : null,
+        // Why the Survivability panel is empty, when it is. A custom target with no
+        // ATK would otherwise quote 0 damage, which reads as a bug rather than as
+        // "you have not told me how hard this thing hits".
+        incoming_note: (!elements.length && targetMode === "custom")
+          ? "Give your custom target an ATK (min/max) and this will show how hard it hits you."
+          : null,
         incoming: elements.length ? {
           elements,
           // The mob's other cast skills (non-elemental-attack). Clickable in the UI:
@@ -1851,7 +2048,7 @@ export default function BuildEditor() {
           // Damage-dealing cast skills only (exclude the mob's buffs/summons/heals
           // and its elemental attacks, which are the element lines above).
           kit: mobSkills.filter((s) => s.ele == null && s.id != null && s.dmg).map((s) => ({ id: s.id, d: s.d, lv: s.lv })).slice(0, 16),
-          mob_name: mobInfo?.name ?? null,
+          mob_name: mobId != null ? (mobInfo?.name ?? null) : "your custom target",
           // Take the monster's DEX from what the backend actually used, not from the
           // undebuffed mobInfo: offensive Blessing halves it, and HIT = level + DEX
           // drives the dodge chance shown next to these lines.
@@ -1861,15 +2058,18 @@ export default function BuildEditor() {
           })(),
           mob_element: 0, // basic melee is Neutral (tags the Neutral line as "basic")
           build: buildWithFlags, // reused for on-demand "which skill hits me" fetches
-          target_mods: targetMods,  // so those fetches see the same debuffs as these lines
+          target_mods: effectiveTargetMods,  // so those fetches see the same debuffs as these lines
           mob_id: mobId,
         } : null,
         // Poison ailment DoT: the target loses 2%/s of its Max HP on Payon Stories
         // (1%/s vanilla). Surfaced so time-to-kill folds it in. Monster mode only
         // (Max HP known); the DEF cut itself is applied server-side.
-        poison_dot_per_sec: targetMode === "monster" && targetMods.element_status === "Poison" && mobInfo?.hp
-          ? Math.floor(mobInfo.hp * (data.server === "payon_stories" ? 2 : 1) / 100)
-          : null,
+        poison_dot_per_sec: (() => {
+          const hp = targetMode === "monster" ? (mobInfo?.hp ?? 0) : (customTarget.hp ?? 0);
+          return targetMods.element_status === "Poison" && hp
+            ? Math.floor(hp * (data.server === "payon_stories" ? 2 : 1) / 100)
+            : null;
+        })(),
       });
     } catch (e: any) {
       setCalcError(e.message);
@@ -1904,7 +2104,6 @@ export default function BuildEditor() {
   function onLoadSavedState(state: UrlEditorState) {
     const next = hydrateState(state);
     setData(next.build);
-    setWildcardMode(deriveWildcardMode(next.build));
     setTemplateHint(null); // it described the template this build just replaced
     setSkill(next.skill);
     setTargetMode(next.targetMode);
@@ -2828,14 +3027,18 @@ export default function BuildEditor() {
                             <button
                               className={!wildcardMode[slot.key] ? "active" : ""}
                               onClick={() => {
-                                setWildcardMode((prev) => ({ ...prev, [slot.key]: false }));
-                                // Drop the slot's wildcard mix so it isn't persisted and
-                                // wrongly re-selected as wildcard mode on the next load.
                                 setData((prev) => {
-                                  if (!prev.wildcard_slots?.[slot.key]) return prev;
-                                  const next = { ...prev.wildcard_slots };
-                                  delete next[slot.key];
-                                  return { ...prev, wildcard_slots: next };
+                                  const wildcard_mode = { ...(prev.wildcard_mode || {}) };
+                                  delete wildcard_mode[slot.key];
+                                  const next = { ...prev, wildcard_mode };
+                                  // Drop the slot's wildcard mix too, so an older client
+                                  // reading this build does not infer wildcard mode from it.
+                                  if (prev.wildcard_slots?.[slot.key]) {
+                                    const ws = { ...prev.wildcard_slots };
+                                    delete ws[slot.key];
+                                    next.wildcard_slots = ws;
+                                  }
+                                  return next;
                                 });
                               }}
                             >
@@ -2844,17 +3047,22 @@ export default function BuildEditor() {
                             <button
                               className={wildcardMode[slot.key] ? "active" : ""}
                               onClick={() => {
-                                setWildcardMode((prev) => ({ ...prev, [slot.key]: true }));
-                                if (!data.wildcard_slots?.[slot.key]?.length) {
-                                  const defaults = Array.from({ length: cardSlotCount }, () => ({
-                                    type: "race" as const,
-                                    bonus: 20,
-                                  }));
-                                  setData((prev) => ({
+                                setData((prev) => {
+                                  const next = {
                                     ...prev,
-                                    wildcard_slots: { ...(prev.wildcard_slots || {}), [slot.key]: defaults },
-                                  }));
-                                }
+                                    wildcard_mode: { ...(prev.wildcard_mode || {}), [slot.key]: true },
+                                  };
+                                  if (!prev.wildcard_slots?.[slot.key]?.length) {
+                                    next.wildcard_slots = {
+                                      ...(prev.wildcard_slots || {}),
+                                      [slot.key]: Array.from({ length: cardSlotCount }, () => ({
+                                        type: "race" as const,
+                                        bonus: 20,
+                                      })),
+                                    };
+                                  }
+                                  return next;
+                                });
                               }}
                             >
                               Wildcard mix
@@ -2974,7 +3182,27 @@ export default function BuildEditor() {
             </Panel>
           )}
 
-          <Panel eyebrow="04" title="Passive skills">
+          <Panel eyebrow="04" title="Clan">
+            <div className="passive-grid">
+              <div className="field">
+                <label>Clan membership</label>
+                <select
+                  value={data.clan ?? ""}
+                  onChange={(e) => updateField(["clan"], e.target.value || undefined)}
+                >
+                  <option value="">None</option>
+                  <option value="sword_clan">Sword Clan (STR+1, VIT+1)</option>
+                  <option value="arch_wand_clan">Arch Wand Clan (INT+1, DEX+1)</option>
+                  <option value="golden_mace_clan">Golden Mace Clan (INT+1, VIT+1)</option>
+                  <option value="crossbow_clan">Crossbow Clan (DEX+1, AGI+1)</option>
+                  <option value="artisan_clan">Artisan Clan (DEX+1, LUK+1)</option>
+                  <option value="vile_wind_clan">Vile Wind Clan (STR+1, AGI+1)</option>
+                </select>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel eyebrow="05" title="Passive skills">
             {passiveSkills.length === 0 ? (
               <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
                 {data.job_id ? "No passive skills for this job." : "Select a job to see passive skills."}
@@ -3098,7 +3326,7 @@ export default function BuildEditor() {
             )}
           </Panel>
 
-          <Panel eyebrow="05" title="Consumables">
+          <Panel eyebrow="06" title="Consumables">
             <div className="field">
               <label>ASPD potion</label>
               <select
@@ -3187,7 +3415,7 @@ export default function BuildEditor() {
             ))}
           </Panel>
 
-          <Panel eyebrow="06" title="Buffs">
+          <Panel eyebrow="07" title="Buffs">
             {(() => {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id)
                 && !((b as { psRemoved?: boolean }).psRemoved && data.server === "payon_stories"));
@@ -3338,7 +3566,7 @@ export default function BuildEditor() {
                         )}
                         {isKnightLine && (
                           <div className="field field-checkbox" key="__riding_peco">
-                            <label title="Riding a Peco Peco (Knight/Crusader line): mounting adds an attack-speed penalty, reduced by one rank's worth per level of Cavalier Mastery and fully removed at Cavalier Mastery 5. Also raises Spear Mastery ATK per level (higher while mounted).">
+                            <label title="Riding a Peco Peco (Knight/Crusader line): mounting adds an attack-speed penalty, reduced by one rank's worth per level of Cavalier Mastery and fully removed at Cavalier Mastery 5. Also raises Spear Mastery ATK per level (higher while mounted), and removes a spear's size penalty against Medium targets (75% to 100%).">
                               <input type="checkbox" checked={!!data.flags?.is_riding_peco} onChange={(e) => setData((prev) => ({ ...prev, flags: { ...(prev.flags || {}), is_riding_peco: e.target.checked } }))} />
                               <span>Riding Peco Peco</span>
                             </label>
@@ -3602,31 +3830,12 @@ export default function BuildEditor() {
                       ))}
                     </>
                   )}
-
-                  <div className="buff-section-header">Clan</div>
-                  <div className="passive-grid">
-                    <div className="field">
-                      <label>Clan membership</label>
-                      <select
-                        value={data.clan ?? ""}
-                        onChange={(e) => updateField(["clan"], e.target.value || undefined)}
-                      >
-                        <option value="">None</option>
-                        <option value="sword_clan">Sword Clan (STR+1, VIT+1)</option>
-                        <option value="arch_wand_clan">Arch Wand Clan (INT+1, DEX+1)</option>
-                        <option value="golden_mace_clan">Golden Mace Clan (INT+1, VIT+1)</option>
-                        <option value="crossbow_clan">Crossbow Clan (DEX+1, AGI+1)</option>
-                        <option value="artisan_clan">Artisan Clan (DEX+1, LUK+1)</option>
-                        <option value="vile_wind_clan">Vile Wind Clan (STR+1, AGI+1)</option>
-                      </select>
-                    </div>
-                  </div>
                 </>
               );
             })()}
           </Panel>
 
-          <Panel eyebrow="07" title="Skill">
+          <Panel eyebrow="08" title="Skill">
             <div className="selected-pill" style={{ marginBottom: "0.6rem" }}>
               <span>{skill.label}{skill.id !== 0 ? ` Lv.${skill.level}` : ""}</span>
               {skill.id !== 0 && (
@@ -3722,7 +3931,7 @@ export default function BuildEditor() {
             )}
           </Panel>
 
-          <Panel eyebrow="08" title="Target">
+          <Panel eyebrow="09" title="Target">
             <div className="tabs">
               <button className={targetMode === "monster" ? "active" : ""} onClick={() => setTargetMode("monster")}>Monster</button>
               <button className={targetMode === "custom" ? "active" : ""} onClick={() => setTargetMode("custom")}>Custom stats</button>
@@ -3776,6 +3985,31 @@ export default function BuildEditor() {
 
             {targetMode === "custom" && (
               <>
+                {/* Start from a real monster rather than typing twelve fields in.
+                    The monster stays selected when you switch tabs, so whatever was
+                    picked on the Monster tab is still here to copy. */}
+                <div className="custom-target-seed">
+                  <button
+                    className="cmp-btn-mini"
+                    disabled={!mobInfo}
+                    title={mobInfo
+                      ? `Fill these fields with ${mobInfo.name}'s own stats, then change whatever you like. `
+                        + `Copies its base stats — debuffs and its self-buffs are applied on top of this, `
+                        + `so they are not folded in.`
+                      : "Pick a monster on the Monster tab first, then come back and copy it here"}
+                    onClick={() => {
+                      setCustomTarget(customTargetFromMob(mobInfo));
+                      statsApi.trackFeature("custom_target_copy_mob");
+                    }}
+                  >
+                    {mobInfo ? `Copy ${mobInfo.name}'s stats` : "Copy a monster's stats"}
+                  </button>
+                  <span className="custom-target-seed-hint">
+                    {mobInfo
+                      ? "then edit anything below"
+                      : "select one on the Monster tab first"}
+                  </span>
+                </div>
                 <div className="field-row">
                   <div className="field">
                     <label>DEF</label>
@@ -3838,6 +4072,41 @@ export default function BuildEditor() {
                     <select value={customTarget.is_boss ? "yes" : "no"} onChange={(e) => setCustomTarget((t) => ({ ...t, is_boss: e.target.value === "yes" }))}>
                       <option value="no">No</option><option value="yes">Yes</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* What the target does to YOU. Everything above describes how hard it
+                    is to hurt; these are what the Survivability panel prices. A target
+                    you invented does not hit back until you fill ATK in — copying a
+                    monster fills all of this for you. */}
+                <div className="custom-target-offence">
+                  <span className="custom-target-offence-head">What it does to you</span>
+                  <span className="custom-target-offence-hint">
+                    for the Survivability panel — leave ATK at 0 if you only care about your own damage
+                  </span>
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <label title="The low end of its weapon attack. With both ATK fields at 0 the target deals no damage and the Survivability panel says so instead of quoting 0.">ATK min</label>
+                    <input className="mono" type="number" min={0} value={customTarget.atk_min ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, atk_min: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label title="The high end of its weapon attack.">ATK max</label>
+                    <input className="mono" type="number" min={0} value={customTarget.atk_max ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, atk_max: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label title="Its STR adds to the damage it deals: STR + (STR/10)², the same formula monsters use.">STR</label>
+                    <input className="mono" type="number" min={0} value={customTarget.str ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, str: Number(e.target.value) }))} />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <label title="Its DEX is its HIT (level + DEX) — how often it lands on you, and so the Flee you need to dodge it.">DEX</label>
+                    <input className="mono" type="number" min={0} value={customTarget.dex ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, dex: Number(e.target.value) }))} />
+                  </div>
+                  <div className="field">
+                    <label title="Its Max HP, for time-to-kill and for Poison damage-over-time (a % of the target's Max HP per second).">Max HP</label>
+                    <input className="mono" type="number" min={0} value={customTarget.hp ?? 0} onFocus={(e) => e.target.select()} onChange={(e) => setCustomTarget((t) => ({ ...t, hp: Number(e.target.value) }))} />
                   </div>
                 </div>
               </>
@@ -4118,7 +4387,147 @@ export default function BuildEditor() {
                 ))}
               </div>
             )}
+
           </Panel>
+
+          {/* Manual edits live with the custom target — only offered there, only
+              applied there — but in their own panel rather than inside the Target
+              one. The editor is a CSS multi-column layout and multicol balances by
+              HEIGHT: a panel taller than the balanced column height drags that
+              height up until the last column has nothing left to hold, and panels
+              cannot be split across a column (they have a border and a background,
+              so a split box looks broken). Nested, this block cost the editor its
+              fourth column at full width however tightly it was packed. As its own
+              panel the layout can simply place it in another column. */}
+          {targetMode === "custom" && (
+            <Panel eyebrow="10" title="Target — manual edits">
+              {/* Manual edits, as part of the custom target. The fields above describe
+                the enemy; these are deltas on top of them, which is what you want
+                right after copying a monster in — "that, but 50 more DEF" — plus the
+                damage reductions, which have no field of their own above. Custom
+                mode only: a hidden edit quietly moving a monster's numbers is the
+                same trap the wildcard-mix state used to be. */}
+            {(() => {
+              const me = targetMods.manual ?? DEFAULT_MANUAL_ENEMY;
+              const activeEdits = activeManualEdits(me);
+              const setMe = (patch: Partial<ManualEnemyEdits>) => setTargetMods((m) => ({
+                ...m, manual: { ...(m.manual ?? DEFAULT_MANUAL_ENEMY), ...patch },
+              }));
+              const numField = (label: string, key: keyof ManualEnemyEdits, title: string, suffix?: string) => (
+                <div className="field">
+                  <label title={title}>{suffix ? `${label} ${suffix}` : label}</label>
+                  <input
+                    className="mono" type="number" value={(me[key] as number) ?? 0}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setMe({ [key]: Number(e.target.value) } as Partial<ManualEnemyEdits>)}
+                  />
+                </div>
+              );
+              const resEle = (slot: "res_ele1" | "res_ele2") => (
+                <div className="field">
+                  <label title="Percent of YOUR damage of that element the enemy shrugs off — the enemy-side mirror of a resist card.">Ele %</label>
+                  <div className="manual-enemy-res-row">
+                    <input
+                      className="mono" type="number" style={{ width: "4.2rem" }} value={me[slot]?.pct ?? 0}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setMe({ [slot]: { ele: me[slot]?.ele ?? 0, pct: Number(e.target.value) } } as Partial<ManualEnemyEdits>)}
+                    />
+                    <select
+                      value={me[slot]?.ele ?? 0}
+                      onChange={(e) => setMe({ [slot]: { ele: Number(e.target.value), pct: me[slot]?.pct ?? 0 } } as Partial<ManualEnemyEdits>)}
+                    >
+                      {ELEMENT_NAMES.map((n, i) => <option key={i} value={i}>{n}</option>)}
+                    </select>
+                  </div>
+                </div>
+              );
+              return (
+                <>
+                  <div className="manual-enemy-head">
+                    <button
+                      type="button"
+                      className="reworks-detail-toggle manual-enemy-toggle"
+                      onClick={() => {
+                        const next = !manualEditsOpen;
+                        setManualEditsOpen(next);
+                        localStorage.setItem("manualEditsOpen", next ? "1" : "0");
+                        if (next) statsApi.trackFeature("target_manual_edit_open");
+                      }}
+                      aria-expanded={manualEditsOpen}
+                    >
+                      Show the fields
+                      <span className="reworks-detail-chevron">{manualEditsOpen ? "▾" : "▸"}</span>
+                    </button>
+                    {/* The count stays visible while collapsed: an edit that is changing
+                        your numbers must never be hidden behind a closed section. */}
+                    {activeEdits.length > 0 && (
+                      <span className="manual-enemy-count">{activeEdits.length} active</span>
+                    )}
+                    {activeEdits.length > 0 && (
+                      <button
+                        className="cmp-btn-mini"
+                        onClick={() => { setMe(DEFAULT_MANUAL_ENEMY); statsApi.trackFeature("target_manual_edit_reset"); }}
+                      >Reset</button>
+                    )}
+                  </div>
+                  {manualEditsOpen && (
+                  <div className="manual-enemy-sub">
+                    Plus or minus on top of the custom target's stats — handy right after
+                    copying a monster in — and resistances, which it has no field for.
+                    They stack with the target debuffs.
+                  </div>
+                  )}
+
+                  {manualEditsOpen && (<div className="manual-enemy-wrap"><div className="manual-enemy-body">
+                  <div className="manual-enemy-col">
+                  <div className="manual-enemy-group">Stat adjustments (+/-)</div>
+                  <div className="field-row">
+                    {numField("AGI", "agi", "Its AGI feeds its FLEE — how hard it is for you to hit.")}
+                    {numField("VIT", "vit", "Its VIT is its soft DEF.")}
+                    {numField("INT", "int", "Its INT is its soft MDEF, and its MATK when it casts at you.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("DEX", "dex", "Its DEX is its HIT (level + DEX) — how often it lands on you.")}
+                    {numField("LUK", "luk", "Its LUK raises its Perfect Dodge (how often it shrugs off a hit outright). On Payon Stories that is all it does to you — PS disabled the crit shield, so enemy LUK no longer cuts your critical rate the way it does on vanilla.")}
+                    {numField("DEF", "def", "Hard DEF, the percentage cut applied before soft DEF subtracts.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("MDEF", "mdef", "Hard MDEF.")}
+                    {numField("FLEE", "flee", "Flat FLEE on top of what its AGI gives — your hit chance is 80 + your HIT − its FLEE.")}
+                    {numField("HIT", "hit", "Flat HIT on top of level + DEX — how often it lands on you.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("Max HP", "max_hp", "Flat Max HP, for time-to-kill and Poison damage-over-time.")}
+                    {numField("HP", "max_hp_pct", "Percent of Max HP, applied after the flat edit above.", "%")}
+                    {numField("ATK", "atk", "Flat ATK, shifting both ends of its attack range — how hard it hits you.")}
+                  </div>
+                  <div className="field-row">
+                    {numField("MATK", "matk", "Flat MATK on top of what its INT gives — how hard its spells hit you.")}
+                  </div>
+
+                  </div>
+                  <div className="manual-enemy-col">
+                  <div className="manual-enemy-group">Damage reductions</div>
+                  <div className="field-row">
+                    {resEle("res_ele1")}
+                    {resEle("res_ele2")}
+                  </div>
+                  <div className="field-row">
+                    {numField("Race", "res_race", "Percent it resists YOUR race (Demi-Human).", "%")}
+                    {numField("Size", "res_size", "Percent it resists YOUR size (Medium).", "%")}
+                    {numField("Range", "res_long", "Percent it resists ranged attacks.", "%")}
+                  </div>
+                  <div className="field-row">
+                    {numField("Physical", "res_atk", "Percent it resists ATK-based damage, at any range.", "%")}
+                    {numField("Magic", "res_matk", "Percent it resists MATK-based damage.", "%")}
+                  </div>
+                  </div>
+                  </div></div>)}
+                </>
+              );
+            })()}
+            </Panel>
+          )}
 
       </div>
       </div>

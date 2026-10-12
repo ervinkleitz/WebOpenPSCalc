@@ -24,10 +24,11 @@ jobs:
           npx tsc --noEmit
           npm test
 
-      - name: Frontend install + build
+      - name: Frontend install + typecheck + build
         working-directory: open-ps-calc-frontend/frontend
         run: |
           npm ci
+          npx tsc --noEmit
           npm run build
 
   deploy:

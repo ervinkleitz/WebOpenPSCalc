@@ -328,7 +328,12 @@ class StatusCalculator {
     }
 
     const tqSpec = (profile.passive_overrides || {}).SC_TWOHANDQUICKEN || {};
-    if ("SC_TWOHANDQUICKEN" in activeSc) {
+    // Sword Quickening's stats ride on holding a sword: "the effect cancels when
+    // switching to any other type of weapon". The ASPD half already checks this (it
+    // looks the weapon up in the quicken table); the stat half did not, so a Knight
+    // with a spear ticked the box and kept the crit.
+    if ("SC_TWOHANDQUICKEN" in activeSc
+      && (!tqSpec.weapon_types || tqSpec.weapon_types.includes(weapon.weapon_type))) {
       const lv = activeSc.SC_TWOHANDQUICKEN;
       status.flee += (tqSpec.flee_per_lv || 0) * lv;
       status.cri += (tqSpec.cri_per_lv || 0) * lv;

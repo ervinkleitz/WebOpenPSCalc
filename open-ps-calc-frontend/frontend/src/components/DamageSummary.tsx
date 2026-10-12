@@ -1,6 +1,7 @@
 import { useState } from "react";
 import HoverNote from "./HoverNote";
 import AttackRateNote from "./AttackRateNote";
+import { swingDamage, killMetrics, type Range } from "../lib/killMetrics";
 
 interface Step {
   name: string;
@@ -82,6 +83,11 @@ interface SingleResult {
     proc_chance?: number;
     double_proc_label?: string | null;
     ta_proc_chance?: number;
+    /** Triple Attack's proc when it CRITS. Only present while Critical Explosion
+     *  is up — that is the one thing on Payon Stories that lets a Triple Attack
+     *  proc crit at all. The engine has always folded it into the DPS; it just
+     *  had nowhere to show. */
+    ta_crit_proc?: DamageBranch | null;
     dps_valid: boolean;
     dps: number;
     period_ms?: number;
@@ -107,6 +113,10 @@ interface SingleResult {
 
 interface CalcResult {
   normal_attack: SingleResult;
+  /** Why the selected skill shows no Critical hit branch, when the answer is a
+   *  toggle rather than "it never crits". Set by the editor, which knows the
+   *  buffs; the engine only reports whether a crit branch exists. */
+  crit_unavailable_reason?: { short: string; detail: string } | null;
   skill: SingleResult | null;
   selected_skill: { id: number; level: number; label: string };
   target_hp?: number | null; // monster HP (monster-mode only) for hits-to-kill / time-to-kill
@@ -196,7 +206,7 @@ const STEP_LABELS: Record<string, string> = {
   "Final Damage": "Final damage",
 };
 // "Skill Ratio (Bash Lv10)" → "Skill ratio — Bash Lv10". The engine already puts
-// the skill's display name (or "Normal attack") in the brackets.
+// the skill's display name (or "Auto attack") in the brackets.
 function stepLabel(name: string): string {
   const m = /^Skill Ratio \((.+)\)$/.exec(name);
   if (m) return `Skill ratio — ${m[1]}`;
@@ -419,11 +429,16 @@ function AutoBlitzView({ branch, chance, dpsAdded }: { branch: DamageBranch; cha
 // chance for a normal attack to become Triple Attack instead. It REPLACES the
 // swing rather than adding a hit, so its expected value is already inside the DPS
 // above; this panel is what one proc actually hits for.
-function TripleAttackView({ branch, chance, label }: { branch: DamageBranch; chance: number; label: string }) {
+function TripleAttackView({ branch, chance, label, crit, critChance }: {
+  branch: DamageBranch; chance: number; label: string;
+  crit?: DamageBranch | null; critChance?: number;
+}) {
   const n = (v: number) => Math.round(v).toLocaleString();
-  const range = Math.round(branch.min_damage) !== Math.round(branch.max_damage)
-    ? `${n(branch.min_damage)}–${n(branch.max_damage)}`
-    : n(branch.avg_damage);
+  const rng = (b: DamageBranch) => Math.round(b.min_damage) !== Math.round(b.max_damage)
+    ? `${n(b.min_damage)}–${n(b.max_damage)}`
+    : n(b.avg_damage);
+  const range = rng(branch);
+  const critRange = crit ? rng(crit) : null;
   return (
     <div className="breakdown-view">
       <div className="breakdown-head">
@@ -435,9 +450,22 @@ function TripleAttackView({ branch, chance, label }: { branch: DamageBranch; cha
         <span className="breakdown-total-label">Per-proc damage</span>
         <span className="breakdown-total-val">{range}</span>
       </div>
+      {/* Only under Critical Explosion, which is the sole thing that lets a Triple
+          Attack proc crit on Payon Stories. Without it there is no crit row at all,
+          which is itself the answer to "does this crit?". */}
+      {crit && (
+        <div className="breakdown-total">
+          <span className="breakdown-total-label">
+            ...when it crits
+            {critChance ? <span className="breakdown-sub"> {critChance.toFixed(1)}% of procs</span> : null}
+          </span>
+          <span className="breakdown-total-val">{critRange}</span>
+        </div>
+      )}
       <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
         <span className="self-damage-chip muted">replaces the auto-attack</span>
         <span className="self-damage-chip muted">already folded into the DPS above</span>
+        {crit && <span className="self-damage-chip muted">crits because Critical Explosion is up</span>}
       </div>
     </div>
   );
@@ -620,6 +648,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const hasSkill = skillResult !== null && selected_skill.id !== 0;
   const primary = hasSkill ? skillResult! : normal_attack;
   const hasCrit = !!primary.result.crit;
+  const critUnavailableReason = calcResult.crit_unavailable_reason ?? null;
   const falcon = (skillResult ?? normal_attack)?.falcon;
   const hasFalcon = !!falcon;
   const hasKatar = !!normal_attack.result.katar_second;
@@ -631,7 +660,6 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const dwLhNormal = normal_attack.result.dw_lh_normal ?? null;
   const dwLhCrit = normal_attack.result.dw_lh_crit ?? null;
   const dwPsBonusPct = normal_attack.result.dw_ps_bonus_pct ?? 0;
-  const dwPsBonusMult = 1 + dwPsBonusPct / 100;
 
   // Vanilla DPS: recompute single-weapon DPS from period_ms
   const periodMs = normal_attack.result.period_ms ?? 0;
@@ -683,6 +711,13 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         branch: tripleAttackBranch,
         chance: activeResult.result.proc_chances?.triple_attack ?? 0,
         label: activeResult.result.proc_labels?.triple_attack ?? "Triple Attack",
+        // Present only under Critical Explosion. The DPS above already weights this
+        // by the crit chance (battlePipeline splits the TA share crit/non-crit), so
+        // showing it is purely catching the readout up with the maths: a player
+        // turned Critical Explosion on, watched this panel not move, and reported
+        // Triple Attack as not critting. It was; the number was just never rendered.
+        crit: activeResult.result.ta_crit_proc ?? null,
+        critChance: activeResult.result.crit_chance ?? 0,
       }
     : null;
   // Double Attack / Chain Action second hit. Only ever procs on a normal attack, so
@@ -763,12 +798,12 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   // paid out per critical hit. Shown under the breakdown, clearly marked as healing.
   const critHeal = activeBranch === "crit" ? (primary.result.crit?.crit_heal ?? null) : null;
 
-  // Combined DW damage range for the headline (PS mode, normal/crit branch)
-  const showDwCombined = hasDualWield && dwMode === "ps" && !!dwLhNormal && (activeBranch === "normal" || activeBranch === "crit");
+  // The two weapons of a PS dual-wield land in ONE swing, so the headline damage is
+  // their total, not the right hand's share. Worked out in lib/killMetrics, which the
+  // pinned Compare columns go through as well — they used to do their own arithmetic
+  // and showed the right-hand hit alone beside a breakdown ending on the full swing.
   const dwRhBranch = activeBranch === "crit" ? (normal_attack.result.crit ?? normal_attack.result.normal) : normal_attack.result.normal;
   const dwLhBranch = activeBranch === "crit" ? (dwLhCrit ?? dwLhNormal!) : dwLhNormal!;
-  const combinedMin = showDwCombined ? Math.round((2 * dwRhBranch.min_damage * dwRhFactor + dwLhBranch.min_damage * dwLhFactor) * dwPsBonusMult) : null;
-  const combinedMax = showDwCombined ? Math.round((2 * dwRhBranch.max_damage * dwRhFactor + dwLhBranch.max_damage * dwLhFactor) * dwPsBonusMult) : null;
 
   // DPS: combined PS DPS in PS mode, single-weapon recomputed in Vanilla mode
   const displayDps = hasDualWield && dwMode === "vanilla" ? vanillaDps : result.dps;
@@ -776,65 +811,64 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
     ? (vanillaDps !== null && isFinite(vanillaDps))
     : result.dps_valid;
 
-  // Hits to kill (min/avg/max) and time to kill vs a monster's HP. Per-hit damage
-  // uses the displayed branch (or the combined dual-wield total); time-to-kill uses
-  // the estimated DPS, which already folds in ASPD / crit mix / procs (and cast +
-  // after-cast delay for skills). Only shown in monster mode, where HP is known.
-  const killMin = showDwCombined ? combinedMin : activeDamage?.min_damage ?? null;
-  const killAvg = showDwCombined ? Math.round(((combinedMin ?? 0) + (combinedMax ?? 0)) / 2) : activeDamage?.avg_damage ?? null;
-  const killMax = showDwCombined ? combinedMax : activeDamage?.max_damage ?? null;
-  const hitsToKill = (dmg: number | null | undefined) =>
-    target_hp != null && dmg != null && dmg > 0 ? Math.ceil(target_hp / dmg) : null;
-
-  // Turn Undead is an instant-kill skill: each cast has `success_chance` to kill
-  // outright, and on failure deals `killAvg` chip damage. Expected casts to kill
-  // = E[min(Geom(p), nChip)] = (1 − (1−p)^nChip) / p, where nChip = casts to kill
-  // by chip damage alone (handles the p→0 limit, where it degrades to nChip). Time
-  // to kill = expected casts × cast period. This is what folds the success chance
-  // into the hits/duration metrics.
-  const successChance = result.success_chance ?? null;
-  const isInstaKill = successChance != null;
-  let tuCasts: number | null = null;
-  if (isInstaKill && target_hp != null) {
-    const p = Math.max(0, Math.min(1, (successChance as number) / 100));
-    const nChip = killAvg != null && killAvg > 0 ? Math.ceil(target_hp / killAvg) : Infinity;
-    if (p > 0) {
-      const survive = Math.pow(1 - p, isFinite(nChip) ? nChip : 1e9);
-      tuCasts = (1 - survive) / p;
-    } else if (isFinite(nChip)) {
-      tuCasts = nChip;
-    }
-  }
-  const tuCastsRounded = tuCasts != null ? Math.max(1, Math.round(tuCasts)) : null;
-  const periodS = (result.period_ms ?? 0) / 1000;
+  // The damage ONE attack lands, as displayed: the dual-wield swing total where that
+  // applies, otherwise the branch on screen. Everything below — the damage range, the
+  // breakdown's final line, the kill metrics — reads this single figure.
+  const showDwCombined = hasDualWield && dwMode === "ps" && !!dwLhNormal
+    && (activeBranch === "normal" || activeBranch === "crit");
+  const swing: Range | null = swingDamage(normal_attack.result, activeDamage, {
+    dw: showDwCombined,
+    crit: activeBranch === "crit",
+  });
+  const killMin = swing?.min ?? null;
+  const killAvg = swing?.avg ?? null;
+  const killMax = swing?.max ?? null;
 
   // Poison ailment damage-over-time (per second), added to the attack DPS so the
   // target dies sooner. Constant since it's a fraction of Max HP, so it folds in
   // as a flat +DPS term. Only present in monster mode with the Poison status on.
   const poisonDot = poison_dot_per_sec != null && poison_dot_per_sec > 0 ? poison_dot_per_sec : 0;
-  const killDps = (displayDpsValid && displayDps != null ? displayDps : 0) + poisonDot;
 
-  // Hits-to-kill and time-to-kill share ONE basis so they can't disagree: the
-  // expected damage per attack cycle = DPS × period, which folds in crit RATE,
-  // procs and ASPD exactly as the DPS/time do. (Using the displayed branch's
-  // per-hit damage for the hit count assumed 100% of that branch — e.g. all crits —
-  // so a big-crit / low-crit-rate build showed FEWER hits yet a SLOWER time.) The
-  // min/max envelope applies the displayed branch's roll spread around that value.
-  // A branch with no meaningful rate (Killing Stroke, Fling, Reflect Shield) reports
-  // dps_valid:false, which zeroes killDps — but "how many casts to kill" is still a
-  // real question there, and it was coming out blank. Those branches are a single
-  // deterministic hit with no crit or proc mix, so the per-hit damage IS the expected
-  // damage per cast and the reason for the DPS×period basis doesn't apply. Time to
-  // kill stays blank: without a rate there is no honest duration to quote.
-  const noRateHit = !isInstaKill && !displayDpsValid && killAvg != null && killAvg > 0;
-  const expPerHit = !isInstaKill && killDps > 0 && periodS > 0 ? killDps * periodS
-    : noRateHit ? killAvg
-    : null;
-  const hiRatio = killAvg != null && killAvg > 0 && killMax != null ? killMax / killAvg : 1;
-  const loRatio = killAvg != null && killAvg > 0 && killMin != null ? killMin / killAvg : 1;
-  const hitsBest = isInstaKill ? null : hitsToKill(expPerHit != null ? expPerHit * hiRatio : null);   // fewest hits — best-case rolls
-  const hitsAvg = isInstaKill ? tuCastsRounded : hitsToKill(expPerHit);
-  const hitsWorst = isInstaKill ? null : hitsToKill(expPerHit != null ? expPerHit * loRatio : null);  // most hits — worst-case rolls
+  // Hits and time to kill, from lib/killMetrics — the same call the pinned Compare
+  // columns make, so a column and the panel under it cannot quote different numbers.
+  const kill = killMetrics({
+    targetHp: target_hp,
+    damage: swing,
+    dps: displayDps,
+    dpsValid: displayDpsValid,
+    periodMs: result.period_ms ?? 0,
+    poisonDotPerSec: poison_dot_per_sec,
+    successChance: result.success_chance ?? null,
+  });
+  const { isInstaKill, noRateHit, hitsBest, hitsAvg, hitsWorst, timeToKill } = kill;
+  const successChance = result.success_chance ?? null;
+  // "...and if every hit were THIS one?" — the count for the branch on screen, with
+  // no crit/proc mix folded in. The figures above answer "how long will this actually
+  // take", which is the right default and is what Time to kill agrees with; this
+  // answers "how many of these would it take", which is the question you are asking
+  // the moment you click Critical hit. A player reported the averaged count as not
+  // very useful for exactly that reason (2026-10-10).
+  //
+  // Shown only when it differs from the expected count — on the default branch of a
+  // build with no crit and no procs the two coincide, and printing the same number
+  // twice is worse than printing it once.
+  const hitsThisBranch = kill.hitsThisBranch;
+  const showBranchHits = hitsThisBranch != null && hitsAvg != null && hitsThisBranch !== hitsAvg;
+
+  // "...and what do I hit for on AVERAGE?" — the crit and non-crit outcomes blended
+  // at your crit rate, which is the number the DPS, Hits to kill and Time to kill are
+  // all built from. Each branch button shows one outcome in isolation; with a 70% crit
+  // rate neither of them is what you actually do, and the blend was only reachable by
+  // dividing the DPS by the cast rate yourself. A player asked for it back after the
+  // branch buttons made the two outcomes separate and visible (2026-10-11).
+  //
+  // Hidden when it matches the branch on screen — a build that never crits and procs
+  // nothing has one outcome, and printing it twice is worse than printing it once.
+  const avgPerCycle = kill.attackPerCycle;
+  const showAvgPerCycle = avgPerCycle != null && killAvg != null
+    && Math.round(avgPerCycle) !== Math.round(killAvg);
+  // The cycle this averages over: a cast on a skill branch, a swing on the auto attack.
+  const cycleNoun = activeBranch === "normal" || !hasSkill ? "hit" : "cast";
 
   // EXP per hit = what the kill awards ÷ how many hits it takes. The headline number
   // uses the SAME expected-hits basis as "Hits to kill" and "Time to kill" (expected
@@ -860,9 +894,6 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const expRangeNote = (lo: number | null, hi: number | null) =>
     lo != null && hi != null && expFmt(lo) !== expFmt(hi) ? ` Best-to-worst damage rolls: ${expFmt(hi)} – ${expFmt(lo)}.` : "";
 
-  const timeToKill = isInstaKill
-    ? (tuCasts != null && periodS > 0 ? tuCasts * periodS : null)
-    : (target_hp != null && killDps > 0 ? target_hp / killDps : null);
   // For an instant-kill skill, "DPS" as chip-damage throughput is misleading next
   // to the kill metrics (they'd imply far less than the target's HP). Show the
   // effective throughput (HP ÷ expected time) so the panel stays self-consistent;
@@ -872,13 +903,21 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
 
   // Header + prominent-total support for the breakdown card.
   const nfmt = (v: number) => Math.round(v).toLocaleString();
+  // Short noun for the "All <x>" count above: "All crits", "All auto attacks", ...
+  const branchNoun =
+    activeBranch === "crit" ? "crits"
+    : activeBranch === "katar" ? "katar hits"
+    : activeBranch === "falcon" ? "falcon hits"
+    : activeBranch === "normal" ? "auto attacks"
+    : hasSkill ? "casts"
+    : "auto attacks";
   const breakdownLabel =
     activeBranch === "crit" ? "Critical hit"
     : activeBranch === "katar" ? "Katar 2nd hit"
     : activeBranch === "falcon" ? "Falcon"
-    : activeBranch === "normal" ? "Normal attack"
+    : activeBranch === "normal" ? "Auto attack"
     : hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}`
-    : "Normal attack";
+    : "Auto attack";
   const finalRange = killMin != null && killMax != null && Math.round(killMin) !== Math.round(killMax);
 
   return (
@@ -955,25 +994,29 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             <div className="value">{status.aspd.toFixed(1)}</div>
           </div>
         )}
-        {showDwCombined ? (
+        {swing && isFinite(swing.min) && isFinite(swing.max) && (
           <div className="metric metric-range">
             <div className="label">Damage range</div>
             <div className="value range">
-              {combinedMin}<span className="unit">min</span>
+              {Math.round(swing.min)}<span className="unit">min</span>
               {" – "}
-              {combinedMax}<span className="unit">max</span>
+              {Math.round(swing.max)}<span className="unit">max</span>
             </div>
           </div>
-        ) : activeDamage && activeDamage.min_damage != null && activeDamage.max_damage != null ? (
-          <div className="metric metric-range">
-            <div className="label">Damage range</div>
-            <div className="value range">
-              {Math.round(activeDamage.min_damage)}<span className="unit">min</span>
-              {" – "}
-              {Math.round(activeDamage.max_damage)}<span className="unit">max</span>
-            </div>
+        )}
+        {/* The crit/non-crit blend — what one attack does on average, as opposed to
+            the single outcome the selected branch shows. */}
+        {showAvgPerCycle && (
+          <div className="metric" title={`What one ${cycleNoun} does on average: your `
+            + `${result.crit_chance.toFixed(1)}% criticals blended with the ordinary hits`
+            + `${result.hit_chance < 100 ? `, and the ${(100 - result.hit_chance).toFixed(1)}% that miss` : ""}`
+            + `${activeResult.result.proc_chances && Object.keys(activeResult.result.proc_chances).length ? ", plus procs" : ""}. `
+            + `The branch buttons each show ONE outcome; this is the mix, and it is what DPS, `
+            + `Hits to kill and Time to kill are built from (DPS ÷ ${(1000 / (result.period_ms || 1000)).toFixed(2)} per second).`}>
+            <div className="label">Average / {cycleNoun}</div>
+            <div className="value">{Math.round(avgPerCycle!).toLocaleString()}</div>
           </div>
-        ) : null}
+        )}
         <div className="metric" title={displayDpsValid
           ? undefined
           : "No DPS for this branch: it has no repeat rate to quote. Killing Stroke drops you to 1 HP and cancels the Ninja Aura it needs; Fling spends your coins; Reflect Shield fires on the enemy's attacks, not yours. The per-hit damage is the meaningful number."}>
@@ -996,6 +1039,15 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
               {" – "}
               {hitsWorst}<span className="unit">max</span>
             </div>
+          </div>
+        )}
+        {/* The count for the branch you are looking at, unaveraged. */}
+        {!isInstaKill && showBranchHits && (
+          <div className="metric" title={`How many of THIS hit alone would kill the ${target_hp!.toLocaleString()}-HP target `
+            + `(${Math.round(killAvg!).toLocaleString()} damage each). The count beside it is the realistic one — it folds in `
+            + `crit rate, procs and ASPD, and is what Time to kill agrees with. This one assumes every hit lands like the branch on screen.`}>
+            <div className="label">All {branchNoun}</div>
+            <div className="value">{hitsThisBranch}<span className="unit">hits</span></div>
           </div>
         )}
         {isInstaKill && hitsAvg != null && (
@@ -1099,23 +1151,44 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         <button
           className={`branch-skill-pill${activeBranch === "skill" && hasSkill ? " active" : ""}${!hasSkill && activeBranch === "normal" ? " active" : ""}`}
           onClick={() => { setBranch(hasSkill ? "skill" : "normal"); if (tuAttempt > 0) onTuAttempt?.(0); }}
+          title={hasSkill
+            ? `${selected_skill.label} Lv ${selected_skill.level} — one cast that does not crit`
+            : "Your weapon's ordinary swing, no skill"}
         >
-          {hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}` : "Normal Attack"}
+          {hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}` : "Auto attack"}
         </button>
 
+        {/* The auto attack, offered alongside the skill so you can see whether the
+            skill is worth casting at all. It is a DIFFERENT attack, not the skill's
+            non-crit hit — which is exactly what "Normal hit" was read as: a player
+            reported the skill ratio "not applying" here, and it never should have.
+            Reported 2026-10-10. */}
         {hasSkill && (
           <button
             className={activeBranch === "normal" ? "active" : ""}
             onClick={() => setBranch("normal")}
+            title="Your weapon's ordinary swing, with no skill — a different attack, so the skill's damage multiplier does not apply here. For comparison against the skill."
           >
-            Normal hit
+            Auto attack
           </button>
+        )}
+
+        {/* A skill that could crit but for a switch the player has not flipped. Without
+            this the branch row just ends, and "this skill cannot crit" is
+            indistinguishable from "you have not turned the thing on". */}
+        {!hasCrit && critUnavailableReason && (
+          <span className="branch-note" title={critUnavailableReason.detail}>
+            {critUnavailableReason.short}
+          </span>
         )}
 
         {hasCrit && (
           <button
             className={activeBranch === "crit" ? "active" : ""}
             onClick={() => setBranch("crit")}
+            title={hasSkill
+              ? `${selected_skill.label} Lv ${selected_skill.level} when it lands a critical — the same attack as the skill, so its damage multiplier still applies`
+              : "Your auto attack when it lands a critical"}
           >
             Critical hit
           </button>
@@ -1219,7 +1292,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         />
       )}
 
-      {tripleAttack && <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label} />}
+      {tripleAttack && <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label}
+        crit={tripleAttack.crit} critChance={tripleAttack.critChance} />}
 
       {holyStrike && (
         <CardAutocastView title="Proc" label="Holy Strike" per="melee attack"

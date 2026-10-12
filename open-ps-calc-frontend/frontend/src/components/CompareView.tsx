@@ -1,13 +1,14 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import InfoTooltip from "./InfoTooltip";
+import { swingDamage, killMetrics } from "../lib/killMetrics";
 
 // Build-vs-build comparison. Pin the current computed result as a snapshot, then
 // tweak the editor and compare the live build against each pinned one. Metrics come
 // straight off the calc result the backend already returns.
 
 export interface CompareMetrics {
-  label: string;        // the output being compared: skill name or "Normal attack"
+  label: string;        // the output being compared: skill name or "Auto attack"
   dps: number | null;   // effective DPS (null when the skill has no valid DPS)
   avg: number;          // average damage per hit
   min: number;
@@ -28,25 +29,45 @@ export interface ComparePin {
 
 // Pull the headline metrics out of a raw calcResult. Shared by BuildEditor (live
 // build) and the pin capture, so both read exactly the same numbers.
+//
+// Everything numeric here goes through lib/killMetrics — the same code the breakdown
+// panel below these columns uses. It used to read `res.normal` directly, which is one
+// weapon's hit: a dual-wield Assassin pinned at "Damage / hit 1,625" while the
+// breakdown under it ended on "Final damage 5,074–5,327", because a PS dual-wield
+// lands two right-hand hits and a left-hand one per swing. Hits to kill, computed off
+// that damage, was wrong by the same factor (reported 2026-10-10).
 export function summaryMetrics(cr: any): CompareMetrics | null {
   if (!cr) return null;
   const usingSkill = cr.skill && cr.selected_skill && cr.selected_skill.id !== 0;
   const branch = usingSkill ? cr.skill : cr.normal_attack;
   const res = branch?.result;
   if (!res || !res.normal) return null;
-  const dps = res.dps_valid ? res.dps : null;
-  const effDps = dps != null ? dps + (cr.poison_dot_per_sec || 0) : null;
-  const ttk = effDps != null && effDps > 0 && cr.target_hp ? cr.target_hp / effDps : null;
-  const avg = res.normal.avg_damage ?? 0;
-  const hitsToKill = cr.target_hp && avg > 0 ? Math.ceil(cr.target_hp / avg) : null;
+  // The branch the panel opens on: the skill if one is selected, else the auto
+  // attack — and for an auto attack, the whole dual-wield swing, not the right hand.
+  const swing = swingDamage(res, res.normal, { dw: !usingSkill, crit: false });
+  const kill = killMetrics({
+    targetHp: cr.target_hp,
+    damage: swing,
+    dps: res.dps,
+    dpsValid: res.dps_valid,
+    periodMs: res.period_ms ?? 0,
+    poisonDotPerSec: cr.poison_dot_per_sec,
+    successChance: res.success_chance ?? null,
+  });
+  const rawDps = res.dps_valid ? res.dps : null;
+  // Turn Undead's chip-damage DPS says nothing about how fast it kills; the panel
+  // quotes HP ÷ expected time there, so these columns do too.
+  const dps = kill.isInstaKill && cr.target_hp && kill.timeToKill
+    ? cr.target_hp / kill.timeToKill
+    : rawDps;
   return {
-    label: usingSkill ? (cr.selected_skill.label || "Skill") : "Normal attack",
+    label: usingSkill ? (cr.selected_skill.label || "Skill") : "Auto attack",
     dps,
-    avg,
-    min: res.normal.min_damage ?? 0,
-    max: res.normal.max_damage ?? 0,
-    hitsToKill,
-    ttk,
+    avg: swing?.avg ?? 0,
+    min: swing?.min ?? 0,
+    max: swing?.max ?? 0,
+    hitsToKill: kill.hitsAvg,
+    ttk: kill.timeToKill,
     critChance: res.crit_chance ?? 0,
     aspd: branch.status?.aspd ?? 0,
   };

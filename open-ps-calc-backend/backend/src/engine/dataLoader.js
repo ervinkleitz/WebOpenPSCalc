@@ -125,6 +125,56 @@ class DataLoader {
     return item;
   }
 
+  /**
+   * The job ids an "All except Novice" item may be worn by.
+   *
+   * Our item records lose this. Hercules' Job field is a bitmask and the conversion
+   * that produced item_db.json collapsed "every job" and "every job but one" alike
+   * into an EMPTY array, which every consumer reads as "no restriction" — so a Novice
+   * could wear a Valkyrie Shield here. 785 pieces of equipment carry that empty array.
+   *
+   * Payon Stories still has the distinction in its own tooltips: 542 equipment items
+   * say "Jobs: All" and 186 say "Jobs: All except Novice". That text is bundled in
+   * ps_item_db.json, so the rule is recoverable without inventing data.
+   *
+   * SUPER NOVICE IS EXCLUDED TOO, which is the part worth justifying. PS never writes
+   * "except Super Novice" anywhere in the catalogue — the phrase is always plain
+   * "Novice" — and in OUR data Super Novice has no representation of its own: job id
+   * 23 appears in zero item job arrays, while Novice (0) appears in 115. That is why
+   * the equip gates all carry `jobId === 23 && job.includes(0)` — a Super Novice is
+   * admitted through the Novice bit. A model where Super Novice counts as a Novice to
+   * get IN but not to be kept OUT would be incoherent, so it is kept out.
+   *
+   * Reported by Beerbelly Slinger via Frennetix (2026-10-06): Eye of Dullahan and
+   * Safety Ring were offered to a Super Novice here and are "all jobs except novice"
+   * in game.
+   */
+  _nonNoviceJobIds() {
+    if (!this.__nonNoviceJobs) {
+      // 0 = Novice, 23 = Super Novice. Everything else this calculator models.
+      this.__nonNoviceJobs = (this.getAllJobs() || [])
+        .map((j) => j.id)
+        .filter((id) => id !== 0 && id !== 23);
+    }
+    return this.__nonNoviceJobs;
+  }
+
+  /** PS's own "Jobs:" line for an item, from whichever layer supplies its text. */
+  _psJobsLine(strId) {
+    const scraped = this._loadPsItemDb()[strId];
+    let desc = scraped && scraped.description;
+    for (const src of [this._loadPsItemOverrides(), this._loadPsItemManual()]) {
+      const e = src[strId];
+      if (e && "description" in e) desc = e.description;
+    }
+    if (!desc) return null;
+    const m = String(desc)
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .match(/Jobs:\s*([^\n]+)/i);
+    return m ? m[1].trim() : null;
+  }
+
   _applyPsItemLayers(strId, base) {
     // `_note` is a maintainer comment on a ps_item_manual entry (why a script
     // deviates from the scraped text) — never part of the item itself.
@@ -135,7 +185,13 @@ class DataLoader {
 
     const override = this._loadPsItemOverrides()[strId] || {};
     const manual = this._loadPsItemManual()[strId] || {};
-    if (Object.keys(override).length === 0 && Object.keys(manual).length === 0) return base;
+    // The "All except Novice" rule below applies to items with NO curated layer at
+    // all — most of them — so this shortcut cannot skip them. It only short-circuits
+    // when there is genuinely nothing to do.
+    const needsNoviceRule = base && Array.isArray(base.loc) && base.loc.length
+      && (!Array.isArray(base.job) || base.job.length === 0)
+      && /^All except Novice$/i.test(this._psJobsLine(strId) || "");
+    if (Object.keys(override).length === 0 && Object.keys(manual).length === 0 && !needsNoviceRule) return base;
 
     let result = base ? { ...base } : {};
     if (Object.keys(result).length === 0) result.id = Number(strId);
@@ -146,6 +202,16 @@ class DataLoader {
         result[REMAP[k] || k] = v;
       }
     }
+
+    // "All except Novice" — fill in the restriction the conversion dropped. Only when
+    // the item carries no job list of its own: an explicit one, from the DB or from a
+    // hand-curated layer, is already more specific than this.
+    if (Array.isArray(result.loc) && result.loc.length
+        && (!Array.isArray(result.job) || result.job.length === 0)
+        && /^All except Novice$/i.test(this._psJobsLine(strId) || "")) {
+      result.job = this._nonNoviceJobIds();
+    }
+
     return Object.keys(result).length ? result : null;
   }
 
@@ -926,10 +992,49 @@ class DataLoader {
     return Object.keys(base).length ? base : null;
   }
 
+  /**
+   * Payon Stories' own tooltip text for a skill, rebuilt in the same shape the
+   * vanilla description file uses. Returns null when we have nothing from PS.
+   *
+   * ps_skill_db.json already carries this - `description` plus a per-level `levels`
+   * array of { level, effect } - scraped from their planner's tooltip. It was only
+   * ever read for display NAMES, so every description we served was vanilla's.
+   */
+  _psSkillDescriptionText(ps) {
+    if (!ps) return null;
+    const lines = [];
+    if (ps.max_level != null) lines.push(`Max Level: ${ps.max_level}`);
+    if (ps.skill_form) lines.push(`Skill Form: ${ps.skill_form}`);
+    if (ps.description) lines.push(`Description: ${ps.description}`);
+    for (const lv of Array.isArray(ps.levels) ? ps.levels : []) {
+      if (!lv || lv.effect == null) continue;
+      lines.push(`[Lv ${lv.level}]: ${lv.effect}`);
+    }
+    // A bare name with no description and no table is not worth preferring over
+    // vanilla's text - it would blank out a description rather than correct it.
+    return lines.length > 1 ? lines.join("\n") : null;
+  }
+
   getSkillDescription(skillConstant) {
     try {
       const data = this._loadJson("db/skill_descriptions.json");
-      return (data.skills || {})[skillConstant] || null;
+      const vanilla = (data.skills || {})[skillConstant] || null;
+
+      // Under the Payon Stories profile PS's own text wins, because for a reworked
+      // skill the vanilla text contradicts the numbers this engine computes beside
+      // it. Spear Mastery is the case that surfaced it: PS gives +5 per level and
+      // +7 mounted - which is what we calculate - while this file still read
+      // "[Lv 1]: Damage +4" and "when riding a pecopeco, the bonus damage increased
+      // by 1 per level". The maintainer pointed at the planner tooltip, 2026-10-07.
+      //
+      // The name is deliberately left alone: getSkillDisplayName already resolves
+      // PS names through use_ps_skill_names, and taking it from two places would be
+      // one more thing that can disagree.
+      if (this._profile && this._profile.use_ps_data) {
+        const text = this._psSkillDescriptionText(this.getPsSkill(skillConstant));
+        if (text) return { ...(vanilla || {}), description: text };
+      }
+      return vanilla;
     } catch {
       return null;
     }

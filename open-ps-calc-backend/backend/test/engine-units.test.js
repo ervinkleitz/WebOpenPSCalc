@@ -5028,8 +5028,13 @@ test("perfect hit, HIT%, DEF% and the defensive bonuses change the numbers they 
   assert.ok(inc({ right_hand: 1408 }, 1320, true) > 0, "Owl Duke's magic should normally hurt");
   assert.equal(inc({ right_hand: 1408, left_hand: 2101, left_hand_card1: 4128 }, 1320, true), 0, "Golden Thiefbug Card: immune to magic");
   const without = inc({ right_hand: 1408, left_hand: 2101 }, 1285, false);
-  assert.equal(inc({ right_hand: 1408, left_hand: 2101, left_hand_card1: 4231 }, 1285, false), without / 2,
-    "Mi Gao Card: -50% from Guardians (Archer Guardian)");
+  const halved = inc({ right_hand: 1408, left_hand: 2101, left_hand_card1: 4231 }, 1285, false);
+  // Within 1: these are averages over a per-roll FLOORED distribution, so halving an
+  // odd-average hit lands half a point low. (It read as exact only while the mob's
+  // damage happened to be even — it stopped being so when the stray player base-ATK
+  // term came off a monster's hit.)
+  assert.ok(Math.abs(halved - without / 2) <= 1,
+    `Mi Gao Card: -50% from Guardians (Archer Guardian) — ${without} -> ${halved}`);
 
   // bAddDefClass: by monster id, straight through the card fix.
   const { calculateIncomingPhysical } = require("../src/engine/calculators/modifiers/cardFix");
@@ -6671,4 +6676,564 @@ test("a planner link whose levels are an ARRAY imports the same as an object", (
   assert.equal(empty.applied.length, 0);
   assert.equal(empty.link_summary.allocated, 0,
     "an genuinely empty link should still say so");
+});
+
+// "All except Novice" gear is not wearable by a Novice OR a Super Novice.
+//
+// Hercules' Job field is a bitmask, and the conversion that produced item_db.json
+// collapsed "every job" and "every job but one" alike into an EMPTY array — which
+// every equip gate reads as "no restriction". 785 pieces of equipment carry that
+// empty array, so a Novice could wear a Valkyrie Shield here.
+//
+// Payon Stories keeps the distinction in its own tooltips (542 equipment items say
+// "Jobs: All", 186 say "Jobs: All except Novice") and that text is bundled, so the
+// rule is recovered from data rather than invented.
+//
+// Reported by Beerbelly Slinger via Frennetix, 2026-10-06: Eye of Dullahan and
+// Safety Ring were offered to a Super Novice.
+// ---------------------------------------------------------------------------
+test("'All except Novice' gear excludes the Novice line, including Super Novice", () => {
+  loader.setProfile(PS);
+  // The same test the equip gates use, in both the editor and the /items route.
+  const jobMatch = (job, jobId) => job.includes(jobId) || (jobId === 23 && job.includes(0));
+  const canWear = (itemId, jobId) => {
+    const job = loader.getItem(itemId).job;
+    if (!Array.isArray(job) || job.length === 0) return true; // no restriction
+    return jobMatch(job, jobId);
+  };
+
+  // The two items in the report, plus two more PS marks the same way.
+  for (const [id, name] of [[2614, "Eye of Dullahan"], [2615, "Safety Ring"],
+                            [2626, "Rosary"], [2114, "Stone Buckler"]]) {
+    assert.equal(canWear(id, 0), false, `a Novice must not wear ${name}`);
+    assert.equal(canWear(id, 23), false,
+      `a Super Novice must not wear ${name} — PS never writes "except Super Novice", `
+      + "and job 23 appears in no item job array, so a Super Novice is only ever "
+      + "admitted through the Novice bit");
+    assert.equal(canWear(id, 7), true, `a Knight must still wear ${name}`);
+    assert.equal(canWear(id, 12), true, `an Assassin must still wear ${name}`);
+  }
+
+  // The control that keeps this honest: PS says plain "All" for Balmung, so it must
+  // stay unrestricted. Without this the rule could be "restrict everything" and the
+  // assertions above would still pass.
+  assert.deepEqual(loader.getItem(1161).job, [],
+    "an item PS calls plain 'All' must keep an empty job list");
+  assert.equal(canWear(1161, 0), true, "including for a Novice");
+
+  // An item with its OWN job list is more specific than the blanket rule and must be
+  // left alone — otherwise this would overwrite real restrictions with a weaker one.
+  const explicit = loader.getItem(1522); // Mace: Acolyte/Merchant line
+  assert.ok(Array.isArray(explicit.job) && explicit.job.length > 0);
+  assert.ok(explicit.job.length < 30, "a class-specific item keeps its narrow list");
+
+  // And a vanilla server is untouched — this is a PS tooltip talking, not Hercules.
+  loader.setProfile(getProfile("standard"));
+  assert.deepEqual(loader.getItem(2614).job, [],
+    "the standard profile keeps the item_db record as shipped");
+  loader.setProfile(PS);
+});
+
+// ---------------------------------------------------------------------------
+// A restriction is only as good as the duplicate next to it.
+//
+// The "All except Novice" rule reads PS's own tooltip, so it can only fire on items
+// PS has. Thirteen _C / _I variants shadow an item PS does have, are absent from PS
+// themselves, and therefore stayed unrestricted — so a Super Novice searching
+// "Safety Ring" still found a wearable copy and the reported bug survived the fix.
+//
+// Found by QA rather than reported, which is why it is pinned by name here: the
+// failure mode is a restricted item sitting in the picker beside an identical-looking
+// one that is not restricted.
+// ---------------------------------------------------------------------------
+test("a restricted item has no unrestricted twin left in the picker", () => {
+  loader.setProfile(PS);
+
+  // Every equipment name, with the copies the player would see offered.
+  const visible = {};
+  for (let id = 1; id < 32000; id++) {
+    const it = loader.getItem(id);
+    if (!it || !it.loc || !it.loc.length) continue;
+    if (loader.isItemHidden(id)) continue;          // not offered, so not confusing
+    (visible[it.name] = visible[it.name] || []).push(it);
+  }
+
+  // The rule's output is a 34-long job list: every class we model but the Novice line.
+  const restricted = (it) => (it.job || []).length === 34;
+  const unrestricted = (it) => !Array.isArray(it.job) || it.job.length === 0;
+
+  // An unrestricted twin is only a problem when it is a GHOST — an id PS does not
+  // have, so no tooltip exists to restrict it from. Seven names legitimately carry
+  // both: PS marks those copies "All", "Male Only" or "Female Only", which are real
+  // rules of their own and must not be overwritten with a job restriction.
+  const psdb2 = require("../src/engine/data/ps/ps_item_db.json");
+  const manual2 = require("../src/engine/data/ps/ps_item_manual.json");
+  const overrides2 = require("../src/engine/data/ps/ps_item_overrides.json");
+  const psKnows = (id) => !!(psdb2[String(id)] || manual2[String(id)] || overrides2[String(id)]);
+
+  const offenders = [];
+  for (const [name, list] of Object.entries(visible)) {
+    if (list.length < 2) continue;
+    if (!list.some(restricted)) continue;
+    const ghosts = list.filter((it) => unrestricted(it) && !psKnows(it.id));
+    if (ghosts.length) {
+      offenders.push(`${name} (restricted ${list.filter(restricted).map((i) => i.id).join(",")} `
+        + `vs ghost ${ghosts.map((i) => i.id).join(",")})`);
+    }
+  }
+  assert.deepEqual(offenders, [],
+    "these names offer both a class-restricted copy and an unrestricted one, so the "
+    + "restriction can be sidestepped by picking the other row:\n  " + offenders.join("\n  "));
+
+  // The reported case, by name, so a regression says what broke rather than just a count.
+  assert.equal(loader.isItemHidden(2695), true, "the Safety Ring duplicate (Safety_Ring_C) is hidden");
+  assert.equal(loader.isItemHidden(2615), false, "the real Safety Ring stays in the picker");
+  assert.equal(loader.getItem(2615).job.length, 34, "and keeps its All-except-Novice restriction");
+
+  // The hidden ones are still READABLE — hiding is a picker filter, not a deletion, so
+  // an old share link that equipped one still resolves instead of breaking.
+  assert.ok(loader.getItem(2695), "a hidden item must still load by id for old links");
+});
+
+// ---------------------------------------------------------------------------
+// Class-gated item bonuses must actually be gated
+// ---------------------------------------------------------------------------
+test("job-gated item bonuses apply only to the classes that qualify", () => {
+  // "Poring dagger's aspd bonus is not limited to SN in the calc" -- a player, via
+  // Frennetix, 2026-10-07. Payon Stories' own description: "If equipped by Novice or
+  // Super Novice, increases attack speed slightly."
+  //
+  // The item data had the gate all along. What was missing was every name in it:
+  // `BaseJob` was declared on the script context but never populated, `BaseClass` was
+  // not declared at all, and no Job_* constant existed. Each made the condition throw
+  // "Unknown variable" -> safeEvalInt returns null -> evalConditionals FAILS OPEN and
+  // keeps the body. 50 of the 51 job-gated items in the DB handed their bonus to every
+  // class; measured live, a Thief got Poring Dagger's +8% ASPD (169 -> 171.5).
+  const { parseScript, preprocessScript, createItemScriptContext, safeEvalInt,
+          JOB_CONSTANTS, baseJobOf, baseClassOf } = require("../src/engine/itemScriptParser");
+
+  const ctxFor = (jobId) => createItemScriptContext({ base_level: 99, job_level: 50, class_: jobId });
+  const applies = (script, jobId, marker) =>
+    new RegExp(marker).test(preprocessScript(script, ctxFor(jobId)));
+
+  // The reported item, verbatim from ps_item_manual.json.
+  const PORING_DAGGER = "bonus2 bAddRace,RC_Formless,20; "
+    + "if(BaseJob==Job_Novice||BaseJob==Job_SuperNovice) { bonus bAspdRate,8; }";
+  for (const job of [0, 23]) {
+    assert.ok(applies(PORING_DAGGER, job, "bAspdRate"),
+      `Poring Dagger's ASPD bonus must apply to job ${job} (Novice / Super Novice)`);
+  }
+  for (const job of [6, 7, 12, 9, 4008]) {
+    assert.ok(!applies(PORING_DAGGER, job, "bAspdRate"),
+      `Poring Dagger's ASPD bonus must NOT apply to job ${job}`);
+  }
+  // The unconditional half is untouched by any of this.
+  assert.ok(applies(PORING_DAGGER, 9, "bAddRace"), "the Formless bonus is not gated and applies to all");
+
+  // BaseClass is the first-tier class, so a gate on it covers the whole branch:
+  // Thief Figure reaches Assassin and Rogue, and no further. (herc-pc.c:8376)
+  const THIEF_FIGURE = "bonus bAgi,1; if(BaseClass==Job_Thief) bonus bAspdRate,3;";
+  for (const job of [6, 12, 17]) assert.ok(applies(THIEF_FIGURE, job, "bAspdRate"), `Thief Figure covers job ${job}`);
+  for (const job of [1, 9, 4008]) assert.ok(!applies(THIEF_FIGURE, job, "bAspdRate"), `Thief Figure must skip job ${job}`);
+
+  // BaseJob keeps the 2nd-class identity and strips only trans/baby, so a Rogue gate
+  // reaches Stalker but NOT the Thief the Rogue came from. (herc-pc.c:8374)
+  const BYORGUE = "if (BaseJob == Job_Rogue) { bonus bMatkRate,10; }";
+  assert.ok(applies(BYORGUE, 17, "bMatkRate"), "Byorgue Card applies to a Rogue");
+  assert.ok(applies(BYORGUE, 4018, "bMatkRate"), "Byorgue Card applies to a Stalker (BaseJob is Rogue)");
+  assert.ok(!applies(BYORGUE, 6, "bMatkRate"), "Byorgue Card must not apply to a plain Thief");
+
+  // Super Novice is its own BaseJob but a Novice BaseClass -- the distinction the
+  // Hercules mapid masks draw, and the one this bug turned on.
+  assert.equal(baseJobOf(23), 23, "BaseJob of a Super Novice is Super Novice");
+  assert.equal(baseClassOf(23), 0, "BaseClass of a Super Novice is Novice");
+  assert.equal(baseJobOf(4008), 7, "BaseJob of a Lord Knight is Knight");
+  assert.equal(baseClassOf(4008), 1, "BaseClass of a Lord Knight is Swordman");
+
+  // Every Job_* constant the item DB actually names must be defined. An undefined one
+  // does not read as false -- it throws, and the gate silently opens for everyone, so
+  // a new item referencing a new constant has to fail HERE rather than in the numbers.
+  const dbs = [
+    require("../src/engine/data/pre-re/db/item_db.json").items,
+    (d => d.items || d)(require("../src/engine/data/ps/ps_item_db.json")),
+    (d => d.items || d)(require("../src/engine/data/ps/ps_item_overrides.json")),
+    (d => d.items || d)(require("../src/engine/data/ps/ps_item_manual.json")),
+  ];
+  const referenced = new Set();
+  for (const db of dbs) {
+    for (const it of Object.values(db)) {
+      if (!it || typeof it !== "object") continue;
+      for (const m of String(it.script || "").matchAll(/\bJob_[A-Za-z0-9_]+/g)) referenced.add(m[0]);
+    }
+  }
+  assert.ok(referenced.size >= 20, "expected the item DB to reference a pile of Job_* constants");
+  const undef = [...referenced].filter((k) => !(k in JOB_CONSTANTS)).sort();
+  assert.deepEqual(undef, [], "item scripts name Job_* constants that are not defined, so their "
+    + "gates fail open and apply to every class: " + undef.join(", "));
+
+  // And no job-gated condition may be unevaluable, for the same reason. readparam() is
+  // the one genuinely unsupported call left (Golden Tiara gates on base DEX), so it is
+  // allowed to stay fail-open rather than be faked.
+  const jobVars = { ...JOB_CONSTANTS, BaseLevel: 99, JobLevel: 50,
+                    Class: 9, BaseJob: baseJobOf(9), BaseClass: baseClassOf(9) };
+  const stillOpen = [];
+  for (const db of dbs) {
+    for (const [id, it] of Object.entries(db)) {
+      if (!it || typeof it !== "object") continue;
+      const script = String(it.script || "");
+      if (!/\bif\s*\(/.test(script)) continue;
+      for (const m of script.matchAll(/if\s*\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)/g)) {
+        const cond = m[1];
+        if (!/BaseJob|BaseClass|Job_/.test(cond)) continue;
+        if (/readparam|gettime|checkmount|getpartnerid|strcharinfo/.test(cond)) continue;
+        if (safeEvalInt(cond, jobVars) === null) stillOpen.push(`${id} ${it.name || it.aegis_name}: ${cond}`);
+      }
+    }
+  }
+  assert.deepEqual(stillOpen, [], "these job gates cannot be evaluated, so they apply to every "
+    + "class:\n  " + stillOpen.join("\n  "));
+
+  // parseScript is the path the aggregator uses -- make sure the gate survives the
+  // whole pipeline, not just the preprocessor.
+  const hasAspd = (jobId) => parseScript(PORING_DAGGER, ctxFor(jobId))
+    .some((eff) => eff && eff.bonus_type === "bAspdRate");
+  assert.ok(hasAspd(0), "parseScript gives a Novice the ASPD bonus");
+  assert.ok(hasAspd(23), "parseScript gives a Super Novice the ASPD bonus");
+  assert.ok(!hasAspd(9), "parseScript must NOT give a Wizard the ASPD bonus");
+  assert.ok(!hasAspd(12), "parseScript must NOT give an Assassin the ASPD bonus");
+});
+
+// ---------------------------------------------------------------------------
+// Ardent Helm (8417)
+// ---------------------------------------------------------------------------
+test("Ardent Helm matches the in-game tooltip, slot included", () => {
+  // "Ardent helm doesn't give me card option" -- a player via Frennetix, 2026-10-07,
+  // with a client screenshot. The item API returns "No data" for 8417, so this entry
+  // was hand-written from the wiki and came out with slots: 0. The wiki had said
+  // "Ardent Helm [1]" all along and the client's item lookup agrees.
+  //
+  // Values here are the client tooltip verbatim. Weight is stored in tenths: the
+  // client reads 80, the DB holds 800 (Apple of Archer reads 20 and holds 200).
+  const manual = require("../src/engine/data/ps/ps_item_manual.json");
+  const helm = (manual.items || manual)["8417"];
+
+  assert.equal(helm.name, "Ardent Helm");
+  assert.equal(helm.slots, 1, "the client calls it \"Ardent Helm [1]\" -- one card slot");
+  assert.equal(helm.def, 3, "tooltip: Defense 3");
+  assert.equal(helm.weight, 800, "tooltip: Weight 80, stored in tenths");
+  assert.deepEqual(helm.loc, ["EQP_HEAD_TOP"], "tooltip: Position Upper");
+  assert.ok(/bonus bMdef,2/.test(helm.script), "tooltip: Mdef +2");
+  assert.ok(/bonus bMagnumEle,Ele_Holy/.test(helm.script), "tooltip: Magnum Break becomes Holy");
+  // No Level Requirement line in the client, and the Apple of Archer tooltip beside
+  // it DOES show one -- so its absence is real, not a cropped screenshot.
+  assert.ok(helm.equip_level == null, "the client shows no level requirement");
+
+  // Crusader only (Paladin is the trans Crusader and was already listed).
+  assert.ok(helm.job.includes(14), "a Crusader can wear it");
+  for (const job of [0, 1, 7, 9, 12, 23]) {
+    assert.ok(!helm.job.includes(job), `job ${job} must not be able to wear a Crusader-only helm`);
+  }
+
+  // The script has to actually parse into the two bonuses, on a Crusader.
+  const { parseScript, createItemScriptContext } = require("../src/engine/itemScriptParser");
+  const effects = parseScript(helm.script, createItemScriptContext({ base_level: 99, job_level: 50, class_: 14 }));
+  const types = effects.map((e) => e && e.bonus_type);
+  assert.ok(types.includes("bMagnumEle"), "the Magnum Break conversion survives parsing");
+  assert.ok(types.includes("bMdef"), "the Mdef bonus survives parsing");
+});
+
+test("Ardent Helm turns Magnum Break's lingering weapon buff Holy, not just its hit", () => {
+  // The tooltip reads "Converts Magnum Break damage AND WEAPON BUFF element to Holy".
+  // battlePipeline.js used to convert only the skill's own hit and left the lingering
+  // enchant (SC_SUB_WEAPONPROPERTY, Fire in Hercules) alone, with a comment saying no
+  // source confirmed it either way. The client screenshot is that source.
+  const src = require("fs").readFileSync(
+    require("path").join(__dirname, "..", "src", "engine", "calculators", "battlePipeline.js"), "utf8");
+
+  // The lingering term must take its element from the gear bonus, not a hardcoded Fire.
+  assert.ok(/const lingerEle = gearBonuses\.magnum_element != null \? gearBonuses\.magnum_element : ELE_FIRE;/.test(src),
+    "the lingering enchant no longer follows bMagnumEle -- Ardent Helm converts the buff too");
+  assert.ok(/calculateAttrFix\(weapon, target, add, scratch, build, lingerEle\)/.test(src),
+    "the lingering damage must be elemented by lingerEle, not ELE_FIRE");
+  // And the readout must not keep saying "fire" when it is Holy.
+  assert.ok(!/name: "Magnum Break \(lingering fire\)"/.test(src),
+    "the step label is hardcoded to fire again, so a Holy conversion would be mislabelled");
+});
+
+// ---------------------------------------------------------------------------
+// Mounted spears and the Medium-size penalty
+// ---------------------------------------------------------------------------
+test("riding a Peco Peco lifts a spear's size penalty against Medium targets", () => {
+  // "being mounted on a pecopeco with a spear doesn't give me 100% dmg to medium
+  // size monsters" -- a player via Frennetix, 2026-10-07. It didn't:
+  //
+  //   if ((pc_isridingpeco(sd) || pc_isridingdragon(sd))
+  //    && (sd->weapontype == W_1HSPEAR || sd->weapontype == W_2HSPEAR))
+  //       sd->right_weapon.atkmods[1] = sd->right_weapon.atkmods[2];   // status.c:1856
+  //
+  // ...was never implemented. is_riding_peco WAS wired up -- for the ASPD penalty and
+  // Spear Mastery's mounted ATK -- so ticking the box moved those numbers and left
+  // this one at 75%, which is what made it look deliberate rather than missing.
+  //
+  // PS says the same in its own words: "The size modifier for Spear weapons on Medium
+  // monsters becomes 100% instead of 75%" (wiki, Peco Peco Ride).
+  const { runScenarioRaw } = require("./engineRunner");
+  const { loader } = require("../src/engine/dataLoader");
+
+  // What "same as Large" resolves to is the table's business, not a hardcoded 100.
+  for (const spear of ["1HSpear", "2HSpear"]) {
+    assert.equal(loader.getSizeFixMultiplier(spear, "Medium"), 75, `${spear} is 75% vs Medium on foot`);
+    assert.equal(loader.getSizeFixMultiplier(spear, "Large"), 100, `${spear} is 100% vs Large -- the column riding copies`);
+  }
+
+  const LANCE = 1410, PIKE = 1408, TWOH_SWORD = 1163;
+  const PORING = 1002;            // Medium
+  const sizeMult = (weapon, riding, mob = PORING, job = 7) => {
+    const res = runScenarioRaw({
+      build: {
+        job_id: job, base_level: 99, job_level: 50,
+        base_stats: { str: 90, agi: 40, vit: 50, int: 10, dex: 50, luk: 10 },
+        equipped: { right_hand: weapon },
+        flags: { is_riding_peco: riding },
+      },
+      target: mob,   // no skill = a normal attack
+    });
+    // runScenarioRaw normalises result.*.steps down to bare names; the full step
+    // objects (with multipliers) are on the raw branch.
+    const step = res.raw.normal.steps.find((x) => x.name === "Size Fix");
+    return step ? Math.round(step.multiplier * 100) : null;
+  };
+
+  // The report.
+  for (const [w, label] of [[LANCE, "2HSpear"], [PIKE, "1HSpear"]]) {
+    assert.equal(sizeMult(w, false), 75, `${label} takes the Medium penalty on foot`);
+    assert.equal(sizeMult(w, true), 100, `${label} must lose the Medium penalty while mounted`);
+  }
+
+  // A Crusader rides too -- the wiki lists Peco Peco Ride under both classes.
+  assert.equal(sizeMult(LANCE, true, PORING, 14), 100, "a mounted Crusader gets it as well");
+
+  // ...and nothing else moves. Hercules rewrites ONLY the Medium column, and only
+  // for spears, so each of these would be an over-application.
+  assert.equal(sizeMult(TWOH_SWORD, false), sizeMult(TWOH_SWORD, true),
+    "riding must not touch a two-handed sword's size modifier");
+  const SCORPION = 1001;          // Small
+  assert.equal(sizeMult(LANCE, false, SCORPION), sizeMult(LANCE, true, SCORPION),
+    "riding must not touch a spear's Small-size modifier");
+});
+
+// ---------------------------------------------------------------------------
+// Skill descriptions come from Payon Stories under the PS profile
+// ---------------------------------------------------------------------------
+test("the PS profile serves PS's own skill text, not vanilla's", () => {
+  // Spear Mastery is the case that surfaced this. The planner tooltip reads
+  // "[Lv 1]: Damage +5 / Mounted Damage +7" and the engine computes exactly that
+  // ([5, 7] in serverProfiles), but the description served beside those numbers was
+  // vanilla's: "[Lv 1]: Damage +4" and "when riding a pecopeco, the bonus damage
+  // increased by 1 per level". We had PS's text all along -- ps_skill_db.json carries
+  // the description AND the per-level table, scraped from the planner -- and read it
+  // only for display names. The maintainer pointed at the tooltip, 2026-10-07.
+  const { loader } = require("../src/engine/dataLoader");
+  const { getProfile } = require("../src/engine/serverProfiles");
+
+  const read = (profileName, constant) => {
+    loader.setProfile(getProfile(profileName));
+    return loader.getSkillDescription(constant);
+  };
+
+  const ps = read("payon_stories", "KN_SPEARMASTERY");
+  assert.ok(ps && ps.description, "the PS profile must serve a Spear Mastery description");
+  assert.match(ps.description, /Damage \+5 \/ Mounted Damage \+7/,
+    "PS's own per-level table must be the one served");
+  assert.ok(!/Damage \+4\b/.test(ps.description), "vanilla's +4 table must be gone");
+  assert.ok(!/increased by 1 per level/i.test(ps.description),
+    "vanilla's '+1 per level while riding' line must be gone -- it is the figure that "
+    + "sent two separate investigations chasing a contradiction");
+
+  // Vanilla must be untouched: this is a profile-scoped correction, not a data edit.
+  const van = read("vanilla", "KN_SPEARMASTERY");
+  assert.ok(van && /Damage \+4\b/.test(van.description), "the vanilla profile keeps vanilla's text");
+
+  // The name is deliberately NOT taken from PS here -- getSkillDisplayName already
+  // resolves names via use_ps_skill_names, and two sources for one field is how
+  // things drift.
+  assert.equal(ps.name, van.name, "the description swap must not change the skill's name");
+
+  // A skill PS has no text for must fall back rather than come back blank.
+  loader.setProfile(getProfile("payon_stories"));
+  const vanillaFile = require("../src/engine/data/pre-re/db/skill_descriptions.json").skills || {};
+  let fellBack = 0, blanked = [];
+  for (const k of Object.keys(vanillaFile)) {
+    const d = loader.getSkillDescription(k);
+    assert.ok(d, `${k} must still resolve under the PS profile`);
+    // Preferring PS must never REMOVE text. (Seven vanilla entries ship with an
+    // empty description of their own -- WZ_FIREIVY and friends -- so the test is
+    // "nothing got blanked", not "everything has text".)
+    if (vanillaFile[k].description && !d.description) blanked.push(k);
+    if (d.description === vanillaFile[k].description) fellBack++;
+  }
+  assert.deepEqual(blanked, [], "preferring PS text blanked these descriptions instead of correcting them");
+  assert.ok(fellBack > 0, "expected at least some skills to fall back to vanilla text");
+
+  loader.setProfile(getProfile("payon_stories"));
+});
+
+test("the PS skill audit can parse the planner's chunk format", () => {
+  // The audit reads PS's JS chunks with regexes (their strings contain \' escapes
+  // that are valid JS and invalid JSON, so JSON.parse fails on most job trees). If
+  // their build layout changes the parser silently returns nothing, and "PS deleted
+  // every skill" would look identical to "our regex broke" -- so the script aborts on
+  // a thin parse, and these pin the shapes it depends on.
+  const { parseTooltips, parseTree, shapeTooltip, clean } =
+    require("../scripts/audit-ps-skills.mjs");
+
+  const TOOLTIP = '"55":["Spear Mastery","Max Level: 10","Skill Form: ^6666CCPassive ^000000",'
+    + '"Description: ^777777Increases damage with Spear class","weapons. When riding a PecoPeco, the damage",'
+    + '"is increased. ^000000"," ","[Lv 1]:^777777 Damage +5 / Mounted Damage +7 ^000000",'
+    + '"[Lv 10]:^777777 Damage +50 / Mounted Damage +70 ^000000"]';
+  const tips = parseTooltips(TOOLTIP);
+  assert.ok(tips["55"], "the tooltip block must be found by skill id");
+  const shaped = shapeTooltip(tips["55"]);
+  assert.equal(shaped.name, "Spear Mastery");
+  assert.equal(shaped.max_level, 10);
+  assert.equal(shaped.skill_form, "Passive");
+  assert.equal(shaped.description,
+    "Increases damage with Spear class weapons. When riding a PecoPeco, the damage is increased.",
+    "the description wraps across several array entries and must be rejoined");
+  assert.deepEqual(shaped.levels, [
+    { level: 1, effect: "Damage +5 / Mounted Damage +7" },
+    { level: 10, effect: "Damage +50 / Mounted Damage +70" },
+  ]);
+
+  const TREE = '{"skid":55,"id":"KN_SPEARMASTERY","name":"Spear Mastery","desc":"","job":"Crusader",'
+    + '"icon":"/skills/KN_SPEARMASTERY.bmp","row":1,"col":4,"max":10,"prereq":{},"auto":false}';
+  assert.deepEqual(parseTree(TREE)["55"], { constant: "KN_SPEARMASTERY", name: "Spear Mastery", max: 10 });
+
+  // Colour codes and escaped quotes must not survive into stored text.
+  assert.equal(clean("^777777Fire   Bolt ^000000"), "Fire Bolt");
+  assert.equal(clean("caster\\'s HP"), "caster's HP");
+});
+
+// A monster's physical hit is its mob_db ATK roll — nothing is added on top.
+//
+// "Drill's Spiral Pierce seems to be hitting me for less... I just got hit for
+// 765 x 5 (3825) when the calculated value says 4165 should be the minimum" —
+// Laila Braveheart via Frennetix, 2026-10-10. The panel was adding the PLAYER's
+// base-ATK formula, str + (str/10)², to every monster attack: +171 on a Drill,
+// which put its stated minimum above a hit the player had actually taken.
+//
+// status_base_atk() returns 0 for anything outside battle_config.enable_baseatk,
+// whose default is BL_PC|BL_HOM (battle.c:7718) — a monster has no base ATK, and
+// battle_calc_base_damage2's closing `damage += st->batk` adds nothing for one.
+test("a monster's hit is its ATK roll, with no player base-ATK on top", () => {
+  const { calculateIncomingPhysicalDamage } = require("../src/engine/calculators/incomingPipeline");
+  const { resolveMobSkillDamage } = require("../src/engine/mobSkillRatios");
+  const PS_PROFILE = getProfile("payon_stories");
+  loader.setProfile(PS_PROFILE);
+  const cfg = createBattleConfig();
+  const b = buildFromSaveSchema({ server: "payon_stories", job_id: 12, base_level: 99, job_level: 50,
+    base_stats: { str: 83, agi: 89, vit: 10, int: 10, dex: 59, luk: 1 } });
+  const [gb, eff, w, s] = resolvePlayerState(b, cfg, PS_PROFILE);
+
+  // DRILL (25017): ATK 810–1250, STR 90 — the monster from the report. Its STR is
+  // high enough that the stray term was worth +171, far outside rounding.
+  const DRILL = 25017;
+  const mob = loader.getMonsterData(DRILL);
+  assert.equal(mob.atk_min, 810, "fixture check: Drill's ATK floor");
+  assert.equal(mob.stats.str, 90, "fixture check: Drill's STR (the size of the old error)");
+
+  const basic = calculateIncomingPhysicalDamage(DRILL, eff, s, gb, w, cfg, {});
+  const roll = basic.steps[0];
+  assert.equal(roll.name, "Mob Base ATK");
+  // rnd()%(atkmax-atkmin)+atkmin, i.e. [atk, atk2-1] — and no more.
+  assert.equal(roll.min_value, mob.atk_min, "a monster rolls from its mob_db ATK floor");
+  assert.equal(roll.max_value, mob.atk_max - 1, "...up to one below its ATK ceiling");
+
+  // Spiral Pierce is the exception, and only by its own hardcoded term: the
+  // pre-renewal LK_SPIRALPIERCE/ML_SPIRALPIERCE case does `i = str/10; i*=i;
+  // ATK_ADD(i)` OUTSIDE the `if (sd)` weapon-weight branch, so a mob caster gets
+  // it. 90/10 = 9, squared = 81.
+  const spec = resolveMobSkillDamage(8218, 5, PS_PROFILE, mob);
+  assert.equal(spec.name, "ML_SPIRALPIERCE");
+  assert.equal(spec.flatAtk, 81, "Spiral Pierce adds (STR//10)² to its caster's ATK");
+  assert.equal(spec.hits, 5);
+  assert.equal(spec.ignoreDef, true, "and goes straight through the defender's DEF");
+
+  const sp = calculateIncomingPhysicalDamage(DRILL, eff, s, gb, w, cfg, {
+    ele_override: spec.elementInt, ratio_override: spec.ratio,
+    ignore_def: spec.ignoreDef, flat_atk_add: spec.flatAtk,
+  });
+  assert.equal(sp.steps[0].min_value, mob.atk_min + 81, "the STR term lands before the ratio");
+  assert.equal(sp.steps[0].max_value, mob.atk_max - 1 + 81);
+
+  // The player's 765-per-hit must be reachable. Their gear cut 15% of it, so the
+  // model has to be able to produce 900 before resists — it could not before: the
+  // old floor was 810 + 171 + 81 = 1062.
+  assert.ok(sp.steps[0].min_value <= 900,
+    `a 765 hit behind 15% resist (900 raw) must be inside the modelled range, not below it `
+    + `(floor is ${sp.steps[0].min_value})`);
+
+  // A monster with no STR at all must be identical either way — the term is the
+  // caster's, not a constant.
+  const peco = loader.getMonsterData(1019);
+  const pecoHit = calculateIncomingPhysicalDamage(1019, eff, s, gb, w, cfg, {});
+  assert.equal(pecoHit.steps[0].min_value, peco.atk_min,
+    "every monster, not just this one, hits for its own ATK");
+});
+
+// PS's Sword Quickening grants FLEE as well as CRIT, and only with a sword in hand.
+//
+// "knights sword quickening doesn't seem to increase flee in the calc" — Mihtsuki via
+// Frennetix, 2026-10-11. The PS skill planner's per-level table for KN_TWOHANDQUICKEN
+// reads "+N FLEE, +N% CRIT" at every level; we applied only the CRIT half. The same
+// tooltip gates the whole buff on the weapon — "This skill only works with Sword class
+// weapons and the effect cancels when switching to any other type of weapon" — which
+// the ASPD half already honoured and the stat half did not.
+test("Sword Quickening gives FLEE and CRIT, and only while holding a sword", () => {
+  loader.setProfile(getProfile("payon_stories"));
+  // Knight. 1163 = Claymore (2H sword), 1408 = Pike (a spear) — same character, so
+  // only the weapon differs between the two comparisons.
+  const st = (equipped, buffs) => runScenarioRaw({
+    build: {
+      server: "payon_stories", job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 20, dex: 50, luk: 20 },
+      equipped, active_buffs: buffs || {},
+    },
+    target: 1002,
+  }).rawStatus;
+
+  const CLAYMORE = 1163, PIKE = 1408;
+  const swordOff = st({ right_hand: CLAYMORE });
+  const swordOn = st({ right_hand: CLAYMORE }, { SC_TWOHANDQUICKEN: 10 });
+  assert.equal(swordOn.flee - swordOff.flee, 10, "Lv10 is +1 FLEE per level");
+  // cri is carried on an internal x10 scale, so +1% per level is +100 at Lv10.
+  assert.equal(swordOn.cri - swordOff.cri, 100, "...and +1% CRIT per level, as before");
+
+  const sword1h = st({ right_hand: 1101 }, { SC_TWOHANDQUICKEN: 10 });   // Sword (1H)
+  const sword1hOff = st({ right_hand: 1101 });
+  assert.equal(sword1h.flee - sword1hOff.flee, 10,
+    "a one-handed sword is still a sword — the planner's table has no 1H column for the stats");
+
+  // A spear cancels it outright. Before this, ticking the box with a spear equipped
+  // kept the crit, which is the same mistake in the other direction.
+  const spearOff = st({ right_hand: PIKE });
+  const spearOn = st({ right_hand: PIKE }, { SC_TWOHANDQUICKEN: 10 });
+  assert.equal(spearOn.flee, spearOff.flee, "no FLEE from Sword Quickening while holding a spear");
+  assert.equal(spearOn.cri, spearOff.cri, "and no CRIT either — the buff cancels off a sword");
+
+  // Spear Quicken is the other quicken and keeps its own numbers: PS gave it +1 HIT
+  // and +1 FLEE per level and took its CRIT away. It is a CRUSADER skill there
+  // (CR_SPEARQUICKEN), which is why it is read on job 14 and not on the Knight above.
+  const cr = (buffs) => runScenarioRaw({
+    build: {
+      server: "payon_stories", job_id: 14, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 20, dex: 50, luk: 20 },
+      equipped: { right_hand: PIKE }, active_buffs: buffs || {},
+    },
+    target: 1002,
+  }).rawStatus;
+  const crOff = cr(), crOn = cr({ SC_SPEARQUICKEN: 10 });
+  assert.equal(crOn.flee - crOff.flee, 10, "Spear Quicken: +1 FLEE per level");
+  assert.equal(crOn.hit - crOff.hit, 10, "Spear Quicken: +1 HIT per level");
+  assert.equal(crOn.cri, crOff.cri, "Spear Quicken: no CRIT on PS");
 });

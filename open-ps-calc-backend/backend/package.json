@@ -15,7 +15,9 @@
     "ps:audit-items": "node scripts/audit-ps-items.mjs",
     "ps:audit-items:accept": "node scripts/audit-ps-items.mjs --accept",
     "ps:check-skills": "node scripts/check-ps-skills.mjs",
-    "ps:check-skills:accept": "node scripts/check-ps-skills.mjs --accept"
+    "ps:check-skills:accept": "node scripts/check-ps-skills.mjs --accept",
+    "ps:audit-skills": "node scripts/audit-ps-skills.mjs",
+    "ps:audit-skills:accept": "node scripts/audit-ps-skills.mjs --accept"
   },
   "dependencies": {
     "cors": "^2.8.5",

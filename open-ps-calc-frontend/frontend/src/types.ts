@@ -31,6 +31,13 @@ export interface BuildData {
   weapon_element?: string;
   active_buffs?: Record<string, number>;
   mastery_levels?: Record<string, number>;
+  /** The character's spellbook, as a PS planner import read it: every skill they
+   *  have points in, keyed by our constant. Nothing is priced from it — it sets the
+   *  rank a skill OPENS AT when the player picks it. */
+  known_skill_levels?: Record<string, number>;
+  /** The same ranks keyed by STATUS CHANGE, for the self-buff toggles, so a buff
+   *  switches on at the rank the character actually has. */
+  known_buff_levels?: Record<string, number>;
   flags?: Record<string, unknown>;
   manual_adj?: Record<string, unknown>;
   support_buffs?: Record<string, unknown>;
@@ -40,6 +47,13 @@ export interface BuildData {
   selected_pet?: string;
   clan?: string;
   wildcard_slots?: Record<string, WildcardSlot[]>;
+  /** Which slots the player put in wildcard (custom card mix) mode. Stored, so it
+   *  survives a share link, a save and a pin; absent on builds made before the
+   *  field existed, which fall back to inference (see deriveWildcardMode). */
+  wildcard_mode?: Record<string, boolean>;
+  /** Aggregated wildcard damage bonuses, computed for a request from wildcard_slots
+   *  (see effectiveBuild). Never stored on a build the player saves. */
+  wildcard_bonuses?: Record<string, number>;
 }
 
 export interface ConsumableBuffs {
@@ -77,6 +91,16 @@ export interface CustomTarget {
   luk: number;
   agi: number;
   int_: number;
+  /** What the target does to YOU. Without these the Survivability panel has nothing
+   *  to price, which is why it used to disappear the moment you left Monster mode.
+   *  atk_min/atk_max and str are its physical hit, dex its HIT (so your dodge
+   *  chance), hp its effective-HP and Poison damage-over-time. Optional so builds
+   *  saved before they existed still load. */
+  atk_min?: number;
+  atk_max?: number;
+  str?: number;
+  dex?: number;
+  hp?: number;
 }
 
 export interface PassiveSkill {
@@ -121,7 +145,31 @@ export interface SearchResult {
 
 export type TargetMode = "monster" | "custom";
 
+/**
+ * Hand-typed adjustments to the enemy, on top of whatever target is selected.
+ *
+ * The rest of TargetMods models real skills. This is the "what if" layer: it works on
+ * a real monster as well as a custom one, which is the point — you cannot edit a
+ * monster's stats, and rebuilding it as a custom target just to add 50 DEF is a lot of
+ * typing. Every field is a delta and defaults to 0, so a build that sets none of them
+ * calculates exactly as before.
+ */
+export interface ManualEnemyEdits {
+  // Stats. VIT is the enemy's soft DEF, INT its soft MDEF, AGI its FLEE, DEX its HIT.
+  agi: number; vit: number; int: number; dex: number; luk: number;
+  // Sub-stats.
+  max_hp: number; max_hp_pct: number;
+  def: number; mdef: number; hit: number; flee: number; atk: number; matk: number;
+  // Damage reductions, in % — these cut what YOU do to it. Two element slots, each
+  // with its own element, mirroring how resist gear is actually stacked.
+  res_ele1: { ele: number; pct: number };
+  res_ele2: { ele: number; pct: number };
+  res_race: number; res_size: number; res_long: number; res_atk: number; res_matk: number;
+}
+
 export interface TargetMods {
+  /** Optional so builds saved before manual edits existed still load. */
+  manual?: ManualEnemyEdits;
   element_status: string;
   element_change: string; // Sage Elemental Change: override target element to Water/Earth/Fire/Wind ("" = off). No effect on MVP/boss.
   lex_aeterna: boolean;

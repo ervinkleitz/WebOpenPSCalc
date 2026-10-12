@@ -39,6 +39,102 @@ node wildcard-carryover.mjs https://openpscalc.com/
   "loading pinned builds is not working"), because a wrong number looks like
   nothing happened.
 
+- **branch-hits-to-kill.mjs** — two things from one report. “Hits to kill” is
+  deliberately branch-independent (it shares a basis with Time to kill so the two
+  cannot contradict — an older version made a big-crit build show fewer hits but a
+  slower time), which is why clicking Critical hit told you nothing; there is now an
+  “All crits” count beside it. And Shadow Slash, which cannot crit without Shadow's
+  Within, now says so instead of just ending its branch row. Asserts the per-branch
+  count is LOWER than the mixed one, that Time to kill does NOT move with it, and that
+  the note appears, disappears when the buff is ticked, and never shows on a skill that
+  simply cannot crit. Parse the range as its first number: “7 min – 7 max” stripped of
+  non-digits reads 77, which made the comparison pass against any value at all.
+
+- **triple-attack-crit.mjs** — Critical Explosion is the one thing on PS that lets a
+  Triple Attack proc crit, and the engine has modelled it for a while; the panel just
+  never printed the crit, so the number read identically with the buff on and off while
+  DPS quietly moved 390 → 434. Guards the readout: no crit row without the buff (which
+  is itself the answer to “does it crit?”), a crit row with it, carrying crit damage
+  rather than a repeat of the normal figure. Uses Orc Warrior, not Poring — against
+  0 DEF a pre-renewal crit is nearly identical to a normal hit, so the test would have
+  passed on noise.
+
+- **damage-branch-labels.mjs** — the damage buttons must say what they compute. With a
+  skill selected they read *Skill / Normal hit / Critical hit*, and two of those looked
+  like a pair and were not: “Normal hit” was the AUTO ATTACK (different attack, no
+  skill ratio) while “Critical hit” was the SKILL critting (same attack, ratio
+  applied) — Sonic Blow Lv10 read 2936 / 296 / 2936. The load-bearing assertion is that
+  the button now called “Auto attack” shows the same damage as selecting no skill at
+  all (296 = 296), which is what makes the label honest rather than merely different.
+  Uses Sonic Blow, not Shadow Slash from the report: Shadow Slash cannot crit, so it
+  only ever renders two buttons.
+
+- **editor-columns.mjs** — the editor is a CSS multi-column layout, and multicol
+  balances by HEIGHT: one panel taller than the balanced height drags that height up
+  until the last column has nothing left to hold, and a panel cannot be split to
+  relieve it (border + background, so a split box looks broken). The manual-edit
+  fields inside the Target panel cost the fourth column at full width. Collapsing them
+  fixed the default but not opening them; packing them tighter did not reach it either,
+  because the budget shrinks as the viewport grows. They are their own panel now.
+  Asserts 4 columns for monster, custom, AND custom-with-fields-open at 1800 / 1920 /
+  2200 / 2560 — the expanded case especially, since it regressed twice. Measure with a
+  FRESH context per width: the collapse choice lives in localStorage and reusing one
+  gives a contaminated reading (it gave me one I reported before catching it).
+
+- **manual-enemy-edits.mjs** — the hand-typed enemy adjustments, which live inside
+  Custom stats. Copies a real monster in first so the numbers mean something, then
+  checks a flat DEF delta and a percentage resistance both cut damage, that AGI drags
+  FLEE with it (it was inert when first shipped), that the badge counts the active
+  edits, and two things that matter most: that edits set here do NOT follow you back
+  to the Monster tab — hidden state must never move a number — and that with
+  everything at 0 the damage is exactly the un-edited figure. The leak assertion is
+  deliberately made against a DAMAGE-affecting edit: an earlier version left only AGI
+  set, which moves hit chance, and a mutation run showed it passing against a real
+  leak.
+
+- **custom-target-copy-mob.mjs** — copying the selected monster into the custom
+  target must land every field on what the monster actually has, checked against the
+  same /data/mobs the editor reads. Orc Warrior on purpose: its race is “DemiHuman” in
+  the vanilla mob DB and “Demi-Human” in the dropdown and every race bonus, so if the
+  copy ever bypasses the loader’s alias the select lands on a value it has no option
+  for and reads blank. Also prices both ways — a copied target must deal exactly the
+  damage the monster it came from does, and that the Survivability panel — which used
+  to vanish silently in custom mode — prices the copy identically (same Effective HP)
+  while a target left at ATK 0 explains itself instead of quoting zero.
+
+- **mounted-spear-size.mjs** — a spear does 75% to Medium targets on foot and 100% mounted (status.c:1856 copies the Large column over the Medium one). That rule was never implemented, and because the Riding Peco Peco checkbox already drove the ASPD penalty and Spear Mastery’s mounted ATK, ticking it moved numbers and hid the gap. Drives the real checkbox and reads the breakdown: the 75% row is there on foot and gone mounted, the damage rises, and a two-handed sword is unaffected either way.
+
+- **ardent-helm.mjs** — Ardent Helm (8417) is a PS custom the item API has no entry
+  for, so it was hand-written from the wiki and shipped with slots: 0, which is what
+  the player hit: no card option. Checks the helm contributes exactly one card slot
+  (by delta, so the weapon’s own slots cannot mask it), that its Defense 3 and Mdef +2
+  reach the stat panel, and that Magnum Break’s lingering weapon buff reads Holy with
+  the helm and Fire without — the half of its description the engine used to skip.
+
+- **job-gated-bonuses.mjs** — item effects written for one class must not reach the
+  others. Poring Dagger gives its attack speed only to a Novice or Super Novice, but
+  the evaluator could not resolve `BaseJob`, `BaseClass` or any `Job_*` constant, and
+  an unresolvable condition FAILS OPEN — so 50 of the 51 job-gated items in the DB
+  applied to every class. Reads the ASPD a player sees, Poring Dagger against a plain
+  Main Gauche (same Knife type, so any difference is the item), across six classes.
+
+- **wildcard-mode-roundtrip.mjs** — which slots are in wildcard mix is the player's
+  choice, so it has to travel with the build. It used to be inferred from
+  wildcard_slots, and the inference cannot represent the ordinary case: switching to a
+  wildcard mix deliberately leaves the real cards equipped so switching back restores
+  them, and a slot with real cards reads as "not in wildcard mode". A build shared or
+  saved mid-experiment came back with the cards — 100 HIT on a Phreeoni Card. Covers
+  the share link, Save/Load and pins, plus a link carrying no wildcard_mode, which must
+  still be inferred so links players already sent keep working.
+
+- **wildcard-stat-readout.mjs** — the stats panel must track the Cards / Wildcard mix
+  toggle. A weapon carded with a Mummy Card kept its +20 HIT in the readout after the
+  slot was switched to a wildcard mix, because the damage request built its own
+  card override while the status, the equip-bonus badges and the breakpoints read the
+  un-overridden build. Drives the real toggle both ways and compares the shown HIT
+  against the same /calculate/status the hit chance comes from, so the test states the
+  property (panel agrees with the build it prices) rather than a total.
+
 - **pin-load-visible.mjs** — clicking Load on a pinned build must visibly take you to
   that build. State assertions all passed while this was broken: the build loaded, and
   then `onCalculate` pulled the results panel back into view, so the user was scrolled

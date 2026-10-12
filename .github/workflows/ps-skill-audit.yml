@@ -1,0 +1,56 @@
+# Weekly check that our skill data still matches Payon Stories.
+#
+# ps_skill_db.json is a point-in-time scrape and the engine's skill numbers are tuned
+# against it by hand (serverProfiles' mastery_per_level, ratio overrides, cast tables).
+# So a PS rework is invisible here until a player notices — which is how Spear Mastery
+# was caught, by the maintainer pointing at the planner tooltip. This job asks the live
+# planner instead of waiting.
+#
+# Deliberately NOT part of deploy.yml, for the same reasons as the item audit: it talks
+# to a third party, it can fail for reasons unrelated to the commit, and it must never
+# block a push.
+#
+# It fails only on findings NOT in ps_skill_audit_baseline.json, so it stays quiet
+# until Payon Stories actually changes something. After reviewing a real finding, run
+# `npm run ps:audit-skills:accept` and commit the baseline.
+name: PS skill audit
+
+on:
+  schedule:
+    # Tuesdays, 04:00 UTC — a day after the item audit so the two never contend for
+    # the same third-party server, and weekly because PS does not rework daily.
+    - cron: "0 4 * * 2"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ps-skill-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install backend deps
+        working-directory: open-ps-calc-backend/backend
+        run: npm ci
+
+      - name: Compare our skill data against the live PS planner
+        working-directory: open-ps-calc-backend/backend
+        run: npm run ps:audit-skills
+
+      # Keep the report even when the step above failed — that is the run you want.
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ps-skill-audit-report
+          path: open-ps-calc-backend/backend/scripts/ps-skill-audit-report.json
+          if-no-files-found: warn
+          retention-days: 30

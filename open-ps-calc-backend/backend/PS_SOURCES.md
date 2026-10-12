@@ -46,6 +46,12 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-11 | PS skill planner tooltip, skid 60 (re-checked live) | First-party | Sword Quickening grants FLEE as well as CRIT, and only with a sword |
+| 2026-10-10 | Laila Braveheart (in-game observation) + Hercules status.c:3788 / battle.c:7718 | Player report + Source | A monster's physical hit is its mob_db ATK roll — it has no base ATK |
+| 2026-10-07 | PS skill planner tooltips (tools.payonstories.com/skill) | First-party | Skill text and per-level effects; standing weekly audit |
+| 2026-10-07 | Hercules status.c:1856 + PS wiki Peco Peco Ride | Source + Live wiki | A mounted spear loses its Medium-size penalty |
+| 2026-10-07 | Hercules pc.c pc_readparam SP_BASEJOB/SP_BASECLASS + PS item API | Source + First-party | Class-gated item bonuses, and Poring Dagger's Novice/Super Novice gate |
+| 2026-10-06 | Hercules pc.c pc_isequip (job bitmask) | Source | "All except Novice" excludes Super Novice |
 | 2026-10-05 | wiki.payonstories.com/Battle_Mastery vs client text | Wiki over client | Battle Mastery / ASPD on books |
 | 2026-10-05 | PS item API, weekly audit (scripts/audit-ps-items.mjs) | First-party | Standing item-data check |
 | 2026-10-05 | Hercules pc.c SP_ATK1 + status.c SCB_WATK | Source | Dual wield / which hand gets watk |
@@ -7729,3 +7735,316 @@ are the same buffs a Priest casts on themselves, so a solo Priest does have them
 are just filed under who can cast them rather than under "yourself". That grouping is
 deliberate (any class can stand in a Priest's range) but it is what makes a Priest's own
 buffs look absent.
+## 2026-10-06 - "All except Novice" really does exclude Super Novice (Hercules source)
+
+The 2026-10-06 equip fix rested on an inference: that a Super Novice is excluded by a
+restriction worded "All except Novice". That was flagged here as the change's one
+unverified assumption, because getting it wrong removes 181 items from a class that
+should have them. The maintainer then pointed out that the item description says
+exactly "Jobs: All Except Novice" - which is the question, not the answer, since the
+phrase names only Novice.
+
+**Hercules settles it.** `pc_isequip` (herc-pc.c:1169-1173):
+
+```c
+uint64 mask_job  = 1ULL << (sd->job & MAPID_BASEMASK);
+uint64 mask_item = item->class_base[((sd->job & JOBL_2_1) != 0) ? 1 : (((sd->job & JOBL_2_2) != 0) ? 2 : 0)];
+
+if ((mask_job & mask_item) == 0) // Not equipable by class. [Skotlex]
+    return 0;
+```
+
+The bit a character is tested with is `1 << (job & MAPID_BASEMASK)` - the **base**
+mapid, with the job-level bits masked off. Super Novice's mapid is MAPID_NOVICE plus a
+JOBL_2 bit, so its base mapid is MAPID_NOVICE and **its bit is the Novice bit**. Two
+other lines in the same file confirm the shape: `pc_jobid2mapid`-based tests identify
+Super Novice through `sd->job & MAPID_UPPERMASK` (pc.c:1962, 6766, 8140), and the
+Play Dead check at pc.c:11417 compares `mapid & (MAPID_BASEMASK | JOBL_2)` against
+MAPID_NOVICE precisely because the base mask alone cannot tell the two apart.
+
+There is **no Super Novice bit** in the item job mask. So an item whose mask clears the
+Novice bit clears it in every tier of `class_base`, and a Super Novice - tested with
+that same bit against `class_base[1]` - fails the check. "All except Novice" excludes
+Super Novice in the server's own code.
+
+This also explains the other half, which the fix had to preserve: an item that INCLUDES
+the Novice bit is wearable by a Super Novice, which is why Novice-line gear works for
+them (121 items, asserted in the tests) and why every equip gate here carries
+`jobId === 23 && job.includes(0)`.
+
+The `/data/items` route already said as much in a comment written before any of this:
+"the vanilla Hercules item DB has no SN bit - the game's equip check uses its BASE class
+mask, which is Novice". That comment also notes PS CUSTOM gear sometimes lists job 23
+explicitly, occasionally without the Novice bit (Guardian's Skull). Those items carry
+their own job list, so the "All except Novice" rule never fires on them - Super Novice
+eligibility is not purely "via Novice" on PS customs, which is worth knowing before
+anyone generalises the rule further.
+
+### Why the rule parses prose
+
+The maintainer asked whether this could come from the PS item DB directly. It does -
+that is exactly what `_psJobsLine` reads - but only as TEXT. Checked on 2026-10-06:
+`api/pc/item` returns name, refine, slots, description, droppingMobs and lastUpdated
+and **no job field**, the item page is JS-rendered with nothing in its HTML, and none
+of the 30 chunks it loads carries a per-item job list. The "Jobs:" line inside the
+description is the only place Payon Stories publishes the restriction, so a regex over
+that line is the best source available rather than a shortcut.
+
+## 2026-10-07 - Class-gated item bonuses: what BaseJob and BaseClass mean
+
+A player reported that Poring Dagger's attack speed bonus was not limited to Super
+Novices. It was not limited to anyone: the item script carries the gate
+`if(BaseJob==Job_Novice||BaseJob==Job_SuperNovice)`, but none of those three names
+existed in the script evaluator, so the condition threw, `safeEvalInt` returned null,
+and `evalConditionals` FAILED OPEN and kept the body. 50 of the 51 job-gated items in
+the DB were handing their bonus to every class. Measured live before the fix, a Thief
+holding a Poring Dagger had ASPD 171.5 against 169.0 with a plain Main Gauche.
+
+**What Payon Stories says.** `api/pc/item?id=8165`: "If equipped by Novice or Super
+Novice, increases attack speed slightly." So the gate covers BOTH, and our item data
+already did. PS does NOT publish a number - "slightly" is all it says. The 8% in
+`ps_item_manual.json` is unsourced and predates any note; it is left as-is because
+changing it would be swapping one guess for another, but it is NOT verified. The same
+entry's Jobs line ("Novice, Swordman, Mage, Archer, Merchant, Thief Classes, Soul
+Linker and Ninja" - no Acolyte line) does match our job array.
+
+**What the two job variables mean**, from `pc_readparam` (herc-pc.c:8374-8376):
+
+```c
+case SP_BASEJOB:   val = pc->mapid2jobid(sd->job & MAPID_UPPERMASK, sd->status.sex); break;
+case SP_CLASS:     val = sd->status.class_; break;
+case SP_BASECLASS: val = pc->mapid2jobid(sd->job & MAPID_BASEMASK,  sd->status.sex); break;
+```
+
+- `Class` is the literal job id.
+- `BaseJob` masks with MAPID_UPPERMASK, which strips the trans/baby bits but KEEPS the
+  2nd-class identity: Lord Knight -> Knight, Stalker -> Rogue. Super Novice stays
+  Super Novice, because UPPERMASK preserves the JOBL_2 bit that separates it from
+  Novice - which is why herc-pc.c compares `job & MAPID_UPPERMASK` against
+  MAPID_SUPER_NOVICE in six places (1962, 6766, 8140, 8897, 9679, 12617).
+- `BaseClass` masks with MAPID_BASEMASK, giving the first-tier class: Knight and Lord
+  Knight are both Swordman, and Super Novice is **Novice** - the same fact the
+  "All except Novice" equip rule rests on (see the 2026-10-06 entry).
+
+That Super Novice split is the whole reason this item needs `BaseJob` and not
+`BaseClass`: on BaseClass a Super Novice and a Novice are the same thing, but so is
+nothing else, whereas Byorgue Card's `BaseJob == Job_Rogue` has to reach a Stalker and
+must NOT reach the Thief the Rogue came from.
+
+**Deliberately still fail-open.** Fail-open is right for conditions we genuinely
+cannot model, and it stays: `readparam()` (Golden Tiara gates on base DEX), `gettime`,
+`checkmount`, `getpartnerid` and map-name checks (`PC_MAP == "job3_war02"`). What
+changed is only that a condition about CLASS is now answerable. Third-class constants
+(`Job_Guillotine_Cross`) are defined as a value no job id can equal rather than a
+guessed renewal id, because this calculator has no third classes to compare against;
+give them real ids if that ever changes.
+
+A test asserts that every `Job_*` constant named anywhere in the item DBs is defined,
+and that no job-gated condition is unevaluable. An undefined constant does not read as
+false - it throws, and the gate silently opens for everyone, so it has to fail loudly
+in the suite rather than quietly in the numbers.
+
+## 2026-10-07 - Mounted spears and the Medium-size penalty
+
+A player reported that riding a Peco Peco with a spear was not giving 100% damage to
+Medium monsters. It was not: the rule had never been implemented. What made it hard to
+spot is that `is_riding_peco` WAS plumbed through and did work - it drives the mounted
+ASPD penalty (statusCalculator, +500 amotion less 100 per Cavalier Mastery level) and
+Spear Mastery's mounted ATK - so ticking the box visibly moved numbers while leaving
+the size modifier at 75%.
+
+**Hercules** (herc-status.c:1856-1861), in `status_calc_pc_` right after the weapon
+size modifiers are copied out of the size_fix table:
+
+```c
+if ((pc_isridingpeco(sd) || pc_isridingdragon(sd)) && (sd->weapontype == W_1HSPEAR || sd->weapontype == W_2HSPEAR)) {
+    //When Riding with spear, damage modifier to mid-class becomes
+    //same as versus large size.
+    sd->right_weapon.atkmods[1] = sd->right_weapon.atkmods[2];
+    sd->left_weapon.atkmods[1] = sd->left_weapon.atkmods[2];
+}
+```
+
+Note what it does: Medium takes the **Large** column, not a flat 100. Spears are
+75/75/100, so it lands on 100% - which is how PS states it on the wiki (Peco Peco
+Ride): "The size modifier for Spear weapons on Medium monsters becomes 100% instead of
+75%." The implementation reads the Large column rather than hardcoding 100, so the two
+cannot drift if the table ever changes.
+
+Scope, asserted by the tests: only spears (1HSpear/2HSpear), only the Medium column,
+only while mounted. Small and Large are untouched, non-spear weapons are untouched,
+and Weapon Perfection / bNoSizeFix still win outright (they zero the penalty for every
+weapon, so the mounted branch never runs under them). Crusaders get it as well as
+Knights - the wiki lists Peco Peco Ride under both. Dragons are the other mount in the
+Hercules condition; this calculator has no third classes, so Rune Knight never reaches
+it.
+
+### A nearby value that is NOT wrong
+
+The same Peco Peco Ride page says Spear Mastery "gains an additional +1 ATK per Spear
+Mastery level" while mounted, which contradicts the profile's `KN_SPEARMASTERY: [5, 7]`
+(+2 per level). The dedicated **Spear Mastery** page wins: it says "+2 ATK per skill
+level" and carries a full table ending at Lv10 = 50 / **70** on Peco, which is exactly
+what the engine produces. The "+1" is the vanilla figure left behind on the riding
+page. Do not "correct" [5, 7] to [5, 6] on the strength of it. (That table also has an
+arithmetic typo of its own at Lv7, printing 47 where +7/level gives 49.)
+
+## 2026-10-07 - The PS skill planner is the skill authority, and it is now checked weekly
+
+Asked to settle Spear Mastery, the maintainer pointed at the planner's tooltip. It is
+the best skill source available - better than the wiki, which contradicted itself on
+this exact skill - and it turned out we were already carrying it and not using it.
+
+**What the tooltip says** (tools.payonstories.com/skill, Spear Mastery):
+
+```
+Description: Increases damage with Spear class weapons. When riding a PecoPeco,
+the damage is increased.
+[Lv 1]:  Damage +5 / Mounted Damage +7
+[Lv 7]:  Damage +35 / Mounted Damage +49
+[Lv 10]: Damage +50 / Mounted Damage +70
+```
+
+That settles three things at once:
+
+1. `KN_SPEARMASTERY: [5, 7]` is right. Third independent confirmation.
+2. The wiki's Spear Mastery table printing **47** at Lv7 is a typo; it is 49.
+3. The "+1 ATK per level while riding" on the wiki's Peco Peco Ride page is vanilla's
+   figure - and the SAME vanilla wording was sitting in our own
+   `db/skill_descriptions.json`, which is what sent two investigations chasing a
+   contradiction that did not exist.
+
+**What changed.** `getSkillDescription` now prefers PS's text under the PS profile,
+rebuilt from `ps_skill_db.json`'s `description` + `levels[]` (which we scrape from
+these very tooltips and previously read only for display NAMES). 543 of 569 skills now
+serve PS text rather than vanilla's. The skill NAME is deliberately still resolved by
+`getSkillDisplayName` via `use_ps_skill_names` - one field, one source. Vanilla profile
+is untouched.
+
+Nothing renders these descriptions today, so no displayed number changed; this is
+reference data being made to agree with the numbers the engine computes beside it.
+
+### The standing check: `npm run ps:audit-skills`
+
+`scripts/audit-ps-skills.mjs` compares every skill we know against the live planner
+weekly (`.github/workflows/ps-skill-audit.yml`, Tuesdays, a day after the item audit so
+the two never contend for their server). Baseline + `--accept`, exit 1 on anything new,
+exactly like the item audit.
+
+Their data is in two page chunks whose names carry a build hash, so they are discovered
+from the HTML: one holds `"<skid>":["<name>","Max Level: N",...,"[Lv 1]:^777777 ..."]`,
+the other the tree records `{"skid":55,"id":"KN_SPEARMASTERY",...}` that map a numeric
+skid onto the constant we key by. The chunks are JavaScript, not JSON - descriptions
+contain `\'` which is valid JS and invalid JSON - so both are read by regex. The script
+ABORTS if it parses fewer than 200 of either, because "our regex broke" and "PS deleted
+every skill" must never look the same.
+
+### The 437 findings in the baseline are a real backlog, not noise
+
+The first run found 437 differences, all accepted so the audit is quiet going forward.
+They are NOT all fixed. The ones worth coming back to:
+
+- **MAXLV (14).** PS caps several skills lower than our scrape says: Decrease AGI,
+  Signum Crucis and Angelus at 5 (we say 10), Sanctuary at 7 (we say 10), and the
+  Blacksmith weapon researches at 4 (we say 3). `_psScrapedMaxLevel` feeds the skill
+  picker's rank cap off these, so they are player-visible.
+- **EFFECT (158).** Per-level text drift. Decrease AGI is the clearest: ours reads
+  "Decreases AGI by 3/4/5/6", live reads "3/6/9/12, Duration 40s/60s/80s/100s". The
+  ENGINE already uses 3/level and is right; the stored text is stale.
+- **NAME (33).** Barter (was Discount), Tool Mastery (was Overcharge), Transmutation
+  (was Axe Mastery) and spelling fixes (Crementia, Highness Heal, Frosty Misty).
+- **NEW (135).** Skills the planner has and we do not, mostly third-class, which this
+  calculator does not model by design - see [[project_no_trans_classes]].
+- **DESC (97).** Mostly rewording; SM_SWORD/SM_TWOHAND look alarming but are explained
+  by `MASTERY_KEY_OVERRIDE` - PS renamed SM_TWOHAND to "Blade Mastery" and our override
+  is keyed on the mastery key, not the tree constant.
+
+### Why there is no bulk `--refresh`
+
+The script has one, and it should NOT be run casually. `_psScrapedMaxLevel` returns the
+PS cap only when `levels.length === max_level`, so rewriting `levels` can silently flip
+a skill's rank cap in the picker, and rewriting `name` moves display names that
+`ps_skill_desc_overrides` was written to correct. Refreshing is a data migration that
+needs its own review and its own test run - not a side effect of an audit.
+
+## 2026-10-10 - A monster has no base ATK (player report + Hercules source)
+
+**Reported.** Laila Braveheart, relayed by Frennetix: *"Drill's Spiral Pierce seems to be
+hitting me for less... I just got hit for 765 x 5 (3825) when the calculated value says
+4165 should be the minimum."* Metan supplied the build (`openpscalc.com/?s=oY1cMgo`,
+a dual-dagger Assassin vs DRILL 25017) and noted the only in-game differences were base
+level 98, 3 AGI and a +4 Matyr footgear - none of which touch this number, because
+Spiral Pierce ignores DEF and those swaps change no %-resist.
+
+**Finding.** The incoming pipeline built a monster's hit the way it builds a player's: the
+mob_db ATK roll **plus `STR + (STR/10)^2`**, the player base-ATK formula. On a Drill
+(STR 90) that is a flat +171 per hit, and it is what lifted the quoted minimum above a hit
+the player had actually taken.
+
+A monster does not have base ATK:
+
+- `status_base_atk()` opens with `if (!(bl->type & battle_config.enable_baseatk)) return 0;`
+  (status.c:3788), and its own comment reads *"Normally only players have base-atk"*.
+- `enable_baseatk` defaults to `BL_PC|BL_HOM` (battle.c:7718). `BL_MOB` is not in it.
+- `battle_calc_base_damage2()` (battle.c:610) therefore gives a mob
+  `damage = rnd()%(atkmax-atkmin)+atkmin` and closes with `damage += st->batk`, which adds
+  **0**. The mob_db ATK columns ARE the damage.
+
+**Spiral Pierce keeps one STR term, and only one.** The pre-renewal
+`LK_SPIRALPIERCE`/`ML_SPIRALPIERCE` case does `i = sstatus->str/10; i*=i; ATK_ADD(i);
+//Add str bonus.` OUTSIDE the `if (sd)` weapon-weight branch, so a monster caster gets it:
++81 on a Drill. (The `ATK_ADDRATE(50*skill_lv)` beside it is inside the player branch, so a
+mob's cast does not scale that way - our per-level ratio for it comes from kokotewa and a
+player report, recorded 2026-08-13, and is unchanged.)
+
+**Arithmetic.** The player's 765 per hit, behind their 15% Neutral resist, is 900 raw.
+Old model: roll + 171 + 81, floor 1062 - 765 was unreachable. New: roll + 81, floor 891,
+and 900 is a roll of 819 out of [810, 1249]. The panel now quotes 3,785-5,650 for the cast,
+which contains the 3,825 they took.
+
+**Blast radius.** Every incoming figure in the Survivability panel drops by that monster's
+`STR + (STR/10)^2`, before resists. Drill's basic melee went 652-947 -> 538-833. One golden
+moved (`incoming-banshee-physical`, 2035 -> 1998 average).
+
+**Guarded by** `test/engine-units.test.js` ("a monster's hit is its ATK roll, with no player
+base-ATK on top") and `tools/e2e/incoming-mob-atk.mjs`, which replays Laila's build on the
+live page and fails if the quoted minimum rises back above the hit she reported.
+
+## 2026-10-11 - Sword Quickening's FLEE, and the weapon it is gated on
+
+**Reported.** Mihtsuki, relayed by Frennetix: *"knights sword quickening doesn't seem to
+increase flee in the calc."*
+
+**Source.** The PS skill planner, skid 60, `KN_TWOHANDQUICKEN`, name **"Sword
+Quickening"** - re-fetched live on 2026-10-11 and byte-identical to our stored
+`ps_skill_db.json` entry (the weekly audit reports no finding against it):
+
+> Decreases weapon swing delay with Swords by 30%. This skill only works with Sword
+> class weapons and the effect cancels when switching to any other type of weapon.
+> Skill also increases FLEE and CRIT rate for its duration. [...] Works with One-Hand
+> Sword for 30% the effect mentioned.
+
+with every level reading `+N FLEE, +N% CRIT`.
+
+**Two gaps, both in `passive_overrides.SC_TWOHANDQUICKEN`:**
+
+1. It carried `cri_per_lv: 10` and no `flee_per_lv`, so the FLEE half was dropped
+   entirely. `statusCalculator` already read a `flee_per_lv` for this buff - the profile
+   simply never set one, which is why it was a silent no-op rather than an error.
+2. The stat half was not gated on the weapon. The ASPD half already was (it looks the
+   weapon up in `aspd_buffs.SC_TWOHANDQUICKEN.quicken`, which has only `1HSword` and
+   `2HSword` keys), so a Knight holding a spear kept the +10% CRIT while correctly
+   getting no attack speed. Now `weapon_types: ["1HSword", "2HSword"]`.
+
+**Left alone.** The "30% the effect mentioned" clause reads as the swing-delay figure -
+the sentence before it - and the per-level table quotes one FLEE/CRIT column with no 1H
+variant, so the stat half is not scaled on a one-handed sword. The ASPD split
+(`2HSword` 30.0% / `1HSword` 10.0%) is older and separately sourced; untouched here.
+
+**Not the same skill.** PS's **Spear Quicken** is `CR_SPEARQUICKEN`, a CRUSADER skill
+(skid 258): +1 HIT and +1 FLEE per level, "No longer grants Critical Hit". That one was
+already right, and the editor correctly does not offer it to a Knight.
+
+**Guarded by** `test/engine-units.test.js` ("Sword Quickening gives FLEE and CRIT, and
+only while holding a sword") and `tools/e2e/sword-quickening-flee.mjs`, which reads the
+character stat cards on the live page.

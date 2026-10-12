@@ -5,6 +5,211 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-11
+
+### Fixed
+
+- **Sword Quickening now gives the FLEE it says it does.** The skill grants “+1 FLEE,
+  +1% CRIT” per level — the calculator applied the CRIT and silently dropped the
+  FLEE, so a Knight running it at Lv10 was 10 FLEE short. It also cancels off a
+  sword (“the effect cancels when switching to any other type of weapon”), which the
+  attack-speed half already honoured but the stats did not — ticking it with a spear
+  equipped used to keep the crit. Both now match the skill. Reported by a player.
+
+### Added
+
+- **"Average / cast" — what one attack does with your crits folded in.** Each damage
+  button shows one outcome, and the skill button shows the cast that does *not* crit;
+  on a Ninja critting 71% of the time, neither button is what you actually do. The
+  blend now sits beside them: 1,095 between a 983 ordinary cast and a 1,140 crit. It
+  is the same figure on every button, because it is the mix rather than a branch, and
+  it is what DPS, Hits to kill and Time to kill have always been built from — it was
+  just only reachable by dividing the DPS by your cast rate yourself. Builds with a
+  single outcome (a skill that cannot crit, landing every hit) don't show it, since it
+  would only repeat the damage above it. Asked for by a player.
+
+## 2026-10-10
+
+### Fixed
+
+- **Survivability overstated how hard every monster hits you.** A player was taking
+  765×5 from a Drill's Clashing Spiral while this panel called 4,165 the *minimum*.
+  The monster's hit was being built like a player's: its ATK roll plus the player
+  base-ATK formula, STR + (STR÷10)², which on a Drill is a free +171 per hit. A
+  monster does not have that — its damage is the ATK in the monster database and
+  nothing else. Every incoming figure drops accordingly (the Drill's basic melee goes
+  from 652–947 to 538–833, its Clashing Spiral from 4,165–6,035 to 3,785–5,650, which
+  now contains the hit that was reported). Spiral Pierce keeps the (STR÷10)² its own
+  formula adds — that part is real, and it is now shown as its own term in the
+  breakdown. Reported by a player.
+
+- **Pinned builds were quoting one weapon's hit as the whole swing.** On a
+  dual-wielding Assassin, Compare showed *Damage / hit 1,625* while the breakdown
+  right below it ended on *Final damage 5,074–5,327*. The columns were reading the
+  first sub-table — the right hand — but a PS dual-wield lands two right-hand hits
+  and a left-hand one in a single swing, so the pin was showing roughly a third of
+  the damage. **Hits to kill** was wrong by the same factor (88 where the panel said
+  65). Both now come from the same place the breakdown does, so a column and the
+  panel under it cannot disagree. Reported by a player.
+
+- **“Hits to kill” now also answers “…and if every hit were this one?”** Switching to
+  Critical hit never changed the hit count, because that figure deliberately folds in
+  your crit rate, procs and attack speed — it is the realistic one, and it is what
+  Time to kill agrees with. Useful, but not the question you are asking the moment you
+  click Critical hit. There is now an **All crits** count beside it (6 where the mixed
+  figure says 7, on the build this was reported with), and the same for whichever
+  branch you are viewing. The realistic count and Time to kill are unchanged.
+
+- **Shadow Slash says why it has no Critical hit option.** On Payon Stories it cannot
+  crit unless **Shadow's Within** is active, so its damage buttons simply ended —
+  which reads as “this skill never crits” rather than “turn the buff on”. The row now
+  says *crits with Shadow's Within*, and the note disappears once you tick it. Skills
+  that genuinely cannot crit still show nothing, because for them there is nothing to
+  explain. Both reported by a player.
+
+- **Triple Attack now shows its critical hit under Critical Explosion.** It has always
+  been critting — the wiki’s “Triple Attack can critically hit while Critical
+  Explosion is active” is modelled, and your DPS already went up accordingly (390 → 434
+  on a Monk hitting an Orc Warrior). But the Triple Attack box only ever printed the
+  non-crit number, so it read identically whether the buff was up or not, and there
+  was no way to tell from it that anything had happened. It now gains a
+  **“…when it crits”** line with the crit damage and how often it lands, and says
+  Critical Explosion is the reason. Reported by a player.
+
+- **“Normal hit” is now called “Auto attack”, because that is what it was.** With a
+  skill selected the damage buttons read *Skill / Normal hit / Critical hit*, which
+  looked like three versions of the same attack. They were not: **Normal hit** was
+  your plain auto attack — a different attack, so the skill’s damage multiplier
+  correctly never applied — while **Critical hit** was that skill critting, multiplier
+  and all. Reading them side by side, “Normal hit” looked like it should be the
+  skill’s non-crit hit, and players reported the skill ratio “not applying”. It is
+  **Auto attack** now, and it keeps that name whether or not a skill is selected — it
+  used to be called “Normal Attack” with no skill and “Normal hit” with one. Every
+  number was always correct; only the label was wrong. Reported by a player.
+
+## 2026-10-09
+
+### Fixed
+
+- **Custom stats no longer costs a column on a wide screen.** The editor lays its
+  panels out in up to four columns, and a single panel taller than the others pushes
+  the whole layout to match it — the Target panel with the manual-edit fields in it was
+  tall enough that the fourth column emptied, whether you had the fields showing or
+  not. Manual edits now sit in their own **Target — manual edits** panel, which appears
+  only on the Custom stats tab and applies only there, so the layout can place it
+  wherever it fits. The fields start collapsed behind **Show the fields**; the count of
+  active edits stays visible while they are closed, so nothing that is changing your
+  numbers is ever hidden.
+
+## 2026-10-08
+
+### Added
+
+- **Manual edits, inside Custom stats.** Under the custom target’s own fields there is
+  now an adjustments block: plus-or-minus on AGI, VIT, INT, DEX, LUK, DEF, MDEF, FLEE,
+  HIT, ATK, MATK and Max HP (flat or %), plus damage reductions that have no field of
+  their own up there — two element resists, racial, size, long-range, all-physical and
+  all-magic. It pairs with **Copy ‹monster›’s stats**: bring a real monster in, then ask
+  “that, but 50 more DEF” without retyping it. Edits stack with the target debuffs,
+  travel in share links, and have a Reset. They belong to the custom target, so they
+  are not applied while you are on the Monster tab — and with everything at 0 the
+  numbers are exactly what they were before.
+
+- **A custom target can now hit back, so Survivability keeps working on one.** A
+  custom target had no ATK, DEX or HP, so the moment you switched to one the
+  Survivability panel disappeared without a word — which made copying a monster to
+  tweak it feel broken. Copying now brings its ATK, STR, DEX and Max HP across too,
+  and the panel prices the copy exactly like the monster it came from. There are
+  fields for all four if you would rather invent a monster outright, and if you leave
+  ATK at 0 the panel says what is missing instead of quoting zero damage.
+
+- **You can now start a custom target from a real monster.** A monster’s own stats
+  are the game’s and can’t be edited, so asking “what if this thing had more DEF”
+  meant typing all twelve fields in by hand. Pick the monster, switch to **Custom
+  stats**, and hit **Copy ‹monster›’s stats** — DEF, MDEF, VIT, level, AGI, LUK, size,
+  race, element and boss flag all come across, and you edit from there. It copies the
+  monster’s base stats: debuffs like Quagmire and the monster’s own self-buffs are
+  applied on top of whatever target you set, so folding them in would count them
+  twice.
+
+## 2026-10-07
+
+### Fixed
+
+- **Riding a Peco Peco with a spear now removes the size penalty against Medium monsters.** A spear normally does 75% damage to Medium targets; mounted, it does 100%. The calculator was still charging the 75% even with Riding Peco Peco ticked — the box already changed attack speed and Spear Mastery’s ATK, so it looked like it was doing its job. Knights and Crusaders, on normal attacks and on every spear skill: roughly a 10% damage increase against Medium. Reported by a player.
+
+- **Ardent Helm has its card slot, and the rest of its stats.** The helm is a Payon
+  Stories custom the item database has no entry for, so it was typed in by hand from
+  the wiki and came out with no card slot at all — and with no Defense or weight
+  either. It is **Ardent Helm [1]**: one card slot, Defense 3, Mdef +2, Weight 80,
+  Crusader only. Reported by a player, who sent the in-game tooltip.
+
+- **Ardent Helm now turns the Magnum Break weapon buff Holy too, not just the hit.**
+  The helm’s own description says it converts “Magnum Break damage and weapon buff
+  element”, but only the skill’s hit was being converted here; the lingering enchant
+  Magnum Break leaves on your weapon stayed Fire. It follows the helm now, on Magnum
+  Break and on the auto attacks that carry the buff — which is a damage increase
+  against anything that resists Fire.
+
+- **Bonuses that only one class should get are no longer given to every class.** Item
+  effects written for a specific class — Poring Dagger’s attack speed for Novices and
+  Super Novices, Thief Figure’s, Wild Rose Card’s and Mobster Card’s for the Thief
+  line, Lude and Quve Cards for Novices, the Taekwon masks, Silver Tiara, Echio,
+  Banshee, Byorgue, Seal, Aliot and about forty more — were being applied no matter
+  what class you picked. The calculator could not read the class condition in the item
+  and, rather than ignore the bonus, it granted it.
+
+  **If your build used one of those items on a class it was not meant for, its numbers
+  will now be lower.** That drop is the correction, not a nerf — those bonuses were
+  never yours in game. Reported by a player for Poring Dagger.
+
+## 2026-10-06
+
+### Fixed
+
+- **A Wildcard mix now survives a share link, a save and a pin.** If you switched a
+  weapon to a wildcard mix while real cards were still in it, sending the link to
+  someone — or saving the build and loading it back — quietly returned it to the
+  cards. With a Phreeoni Card in the weapon that was a 100 HIT difference between
+  what you saw and what they saw. Which slots are in wildcard mix is now stored with
+  the build; links and saved builds made before this still open the way they did.
+
+- **Switching a weapon to a Wildcard mix now updates the stats beside it.** A weapon
+  carded with a Mummy Card kept its +20 HIT in the character stats after the slot was
+  switched to a wildcard mix, and the same went for any stat a replaced card granted.
+  The damage and hit chance underneath were always right — it was the readout that
+  still counted cards the build was no longer being priced with. Reported by a player.
+
+- **Gear marked "all jobs except Novice" is no longer offered to Novices or Super
+  Novices.** Items like Eye of Dullahan, Safety Ring and Rosary looked wearable by
+  anyone here, because the job restriction was lost when the item data was converted —
+  "every job" and "every job but one" both ended up as a blank list, which the
+  calculator read as no restriction at all. 181 pieces of gear are affected. Reported
+  by a player.
+
+- **Thirteen duplicate accessories and hats are gone from the pickers.** Searching for
+  Safety Ring, Rosary, Critical Ring, Elven Ears, Ring, Earring, Necklace, Glove,
+  Brooch, Odin's Blessing, Grand Circlet, Helmet of Orc Hero or Ulle's Cap turned up
+  two entries: the real one and a copy Payon Stories doesn't have. The copies were
+  also the ones that slipped past the class restriction above — a Super Novice
+  searching "Safety Ring" still found a wearable one. Only the real items remain; a
+  build that already had a copy equipped still loads.
+
+- **Changing class no longer leaves stat bonuses from your old one.** A Sage with
+  Dragonology who switched to Acolyte kept the +5 INT, even though the passive list
+  beside it correctly stopped offering the skill — so the stats on screen disagreed
+  with the damage underneath, which was already ignoring it. Your typed ranks are
+  still kept when you switch away and back; they're just no longer counted while you
+  are a class that can't learn them. Reported by a player.
+
+### Changed
+
+- **Clan membership has its own section now, up with Pet.** It used to sit at the very
+  bottom of Buffs, below every song and party buff, which both buried it and made it
+  look temporary — a clan is a one-off visit to an NPC in Prontera that grants a
+  permanent +1 to two stats, not something you keep refreshed. It's section 04 now,
+  straight after Pet, with the same options and the same effect on your stats.
+
 ## 2026-10-05
 
 ### Fixed

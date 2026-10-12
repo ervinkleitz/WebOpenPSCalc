@@ -1803,9 +1803,9 @@ class BattlePipeline {
     // PS rework: Envenom uses weapon element instead of forced Poison.
     if (profile.mechanic_flags.has("TF_POISON_USES_WEAPON_ELEMENT") && skill.name === "TF_POISON") effAtkEle = baseWeaponEle;
 
-    // Ardent Helm turns Magnum Break Holy. Applied to the SKILL's hit only — the
-    // lingering fire enchant it leaves behind is a separate term below, and no source
-    // says whether that changes too, so it is deliberately left as Fire.
+    // Ardent Helm turns Magnum Break Holy. It converts the lingering enchant below as
+    // well — the in-game tooltip reads "Converts Magnum Break damage and weapon buff
+    // element to Holy", which is the source this previously lacked (2026-10-07).
     if (skill.name === "SM_MAGNUM" && gearBonuses && gearBonuses.magnum_element != null) {
       effAtkEle = gearBonuses.magnum_element;
     }
@@ -1834,10 +1834,17 @@ class BattlePipeline {
       ? Math.max(20, gearBonuses.magnum_linger_pct || 0)
       : 0;
     if (magnumPct > 0) {
+      // Fire by default; Ardent Helm's bMagnumEle converts the BUFF, not just the
+      // skill, so this term follows it. It applies on whatever attack carries the
+      // enchant, auto attacks included — the buff's own element is what changed.
+      // Declared out here so the bypassed branch labels itself correctly too.
+      const ELE_FIRE = 3;
+      const lingerEle = gearBonuses.magnum_element != null ? gearBonuses.magnum_element : ELE_FIRE;
+      const ELE_LABEL = ["Neutral", "Water", "Earth", "Fire", "Wind", "Poison", "Holy", "Dark", "Ghost", "Undead"];
+      const lingerEleName = ELE_LABEL[lingerEle] || String(lingerEle);
       const psScoped = profile.mechanic_flags.has("SM_MAGNUM_ENDOW_ATTACK_ONLY");
       const eligible = !psScoped || skill.id === 0 || skill.name === "SM_MAGNUM";
       if (eligible) {
-        const ELE_FIRE = 3;
         const scratch = createDamageResult();
         // Same normal-attack base damage the swing itself starts from: no skill
         // ratio, no crit flag (Hercules passes the plain rhw base damage).
@@ -1845,21 +1852,21 @@ class BattlePipeline {
           gear_bonuses: gearBonuses, is_crit: false, is_ranged: isRanged,
         });
         add = scaleFloor(add, magnumPct, 100);
-        add = calculateAttrFix(weapon, target, add, scratch, build, ELE_FIRE);
+        add = calculateAttrFix(weapon, target, add, scratch, build, lingerEle);
         pmf = convolve(pmf, add);
         const [mnM, mxM, avM] = pmfStats(pmf);
         const [, , addAv] = pmfStats(add);
         result.add_step({
-          name: "Magnum Break (lingering fire)", value: avM, min_value: mnM, max_value: mxM, multiplier: 1.0,
-          note: `+${magnumPct}% of a normal attack as FIRE damage (avg +${Math.round(addAv)}) — bypasses DEF`,
-          formula: `dmg + attr_fix(base_attack × ${magnumPct}%, Fire)`,
+          name: `Magnum Break (lingering ${lingerEleName.toLowerCase()})`, value: avM, min_value: mnM, max_value: mxM, multiplier: 1.0,
+          note: `+${magnumPct}% of a normal attack as ${lingerEleName.toUpperCase()} damage (avg +${Math.round(addAv)}) — bypasses DEF`,
+          formula: `dmg + attr_fix(base_attack × ${magnumPct}%, ${lingerEleName})`,
           hercules_ref: "battle.c battle_calc_elefix (SC_SUB_WEAPONPROPERTY, pre-re)",
         });
       } else {
         const [mnM, mxM, avM] = pmfStats(pmf);
         result.add_step({
-          name: "Magnum Break (lingering fire)", value: avM, min_value: mnM, max_value: mxM, multiplier: 1.0,
-          note: "BYPASSED — on Payon Stories the lingering fire applies to auto attacks and Magnum Break only",
+          name: `Magnum Break (lingering ${lingerEleName.toLowerCase()})`, value: avM, min_value: mnM, max_value: mxM, multiplier: 1.0,
+          note: `BYPASSED — on Payon Stories the lingering enchant applies to auto attacks and Magnum Break only`,
           formula: "no change", hercules_ref: "PS patch notes 2026-08-09 — Swordsman",
         });
       }

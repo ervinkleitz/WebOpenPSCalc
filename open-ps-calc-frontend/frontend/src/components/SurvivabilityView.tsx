@@ -182,8 +182,8 @@ export default function SurvivabilityView({ incoming }: { incoming: IncomingData
     if (pickedId === s.id) { setPickedId(null); setDmg(null); return; } // toggle off
     setPickedId(s.id); setDmg(null); setLoading(true);
     try {
-      if (incoming.mob_id == null) return;
-      const r = await api.calculateIncomingSkill(incoming.build, incoming.mob_id, s.id, s.lv, incoming.target_mods);
+      if (incoming.mob_id == null) return;   // a custom target has no skill kit to pick from
+      const r = await api.calculateIncomingSkill(incoming.build, { mob_id: incoming.mob_id }, s.id, s.lv, incoming.target_mods);
       setDmg(r as SkillDamage);
     } catch { setDmg(null); } finally { setLoading(false); }
   };

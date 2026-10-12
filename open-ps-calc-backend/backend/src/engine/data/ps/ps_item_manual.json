@@ -2731,22 +2731,24 @@
   "_note": "Live item API: Accessory [1], no innate bonuses. Worth having despite the blank stat line because the CARD SLOT is the point — it is a slotted accessory available to all jobs. Verified 2026-08-23."
  },
  "8417": {
-  "type": "IT_ARMOR",
-  "loc": [
-   "EQP_HEAD_TOP"
-  ],
-  "slots": 0,
-  "aegis_name": "Ardent_Helm",
-  "name": "Ardent Helm",
-  "refineable": true,
-  "job": [
-   14,
-   4015
-  ],
-  "script": "bonus bMagnumEle,Ele_Holy;",
-  "description": "A helm carried by a crusader whose conviction burns brighter than the fire itself.<br/>Changes the element of <font color='#6666CC'>Magnum Break</font> from <font color='#CC0000'>Fire</font> to <font color='#6666CC'>Holy</font>.<br/>Class:<font color='#6666CC'> Headgear</font><br/>Position:<font color='#6666CC'> Upper</font><br/>Jobs:<font color='#6666CC'> Crusader</font>",
-  "_note": "Added 2026-08-26 from the WIKI, not the item API — tools.payonstories.com returns \"No data\" for both id 8417 and the name, so the wiki's List of Custom Items is the only source. That page gives id, Upper Headgear, and \"Obtainable through a hidden quest for Crusaders\"; its <ref> to Patch Note - 22 Jun 2026 is BROKEN (that page never mentions the item). The one mechanical effect is documented on the Magnum Break page instead: \"The element of Magnum Break can be changed from Fire to Holy with the Ardent Helmet headgear.\" NOT DOCUMENTED ANYWHERE, so deliberately omitted rather than guessed: DEF, refine bonuses, level requirement, and whether the lingering fire enchant also turns Holy. The description here is written from those two wiki statements — it is not verbatim API text like the other entries. Re-check the API; it has caught up on other items a day or two after a patch."
- },
+ "type": "IT_ARMOR",
+ "loc": [
+  "EQP_HEAD_TOP"
+ ],
+ "slots": 1,
+ "aegis_name": "Ardent_Helm",
+ "name": "Ardent Helm",
+ "refineable": true,
+ "job": [
+  14,
+  4015
+ ],
+ "script": "bonus bMagnumEle,Ele_Holy; bonus bMdef,2;",
+ "description": "Some warriors burn with such conviction, their very will sears the darkness they face.<br/>Converts <font color='#6666CC'>Magnum Break</font> damage and weapon buff element to <font color='#6666CC'>Holy</font>.<br/>Mdef +2<br/>Class:<font color='#6666CC'> Headgear</font><br/>Defense:<font color='#6666CC'> 3</font><br/>Position:<font color='#6666CC'> Upper</font><br/>Weight:<font color='#6666CC'> 80</font><br/>Jobs:<font color='#6666CC'> Crusader</font>",
+ "_note": "Rewritten 2026-10-07 from an IN-GAME tooltip screenshot supplied by the maintainer, which outranks both earlier sources. tools.payonstories.com still returns \"No data\" for id 8417 and the wiki has no page for it, so until now this entry came from the wiki's List of Custom Items and left DEF, weight and the slot count out as undocumented. The client gives all of them: \"Ardent Helm [1]\" (the chat line's item lookup), Defense 3, Mdef +2, Weight 80, Position Upper, Jobs Crusader, ItemID 8417, and no level requirement (the Apple of Archer tooltip beside it DOES show one, so its absence here is real rather than cropped). Weight is stored as 800 because this DB keeps tenths — Apple of Archer reads 20 in the client and 200 here.\n\nThe slot was the reported bug: slots was 0, so the calculator offered no card slot. The wiki's custom-items table had said \"[1]\" all along in plain text (its real citations are <sup class=\"reference\"> markers, and 22 other customs there use the same [n] notation including [2] and [4]); it was simply read past when this entry was written.\n\nThe effect line also settles what this entry previously flagged as unknown: \"Converts Magnum Break damage AND WEAPON BUFF element to Holy\" — so the lingering enchant Magnum Break leaves behind (SC_SUB_WEAPONPROPERTY, Fire in Hercules) turns Holy too, not just the skill's own hit. battlePipeline.js had deliberately left that term Fire for want of a source; it now follows bMagnumEle.\n\nStill undocumented and still omitted rather than guessed: refine bonuses. job stays [14, 4015] — Paladin is the trans Crusader and was already here; the client's \"Jobs: Crusader\" does not distinguish them.",
+ "def": 3,
+ "weight": 800
+},
  "2615": {
   "_note": "Safety Ring: PS zeroed the item's structured DEF (its tooltip reads \"Defense: 0\", scraped faithfully into ps_item_overrides - all 70 def overrides match their own tooltip line) but its description still lists the effects as \"Def +3\" and \"Mdef +3\". So the DEF lives in the script, not the def field, and only the MDEF half was modelled - a player reported the ring adding no DEF. bDef and equip DEF both feed hard DEF, so +3 here is what the vanilla item's Def: 3 used to give. NB the only mechanical source for the DEF half is the description prose; the item API does not expose scripts.",
   "script": "bonus bDef,3; bonus bMdef,3;"
