@@ -2456,7 +2456,14 @@ export default function BuildEditor() {
             <button onClick={() => { setSavedBuildsOpen(true); setMenuOpen(false); }}>
               Save / Load{hasUnsavedChanges && <span className="unsaved-dot" title="You have unsaved changes — save or copy the share link to keep them">●</span>}
             </button>
-            <button onClick={() => { setImportOpen(true); setMenuOpen(false); }}>Import</button>
+            {/* Label kept to one word: the menu is a column of short verbs, and the
+                dialog itself spells out that it takes either kind of link. */}
+            <button
+              title="Paste a Payon Stories skill-planner link to bring in your skill tree, or a jaludev link to bring in a whole build"
+              onClick={() => { setImportOpen(true); setMenuOpen(false); }}
+            >
+              Import
+            </button>
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
             <button onClick={() => { statsApi.trackFeature("changelog_open"); setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>

@@ -86,7 +86,7 @@ export default function ImportBuildModal({ open, onClose, server, onImported, on
     <div className="modal-overlay" onClick={close}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Import a build</h2>
+          <h2>Import a build or skill tree</h2>
           <button onClick={close} aria-label="Close">×</button>
         </div>
         <div className="modal-body">
@@ -180,22 +180,36 @@ export default function ImportBuildModal({ open, onClose, server, onImported, on
             </>
           ) : (
             <>
+              {/* Two sources, laid out as two things rather than described in a
+                  paragraph. The prose version buried the fact that a Payon Stories
+                  planner link works at all, and that is the one most players have. */}
               <p className="hint-text" style={{ marginTop: 0 }}>
-                Paste a link from <strong>tools.payonstories.com/skill</strong> to bring in a skill tree, or from{" "}
-                <strong>payonrocalc.jaludev.com</strong> to bring in a whole build. Either one is recognised
-                automatically.
+                Paste either kind of link — it is recognised automatically.
               </p>
-              <p className="hint-text" style={{ marginTop: "0.5rem", color: "var(--text-faint)" }}>
-                A PS planner link carries <strong>only skills</strong>, so your stats and gear here are kept and just
-                the skill levels are filled in — anything the link doesn't mention keeps the level it has now. A
-                jaludev link carries a whole build and <strong>replaces</strong> what's on screen — and since that
-                calculator is no longer kept up to date, its numbers can be missing recent reworks.
-              </p>
+              <ul className="import-sources">
+                <li>
+                  <span className="import-src-name">Payon Stories skill planner</span>
+                  <code>tools.payonstories.com/skill</code>
+                  <span className="import-src-what">
+                    Brings in your <strong>skill tree</strong> — the job and every skill level.
+                    <em> Merges:</em> your stats, gear and cards are kept exactly as they are.
+                  </span>
+                </li>
+                <li>
+                  <span className="import-src-name">jaludev calculator</span>
+                  <code>payonrocalc.jaludev.com</code>
+                  <span className="import-src-what">
+                    Brings in a <strong>whole build</strong> — stats, gear and cards included.
+                    <em> Replaces</em> what is on screen. That calculator is no longer kept up to
+                    date, so its numbers can be missing recent reworks.
+                  </span>
+                </li>
+              </ul>
               <textarea
                 rows={3}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://tools.payonstories.com/skill?state=…"
+                placeholder={"https://tools.payonstories.com/skill?state=…\nor https://payonrocalc.jaludev.com/#…"}
                 spellCheck={false}
                 style={{ fontFamily: "var(--mono)", fontSize: "0.78rem" }}
               />

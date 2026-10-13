@@ -1756,6 +1756,18 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
   font-size: 0.78rem; color: var(--text-dim); line-height: 1.55;
 }
 .import-unmapped li { margin: 0.12rem 0; }
+/* The two kinds of link the import box takes, as two cards rather than a paragraph —
+   the prose version buried the Payon Stories planner, which is the one most players
+   have. */
+.import-sources { list-style: none; margin: 0.55rem 0 0.2rem; padding: 0; display: grid; gap: 0.45rem; }
+.import-sources li {
+  display: grid; gap: 0.15rem; padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-panel-raised);
+}
+.import-src-name { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
+.import-sources code { font-size: 0.72rem; color: var(--text-dim); font-family: var(--mono); }
+.import-src-what { font-size: 0.76rem; color: var(--text-dim); line-height: 1.5; }
+.import-src-what em { font-style: normal; font-weight: 700; color: var(--text); }
 
 /* Breakpoints readout (on-demand ASPD / cast / hit thresholds) */
 .bp {

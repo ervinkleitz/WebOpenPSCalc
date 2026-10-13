@@ -20,6 +20,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **The Import box now says what it takes.** It has always accepted two kinds of link
+  and described them in a paragraph, which buried the Payon Stories one — the link most
+  people have. The two sources are now laid out side by side: the PS skill planner,
+  which brings in your skill tree and keeps your stats and gear, and the jaludev
+  calculator, which brings in a whole build and replaces what is on screen.
+
 - **The Breakpoints list no longer repeats its own heading.** It sits inside the
   Character panel and every list under it is already labelled, so the extra title was
   a line of furniture between you and the numbers.
