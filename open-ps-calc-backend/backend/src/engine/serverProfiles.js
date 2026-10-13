@@ -116,6 +116,7 @@ function emptyProfile(name, overrides = {}) {
     mechanic_flags: new Set(),
     passive_overrides: {},
     aspd_buffs: {},
+    skill_tree_additions: {},
     proc_rate_overrides: {},
     steelbody_override: null,
     sn_hp_bonus: {},
@@ -508,6 +509,36 @@ const PS_MAGIC_SINGLE_ROLL_SPLIT_HITS = {
 // MIT licensed — the reference implementation this whole port tracks against).
 // Only flags with an existing consumer in this JS port are enabled below; the
 // remaining upstream flags have no ported consumer yet (see ROADMAP.md).
+/**
+ * Skills Payon Stories puts on a class's tree that vanilla Hercules does not.
+ *
+ * `tables/skill_tree.json` is a scrape of Hercules' own skill_tree.conf, and it stays
+ * that way — these are the documented PS differences, layered on top by the loader so
+ * the scrape's provenance is not muddied by hand edits.
+ *
+ * Found by importing every class's tree straight from the PS planner (2026-10-12): each
+ * of these arrived as "a skill from another class", because our tree disagreed with
+ * theirs. Two of them the codebase already knew about in a different file — the
+ * editor's self-buff list has carried the Super Novice note for months.
+ */
+const PS_SKILL_TREE_ADDITIONS = {
+  // Acolyte. PS gives Holy Strike to the Acolyte line, not just Priests; we filed it
+  // under the Priest id alone, so an Acolyte import lost it.
+  4: ["PS_PR_HOLYSTRIKE"],
+  // Sage. The editor already offers Double Bolt (SC_DOUBLECASTING) to Sage AND
+  // Professor — "On Payon Stories it's a SAGE skill (wiki: class = Sage)" — while the
+  // tree only carried it for Professor. One half of the app contradicted the other.
+  16: ["PF_DOUBLECASTING"],
+  // Rogue.
+  17: ["ST_PRESERVE", "AC_MAKINGARROW"],
+  // Super Novice. From the editor's own comment: "Payon Stories has ALWAYS granted it
+  // Crazy Uproar and Cart Revolution — the 2026-08-18 client hotfix only moved them
+  // from the Etc. tab to the Novice tab. The vanilla Hercules skill_tree.conf we scrape
+  // doesn't list either for job 23, which is why this was missed." It was still missing
+  // from the tree itself.
+  23: ["MC_LOUD", "MC_CARTREVOLUTION"],
+};
+
 const PS_MECHANIC_FLAGS = new Set([
   "PS_CRIT_SHIELD_DISABLED",
   "AS_KATAR_KATAR_CRIT_DMG_BONUS",
@@ -999,6 +1030,7 @@ const PAYON_STORIES = emptyProfile("payon_stories", {
   rate_bonuses: PS_RATE_BONUSES,
   mechanic_flags: PS_MECHANIC_FLAGS,
   aspd_buffs: PS_ASPD_BUFFS,
+  skill_tree_additions: PS_SKILL_TREE_ADDITIONS,
   ps_attack_interval: PS_ATTACK_INTERVAL,
   ps_skill_delay_fn: PS_SKILL_DELAY_FN,
   // Skills PS strips the vanilla after-cast delay from, leaving them limited by ASPD

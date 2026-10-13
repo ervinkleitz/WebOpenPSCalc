@@ -7384,3 +7384,69 @@ test("Payon Stories: One-Hand Quicken does nothing, Sword Quickening covers both
   const { allowedWeaponTypes } = require("../src/engine/weaponRequirements");
   assert.deepEqual(allowedWeaponTypes(loader.getSkillByName("KN_ONEHAND")), ["1HSword"]);
 });
+
+// Every class's tree, imported from the planner's own data, lands somewhere sane.
+//
+// A sweep of all 36 modelled classes (2026-10-12) found six classes losing a skill to
+// "skills from other classes were ignored" because our tree disagreed with PS's, one
+// modelled skill (Zeny Pincher) dropped the same way, and self-targeted AoEs putting
+// their ENEMY ailments into the self-buff rank map. These pin the fixes.
+test("a planner import never files a PS skill as another class's", () => {
+  const PS_PROFILE = getProfile("payon_stories");
+  loader.setProfile(PS_PROFILE);
+  const link = (job, levels) => "https://tools.payonstories.com/skill?state=" +
+    encodeURIComponent(zlib.deflateSync(Buffer.from(JSON.stringify({ job, levels }), "utf8")).toString("base64"));
+
+  // Skills Payon Stories puts on these trees and vanilla Hercules does not. Each one
+  // used to arrive as another class's noise.
+  const CASES = [
+    ["Acolyte", "AL_HOLYSTRIKE", "Holy Strike"],
+    ["Sage", "PF_DOUBLECASTING", "Double Casting"],
+    ["Rogue", "ST_PRESERVE", "Preserve"],
+    ["Super_Novice", "MC_LOUD", "Crazy Uproar"],
+    ["Super_Novice", "MC_CARTREVOLUTION", "Cart Revolution"],
+    // We model this one (Mammonite's ratio changes with it) and PS puts it on the
+    // MERCHANT tree while our buff list files it under Blacksmith.
+    ["Merchant", "MC_ZENYPINCHER", "Zeny Pincher"],
+    // Their tree and their own skill DB name this differently; the alias bridges them.
+    ["Creator", "CR_PS_BERSERK_POTIONPITCHER", "Berserk Pitcher"],
+  ];
+  for (const [job, theirConstant, label] of CASES) {
+    const res = importPsToolsSkills(link(job, { [theirConstant]: 1 }), PS_PROFILE);
+    assert.equal(res.off_tree_count, 0,
+      `${label} is a ${job} skill on Payon Stories — it must not count as another class's`);
+    const named = [...res.applied, ...res.learned, ...res.not_modelled];
+    assert.ok(named.some((n) => n.display === label),
+      `${label} should be named in the report, got ${JSON.stringify(named.map((n) => n.display))}`);
+  }
+
+  // The platinum list PS hands every class IS other-class noise, and still counts as
+  // it — otherwise the check above would pass by never counting anything.
+  const noisy = importPsToolsSkills(link("Swordsman", {
+    SM_BASH: 9, AL_HEAL: 5, MG_FIREBOLT: 5, AC_DOUBLE: 5,
+  }), PS_PROFILE);
+  assert.ok(noisy.off_tree_count >= 3,
+    `another class's skills are still counted as noise (got ${noisy.off_tree_count})`);
+});
+
+// known_buff_levels drives the SELF-buff toggles, and a skill typed "Self" is not the
+// same as a status that lands on you: a self-TARGETED area skill inflicts its ailment
+// on whoever is standing there.
+test("a self-targeted AoE does not put its ailment in the self-buff ranks", () => {
+  const PS_PROFILE = getProfile("payon_stories");
+  loader.setProfile(PS_PROFILE);
+  const link = (job, levels) => "https://tools.payonstories.com/skill?state=" +
+    encodeURIComponent(zlib.deflateSync(Buffer.from(JSON.stringify({ job, levels }), "utf8")).toString("base64"));
+
+  // Frost Nova is typed Self and carries SC_FREEZE; Raid is typed Self and carries
+  // SC_STUN. Both are things done TO the enemy.
+  const wiz = importPsToolsSkills(link("Wizard", { WZ_FROSTNOVA: 10, MG_SRECOVERY: 5 }), PS_PROFILE);
+  assert.equal(wiz.known_buff_levels.SC_FREEZE, undefined, "Frost Nova freezes the enemy, not you");
+  const rogue = importPsToolsSkills(link("Rogue", { RG_RAID: 5 }), PS_PROFILE);
+  assert.equal(rogue.known_buff_levels.SC_STUN, undefined, "Raid stuns the enemy, not you");
+
+  // ...while a real self-buff still records its rank, or the filter has gone too far.
+  const knight = importPsToolsSkills(link("Knight", { KN_TWOHANDQUICKEN: 7, SM_ENDURE: 3 }), PS_PROFILE);
+  assert.equal(knight.known_buff_levels.SC_TWOHANDQUICKEN, 7);
+  assert.equal(knight.known_buff_levels.SC_ENDURE, 3);
+});

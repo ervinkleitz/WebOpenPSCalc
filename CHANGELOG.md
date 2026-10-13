@@ -315,6 +315,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Added
 
+- **Six classes were losing a skill on import, and now aren't.** Payon Stories gives
+  the Acolyte line Holy Strike, Sages Double Casting, Rogues Preserve and Arrow
+  Crafting, Super Novices Crazy Uproar and Cart Revolution, Merchants Zeny Pincher and
+  Creators Berserk Pitcher — none of which the stock Ragnarok skill tree lists, so each
+  one came across as “a skill from another class” and quietly vanished. Every class's
+  whole tree now imports with nothing lost. Found by sweeping all 36 classes.
+
 - **Import your skill tree from the Payon Stories planner.** Plan your build at
   tools.payonstories.com/skill, copy the link, and paste it into Import here — the job and
   every skill level that affects damage are filled in for you. The link only carries skills,

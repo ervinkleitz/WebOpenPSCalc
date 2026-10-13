@@ -58,6 +58,11 @@ const CONSTANT_ALIASES = {
   RG_QUICKSTEP: "PS_RG_QUICKSTEP",             // 2633  Quick Step
   ST_WEAKNESSEXPLOIT: "PS_RG_WEAKNESSEXPLOIT", // 2635  Weakness Exploit
   RG_BLACKMARKET: "PS_RG_STOLENGOODS",         // 2636  Stolen Goods
+  // Their skill TREE calls Berserk Pitcher CR_PS_BERSERK_POTIONPITCHER while their own
+  // skill DB calls it AM_BERSERKPITCHER (id 446) — a PS-internal naming difference,
+  // which is what this table is for. It is a real skill on both sides, so aliasing it
+  // to the constant we hold carries the rank instead of dropping the skill.
+  CR_PS_BERSERK_POTIONPITCHER: "AM_BERSERKPITCHER",   // 446  Berserk Pitcher
   // SM_TWOHAND needs no alias — it is "Blade Mastery" on both sides — but it IS
   // stored here under the mastery key SM_TWOHANDSWORD. passivePanelIndex below
   // reads that pairing off the panel rather than restating it.
@@ -77,6 +82,13 @@ const CONSTANT_ALIASES = {
  */
 const SUPPORT_BUFF_SKILLS = {
   PS_NJ_SHADOWSWITHIN: { key: "shadows_within", display: "Shadow's Within", note: "tick it under Buffs" },
+  // Zeny Pincher: a toggled PS quest skill that makes Mammonite free and changes its
+  // ratio (100 + 25×lv% instead of 100 + 50×lv%). The engine reads it and the editor
+  // offers it — and the importer was filing it as another class's skill, because like
+  // Shadow's Within it lives in ps_skill_db rather than in the skill DB. Found by
+  // importing every class's tree (2026-10-12). `sc` so the toggle also opens at the
+  // rank the character has.
+  PS_BS_ZENYPINCHER: { key: "zeny_pincher", sc: "SC_PS_ZENYPINCHER", display: "Zeny Pincher", note: "tick it under Buffs" },
 };
 
 /** Pull the compressed state out of whatever the player pasted. */
@@ -143,6 +155,16 @@ function normaliseLevels(levels) {
   }
   return out;
 }
+
+/**
+ * Statuses a skill puts on its TARGET, never on the caster. They have no business in
+ * `known_buff_levels`, which drives the editor's own self-buff toggles — the target
+ * panel owns these.
+ */
+const AILMENT_SCS = new Set([
+  "SC_STUN", "SC_FREEZE", "SC_BLIND", "SC_STOP", "SC_SLEEP", "SC_CURSE",
+  "SC_SILENCE", "SC_POISON", "SC_DPOISON", "SC_STONE", "SC_BLOODING", "SC_CONFUSION",
+]);
 
 /**
  * Status changes whose source skill the skill DB does not declare, so they cannot be
@@ -262,8 +284,15 @@ function importPsToolsSkills(input, profile = null) {
         // toggle's. Recording them here put "SC_STUN: 10" in a map read by the buff
         // checkboxes: inert today only because no self-buff happens to share a key
         // with an ailment.
+        // `skill_type: Self` is not the same as "the status lands on you": a
+        // self-TARGETED area skill still inflicts its status on whoever is standing
+        // there. Frost Nova, Raid, Grand Cross, Frost Joke, Scream, Tiger Fist and
+        // Down Kick are all typed Self and all carry an ailment, so the type check
+        // alone let SC_FREEZE/SC_STUN/SC_BLIND/SC_STOP back into a map the self-buff
+        // toggles read (found by sweeping every class's tree, 2026-10-12).
         const selfCast = Array.isArray(known.skill_type)
-          && known.skill_type.some((t) => t === "Self" || t === "Friend");
+          && known.skill_type.some((t) => t === "Self" || t === "Friend")
+          && !AILMENT_SCS.has(known.status_change);
         if (selfCast) {
           for (const sc of [].concat(known.status_change || [])) {
             if (sc) knownBuffLevels[sc] = capped;
@@ -278,8 +307,17 @@ function importPsToolsSkills(input, profile = null) {
       // the engine uses to strip a stale share link, so the two cannot disagree.
       const { dropped } = loader.filterMasteryLevelsForJob(jobEntry.id, { [ourConstant]: level });
       const support = SUPPORT_BUFF_SKILLS[ourConstant];
-      if (dropped.length) offTree++;
-      else if (knownSkillLevels[ourConstant] != null) {
+      // ORDER MATTERS. A skill we model through a toggle (SUPPORT_BUFF_SKILLS) is
+      // claimed BEFORE the off-tree test, because our tree can disagree with PS's
+      // about whose skill it is — Zeny Pincher is one we price, filed here under
+      // Blacksmith while their planner puts it on the Merchant tree.
+      //
+      // An earlier draft claimed every ALIASED constant that way, on the theory that
+      // aliasing means we recognise it as PS's own. That is true and still not enough:
+      // their planner hands every class the whole quest-skill list, so a Knight's link
+      // carries Holy Strike, which is genuinely another class's skill and must stay a
+      // count. (Caught by ps-tools-skill-import.mjs, which imports exactly that.)
+      if (knownSkillLevels[ourConstant] != null) {
         // Rank kept: the picker and the buff toggles read it. Not "left out".
         learned.push({
           constant: ourConstant, display: skillLabel(ourConstant, profile),
@@ -287,6 +325,11 @@ function importPsToolsSkills(input, profile = null) {
         });
       } else if (support) {
         learned.push({ constant: ourConstant, display: support.display, level, note: support.note });
+        // Some of these are a toggle with a rank behind it, so the buff switch can
+        // open where the character actually is.
+        if (support.sc) knownBuffLevels[support.sc] = level;
+      } else if (dropped.length) {
+        offTree++;
       } else {
         notModelled.push({ constant: ourConstant, display: skillLabel(ourConstant, profile), level });
       }

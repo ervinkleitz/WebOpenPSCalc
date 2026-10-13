@@ -704,8 +704,7 @@ class DataLoader {
       "MC_MAMMONITE", "SM_BASH", "MG_FIREBALL", "WZ_JUPITEL", "AC_DOUBLE", "AS_SONICBLOW"]);
 
     try {
-      const treeData = this._loadJson("tables/skill_tree.json");
-      const skillNames = (treeData.jobs || {})[String(jobId)] || [];
+      const skillNames = this._treeNamesFor(jobId);
       if (skillNames.length === 0) return [];
       const skillData = this._loadJson("db/skills.json");
       const byName = {};
@@ -797,8 +796,7 @@ class DataLoader {
 
     let names = [];
     try {
-      const treeData = this._loadJson("tables/skill_tree.json");
-      names = (treeData.jobs || {})[String(jobId)] || [];
+      names = this._treeNamesFor(jobId);
     } catch {
       names = [];
     }
@@ -889,11 +887,29 @@ class DataLoader {
 
   getSkillsForJob(jobId) {
     try {
-      const data = this._loadJson("tables/skill_tree.json");
-      return new Set((data.jobs || {})[String(jobId)] || []);
+      return new Set(this._treeNamesFor(jobId));
     } catch {
       return new Set();
     }
+  }
+
+  /**
+   * The skills a job can learn: the Hercules scrape plus this server's own additions.
+   *
+   * Every read of the tree goes through here. Payon Stories gives several classes
+   * skills vanilla does not (Super Novice's Crazy Uproar, the Acolyte line's Holy
+   * Strike), and reading the scrape raw meant a planner import filed them as another
+   * class's noise while the editor offered them.
+   */
+  _treeNamesFor(jobId) {
+    const treeData = this._loadJson("tables/skill_tree.json");
+    const names = (treeData.jobs || {})[String(jobId)] || [];
+    const extra = ((this._profile || {}).skill_tree_additions || {})[jobId]
+      || ((this._profile || {}).skill_tree_additions || {})[String(jobId)];
+    if (!extra || !extra.length) return names;
+    const merged = names.slice();
+    for (const n of extra) if (!merged.includes(n)) merged.push(n);
+    return merged;
   }
 
   // ---------------------------------------------------------------

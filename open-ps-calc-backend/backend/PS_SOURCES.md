@@ -46,6 +46,7 @@ calculator is an unofficial fan tool.
 
 | Date | Source | Type | Affects |
 |---|---|---|---|
+| 2026-10-12 | PS skill planner per-job trees (all 58, swept) | First-party | Six classes' trees, Zeny Pincher's class, Berserk Pitcher's constant; Bioethics tree/tooltip conflict |
 | 2026-10-12 | Friekshow (CC), relayed by Frennetix | Staff ruling - outranks the planner tooltip | One-Hand Quicken does nothing on PS; Sword Quickening is 30% on BOTH sword types |
 | 2026-10-11 | PS skill planner tooltip, skid 495 + Hercules status.c:8044 | First-party + Source | One-Hand Quicken is +30% ASPD, one-handed swords only |
 | 2026-10-11 | PS skill planner tooltip, skid 60 (re-checked live) | First-party | Sword Quickening grants FLEE as well as CRIT, and only with a sword |
@@ -8148,3 +8149,42 @@ nothing, Sword Quickening covers both swords"), which checks both servers, and
 `tools/e2e/one-hand-quicken.mjs`, which confirms the checkbox is not offered, that a
 build still carrying the buff gains nothing, and that Sword Quickening takes 30% off the
 attack motion with either sword and nothing with a spear.
+
+## 2026-10-12 - Sweeping every class's tree through the planner import
+
+**What was done.** Every one of the planner's 58 job trees (833 distinct skills) was
+imported, using THEIR per-job `job` field at THEIR declared max rank, rather than our
+own idea of who has what. 36 classes we model; the other 22 are third-class/expanded and
+fail by name.
+
+**Their tree disagreed with ours for six classes.** Each of these arrived as "a skill
+from another class was ignored", so the rank was lost without being named:
+
+| class | skill | note |
+|---|---|---|
+| Acolyte | Holy Strike | PS gives it to the Acolyte line; we filed it under Priest only |
+| Sage | Double Casting | the EDITOR already offered Double Bolt to Sage and Professor; only the tree disagreed |
+| Rogue | Preserve, Arrow Crafting | |
+| Super Novice | Crazy Uproar, Cart Revolution | the editor's own comment has said for months that PS grants these and the Hercules scrape does not list them |
+| Merchant | Zeny Pincher | we model it (Mammonite's ratio) and file it under Blacksmith; PS puts it on the Merchant tree |
+| Creator | Berserk Pitcher | their TREE calls it `CR_PS_BERSERK_POTIONPITCHER`, their own skill DB calls it `AM_BERSERKPITCHER` (id 446) |
+
+`tables/skill_tree.json` stays a clean Hercules scrape; the four tree differences live in
+`PS_SKILL_TREE_ADDITIONS` on the PS profile and are merged by the loader, so vanilla is
+unaffected. Zeny Pincher is claimed by the toggle table before the off-tree test, and
+Berserk Pitcher by an alias onto the constant PS's own data uses.
+
+**Bioethics: PS's two sources disagree with each other.** Their skill TREE record says
+`"max":4`; their own TOOLTIP for the same skid says "Max Level: 1". We say 1, which
+matches the tooltip - the source this file already treats as the authority and the one
+the weekly audit checks. No change made. Worth knowing before someone "fixes" it from
+the tree data.
+
+**The nine skills still reported as left out are genuinely unmodelled**: Herbicide,
+Remote Detonator, Resource Roundup, Scattering, Stolen Goods, Gemstone Extraction,
+Flight Pattern, Weakness Exploit, Soul Harvest. Each exists in `ps_skill_db` and in
+`CONSTANT_ALIASES` and nowhere else in the engine, so "nothing here reads it" is true.
+
+**Clean after the fixes:** zero off-tree losses across all 36 class trees, every
+allocated skill accounted for in every class, no ailment statuses left in the self-buff
+rank map, and no class that imports with a clamped rank.
