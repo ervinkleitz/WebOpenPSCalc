@@ -47,7 +47,8 @@ calculator is an unofficial fan tool.
 | Date | Source | Type | Affects |
 |---|---|---|---|
 | 2026-10-12 | PS skill planner per-job trees (all 58, swept) | First-party | Six classes' trees, Zeny Pincher's class, Berserk Pitcher's constant; Bioethics tree/tooltip conflict |
-| 2026-10-12 | Friekshow (CC), relayed by Frennetix | Staff ruling - outranks the planner tooltip | One-Hand Quicken does nothing on PS; Sword Quickening is 30% on BOTH sword types |
+| 2026-10-13 | Beerbelly Slinger (in-game observation) | Player report - corrects our reading of the 10-12 ruling | Sword Quickening is 30% two-handed, ~10% one-handed |
+| 2026-10-12 | Friekshow (CC), relayed by Frennetix | Staff ruling - outranks the planner tooltip | One-Hand Quicken does nothing on PS (its magnitude claim was misread - see 2026-10-13) |
 | 2026-10-11 | PS skill planner tooltip, skid 495 + Hercules status.c:8044 | First-party + Source | One-Hand Quicken is +30% ASPD, one-handed swords only |
 | 2026-10-11 | PS skill planner tooltip, skid 60 (re-checked live) | First-party | Sword Quickening grants FLEE as well as CRIT, and only with a sword |
 | 2026-10-10 | Laila Braveheart (in-game observation) + Hercules status.c:3788 / battle.c:7718 | Player report + Source | A monster's physical hit is its mob_db ATK roll — it has no base ATK |
@@ -8126,11 +8127,10 @@ card on the live page.
    client and still in their skill planner - which is exactly why it looked real when
    this was investigated the day before, and why the calculator offered it as a +30%
    ASPD checkbox a Knight could tick. It is a leftover they have not removed.
-2. **Sword Quickening is the full 30% with a ONE-handed sword**, not 10%. Their planner
-   tooltip still reads "Works with One-Hand Sword for 30% the effect mentioned", and
-   that sentence is where our `"1HSword": () => 100` came from. A direct CC ruling
-   outranks a tooltip (see "How to use this" at the top of this file): the CCs write
-   these reworks, and this one says the two sword types were deliberately levelled.
+2. ~~**Sword Quickening is the full 30% with a ONE-handed sword**, not 10%.~~
+   **WRONG - reverted 2026-10-13, see the section below.** The ruling says the skill
+   WORKS with both sword types; it says nothing about the magnitude, and the tooltip's
+   "Works with One-Hand Sword for 30% the effect mentioned" was the answer all along.
 
 The two halves are the same change - Sword Quickening absorbed One-Hand Quicken's job,
 which is why the older skill was left with nothing to do.
@@ -8188,3 +8188,36 @@ Flight Pattern, Weakness Exploit, Soul Harvest. Each exists in `ps_skill_db` and
 **Clean after the fixes:** zero off-tree losses across all 36 class trees, every
 allocated skill accounted for in every class, no ailment statuses left in the self-buff
 rank map, and no class that imports with a clamped rank.
+
+## 2026-10-13 - Sword Quickening's one-handed figure: a ruling read too widely
+
+**Reported.** Beerbelly Slinger, in the Discord: *"The sword quickening for 1 handed is
+wrong. It's supposed to increase aspd by 10% for 1 handed swords. The calc gives 30%."*
+
+Correct, and the error was ours, one day old.
+
+**What happened.** Friekshow (CC) said, explaining why One-Hand Quicken is dead: "We
+made Sword Quickening to flat out work for both types of Swords." That was taken here as
+"the same effect on both", and `"1HSword"` went from 100 to 300. It means the skill
+FUNCTIONS with a one-handed sword - which is exactly why the old one-handed skill became
+redundant - and says nothing about how much.
+
+The magnitude was never in dispute: their own tooltip for skid 60 reads "Decreases
+weapon swing delay with Swords by 30% ... **Works with One-Hand Sword for 30% the effect
+mentioned**", i.e. roughly 9-10%, and 100 (10%) is what this file had before. Beerbelly's
+in-game figure matches it.
+
+**The precedence rule still holds, with a caveat worth writing down.** "A direct CC
+ruling outranks the wiki and the tooltip" is about the question the ruling ANSWERS. This
+one answered "does it work with one-handed swords, and is One-Hand Quicken still a
+thing?" - not "how much?". Reading a magnitude out of it was over-reach. Where a ruling
+is silent, the tooltip is still the source.
+
+**Unchanged:** One-Hand Quicken stays removed on PS. That half of the ruling was
+explicit ("does nothing, and wont exist in the future either") and Beerbelly does not
+dispute it. A one-handed sword Knight is therefore worse off than before the rework - 10%
+from Sword Quickening instead of 30% from a dedicated skill - which is consistent with
+PS retiring it.
+
+**Guarded by** the unit test and `tools/e2e/one-hand-quicken.mjs`, which now assert BOTH
+magnitudes and that the two hands differ - the equality was the bug.

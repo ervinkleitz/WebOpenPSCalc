@@ -94,13 +94,20 @@ for (const [name, weapon] of [["a one-handed sword", SWORD_1H], ["a two-handed s
   check(on === off, `a build still carrying One-Hand Quicken gets nothing with ${name}`);
 }
 
-// === Sword Quickening is the full 30% on either sword =====================
-for (const [name, weapon] of [["a one-handed sword", SWORD_1H], ["a two-handed sword", CLAYMORE]]) {
+// === Sword Quickening works on both swords, at its two magnitudes =========
+// Their tooltip: "Decreases weapon swing delay with Swords by 30% ... Works with
+// One-Hand Sword for 30% the effect mentioned." A CC's "we made it flat out work for
+// both types of Swords" was briefly read as "the same amount on both" and shipped a
+// one-handed sword at 30%; Beerbelly Slinger caught it from in game the next morning.
+for (const [name, weapon, keep] of [
+  ["a two-handed sword", CLAYMORE, 0.70],   // 30% off the swing
+  ["a one-handed sword", SWORD_1H, 0.90],   // a third of that
+]) {
   const off = await aspd(weapon, {});
   const on = await aspd(weapon, { SC_TWOHANDQUICKEN: 10 });
   console.log(`    Sword Quickening with ${name}: ASPD ${off} -> ${on} (motion ${motion(off)}ms -> ${motion(on)}ms)`);
-  check(Math.abs(motion(on) - motion(off) * 0.7) < 1,
-    `it takes 30% off the attack motion with ${name} — the one-handed case used to be 10%`);
+  check(Math.abs(motion(on) - motion(off) * keep) < 1,
+    `it leaves ${Math.round(keep * 100)}% of the attack motion with ${name}`);
 }
 const pikeOff = await aspd(PIKE, {}), pikeOn = await aspd(PIKE, { SC_TWOHANDQUICKEN: 10 });
 check(pikeOn === pikeOff, `and still nothing with a spear (${pikeOff} both)`);

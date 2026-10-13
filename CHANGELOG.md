@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-13
+
+### Fixed
+
+- **Sword Quickening was giving a one-handed sword too much attack speed.** It was
+  showing the full 30% on either kind of sword; a one-handed sword gets a third of
+  that, about 10%, which is what the skill's own description says (“Works with One-Hand
+  Sword for 30% the effect mentioned”). A two-handed sword is unchanged at 30%, and so
+  is everything else. This was our mistake from yesterday — a staff note saying the
+  skill had been made to work for both kinds of sword was read as “by the same amount”.
+  Reported by a player within the day.
+
 ## 2026-10-12
 
 ### Fixed
@@ -39,6 +51,7 @@ instead of release version. Dates are taken from actual git commit history.
   now the same 30% it gives a two-hander, where this calculator had it at 10%; with a
   two-handed sword, and with anything that is not a sword, nothing changes. The skill is
   untouched on the Standard pre-renewal server, where it is still a real skill.
+  *(Corrected the next day — the one-handed figure was wrong, see 2026-10-13.)*
 
 ## 2026-10-11
 

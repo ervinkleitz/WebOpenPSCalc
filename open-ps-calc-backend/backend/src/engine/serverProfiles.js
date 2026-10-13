@@ -348,13 +348,19 @@ const PS_JOB_BONUSES = {
 };
 
 const PS_ASPD_BUFFS = {
-  // Sword Quickening: the SAME 30% on either kind of sword. Friekshow (CC), relayed
-  // 2026-10-12: "We made Sword Quickening to flat out work for both types of Swords."
-  // Their planner tooltip still reads "Works with One-Hand Sword for 30% the effect
-  // mentioned", which is what the 100 here came from; a CC ruling outranks the
-  // tooltip (see PS_SOURCES "How to use this"), and it is the same change that
-  // retired One-Hand Quicken — Sword Quickening absorbed its job.
-  SC_TWOHANDQUICKEN: { quicken: { "2HSword": () => 300, "1HSword": () => 300 } },
+  // Sword Quickening: 30% off the swing with a TWO-handed sword, a third of that with
+  // a one-handed one. Their tooltip is the magnitude — "Decreases weapon swing delay
+  // with Swords by 30% ... Works with One-Hand Sword for 30% the effect mentioned."
+  //
+  // This briefly read 300/300. Friekshow (CC) said on 2026-10-12 "We made Sword
+  // Quickening to flat out work for both types of Swords" while explaining why
+  // One-Hand Quicken is dead, and that was read here as "the same effect on both".
+  // It means it WORKS with both; it says nothing about how much. Beerbelly Slinger
+  // reported the error from in game the next morning — "It's supposed to increase
+  // aspd by 10% for 1 handed swords. The calc gives 30%" — which is the tooltip's
+  // ~9–10% and the value that was here before. A ruling outranks a tooltip on the
+  // question it actually answers, and this one answered a different question.
+  SC_TWOHANDQUICKEN: { quicken: { "2HSword": () => 300, "1HSword": () => 100 } },
   SC_SPEARQUICKEN: { quicken: { "2HSpear": (lv) => 200 + 15 * lv, "1HSpear": (lv) => 75 + 5 * lv } },
   BA_MUSICALLESSON: { lv10_rate: { MusicalInstrument: -100 } },
   // AM_AXEMASTERY's ASPD is no longer an at-Lv10 lump — the Alchemist rework made it

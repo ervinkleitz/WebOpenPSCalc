@@ -7363,13 +7363,29 @@ test("Payon Stories: One-Hand Quicken does nothing, Sword Quickening covers both
       `PS: One-Hand Quicken changes nothing with ${name}`);
   }
 
-  // --- and Sword Quickening is the full 30% on EITHER sword --------------------
-  for (const [name, weapon] of [["a one-handed sword", SWORD_1H], ["a two-handed sword", CLAYMORE]]) {
+  // --- and Sword Quickening works on BOTH swords, at its two magnitudes --------
+  // Their tooltip: "Decreases weapon swing delay with Swords by 30% ... Works with
+  // One-Hand Sword for 30% the effect mentioned." A CC's "we made it flat out work
+  // for both types of Swords" was briefly read here as "the same amount on both",
+  // which put a one-handed sword at 30%; a player caught it from in game the next
+  // morning ("supposed to increase aspd by 10% for 1 handed swords"). Both numbers
+  // are asserted now, so the pair cannot drift to one value again.
+  for (const [name, weapon, keep] of [
+    ["a two-handed sword", CLAYMORE, 0.70],   // 30% off the swing
+    ["a one-handed sword", SWORD_1H, 0.90],   // a third of that
+  ]) {
     const off = aspd("payon_stories", weapon);
     const on = aspd("payon_stories", weapon, { SC_TWOHANDQUICKEN: 10 });
-    assert.ok(Math.abs(motion(on) - motion(off) * 0.7) < 1,
-      `PS: Sword Quickening takes 30% off the motion with ${name} (${motion(off)}ms -> ${motion(on)}ms)`);
+    assert.ok(Math.abs(motion(on) - motion(off) * keep) < 1,
+      `PS: Sword Quickening leaves ${Math.round(keep * 100)}% of the motion with ${name} `
+      + `(${motion(off)}ms -> ${motion(on)}ms)`);
   }
+  // And the two hands must NOT be the same: that equality is the bug itself.
+  assert.notEqual(
+    Math.round((1 - motion(aspd("payon_stories", SWORD_1H, { SC_TWOHANDQUICKEN: 10 })) / motion(aspd("payon_stories", SWORD_1H))) * 100),
+    Math.round((1 - motion(aspd("payon_stories", CLAYMORE, { SC_TWOHANDQUICKEN: 10 })) / motion(aspd("payon_stories", CLAYMORE))) * 100),
+    "a one-handed sword gets less than a two-handed one",
+  );
   // It is still a SWORD skill — this is the half that did not change.
   assert.equal(aspd("payon_stories", PIKE, { SC_TWOHANDQUICKEN: 10 }), aspd("payon_stories", PIKE),
     "PS: Sword Quickening still does nothing with a spear");
