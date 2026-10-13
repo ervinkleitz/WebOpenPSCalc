@@ -20,6 +20,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **The Breakpoints list no longer repeats its own heading.** It sits inside the
+  Character panel and every list under it is already labelled, so the extra title was
+  a line of furniture between you and the numbers.
+
 - **One-Hand Quicken is gone, and Sword Quickening now covers one-handed swords in
   full.** A Content Curator confirmed the skill does nothing on Payon Stories and is not
   coming back — Sword Quickening was changed to work for both kinds of sword, and

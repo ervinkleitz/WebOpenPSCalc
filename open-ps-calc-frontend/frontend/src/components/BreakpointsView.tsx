@@ -37,10 +37,14 @@ export function BreakpointsView({ payload, targetName, skillLabel, skillLevel }:
 
   return (
     <div className="bp">
-      <div className="bp-head">
-        <span className="bp-title">Breakpoints</span>
-        {loading && <span className="bp-sub">updating…</span>}
-      </div>
+      {/* No heading: this sits inside the Character panel, which already says where
+          you are, and the section's own sub-headings name each list. The head is kept
+          only while a request is in flight, so an empty bar never takes up a row. */}
+      {loading && (
+        <div className="bp-head">
+          <span className="bp-sub">updating…</span>
+        </div>
+      )}
       {err && !bp && <div className="bp-err">{err}</div>}
       {bp && <BreakpointsBody bp={bp} targetName={targetName} skillLabel={skillLabel} skillLevel={skillLevel} />}
     </div>
