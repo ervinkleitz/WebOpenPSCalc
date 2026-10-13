@@ -698,9 +698,16 @@ label {
    a ROW, so a select dropped into it becomes a second item on that row and squeezes
    the label down to one letter per line — "IMPOSI / TIO / MANUS" in a grid this
    narrow. Stack them instead. */
-.field-checkbox--leveled { flex-direction: column; align-items: stretch; gap: 0.3rem; }
-.field-checkbox--leveled label { align-items: flex-start; }
-.field-checkbox--leveled select { width: 100%; }
+/* The level sits on the SAME line as the buff. The select has to be pinned narrow and
+   kept from growing, or it takes half a (already narrow) grid column and squeezes the
+   label into one letter per line — "IMPOSI / TIO / MANUS". The label takes what is
+   left and wraps at spaces like any other. */
+.field-checkbox--leveled { align-items: center; gap: 0.4rem; }
+.field-checkbox--leveled label { flex: 1 1 auto; min-width: 0; }
+.field-checkbox--leveled select {
+  flex: 0 0 auto; width: auto; min-width: 4.1rem;
+  padding: 0.12rem 0.3rem; font-size: 0.75rem;
+}
 /* Leveled target debuffs (Quagmire/Provoke) use a select instead of a checkbox;
    match their label size to the sibling checkbox-debuff rows (0.85rem). */
 .debuff-field label { font-size: 0.85rem; }
