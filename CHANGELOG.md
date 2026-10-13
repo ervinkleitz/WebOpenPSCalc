@@ -5,9 +5,41 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-12
+
+### Fixed
+
+- **The ATK readout was ignoring your off-hand weapon.** A dual-dagger Assassin saw
+  *348+35* here while the game showed *391+49* — the whole difference was a +7 Main
+  Gauche sitting in the left hand: its 43 ATK and its 14 refine. Both halves of the
+  in-game ATK window count both hands, and now so do these. Your damage was never
+  affected; the dual-wield maths has always been separate, which is why the number on
+  the left looked wrong while the damage looked right. Hover the ATK card and it names
+  the off-hand and what it added. A shield in that slot still adds nothing. Reported by
+  a player.
+
+### Changed
+
+- **One-Hand Quicken is gone, and Sword Quickening now covers one-handed swords in
+  full.** A Content Curator confirmed the skill does nothing on Payon Stories and is not
+  coming back — Sword Quickening was changed to work for both kinds of sword, and
+  One-Hand Quicken was simply left behind in the client. The calculator no longer offers
+  it, and a saved build or share link that still carries it gets nothing from it rather
+  than the attack speed it used to add. Sword Quickening with a **one-handed** sword is
+  now the same 30% it gives a two-hander, where this calculator had it at 10%; with a
+  two-handed sword, and with anything that is not a sword, nothing changes. The skill is
+  untouched on the Standard pre-renewal server, where it is still a real skill.
+
 ## 2026-10-11
 
 ### Fixed
+
+- **One-Hand Quicken only works with a one-handed sword now.** The skill gives +30%
+  attack speed and, as its own description says, “unequipping Sword will cancel this
+  skill’s effect” — but the calculator handed the bonus to whatever you had equipped,
+  so a Knight with a spear or an axe was shown an attack speed they cannot reach.
+  *(Superseded the next day: a Content Curator confirmed the skill does nothing on
+  Payon Stories at all — see 2026-10-12.)*
 
 - **Sword Quickening now gives the FLEE it says it does.** The skill grants “+1 FLEE,
   +1% CRIT” per level — the calculator applied the CRIT and silently dropped the

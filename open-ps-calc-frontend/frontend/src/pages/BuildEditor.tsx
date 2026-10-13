@@ -331,7 +331,11 @@ const SELF_BUFFS = [
   { key: "SC_TWOHANDQUICKEN",  label: "Sword Quickening",      max: 10, jobs: [7, 4008] },
   // One rank in both the vanilla and PS skill DBs, and the ASPD it grants doesn't
   // scale with level — presence-only, so offering 10 ranks was meaningless.
-  { key: "SC_ONEHANDQUICKEN",  label: "One-Hand Quicken",      max: 1,  jobs: [7, 4008] },
+  // Does nothing on Payon Stories, so it is not offered there: Sword Quickening was
+  // changed to cover one-handed swords as well and this one was left in the client
+  // unused (Friekshow, CC, 2026-10-12). Still real on the standard pre-renewal
+  // profile, where it is +30% ASPD with a one-handed sword.
+  { key: "SC_ONEHANDQUICKEN",  label: "One-Hand Quicken",      max: 1,  jobs: [7, 4008], psRemoved: true },
   // Crusader / Paladin
   { key: "SC_SPEARQUICKEN",    label: "Spear Quicken",         max: 10, jobs: [14, 4015] },
   { key: "SC_PROVIDENCE",      label: "Providence",            max: 5,  jobs: [14, 4015] },
@@ -2820,8 +2824,21 @@ export default function BuildEditor() {
                     const extra = (charStatus.refine_atk || 0) + (charStatus.weapon_atk_flat || 0) + buffAtk;
                     return extra ? `+${extra}` : "";
                   })()}` : undefined,
-                  note: charStatus && (charStatus.buff_atk || []).length
-                    ? `Includes ${(charStatus.buff_atk || []).map((b: { label: string; atk: number }) => `${b.label} +${b.atk}`).join(", ")}.`
+                  // Both halves count BOTH hands, the way the game's own ATK window
+                  // does — a dual-wielder seeing their off-hand appear in the number
+                  // should be able to find out why from the number itself.
+                  note: charStatus && ((charStatus.buff_atk || []).length || charStatus.off_hand)
+                    ? [
+                        charStatus.off_hand
+                          ? `Counts both hands: your off-hand ${charStatus.off_hand.label} adds `
+                            + `${charStatus.off_hand.atk} ATK`
+                            + (charStatus.off_hand.refine_atk ? ` and ${charStatus.off_hand.refine_atk} refine` : "")
+                            + `, as the in-game ATK window does.`
+                          : null,
+                        (charStatus.buff_atk || []).length
+                          ? `Includes ${(charStatus.buff_atk || []).map((b: { label: string; atk: number }) => `${b.label} +${b.atk}`).join(", ")}.`
+                          : null,
+                      ].filter(Boolean).join(" ")
                     : undefined },
                 { label: "MATK",     value: charStatus ? `${charStatus.matk_min}–${charStatus.matk_max}` : undefined },
                 { label: "DEF",      value: charStatus ? `${charStatus.hard_def}+${charStatus.soft_def}` : undefined },

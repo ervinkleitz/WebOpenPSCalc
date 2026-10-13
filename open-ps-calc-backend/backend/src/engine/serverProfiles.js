@@ -347,7 +347,13 @@ const PS_JOB_BONUSES = {
 };
 
 const PS_ASPD_BUFFS = {
-  SC_TWOHANDQUICKEN: { quicken: { "2HSword": () => 300, "1HSword": () => 100 } },
+  // Sword Quickening: the SAME 30% on either kind of sword. Friekshow (CC), relayed
+  // 2026-10-12: "We made Sword Quickening to flat out work for both types of Swords."
+  // Their planner tooltip still reads "Works with One-Hand Sword for 30% the effect
+  // mentioned", which is what the 100 here came from; a CC ruling outranks the
+  // tooltip (see PS_SOURCES "How to use this"), and it is the same change that
+  // retired One-Hand Quicken — Sword Quickening absorbed its job.
+  SC_TWOHANDQUICKEN: { quicken: { "2HSword": () => 300, "1HSword": () => 300 } },
   SC_SPEARQUICKEN: { quicken: { "2HSpear": (lv) => 200 + 15 * lv, "1HSpear": (lv) => 75 + 5 * lv } },
   BA_MUSICALLESSON: { lv10_rate: { MusicalInstrument: -100 } },
   // AM_AXEMASTERY's ASPD is no longer an at-Lv10 lump — the Alchemist rework made it
@@ -508,6 +514,14 @@ const PS_MECHANIC_FLAGS = new Set([
   "GROUND_EFFECT_PS_VALUES",
   "GS_GS_ADJUSTMENT_SKIP_HIT_PENALTY",
   "GS_INCREASING_REMOVED",   // Increasing Accuracy removed on PS (folded into Single Action)
+  // One-Hand Quicken does nothing on Payon Stories. Friekshow (CC), relayed
+  // 2026-10-12: "1 hand sword quickening does nothing, and wont exist in the future
+  // either. We made Sword Quickening to flat out work for both types of Swords. Just
+  // haven't deleted the old extra spirit link buff." The skill is still in their
+  // client and their planner, which is why it looked real — it is a leftover.
+  // Vanilla pre-renewal keeps it (+30% ASPD with a one-handed sword), so this is a
+  // profile flag rather than a deletion.
+  "KN_ONEHAND_REMOVED",
   // Gunslinger Release Patch Notes, Core Changes: "Gunslingers are no longer able
   // to be endowed, nor can they gain the effect of element converters." Their
   // attack element comes from ammunition instead. Consumed by buildApplicator's

@@ -10,6 +10,20 @@ const { loader } = require("../dataLoader");
 const { createStatusData } = require("../models");
 const { getProfile } = require("../serverProfiles");
 
+const { allowedWeaponTypes } = require("../weaponRequirements");
+
+/**
+ * Is One-Hand Quicken's buff actually up, given what is in hand? Its weapon list
+ * lives in the skill DB (KN_ONEHAND requires "1HSwords"); an unreadable or absent
+ * requirement means no opinion, and the buff applies as before rather than being
+ * silently withheld.
+ */
+function oneHandQuickenApplies(weapon) {
+  const allowed = allowedWeaponTypes(loader.getSkillByName("KN_ONEHAND"));
+  if (!allowed) return true;
+  return allowed.includes(weapon && weapon.weapon_type);
+}
+
 const GUN_WEAPON_TYPES = new Set(["Revolver", "Rifle", "Gatling", "Shotgun", "Grenade"]);
 // Weapons Adrenaline Rush was restricted to in vanilla, and the classes that still
 // get its FULL bonus after the PS rework (30% self / 20% party; every other melee
@@ -417,7 +431,28 @@ class StatusCalculator {
     amotion += build.bonus_aspd_add;
 
     let scAspdMax = 0;
-    if ("SC_ONEHANDQUICKEN" in activeSc) scAspdMax = Math.max(scAspdMax, 300);
+    // One-Hand Quicken: +30% ASPD, flat and unlevelled (battle/status.c
+    // `case SC_ONEHANDQUICKEN: case SC_TWOHANDQUICKEN: val2 = 300;` — the val1 > 10
+    // branch beside it is for boss-cast copies only).
+    //
+    // It only exists while a one-handed sword is held. The skill DB says so in its
+    // own requirements ("1HSwords"), and the PS planner spells out the consequence:
+    // "Unequipping Sword will cancel this skill's effect." Hercules does not re-check
+    // the weapon inside the ASPD formula because the game ends the status the moment
+    // the sword comes off — a calculator has no such event, so it has to ask. Without
+    // this a Knight holding a Pike ticked the box and kept +30% ASPD (reported
+    // 2026-10-11). Read from the skill's own requirement rather than a hardcoded
+    // type, so it follows the data if PS ever widens it.
+    //
+    // NONE OF THAT APPLIES ON PAYON STORIES, where the skill does nothing at all:
+    // Sword Quickening was made to cover both kinds of sword and this one was left
+    // behind in the client (Friekshow, CC, 2026-10-12). The flag keeps the vanilla
+    // behaviour for the standard pre-renewal profile, where the skill is real.
+    if ("SC_ONEHANDQUICKEN" in activeSc
+      && !profile.mechanic_flags.has("KN_ONEHAND_REMOVED")
+      && oneHandQuickenApplies(weapon)) {
+      scAspdMax = Math.max(scAspdMax, 300);
+    }
 
     if ("SC_TWOHANDQUICKEN" in activeSc) {
       const tqQuickenSpec = ((profile.aspd_buffs || {}).SC_TWOHANDQUICKEN || {}).quicken;

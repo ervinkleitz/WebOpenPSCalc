@@ -3,7 +3,7 @@ const { logCalculate, logFeature, logDonateClick, logPageView } = require("../mi
 import { createBattleConfig } from "../engine/config";
 const { applyTargetSelfBuffs, applySelfBuffsToRawMob, applyIncomingDebuffs } = require("../engine/targetSelfBuffs");
 const { weaponAtkBuffs } = require("../engine/calculators/modifiers/baseDamage");
-import { buildFromSaveSchema } from "../engine/buildManager";
+import { buildFromSaveSchema, resolveWeapon } from "../engine/buildManager";
 import { createSkillInstance, createTarget, createDamageResult } from "../engine/models";
 import { loader } from "../engine/dataLoader";
 import { getProfile } from "../engine/serverProfiles";
@@ -795,19 +795,45 @@ router.post("/status", (req: Request, res: Response) => {
     const config = createBattleConfig();
     const [gearBonuses, effBuild, weapon, status] = resolvePlayerState(build, config, profile);
 
+    // The off-hand weapon of a dual-wielder. The in-game ATK window counts BOTH hands
+    // in BOTH of its numbers — Hercules keeps `lhw` beside `rhw` and the status packet
+    // sums them — so a dual-dagger Assassin reading "348+35" here while the client said
+    // "391+49" was missing exactly their +7 Main Gauche: 43 ATK and its 14 refine
+    // (reported by Laila Braveheart, 2026-10-12). Display only; the damage pipeline has
+    // always had its own dual-wield path.
+    //
+    // Resolved the same way the damage side resolves it, forge and all, so the two
+    // cannot quote different weapons. buildFromSaveSchema has already dropped an
+    // off-hand that a two-handed right hand makes illegal.
+    const lhId = (effBuild.equipped || {}).left_hand;
+    const lhItem = lhId != null ? loader.getItem(lhId) : null;
+    const offHand = lhItem && lhItem.type === "IT_WEAPON"
+      ? resolveWeapon(loader, lhId, (effBuild.refine_levels || {}).left_hand || 0, effBuild.weapon_element, {
+          is_forged: effBuild.lh_is_forged,
+          forge_sc_count: effBuild.lh_forge_sc_count,
+          forge_ranked: effBuild.lh_forge_ranked,
+          forge_element: effBuild.lh_forge_element,
+          script_atk_ele_rh: gearBonuses.script_atk_ele_lh,
+        })
+      : null;
+    const offHandRefineAtk = offHand ? loader.getRefineBonus(offHand.level, offHand.refine) : 0;
+
     res.json({
       max_hp:    status.max_hp,
       max_sp:    status.max_sp,
       hp_regen:  status.hp_regen,
       sp_regen:  status.sp_regen,
       batk:      status.batk,
-      weapon_atk: weapon?.atk ?? 0,
+      weapon_atk: (weapon?.atk ?? 0) + (offHand?.atk ?? 0),
       // Flat gear weapon-ATK (bAtk, e.g. Bradium Ring) — added to weapon ATK in the
       // damage pipeline, so it belongs in the ATK readout too.
       weapon_atk_flat: gearBonuses?.weapon_atk_flat ?? 0,
       // Weapon refine bonus (the "atk2" shown as the right-hand number in the
-      // in-game status window, e.g. "420 + 35"). Deterministic part only.
-      refine_atk: weapon ? loader.getRefineBonus(weapon.level, weapon.refine) : 0,
+      // in-game status window, e.g. "420 + 35"). Deterministic part only, both hands.
+      refine_atk: (weapon ? loader.getRefineBonus(weapon.level, weapon.refine) : 0) + offHandRefineAtk,
+      // Named separately so the readout can say where the extra came from, rather than
+      // leaving a dual-wielder to wonder why the number jumped.
+      off_hand: offHand ? { label: lhItem.name, atk: offHand.atk, refine_atk: offHandRefineAtk } : null,
       // Temporary weapon ATK from buffs — Impositio Manus, Battle Theme, Nibelungen, a
       // Volcano ground effect. Hercules adds these to `watk` pre-renewal, so the in-game
       // status window shows them; ours did not, and a player noticed Impositio moving the

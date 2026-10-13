@@ -7326,3 +7326,61 @@ test("a job name is matched loosely enough to survive their formatting", () => {
   // A class we really do not model still fails, and names itself.
   assert.throws(() => importPsToolsSkills(link("Rune_Knight"), PS_PROFILE), /Rune Knight/);
 });
+
+// On Payon Stories One-Hand Quicken does nothing, and Sword Quickening covers both
+// kinds of sword at the full 30%.
+//
+// Friekshow (CC), relayed 2026-10-12: "1 hand sword quickening does nothing, and wont
+// exist in the future either. We made Sword Quickening to flat out work for both types
+// of Swords. Just haven't deleted the old extra spirit link buff." The skill is still
+// in their client and their planner, which is why it looked real, and their Sword
+// Quickening tooltip still says "Works with One-Hand Sword for 30% the effect
+// mentioned" — a CC ruling outranks the tooltip.
+//
+// Vanilla pre-renewal is untouched: there the skill is real (+30% ASPD, one-handed
+// swords only, from `case SC_ONEHANDQUICKEN: ... val2 = 300`), which is why this is a
+// profile flag and not a deletion.
+test("Payon Stories: One-Hand Quicken does nothing, Sword Quickening covers both swords", () => {
+  const cfg = createBattleConfig();
+  const aspd = (server, weapon, buffs) => {
+    const profile = getProfile(server);
+    loader.setProfile(profile);
+    const b = buildFromSaveSchema({
+      server, job_id: 7, base_level: 99, job_level: 50,
+      base_stats: { str: 90, agi: 60, vit: 40, int: 20, dex: 50, luk: 20 },
+      equipped: { right_hand: weapon }, active_buffs: buffs || {},
+    });
+    return resolvePlayerState(b, cfg, profile)[3].aspd;
+  };
+  const SWORD_1H = 1101, CLAYMORE = 1163, PIKE = 1408;
+  const OHQ = { SC_ONEHANDQUICKEN: 1 };
+  // ASPD is 200 − amotion/10, and val2 = 300 takes 30% off the motion.
+  const motion = (a) => (200 - a) * 10;
+
+  // --- Payon Stories: the leftover buff is inert on every weapon ---------------
+  for (const [name, weapon] of [["a one-handed sword", SWORD_1H], ["a two-handed sword", CLAYMORE], ["a spear", PIKE]]) {
+    assert.equal(aspd("payon_stories", weapon, OHQ), aspd("payon_stories", weapon),
+      `PS: One-Hand Quicken changes nothing with ${name}`);
+  }
+
+  // --- and Sword Quickening is the full 30% on EITHER sword --------------------
+  for (const [name, weapon] of [["a one-handed sword", SWORD_1H], ["a two-handed sword", CLAYMORE]]) {
+    const off = aspd("payon_stories", weapon);
+    const on = aspd("payon_stories", weapon, { SC_TWOHANDQUICKEN: 10 });
+    assert.ok(Math.abs(motion(on) - motion(off) * 0.7) < 1,
+      `PS: Sword Quickening takes 30% off the motion with ${name} (${motion(off)}ms -> ${motion(on)}ms)`);
+  }
+  // It is still a SWORD skill — this is the half that did not change.
+  assert.equal(aspd("payon_stories", PIKE, { SC_TWOHANDQUICKEN: 10 }), aspd("payon_stories", PIKE),
+    "PS: Sword Quickening still does nothing with a spear");
+
+  // --- vanilla pre-renewal keeps the real skill -------------------------------
+  const vOff = aspd("standard", SWORD_1H), vOn = aspd("standard", SWORD_1H, OHQ);
+  assert.ok(Math.abs(motion(vOn) - motion(vOff) * 0.7) < 1,
+    `standard: One-Hand Quicken is still +30% with a one-handed sword (${motion(vOff)}ms -> ${motion(vOn)}ms)`);
+  assert.equal(aspd("standard", CLAYMORE, OHQ), aspd("standard", CLAYMORE),
+    "standard: and still only with a ONE-handed sword");
+  // The weapon rule there comes from the skill's own requirement, not a hardcoded type.
+  const { allowedWeaponTypes } = require("../src/engine/weaponRequirements");
+  assert.deepEqual(allowedWeaponTypes(loader.getSkillByName("KN_ONEHAND")), ["1HSword"]);
+});
