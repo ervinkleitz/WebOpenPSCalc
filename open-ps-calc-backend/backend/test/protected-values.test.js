@@ -121,6 +121,41 @@ test("upstream attribution survives", () => {
     "the attribution must stay a working link to the upstream project");
 });
 
+// Our OWN authorship line, which is a different thing from the licence condition
+// above and is protected for a different reason.
+//
+// It used to be a link to github.com/ervinkleitz/WebOpenPSCalc, and the link was its
+// own proof: anyone could click through to a public, timestamped commit history. The
+// repo went private on 2026-10-13, so the href came off and the credit stayed. What
+// is left is one short span of text — no link, nothing fetching it, nothing else in
+// the app referring to it. That makes it the easiest thing in this codebase to delete
+// by accident in a topbar refactor, and if it goes, the running app no longer says who
+// wrote it anywhere at all.
+//
+// This is also the only authorship record a copy of this app would have to strip on
+// purpose, which is the other reason it is worth a test.
+test("the app still says who built it", () => {
+  const src = read(FRONTEND, "src", "pages", "BuildEditor.tsx");
+
+  const row = src.match(/<span>This build<\/span>\s*<span>([^<]+)<\/span>/);
+  assert.ok(row, "the authorship row is gone from the credits tooltip");
+  assert.ok(/WebOpenPSCalc/.test(row[1]),
+    `the authorship row must name this codebase — got "${row[1]}"`);
+  assert.ok(/&copy;|©/.test(row[1]),
+    `the authorship row must carry a copyright notice — got "${row[1]}"`);
+
+  // No LICENSE file means all rights reserved by default, which is a real position but
+  // an invisible one. If a licence is ever added, that is the moment to decide whether
+  // the app should name it on screen the way it names upstream's.
+  const licensed = ["LICENSE", "LICENSE.md", "LICENSE.txt"]
+    .some((f) => fs.existsSync(path.join(REPO, f)));
+  if (licensed) {
+    assert.ok(/This build[\s\S]{0,400}(licen[cs]e|AGPL|MIT|GPL)/i.test(src),
+      "a LICENSE file was added but the credits tooltip does not name the licence — "
+      + "upstream's is named there, so ours should be too");
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Data sources. Silently repointing these would make every number suspect while
 // the app still looked fine.

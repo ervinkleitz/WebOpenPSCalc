@@ -2356,19 +2356,22 @@ export default function BuildEditor() {
               A pre-renewal Ragnarok Online damage calculator for vanilla
               and Payon Stories servers — equip gear, pick a skill and
               target, and see the full step-by-step damage breakdown.
-              {/* Both links are here on purpose. The first is the upstream project
-                  and the MIT licence this is built under. The second is THIS codebase:
-                  the API, the breakpoints, the build comparison, the imports and the
-                  PS-specific modelling were written here, and the link is the public
-                  record of that. It was briefly removed on 2026-10-13 and put back the
-                  same day — an authorship record is worth more than the quiet. */}
+              {/* Two credits, on purpose. The first is the upstream project and the
+                  MIT licence this is built under, and it stays a link because that
+                  repo is public and the licence asks for the attribution.
+                  The second is THIS codebase: the API, the breakpoints, the build
+                  comparison, the imports and the PS-specific modelling were written
+                  here, none of it upstream. It was a link to the repo until
+                  2026-10-13, when the repo went private — a dead link is worse than
+                  no link, so the authorship stayed and the href went. Do not quietly
+                  drop this row; it is the only place the app says who built it. */}
               <span className="tooltip-row">
                 <span>Based on</span>
                 <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
               </span>
               <span className="tooltip-row">
-                <span>This repo</span>
-                <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">WebOpenPSCalc</a>
+                <span>This build</span>
+                <span>WebOpenPSCalc &middot; &copy; 2026 Vin Gonzales</span>
               </span>
             </InfoTooltip>
           </span>

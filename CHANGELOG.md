@@ -17,6 +17,13 @@ instead of release version. Dates are taken from actual git commit history.
   skill had been made to work for both kinds of sword was read as “by the same amount”.
   Reported by a player within the day.
 
+### Changed
+
+- **The credits no longer link to this calculator's own source.** The source repository
+  is private from today, so the link would only have gone to a sign-in page. The credit
+  itself is still there under the title, and the link to the upstream project this is
+  built on is unchanged.
+
 ## 2026-10-12
 
 ### Fixed
