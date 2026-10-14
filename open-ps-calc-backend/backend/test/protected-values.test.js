@@ -144,15 +144,10 @@ test("the app still says where it came from", () => {
   // Deliberately NOT asserting a personal name: the maintainer asked for the repo name
   // alone. Re-adding one is a decision, not a fix, so it does not belong behind a test.
 
-  // A LICENSE exists, so the tooltip has to name the licence the way it names
-  // upstream's — a network-facing AGPL app has nowhere else to tell a user the terms.
-  const licensed = ["LICENSE", "LICENSE.md", "LICENSE.txt"]
-    .some((f) => fs.existsSync(path.join(REPO, f)));
-  if (licensed) {
-    assert.ok(/This build[\s\S]{0,400}(licen[cs]e|AGPL|MIT|GPL)/i.test(src),
-      "a LICENSE file exists but the credits tooltip does not name the licence — "
-      + "upstream's is named there, so ours should be too");
-  }
+  // The tooltip deliberately does NOT name the licence any more (maintainer's call,
+  // 2026-10-14). LICENSE and NOTICE still govern and still sit at the repo root, which
+  // the link above reaches; this file pins where the app says it came from, not what
+  // terms it says it is under.
 });
 
 // ---------------------------------------------------------------------------

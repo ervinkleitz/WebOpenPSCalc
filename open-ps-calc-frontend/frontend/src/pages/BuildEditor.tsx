@@ -2367,11 +2367,10 @@ export default function BuildEditor() {
                   drop it — it is the only place the running app says where it came
                   from. If the repo is ever made private the href has to go, because
                   a credit that leads to a sign-in page is worse than a plain one.
-                  The licence row is not decoration either: AGPL-3.0 asks that the
-                  notices stay with the work, and for a thing people only ever reach
-                  over the network this tooltip is the one place a user can see the
-                  terms at all. NOTICE at the repo root says which parts are upstream's
-                  MIT work and which are ours. */}
+                  The licence is NOT named here — removed at the maintainer's request
+                  on 2026-10-14. It still governs: LICENSE and NOTICE sit at the repo
+                  root, which the row above links to. Adding it back is a decision, not
+                  a fix. */}
               <span className="tooltip-row">
                 <span>Based on</span>
                 <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
@@ -2379,10 +2378,6 @@ export default function BuildEditor() {
               <span className="tooltip-row">
                 <span>This build</span>
                 <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">WebOpenPSCalc</a>
-              </span>
-              <span className="tooltip-row">
-                <span>Licence</span>
-                <span>AGPL-3.0 &middot; see NOTICE</span>
               </span>
             </InfoTooltip>
           </span>

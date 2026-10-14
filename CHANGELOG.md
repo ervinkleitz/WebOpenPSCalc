@@ -22,13 +22,23 @@ instead of release version. Dates are taken from actual git commit history.
   item is now the same small × that removes a card, so there is one way to clear a slot
   rather than two that look unrelated.
 
+### Removed
+
+- **The credits no longer name the licence.** The project is still licensed the same way
+  — the licence sits with the source, which the credit links to.
+
 ### Fixed
 
-- **Two Payon Stories cards now name the item they are slotted into.** **Corruptor Card**
-  gives *“of Transfusion”* and **Shade of Payon Card** gives *“Magic Missile”*, so a
-  pair of Shoes reads **Shoes of Transfusion**. The words for custom cards are not in
-  any file the game ships — they have to be read off the item in game — so the rest of
-  the custom cards still add nothing to a name until someone tells us what they say.
+- **The refine list was almost unreadable when you opened it.** The numbers were being
+  drawn in the page’s own light text colour on top of the system’s white dropdown, so
+  every level except the one already selected faded into the background. The dropdown
+  now follows whichever theme you are using.
+- **Three Payon Stories cards now name the item they are slotted into.** **Corruptor
+  Card** gives *“of Transfusion”*, **Shade of Payon Card** gives *“Magic Missile”* and
+  **Moon Rabbit Card** gives *“of Sanctuary”*, so a pair of Shoes reads **Shoes of
+  Transfusion**. The words for custom cards are not in any file the game ships — they
+  have to be read off the item in game — so the other 47 still add nothing to a name
+  until someone tells us what they say.
 
 ## 2026-10-13
 

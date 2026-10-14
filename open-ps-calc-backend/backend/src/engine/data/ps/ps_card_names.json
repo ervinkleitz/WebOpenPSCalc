@@ -4,6 +4,7 @@
   "_source": "maintainer, reading the name off the item in-game",
   "cards": {
     "8218": { "n": "of Transfusion", "after": true },
-    "8239": { "n": "Magic Missile" }
+    "8239": { "n": "Magic Missile" },
+    "8244": { "n": "of Sanctuary", "after": true }
   }
 }

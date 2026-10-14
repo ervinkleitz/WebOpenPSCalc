@@ -928,9 +928,15 @@ label {
 }
 .refine-select:hover { color: var(--text); }
 .refine-wrap:hover::after { border-top-color: var(--accent); }
-/* The native dropdown list does NOT inherit the transparent background above; without
-   this it can render unreadably on some platforms in dark mode. */
-.refine-select option { background: var(--panel); color: var(--text); }
+/* A <select>'s open list is drawn by the OS, not by this stylesheet. It ignores the
+   colours above and, with no color-scheme declared, defaults to a LIGHT popup — so the
+   `option { color: var(--text) }` that used to live here painted near-white text onto a
+   white list and the refine numbers were barely readable. color-scheme is the switch
+   that makes the browser draw the popup to match the app; with it set, the options need
+   no colours of their own. Scoped to selects rather than :root so scrollbars and other
+   native furniture are left alone. */
+select { color-scheme: dark; }
+[data-theme="light"] select { color-scheme: light; }
 /* One "take this off" affordance for the whole panel: the same x on an equipped
    item as on a card. Square so a row of them lines up, and it only takes the
    accent on hover so a grid of slots is not covered in red. */
