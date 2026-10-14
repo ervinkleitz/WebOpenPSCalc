@@ -808,6 +808,14 @@ label {
 
 .card-slots { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.4rem; }
 .card-slot .selected-pill { font-size: 0.85rem; }
+/* Shown only when a slot carries more cards than its host has room for — a jaludev
+   import can produce that, and the bonus is live, so the row has to be reachable.
+   Warning-coloured rather than error: nothing is broken, it just needs a look. */
+.card-slot-note {
+  display: block; font-size: 0.72rem; line-height: 1.35;
+  color: var(--text-dim); border-left: 2px solid var(--accent-dim);
+  padding: 0.25rem 0 0.25rem 0.5rem; margin-bottom: 0.35rem;
+}
 
 .wildcard-slots { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.4rem; }
 .wildcard-slot-row {
@@ -895,6 +903,12 @@ label {
   padding: 0.5rem 0.65rem; font-size: 0.85rem;
 }
 .selected-pill button { padding: 0.2rem 0.5rem; font-size: 0.75rem; }
+/* A filled slot reads in the accent, so a glance down the equipment column separates
+   what is worn from the empty slots' placeholder text without needing to read any of
+   it. Same gold the headline metrics use — this is the "something is here" colour
+   throughout. Kept weaker than --invalid below, which must still win on a slot that
+   is worn but not legal for the class. */
+.selected-pill__name { color: var(--accent); }
 .selected-pill--invalid { border-color: var(--crit); background: rgba(226,104,92,0.08); }
 .selected-pill--invalid > span:first-child { color: var(--crit); }
 

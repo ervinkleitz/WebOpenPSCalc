@@ -9,6 +9,8 @@ const { importJaludev } = require("../engine/jaludevImport");
 const { importPsToolsSkills } = require("../engine/psToolsImport");
 const { describeSelfBuff } = require("../engine/targetSelfBuffs");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
+const { cardNameFragment } = require("../engine/cardNames");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { TRAP_SKILL_NAMES } = require("../engine/calculators/battlePipeline");
 
 const router = Router();
@@ -208,7 +210,16 @@ router.get("/items/:id", (req: Request, res: Response) => {
   const item = loader.getItem(Number(req.params.id));
   if (!item) return res.status(404).json({ error: "Item not found" });
   const desc = loader.getItemDescription(Number(req.params.id));
-  res.json({ ...item, description: desc ? desc.description : null });
+  // A card also carries the word it lends to its host item's name, so the editor can
+  // title a slotted weapon the way the game does. Null for everything that is not a
+  // card, and for cards the client has no word for (every PS custom).
+  const frag = cardNameFragment(Number(req.params.id));
+  res.json({
+    ...item,
+    description: desc ? desc.description : null,
+    card_name: frag ? frag.name : null,
+    card_name_after: frag ? frag.after : false,
+  });
 });
 
 router.get("/mobs", (req: Request, res: Response) => {

@@ -1,0 +1,106 @@
+WebOpenPSCalc — attribution and licensing
+=========================================
+
+This project is served to players at https://openpscalc.com.
+
+It is two bodies of work under two licences. This file says which is which, so
+that anyone reusing any part of it knows what they are bound by. LICENSE (the
+GNU Affero General Public License v3.0) governs this project as a whole; the
+MIT-licensed portion below additionally remains available under MIT, and MIT's
+terms are not narrowed by anything here.
+
+
+1. The upstream work
+--------------------
+
+A web migration of StatGameDev/Open_PS_Calc:
+
+    https://github.com/StatGameDev/Open_PS_Calc
+
+a PySide6/Qt DESKTOP damage calculator for pre-renewal Ragnarok Online. Its
+Python calculation engine (`core/`) was ported to JavaScript by hand,
+file-for-file. Those ported calculations, and the pre-renewal game data that
+came with them, derive from that project and carry its licence:
+
+    MIT License
+
+    Copyright (c) 2026 Chocolate
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+
+2. This work
+------------
+
+    Copyright (c) 2026 Vin Gonzales
+    Licensed under the GNU Affero General Public License v3.0 — see LICENSE.
+
+Everything that makes this a web application rather than a desktop one was
+written here and exists nowhere upstream. Upstream has no HTTP layer at all.
+That includes, and is not limited to:
+
+  - The HTTP API: /calculate, /calculate/status, /calculate/incoming,
+    /calculate/breakpoints, /data/*, /share/:id, and the request and response
+    shapes they speak.
+  - The React front end in open-ps-calc-frontend/ in its entirety.
+  - Breakpoints: the ASPD/cast/HIT threshold solver and its presentation.
+  - Build comparison and pinning.
+  - Share links, saved builds, and the Z3 share-key encoding.
+  - Importing builds from the jaludev calculator, and skill trees from the
+    Payon Stories planner.
+  - The survivability / incoming-damage model.
+  - Wildcard card mixing.
+  - The Payon Stories server profile: the custom skills, reworked formulas,
+    item and monster data, and the mechanic flags that separate PS from vanilla
+    pre-renewal.
+  - The test suite, the data audits, and the deployment pipeline.
+
+Why AGPL rather than MIT: this is software people reach over a network and
+never download. A licence whose conditions attach only to distributing copies
+would leave the case this project actually faces — someone running a modified
+copy as a public website — entirely unaddressed. The AGPL's section 13 is the
+clause that covers it.
+
+In plain terms, and the licence text governs where this summary is loose: you
+may use, study, change and redistribute this, including commercially. If you
+run a modified version as a network service, you must offer its users the
+corresponding source of your version under the same licence, and you must keep
+the attribution notices intact.
+
+
+3. Game data
+------------
+
+Ragnarok Online is the property of Gravity Co., Ltd. and Lee Myoungjin.
+Payon Stories is an independent server; its rework and custom-content data
+originates with its staff and is used here to model their server. Neither is
+covered by the licences above, and no claim is made over either. See
+PS_SOURCES.md for where each number comes from and which source outranks which.
+
+This is a fan-made tool, unaffiliated with and unendorsed by Gravity or Payon
+Stories.
+
+
+4. Reuse
+--------
+
+If you want to build on this, that is what the licence is for and you are
+welcome to. Keep this file and LICENSE with it, say where it came from, and if
+you host it, publish your source. If the AGPL does not suit what you have in
+mind, ask — other terms are possible for the parts that are mine to license.

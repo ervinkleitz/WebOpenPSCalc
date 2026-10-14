@@ -16,6 +16,7 @@ import KofiModal from "../components/KofiModal";
 import { summaryMetrics, type ComparePin } from "../components/CompareView";
 import { BreakpointsView } from "../components/BreakpointsView";
 import starterBuildsJson from "../data/starterBuilds.json";
+import { displayItemName } from "../lib/itemName";
 import {
   BuildData, SkillState, CustomTarget, TargetMode, TargetMods, ManualEnemyEdits,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
@@ -2364,7 +2365,12 @@ export default function BuildEditor() {
                   here, none of it upstream. It was a link to the repo until
                   2026-10-13, when the repo went private — a dead link is worse than
                   no link, so the authorship stayed and the href went. Do not quietly
-                  drop this row; it is the only place the app says who built it. */}
+                  drop this row; it is the only place the app says who built it.
+                  The licence row is not decoration either: AGPL-3.0 asks that the
+                  notices stay with the work, and for a thing people only ever reach
+                  over the network this tooltip is the one place a user can see the
+                  terms at all. NOTICE at the repo root says which parts are upstream's
+                  MIT work and which are ours. */}
               <span className="tooltip-row">
                 <span>Based on</span>
                 <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
@@ -2372,6 +2378,10 @@ export default function BuildEditor() {
               <span className="tooltip-row">
                 <span>This build</span>
                 <span>WebOpenPSCalc &middot; &copy; 2026 Vin Gonzales</span>
+              </span>
+              <span className="tooltip-row">
+                <span>Licence</span>
+                <span>AGPL-3.0 &middot; see NOTICE</span>
               </span>
             </InfoTooltip>
           </span>
@@ -2896,6 +2906,30 @@ export default function BuildEditor() {
                 const equippedId = data.equipped[slot.key] as number | null | undefined;
                 const item = equippedId != null ? itemCache[equippedId] : null;
                 const cardSlotCount = item?.slots ?? 0;
+                // A slot can hold MORE cards than its host has room for. The jaludev
+                // importer emits exactly that: its item tables are keyed by name, so a
+                // carded item whose name has no slotted variant in our DB resolves to a
+                // slotless id while its card arrives separately. The engine prices those
+                // cards (cardFitsSlot gates on loc, not on slot count), so the bonus is
+                // live — but the editor rendered `item.slots` rows, which meant zero rows
+                // and no way to see or remove it.
+                //
+                // Rows are therefore sized to whichever is larger. Dropping the extra
+                // cards instead would be wrong: the player really does have a carded
+                // item, it is our DB that lacks the slotted id, so discarding it would
+                // quietly cost them a bonus they actually have. (The gear-SWAP path still
+                // drops overflow, and should: choosing an unslotted item by hand is an
+                // unambiguous intent to not have those cards.)
+                // Only while something is actually worn. Unequipping KEEPS the slot's
+                // cards on purpose, so the next item inherits them — but they are dormant
+                // (the engine ignores cards on an empty host), and showing rows for them
+                // would put a card UI under an empty slot. Guarded by card-persist.mjs.
+                const occupiedCards = equippedId == null ? [] : [1, 2, 3, 4]
+                  .filter((i) => data.equipped[`${slot.key}_card${i}`] != null);
+                const cardRowCount = equippedId == null
+                  ? 0
+                  : Math.max(cardSlotCount, ...occupiedCards, 0);
+                const hasOverflowCards = cardRowCount > cardSlotCount;
                 const isWeaponSlot = slot.key === "right_hand" || (slot.key === "left_hand" && item?.type === "IT_WEAPON");
                 const isRefineable = item?.refineable ?? false;
                 // A weapon can be Star-Crumb forged only if it's on the blacksmith
@@ -2928,9 +2962,29 @@ export default function BuildEditor() {
                           id={equippedId as number}
                           fetchDescription={fetchItemTooltip}
                           title={isInvalid ? invalidSlots.get(slot.key) : undefined}
+                          className="selected-pill__name"
                         >
-                          {item ? item.name : `Item #${equippedId}`}
-                          {isRefineable ? ` +${data.refine[slot.key] || 0}` : ""}
+                          {/* Written the way the game writes it — "+7 Double Boned
+                              Bloody Gladius" — so the pill matches what the player
+                              sees in their own inventory. A forged weapon takes no
+                              cards, so its card list is empty by construction. */}
+                          {displayItemName(
+                            item,
+                            isRefineable ? (data.refine[slot.key] || 0) : 0,
+                            // A slot in wildcard mix is named as if it were uncarded.
+                            // Switching to the mix deliberately LEAVES the real cards
+                            // equipped so switching back restores them, so reading
+                            // data.equipped here would keep titling the weapon after
+                            // cards the engine is no longer pricing — the mix's own
+                            // bonuses are generic ("race +20%") and have no names.
+                            wildcardMode[slot.key]
+                              ? []
+                              : [1, 2, 3, 4].map((i) => {
+                                const cid = data.equipped[`${slot.key}_card${i}`] as number | null | undefined;
+                                return cid != null ? itemCache[cid] : null;
+                              }),
+                            `Item #${equippedId}`,
+                          )}
                         </HoverDescription>
                         <button
                           onClick={() => {
@@ -3101,9 +3155,11 @@ export default function BuildEditor() {
                         </div>
                       </>
                     )}
-                    {cardSlotCount > 0 && !isForged && (
+                    {cardRowCount > 0 && !isForged && (
                       <>
-                        {isWeaponSlot && (
+                        {/* Wildcard mix is offered only on a host that really has slots —
+                            a mix on a slotless host would have nothing to mix into. */}
+                        {isWeaponSlot && cardSlotCount > 0 && (
                           <div className="card-mode-toggle">
                             <button
                               className={!wildcardMode[slot.key] ? "active" : ""}
@@ -3194,7 +3250,14 @@ export default function BuildEditor() {
                           </div>
                         ) : (
                           <div className="card-slots">
-                            {Array.from({ length: cardSlotCount }, (_, i) => {
+                            {hasOverflowCards && (
+                              <span className="card-slot-note">
+                                This {item?.name ?? "item"} has {cardSlotCount === 0 ? "no card slots" : `only ${cardSlotCount}`} in
+                                our database, but the build carries more. They are counted in your damage —
+                                remove any that should not be.
+                              </span>
+                            )}
+                            {Array.from({ length: cardRowCount }, (_, i) => {
                               const cardKey = `${slot.key}_card${i + 1}`;
                               const cardId = data.equipped[cardKey] as number | null | undefined;
                               const card = cardId != null ? itemCache[cardId] : null;
@@ -3202,7 +3265,7 @@ export default function BuildEditor() {
                                 <div key={cardKey} className="card-slot">
                                   {cardId != null ? (
                                     <div className="selected-pill">
-                                      <HoverDescription id={cardId} fetchDescription={fetchItemTooltip}>
+                                      <HoverDescription id={cardId} fetchDescription={fetchItemTooltip} className="selected-pill__name">
                                         {card ? card.name : `Card #${cardId}`}
                                       </HoverDescription>
                                       <button onClick={() => updateField(["equipped", cardKey], null)}>×</button>
@@ -3212,7 +3275,18 @@ export default function BuildEditor() {
                                       placeholder={`Card slot ${i + 1}…`}
                                       search={itemSearch("IT_CARD", cardLoc)}
                                       onSelect={(r) => {
-                                        setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } }));
+                                        // The stub lands first so the pill names the card
+                                        // immediately. It must then be REPLACED by the full
+                                        // record: the "resolve names for equipped items"
+                                        // effect skips any id already in the cache, so a
+                                        // stub left here is permanent — and a stub has no
+                                        // card_name, which is what titles the host weapon.
+                                        setItemCache((prev) => prev[r.id]
+                                          ? prev
+                                          : { ...prev, [r.id]: { id: r.id, name: r.label } });
+                                        api.getItem(r.id, data.server)
+                                          .then((full) => setItemCache((prev) => ({ ...prev, [r.id]: full })))
+                                          .catch(() => {});
                                         updateField(["equipped", cardKey], r.id);
                                       }}
                                       fetchTooltip={fetchItemTooltip}
@@ -3878,7 +3952,7 @@ export default function BuildEditor() {
 
           <Panel eyebrow="08" title="Skill">
             <div className="selected-pill" style={{ marginBottom: "0.6rem" }}>
-              <span>{skill.label}{skill.id !== 0 ? ` Lv.${skill.level}` : ""}</span>
+              <span className="selected-pill__name">{skill.label}{skill.id !== 0 ? ` Lv.${skill.level}` : ""}</span>
               {skill.id !== 0 && (
                 <input
                   className="mono"
@@ -3983,7 +4057,7 @@ export default function BuildEditor() {
                 {data.target_mob_id != null ? (
                   <>
                   <div className="selected-pill">
-                    <span>
+                    <span className="selected-pill__name">
                       {mobInfo ? mobInfo.name : `Mob #${data.target_mob_id}`}
                       {mobInfo ? ` (Lv.${mobInfo.level})` : ""}
                       {mobInfo?.is_boss ? " · Boss" : ""}

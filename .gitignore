@@ -41,3 +41,6 @@ tools/e2e/*.png
 # `git add -A` should never sweep them in.
 /NOTES-*.local.md
 /local-notes/
+
+# Screenshots the e2e scripts drop in the repo root when run by hand.
+/*.png

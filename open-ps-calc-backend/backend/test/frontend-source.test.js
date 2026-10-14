@@ -113,6 +113,55 @@ test("the frontend and backend agree on which weapons are forgeable", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Equipped items are titled the way the game titles them
+// ---------------------------------------------------------------------------
+test("the card name table is present and the words are the client's", () => {
+  // The words come from the RO client's cardprefixnametable, fetched by
+  // tools/gen-card-names.mjs — they are not in Hercules, not in the PS item API and
+  // not in our own item DB, so if the generated file goes missing there is no other
+  // source to fall back on and every slotted item silently loses its name.
+  const { cardNameFragment } = require("../src/engine/cardNames");
+
+  // The reported example: 2x Skel Worker + 1x Hydra in a Gladius.
+  assert.deepEqual(cardNameFragment(4092), { name: "Boned", after: false }, "Skel Worker");
+  assert.deepEqual(cardNameFragment(4035), { name: "Bloody", after: false }, "Hydra");
+
+  // A SUFFIX card. Dropping the postfix table does not merely lose a word — it
+  // renders "of Champion Cotton Shirt".
+  assert.deepEqual(cardNameFragment(4014), { name: "of Champion", after: true }, "Roda Frog");
+
+  // Anything with no entry contributes no word, which is what the client does with a
+  // card it does not know — every PS custom lands here.
+  assert.equal(cardNameFragment(999999), null);
+
+  const { CARD_NAMES } = require("../src/engine/cardNames");
+  assert.ok(Object.keys(CARD_NAMES).length > 900,
+    `expected the full table, found ${Object.keys(CARD_NAMES).length} cards`);
+});
+
+test("the editor titles an equipped item through the shared helper", () => {
+  // The pill used to be built inline as `{item.name}{" +" + refine}` — "Gladius +7",
+  // which matches nothing a player sees in their own inventory. The order (refine
+  // first, cards before the name) and the Double/Triple collapsing live in
+  // lib/itemName.ts; this catches a revert to inline string building.
+  const src = read("src", "pages", "BuildEditor.tsx");
+  assert.ok(/import \{ displayItemName \} from "\.\.\/lib\/itemName"/.test(src),
+    "BuildEditor no longer imports displayItemName");
+  assert.ok(/displayItemName\(/.test(src), "the equipment pill no longer calls displayItemName");
+  assert.ok(!/\$\{isRefineable \? ` \+\$\{data\.refine/.test(src),
+    "the old appended-refine string is back — refine leads the name now");
+
+  // The helper's own contract, asserted on its source for the same reason the rest of
+  // this file does: there is no frontend test runner. Behaviour is covered live by
+  // tools/e2e/equip-item-naming.mjs.
+  const lib = read("src", "lib", "itemName.ts");
+  assert.ok(/"", "Double ", "Triple ", "Quadruple "/.test(lib),
+    "the count words must stay the client's set, in order");
+  assert.ok(/card_name_after \? after : before/.test(lib),
+    "suffix cards must still be routed after the item name");
+});
+
+// ---------------------------------------------------------------------------
 // CHANGELOG structure
 // ---------------------------------------------------------------------------
 test("CHANGELOG.md is well formed", () => {

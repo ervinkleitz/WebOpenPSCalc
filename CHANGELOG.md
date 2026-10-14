@@ -17,12 +17,34 @@ instead of release version. Dates are taken from actual git commit history.
   skill had been made to work for both kinds of sword was read as “by the same amount”.
   Reported by a player within the day.
 
-### Changed
-
+- **Cards an imported build carried but the editor would not show.** Importing from the
+  jaludev calculator can land a card on an item our database has no slotted version of —
+  a +4 Cotton Shirt whose carded twin we only know as plain Cotton Shirt. The card was
+  counted in your damage the whole time, but the editor drew card rows only for the slots
+  it thought the item had, so for those items it drew none: the bonus was live and
+  invisible, with no way to take it off. Those cards now get a row, with a note saying
+  where they came from, and an × if you want them gone. Nothing about your damage
+  changed — only what you can see and undo.
 - **The credits no longer link to this calculator's own source.** The source repository
   is private from today, so the link would only have gone to a sign-in page. The credit
   itself is still there under the title, and the link to the upstream project this is
   built on is unchanged.
+
+### Changed
+
+- **Equipment is now named the way the game names it.** A slot used to read
+  “Gladius +7” with its cards listed separately underneath, which matched nothing you
+  see in your own inventory. The refine now leads and the cards are folded in, so two
+  Skel Worker and a Hydra in a +7 Gladius reads **+7 Double Boned Bloody Gladius** —
+  same words, same order, same Double/Triple/Quadruple counting as in game. Cards that
+  name the back of an item still do (“Cotton Shirt of Champion”). A card the client has
+  no name for, which is every Payon Stories custom, simply adds no word. A slot switched
+  to wildcard mix is named as though it were uncarded — the mix’s bonuses are generic
+  and have no names — and switching back brings the real cards’ words back with them.
+- **A slot with something in it now reads in gold.** Worn gear stands out from the
+  empty slots at a glance, without having to read any of it. The selected skill and the
+  selected target read the same way. A slot holding something your class cannot use is
+  still red, as before.
 
 ## 2026-10-12
 
