@@ -32,7 +32,7 @@ console.log("start: HP", before, "| Pupa card shown:", !!hadCard);
 if (!hadCard) { console.error("FAIL setup: card not slotted"); ok = false; }
 
 // Swap the armor for an UNSLOTTED one (Jacket, 0 slots).
-await armorField().locator("button", { hasText: "Unequip" }).click();
+await armorField().locator('button[aria-label^="Unequip"]').click();
 await page.waitForTimeout(600);
 await armorField().locator("input[placeholder^='Search ']").fill("Jacket");
 await page.waitForTimeout(900);

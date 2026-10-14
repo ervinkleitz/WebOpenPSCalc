@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-14
+
+### Changed
+
+- **The refine level is now a +0 dropdown beside the item, not a number box under it.**
+  Each equipped piece reads as one line — **+7** next to **Double Boned Bloody Gladius** —
+  the way it looks in your inventory, and picking a level is one click instead of
+  selecting and retyping a number. The refine no longer appears inside the item name
+  as well, because the box beside it is already showing it.
+- **Taking something off is an × everywhere.** The **Unequip** button on an equipped
+  item is now the same small × that removes a card, so there is one way to clear a slot
+  rather than two that look unrelated.
+
 ## 2026-10-13
 
 ### Fixed

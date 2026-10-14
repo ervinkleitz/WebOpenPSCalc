@@ -24,7 +24,7 @@ await page.waitForTimeout(1600);
 
 const pill = page.locator(".selected-pill", { hasText: /Damascus|Item #1224|#1224/ }).first();
 const anyPill = (await pill.count()) ? pill : page.locator(".selected-pill").first();
-await anyPill.locator("button", { hasText: "Unequip" }).click();
+await anyPill.locator('button[aria-label^="Unequip"]').click();
 await page.waitForTimeout(600);
 
 const focus = await page.evaluate(() => {

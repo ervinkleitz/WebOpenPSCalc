@@ -2957,6 +2957,24 @@ export default function BuildEditor() {
                     <label>{slot.label}</label>
                     {equippedId != null ? (
                       <>
+                      {/* The refine sits in its own +N control immediately left of the
+                          name, so the row still reads "+7 Double Boned Bloody Gladius"
+                          while the number stays editable in one click. It is not also
+                          printed into the name — that showed it twice. */}
+                      <div className="equip-row">
+                      {isRefineable && (
+                        <select
+                          className="refine-select mono"
+                          value={data.refine[slot.key] || 0}
+                          onChange={(e) => updateField(["refine", slot.key], Number(e.target.value))}
+                          title="Refine level"
+                          aria-label={`Refine level for ${slot.label}`}
+                        >
+                          {Array.from({ length: 11 }, (_, n) => (
+                            <option key={n} value={n}>+{n}</option>
+                          ))}
+                        </select>
+                      )}
                       <div className={`selected-pill${isInvalid ? " selected-pill--invalid" : ""}`}>
                         <HoverDescription
                           id={equippedId as number}
@@ -2964,13 +2982,8 @@ export default function BuildEditor() {
                           title={isInvalid ? invalidSlots.get(slot.key) : undefined}
                           className="selected-pill__name"
                         >
-                          {/* Written the way the game writes it — "+7 Double Boned
-                              Bloody Gladius" — so the pill matches what the player
-                              sees in their own inventory. A forged weapon takes no
-                              cards, so its card list is empty by construction. */}
                           {displayItemName(
                             item,
-                            isRefineable ? (data.refine[slot.key] || 0) : 0,
                             // A slot in wildcard mix is named as if it were uncarded.
                             // Switching to the mix deliberately LEAVES the real cards
                             // equipped so switching back restores them, so reading
@@ -3001,9 +3014,18 @@ export default function BuildEditor() {
                             });
                             setFocusSearchSlot(slot.key);
                           }}
+                          // The visible label is the same x a card uses, so "take this
+                          // off" looks the same everywhere in the panel. The accessible
+                          // name stays "Unequip" — a row of unlabelled x buttons is
+                          // unusable with a screen reader, and the e2e locators bind to
+                          // this rather than to the glyph.
+                          className="pill-remove"
+                          title="Unequip"
+                          aria-label={`Unequip ${slot.label}`}
                         >
-                          Unequip
+                          ×
                         </button>
+                      </div>
                       </div>
                       {isInvalid && (
                         <span style={{ fontSize: "0.72rem", color: "var(--crit)", marginTop: "0.2rem", display: "block" }}>
@@ -3097,19 +3119,6 @@ export default function BuildEditor() {
                             .catch(() => setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } })));
                         }}
                         fetchTooltip={fetchItemTooltip}
-                      />
-                    )}
-                    {isRefineable && equippedId != null && (
-                      <input
-                        className="mono"
-                        type="number"
-                        min={0}
-                        max={10}
-                        style={{ marginTop: "0.4rem" }}
-                        value={data.refine[slot.key] || 0}
-                        onChange={(e) => updateField(["refine", slot.key], Math.min(10, Math.max(0, Number(e.target.value))))}
-                        onFocus={(e) => e.target.select()}
-                        title="Refine level"
                       />
                     )}
                     {isForgeableWeapon && equippedId != null && (
@@ -3268,7 +3277,12 @@ export default function BuildEditor() {
                                       <HoverDescription id={cardId} fetchDescription={fetchItemTooltip} className="selected-pill__name">
                                         {card ? card.name : `Card #${cardId}`}
                                       </HoverDescription>
-                                      <button onClick={() => updateField(["equipped", cardKey], null)}>×</button>
+                                      <button
+                                        className="pill-remove"
+                                        title="Remove card"
+                                        aria-label={`Remove card ${i + 1} from ${slot.label}`}
+                                        onClick={() => updateField(["equipped", cardKey], null)}
+                                      >×</button>
                                     </div>
                                   ) : (
                                     <SearchPicker

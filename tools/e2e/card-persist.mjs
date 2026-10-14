@@ -42,7 +42,7 @@ const equipInto = async (label, query) => {
 await load(state({ equipped: { right_hand: 1201, right_hand_card1: 4035 } }));
 const rh = slotBox("Right hand");
 if (!(await rh.locator(".selected-pill", { hasText: "Hydra" }).count())) fail("setup: Hydra Card not shown on the Knife");
-await rh.locator("button", { hasText: "Unequip" }).first().click();
+await rh.locator('button[aria-label^="Unequip"]').first().click();
 await page.waitForTimeout(500);
 if (await rh.locator(".selected-pill", { hasText: "Hydra" }).count()) fail("card UI should be hidden while the slot is empty");
 await equipInto("Right hand", "Stiletto");
@@ -54,7 +54,7 @@ if (await rh.locator(".selected-pill", { hasText: "Hydra" }).count()) {
 await load(state({ equipped: { right_hand: 1201, left_hand: 2104, left_hand_card1: 4058 } }));
 const lh = slotBox("Left hand");
 if (!(await lh.locator(".selected-pill", { hasText: "Thara" }).count())) fail("setup: Thara Frog not shown on the Buckler");
-await lh.locator("button", { hasText: "Unequip" }).first().click();
+await lh.locator('button[aria-label^="Unequip"]').first().click();
 await page.waitForTimeout(500);
 await equipInto("Left hand", "Main Gauche");
 await page.waitForTimeout(900);

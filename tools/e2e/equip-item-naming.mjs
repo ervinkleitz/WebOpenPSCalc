@@ -60,15 +60,22 @@ const page = await (await browser.newContext({ viewport: { width: 1500, height: 
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 
-// The visible name of a slot's pill, by the slot's own <label>.
-const pillName = async (equipped, refine, label) => {
+// A slot's visible name AND the value of its +N refine control. The refine is NOT in
+// the name string: it lives in the select immediately to its left, so the row still
+// reads "+7 <item>" but the number is one click from editable. Asserting them together
+// is what stops the refine quietly vanishing from the row altogether.
+const readSlot = async (equipped, refine, label) => {
   await page.goto(link(equipped, refine), { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(7000);
   return page.evaluate((lbl) => {
     const field = [...document.querySelectorAll(".field")]
       .find((f) => f.querySelector("label")?.textContent?.trim() === lbl);
     const pill = field?.querySelector(".selected-pill .selected-pill__name");
-    return pill ? pill.textContent.replace(/\s+/g, " ").trim() : null;
+    const sel = field?.querySelector(".refine-select");
+    return {
+      name: pill ? pill.textContent.replace(/\s+/g, " ").trim() : null,
+      refine: sel ? sel.value : null,
+    };
   }, label);
 };
 
@@ -77,32 +84,35 @@ const carded = {
   right_hand: GLADIUS3,
   right_hand_card1: SKEL_WORKER, right_hand_card2: SKEL_WORKER, right_hand_card3: HYDRA,
 };
-let name = await pillName(carded, { right_hand: 7 }, "Right hand (weapon)");
-check(name === "+7 Double Boned Bloody Gladius",
-  'a +7 Gladius[3] with 2x Skel Worker + 1x Hydra reads "+7 Double Boned Bloody Gladius"', name);
+let slotRead = await readSlot(carded, { right_hand: 7 }, "Right hand (weapon)");
+check(slotRead.name === "Double Boned Bloody Gladius" && slotRead.refine === "7",
+  'a +7 Gladius[3] with 2x Skel Worker + 1x Hydra reads "+7 Double Boned Bloody Gladius"'
+  + " across the control and the name", slotRead);
 
 // --- 2. refine leads, and +0 says nothing --------------------------------------
-name = await pillName(carded, { right_hand: 0 }, "Right hand (weapon)");
-check(name === "Double Boned Bloody Gladius",
-  "+0 contributes no word — the refine spinner is where a zero is read", name);
+slotRead = await readSlot(carded, { right_hand: 0 }, "Right hand (weapon)");
+check(slotRead.name === "Double Boned Bloody Gladius" && slotRead.refine === "0",
+  "+0 shows on the control and adds nothing to the name", slotRead);
 
 // --- 3. a bare weapon is just its name -----------------------------------------
-name = await pillName({ right_hand: GLADIUS3 }, { right_hand: 4 }, "Right hand (weapon)");
-check(name === "+4 Gladius", "an uncarded +4 Gladius reads \"+4 Gladius\"", name);
+slotRead = await readSlot({ right_hand: GLADIUS3 }, { right_hand: 4 }, "Right hand (weapon)");
+check(slotRead.name === "Gladius" && slotRead.refine === "4",
+  "an uncarded +4 Gladius reads \"+4 Gladius\"", slotRead);
 
 // --- 4. triple, and the count word tracks the card COUNT ------------------------
-name = await pillName({
+slotRead = await readSlot({
   right_hand: GLADIUS3,
   right_hand_card1: HYDRA, right_hand_card2: HYDRA, right_hand_card3: HYDRA,
 }, { right_hand: 10 }, "Right hand (weapon)");
-check(name === "+10 Triple Bloody Gladius", "three of one card gives \"Triple\"", name);
+check(slotRead.name === "Triple Bloody Gladius" && slotRead.refine === "10",
+  "three of one card gives \"Triple\", and +10 is reachable on the control", slotRead);
 
 // --- 5. a SUFFIX card goes after the name, not before --------------------------
 // Ignoring the client's postfix table would render "of Champion Cotton Shirt".
-name = await pillName({ armor: COTTON_SHIRT, armor_card1: RODA_FROG },
+slotRead = await readSlot({ armor: COTTON_SHIRT, armor_card1: RODA_FROG },
   { armor: 0 }, "Armor");
-check(name === "Cotton Shirt of Champion",
-  "a suffix card follows the item name", name);
+check(slotRead.name === "Cotton Shirt of Champion",
+  "a suffix card follows the item name", slotRead);
 
 // --- 6. switching to wildcard mix drops the real cards' words ------------------
 // Reported 2026-10-13: "switching to wildcard mix from a previous selection retains
@@ -124,20 +134,20 @@ const shownName = () => page.evaluate(() => {
   return f?.querySelector(".selected-pill__name")?.textContent.replace(/\s+/g, " ").trim() ?? null;
 });
 
-check(await shownName() === "+7 Double Boned Bloody Gladius",
+check(await shownName() === "Double Boned Bloody Gladius",
   "starts carded", await shownName());
 
 await rightHand.getByRole("button", { name: /^Wildcard mix$/ }).click();
 await page.waitForTimeout(2500);
-name = await shownName();
-check(name === "+7 Gladius",
+let name = await shownName();
+check(name === "Gladius",
   "in wildcard mix the weapon is named as if uncarded — the mix's bonuses have no names",
   name);
 
 await rightHand.getByRole("button", { name: /^Cards$/ }).click();
 await page.waitForTimeout(2500);
 name = await shownName();
-check(name === "+7 Double Boned Bloody Gladius",
+check(name === "Double Boned Bloody Gladius",
   "switching back restores the real cards' words", name);
 
 // --- 7. a host carrying more cards than it has room for -----------------------

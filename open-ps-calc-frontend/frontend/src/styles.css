@@ -903,6 +903,27 @@ label {
   padding: 0.5rem 0.65rem; font-size: 0.85rem;
 }
 .selected-pill button { padding: 0.2rem 0.5rem; font-size: 0.75rem; }
+/* Refine sits to the LEFT of the name, so the row reads "+7 <item>" the way an
+   inventory line does while staying one click from editable. Fixed width so the
+   names below it stay aligned down the column whether the slot is +0 or +10. */
+.equip-row { display: flex; gap: 0.35rem; align-items: stretch; }
+.equip-row .selected-pill { flex: 1; min-width: 0; }
+.refine-select {
+  flex: 0 0 auto; width: 3.4rem; padding: 0.5rem 0.3rem;
+  text-align: center; text-align-last: center; font-size: 0.85rem;
+  border-radius: var(--radius); background: var(--bg);
+  border: 1px solid var(--border); color: var(--accent);
+}
+.refine-select:hover { border-color: var(--accent-dim); }
+/* One "take this off" affordance for the whole panel: the same x on an equipped
+   item as on a card. Square so a row of them lines up, and it only takes the
+   accent on hover so a grid of slots is not covered in red. */
+.pill-remove {
+  flex: 0 0 auto; width: 1.5rem; height: 1.5rem; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; line-height: 1; color: var(--text-dim);
+}
+.pill-remove:hover { color: var(--crit); border-color: var(--crit); }
 /* A filled slot reads in the accent, so a glance down the equipment column separates
    what is worn from the empty slots' placeholder text without needing to read any of
    it. Same gold the headline metrics use — this is the "something is here" colour

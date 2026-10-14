@@ -3,13 +3,17 @@
  *
  * A player reads "+7 Double Boned Bloody Gladius" off their inventory; the editor used
  * to show "Gladius +7" with the cards listed separately underneath, so the two were
- * hard to match up at a glance. This builds the former.
+ * hard to match up at a glance. This builds the card half of that name.
+ *
+ * The REFINE is deliberately not here. It sits in the +N control immediately to the
+ * left of the name in the editor, which reads as the same "+7 ..." line while staying
+ * editable — putting it in both places printed it twice.
  *
  * THE ALGORITHM IS THE CLIENT'S, not an approximation of it. Transcribed from
  * roBrowser's DB/DBManager.js getItemName(), which is an open reimplementation of the
  * official client:
  *
- *   1. refine goes FIRST, as "+N ".
+ *   1. refine goes FIRST, as "+N " — here that is the +N control, not this string.
  *   2. walk the card slots in order; each card contributes one word.
  *   3. identical words collapse into one, counted: 2 -> "Double", 3 -> "Triple",
  *      4 -> "Quadruple". The collapse is by WORD, not by card id, which matters
@@ -58,13 +62,11 @@ function collapse(words: string[]): string[] {
  * Build the display name.
  *
  * @param item   the host item, or null while its record is still loading
- * @param refine 0 when the item takes no refine, or is unrefined
  * @param cards  the slotted cards in slot order; nulls are empty slots
  * @param fallback shown when the host's record has not arrived yet
  */
 export function displayItemName(
   item: NameableItem | null | undefined,
-  refine: number,
   cards: (NameableItem | null | undefined)[],
   fallback: string,
 ): string {
@@ -78,14 +80,11 @@ export function displayItemName(
     (card.card_name_after ? after : before).push(word);
   }
 
-  // +0 carries no word, exactly as in-game — the refine spinner beside the pill is
-  // where you read a zero. Anything above it leads.
-  const head = refine > 0 ? `+${refine} ` : "";
   // Join with a space, not "": a count word carries its own trailing space ("Double ")
   // but the card word does not, so concatenating ran two cards together as
   // "Double BonedBloodyGladius".
   const pre = collapse(before).join(" ");
   const post = collapse(after).join(" ");
 
-  return `${head}${pre ? pre + " " : ""}${base}${post ? " " + post : ""}`;
+  return `${pre ? pre + " " : ""}${base}${post ? " " + post : ""}`;
 }
