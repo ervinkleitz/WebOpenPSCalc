@@ -34,9 +34,11 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(HERE, "..", "open-ps-calc-backend", "backend", "src",
   "engine", "data", "card_names.json");
 
-// Pinned so this is reproducible. master moves; the card tables do not, but a silent
-// upstream edit should be a visible diff here rather than a surprise in the UI.
-const REF = "master";
+// A COMMIT, not a branch: "master" would have made this say "pinned" while quietly
+// re-reading whatever upstream looks like on the day it is run. Bump it deliberately
+// when you want new cards, and the regenerated JSON shows up as a reviewable diff.
+// 2019-10-10, head of master at the time this landed.
+const REF = "c940bca97de8e91470de8809d6ae3b658b1e0cdd";
 const BASE = `https://raw.githubusercontent.com/zackdreaver/ROenglishRE/${REF}/Ragnarok/data/`;
 
 const fetchText = async (file) => {

@@ -140,6 +140,43 @@ name = await shownName();
 check(name === "+7 Double Boned Bloody Gladius",
   "switching back restores the real cards' words", name);
 
+// --- 7. a host carrying more cards than it has room for -----------------------
+// The jaludev importer emits this: its item tables are keyed by NAME, so a carded
+// item whose name has no slotted variant in our DB resolves to a slotless id while
+// its card arrives separately. The engine prices those cards — cardFitsSlot gates on
+// loc, not on slot count — so the bonus is live. The editor drew `item.slots` rows,
+// which for a slotless host is none, so it was live AND invisible, with no x to
+// remove it. Rows now follow whichever is larger.
+//
+// 2289 Poo Poo Hat has 0 slots; 4002 Fabre Card is "Vital".
+await page.goto(link({ armor: 2289, armor_card1: 4002 }, {}), { waitUntil: "domcontentloaded" });
+await page.waitForTimeout(7000);
+
+const armorSlot = () => page.evaluate(() => {
+  const f = [...document.querySelectorAll(".equip-grid > .field")]
+    .find((x) => x.querySelector("label")?.textContent?.trim() === "Armor");
+  return {
+    name: f?.querySelector(".selected-pill__name")?.textContent.replace(/\s+/g, " ").trim() ?? null,
+    rows: f ? f.querySelectorAll(".card-slot").length : 0,
+    removers: f ? [...f.querySelectorAll(".card-slot button")].filter((b) => b.textContent.trim() === "×").length : 0,
+    note: !!f?.querySelector(".card-slot-note"),
+  };
+});
+
+let slot = await armorSlot();
+check(slot.name === "Vital Poo Poo Hat", "a slotless host still shows its card's word", slot.name);
+check(slot.rows === 1, "and the card gets a row even though the host has no slots", slot.rows);
+check(slot.removers === 1, "with an x, so the live bonus can actually be removed", slot.removers);
+check(slot.note, "and a note saying why the row is there", slot.note);
+
+await page.locator(".equip-grid > .field")
+  .filter({ has: page.locator('label:text-is("Armor")') })
+  .locator(".card-slot button", { hasText: "×" }).first().click();
+await page.waitForTimeout(2500);
+slot = await armorSlot();
+check(slot.name === "Poo Poo Hat" && slot.rows === 0 && !slot.note,
+  "removing it drops the word, the row and the note", slot);
+
 check(errors.length === 0, "no page errors", errors);
 await browser.close();
 console.log(ok ? "\nPASS" : "\nFAIL");

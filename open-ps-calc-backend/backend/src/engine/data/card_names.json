@@ -1,6 +1,6 @@
 {
  "_source": "zackdreaver/ROenglishRE Ragnarok/data/card{prefix,postfix}nametable.txt",
- "_ref": "master",
+ "_ref": "c940bca97de8e91470de8809d6ae3b658b1e0cdd",
  "_generated_by": "tools/gen-card-names.mjs",
  "_note": "Client-side display names. n = word; after = true means it follows the item name.",
  "cards": {
