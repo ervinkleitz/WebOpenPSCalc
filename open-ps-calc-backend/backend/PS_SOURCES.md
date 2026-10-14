@@ -27,6 +27,16 @@ calculator is an unofficial fan tool.
   Scythe's crit heal is "0.1% per refine", not the original post's flat "0.1%".
 - **The item API lags a patch by about a day**, then catches up and sometimes carries terms
   the PDFs never mentioned. Re-check it a day or two after a patch.
+- **Card prefixes and suffixes come from PS's own card database, not the client.**
+  `tools.payonstories.com/card_database` is server-rendered HTML listing every card as
+  `Name (ID: n) | Prefix | Suffix`, so it parses without running their JavaScript
+  (`tools/gen-ps-card-names.mjs`). It is the only source that names PS CUSTOM cards at
+  all - the official client tables ship nothing for them - and where it disagrees with
+  the client on a vanilla card, PS has reworked it and PS wins: Stalactic Golem 4223 is
+  "Resist Stun" in the client and *of Sturdiness* on PS, Wootan Fighter 4261 is "Bleeding
+  Guard" vs *Smoldering*, and Ungoliant 4336 flips from a suffix to the prefix
+  *Cracking*. That precedence is applied per SERVER - the vanilla profile keeps the
+  client's words, because a PS rework is not a vanilla fact.
 - Dates marked *(downloaded)* are when the file was obtained, not when Payon Stories
   published it. Treat them as an upper bound on the real publish date.
 - **When the item API returns "No data", try the wiki's `List of Custom Items`.** That page
@@ -47,6 +57,7 @@ calculator is an unofficial fan tool.
 | Date | Source | Type | Affects |
 |---|---|---|---|
 | 2026-10-12 | PS skill planner per-job trees (all 58, swept) | First-party | Six classes' trees, Zeny Pincher's class, Berserk Pitcher's constant; Bioethics tree/tooltip conflict |
+| 2026-10-14 | PS card database (tools.payonstories.com/card_database), 1,003 cards | First-party | Card prefixes/suffixes, incl. all 47 PS customs; overrides the client tables on PS |
 | 2026-10-13 | Beerbelly Slinger (in-game observation) | Player report - corrects our reading of the 10-12 ruling | Sword Quickening is 30% two-handed, ~10% one-handed |
 | 2026-10-12 | Friekshow (CC), relayed by Frennetix | Staff ruling - outranks the planner tooltip | One-Hand Quicken does nothing on PS (its magnitude claim was misread - see 2026-10-13) |
 | 2026-10-11 | PS skill planner tooltip, skid 495 + Hercules status.c:8044 | First-party + Source | One-Hand Quicken is +30% ASPD, one-handed swords only |

@@ -139,6 +139,46 @@ test("the card name table is present and the words are the client's", () => {
     `expected the full table, found ${Object.keys(CARD_NAMES).length} cards`);
 });
 
+test("PS card names apply to PS only, and cover the customs", () => {
+  // Two tables: the official client's (vanilla words) and Payon Stories' own published
+  // one. PS covers their customs, which the client knows nothing about, AND overrides a
+  // handful of vanilla cards they have reworked. That override must NOT leak onto the
+  // vanilla profile — a PS rework is not a vanilla fact.
+  const { cardNameFragment, PS_NAMES, CLIENT_NAMES } = require("../src/engine/cardNames");
+
+  // A PS custom: named on PS, absent from the client entirely.
+  assert.deepEqual(cardNameFragment(8244, "payon_stories"),
+    { name: "of Sanctuary", after: true }, "Moon Rabbit on PS");
+  assert.equal(cardNameFragment(8244, "standard"), null,
+    "a PS custom must not be named on the vanilla profile");
+
+  // The three reworked vanilla cards found when the PS table first landed. Each is a
+  // real divergence, not a parse artefact, so each is pinned on BOTH profiles.
+  const SPLIT = {
+    4223: [{ name: "of Sturdiness", after: true }, { name: "Resist Stun", after: false }],
+    4261: [{ name: "Smoldering", after: false }, { name: "Bleeding Guard", after: false }],
+    4336: [{ name: "Cracking", after: false }, { name: "of Vitality", after: true }],
+  };
+  for (const [id, [ps, vanilla]] of Object.entries(SPLIT)) {
+    assert.deepEqual(cardNameFragment(Number(id), "payon_stories"), ps, `${id} on PS`);
+    assert.deepEqual(cardNameFragment(Number(id), "standard"), vanilla, `${id} on vanilla`);
+  }
+
+  // The parse reads the right columns. These three were collected by hand off the items
+  // in game BEFORE the table was found, and matched it exactly — the only independent
+  // check available that prefix and suffix are not swapped.
+  assert.deepEqual(cardNameFragment(8218), { name: "of Transfusion", after: true });
+  assert.deepEqual(cardNameFragment(8239), { name: "Magic Missile", after: false });
+
+  assert.ok(Object.keys(PS_NAMES).length > 900,
+    `the PS table looks truncated: ${Object.keys(PS_NAMES).length} cards`);
+  assert.ok(Object.keys(CLIENT_NAMES).length > 900, "the client table looks truncated");
+
+  // Defaulting matters: every existing caller omits the server and means PS.
+  assert.deepEqual(cardNameFragment(8244), cardNameFragment(8244, "payon_stories"),
+    "cardNameFragment must default to the PS table");
+});
+
 test("the editor titles an equipped item through the shared helper", () => {
   // The pill used to be built inline as `{item.name}{" +" + refine}` — "Gladius +7",
   // which matches nothing a player sees in their own inventory. The order (refine

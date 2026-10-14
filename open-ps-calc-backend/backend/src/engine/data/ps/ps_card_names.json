@@ -1,10 +1,3358 @@
 {
-  "_note": "Payon Stories custom cards: the word they lend to a host item's name. The client's own cardprefixnametable (card_names.json, generated from the official tables) only knows vanilla cards, so every PS custom is absent from it and contributes no word until it is listed here. Hand-maintained from what the game shows — the PS item API does not publish these.",
-  "_format": "id -> { n: \"word\", after: true when it follows the item name }",
-  "_source": "maintainer, reading the name off the item in-game",
-  "cards": {
-    "8218": { "n": "of Transfusion", "after": true },
-    "8239": { "n": "Magic Missile" },
-    "8244": { "n": "of Sanctuary", "after": true }
+ "_source": "https://tools.payonstories.com/card_database",
+ "_generated_by": "tools/gen-ps-card-names.mjs",
+ "_note": "Payon Stories' own card prefix/suffix table. Applied to the payon_stories profile only; the vanilla profile uses the client tables in ../card_names.json. n = the word; after = true means it follows the item name.",
+ "_fetched": "2026-10-14",
+ "cards": {
+  "4001": {
+   "n": "Lucky"
+  },
+  "4002": {
+   "n": "Vital"
+  },
+  "4003": {
+   "n": "Hard"
+  },
+  "4004": {
+   "n": "Dexterous"
+  },
+  "4005": {
+   "n": "Hallowed"
+  },
+  "4006": {
+   "n": "Lucky"
+  },
+  "4007": {
+   "n": "Beholder"
+  },
+  "4008": {
+   "n": "Extra"
+  },
+  "4009": {
+   "n": "Light"
+  },
+  "4010": {
+   "n": "Wise"
+  },
+  "4011": {
+   "n": "Dynamic"
+  },
+  "4012": {
+   "n": "Rigid"
+  },
+  "4013": {
+   "n": "Excellent"
+  },
+  "4014": {
+   "n": "of Champion",
+   "after": true
+  },
+  "4015": {
+   "n": "Quick"
+  },
+  "4016": {
+   "n": "Speedy"
+  },
+  "4017": {
+   "n": "Stun"
+  },
+  "4018": {
+   "n": "Smart"
+  },
+  "4019": {
+   "n": "Martyr"
+  },
+  "4020": {
+   "n": "Blink"
+  },
+  "4021": {
+   "n": "Skillful"
+  },
+  "4022": {
+   "n": "of Spore",
+   "after": true
+  },
+  "4023": {
+   "n": "of Desert",
+   "after": true
+  },
+  "4024": {
+   "n": "Drowsy"
+  },
+  "4025": {
+   "n": "Keen"
+  },
+  "4026": {
+   "n": "Shrewd"
+  },
+  "4027": {
+   "n": "Athletic"
+  },
+  "4028": {
+   "n": "Double-forced"
+  },
+  "4029": {
+   "n": "Wolverine"
+  },
+  "4030": {
+   "n": "Windy"
+  },
+  "4031": {
+   "n": "of Mars",
+   "after": true
+  },
+  "4032": {
+   "n": "of Athena",
+   "after": true
+  },
+  "4033": {
+   "n": "Detoxication"
+  },
+  "4034": {
+   "n": "Clever"
+  },
+  "4035": {
+   "n": "Bloody"
+  },
+  "4036": {
+   "n": "Robust"
+  },
+  "4037": {
+   "n": "Untouchable"
+  },
+  "4038": {
+   "n": "Healthy"
+  },
+  "4039": {
+   "n": "of Aristotle",
+   "after": true
+  },
+  "4040": {
+   "n": "Teleport"
+  },
+  "4041": {
+   "n": "of Sandman",
+   "after": true
+  },
+  "4042": {
+   "n": "of Heman",
+   "after": true
+  },
+  "4043": {
+   "n": "Hurricane"
+  },
+  "4044": {
+   "n": "Hiding"
+  },
+  "4045": {
+   "n": "Heavy"
+  },
+  "4046": {
+   "n": "of Cleric",
+   "after": true
+  },
+  "4047": {
+   "n": "Ghost"
+  },
+  "4048": {
+   "n": "Poison"
+  },
+  "4049": {
+   "n": "Flammable"
+  },
+  "4050": {
+   "n": "of Hermes",
+   "after": true
+  },
+  "4051": {
+   "n": "of Flash",
+   "after": true
+  },
+  "4052": {
+   "n": "Erudite"
+  },
+  "4053": {
+   "n": "Healing"
+  },
+  "4054": {
+   "n": "Holy"
+  },
+  "4055": {
+   "n": "Ice"
+  },
+  "4056": {
+   "n": "of Warmth",
+   "after": true
+  },
+  "4057": {
+   "n": "Silence"
+  },
+  "4058": {
+   "n": "Cranial"
+  },
+  "4059": {
+   "n": "of Cadi",
+   "after": true
+  },
+  "4060": {
+   "n": "Clamorous"
+  },
+  "4061": {
+   "n": "Immortal"
+  },
+  "4062": {
+   "n": "Envenom"
+  },
+  "4063": {
+   "n": "Insecticide"
+  },
+  "4064": {
+   "n": "Nimble"
+  },
+  "4065": {
+   "n": "Underneath"
+  },
+  "4066": {
+   "n": "Brutal"
+  },
+  "4067": {
+   "n": "Atomic"
+  },
+  "4068": {
+   "n": "Chemical"
+  },
+  "4069": {
+   "n": "Saharic"
+  },
+  "4070": {
+   "n": "of Witch",
+   "after": true
+  },
+  "4071": {
+   "n": "Angelic"
+  },
+  "4072": {
+   "n": "Solid"
+  },
+  "4073": {
+   "n": "Discount"
+  },
+  "4074": {
+   "n": "of Gargantua",
+   "after": true
+  },
+  "4075": {
+   "n": "Hypnotic"
+  },
+  "4076": {
+   "n": "Cursing"
+  },
+  "4077": {
+   "n": "Under a Cast",
+   "after": true
+  },
+  "4078": {
+   "n": "of Recovery",
+   "after": true
+  },
+  "4079": {
+   "n": "of Mustle",
+   "after": true
+  },
+  "4080": {
+   "n": "Fisher"
+  },
+  "4081": {
+   "n": "Glorious"
+  },
+  "4082": {
+   "n": "Gigantic"
+  },
+  "4083": {
+   "n": "Homer's"
+  },
+  "4084": {
+   "n": "Blast"
+  },
+  "4085": {
+   "n": "Damned"
+  },
+  "4086": {
+   "n": "Critical"
+  },
+  "4087": {
+   "n": "Order"
+  },
+  "4088": {
+   "n": "Guard"
+  },
+  "4089": {
+   "n": "Aqua"
+  },
+  "4090": {
+   "n": "Amulet"
+  },
+  "4091": {
+   "n": "of Counter",
+   "after": true
+  },
+  "4092": {
+   "n": "Boned"
+  },
+  "4093": {
+   "n": "Cure"
+  },
+  "4094": {
+   "n": "Kingbird"
+  },
+  "4095": {
+   "n": "Genie's"
+  },
+  "4096": {
+   "n": "Venomer's"
+  },
+  "4097": {
+   "n": "Green"
+  },
+  "4098": {
+   "n": "of Zephyrus",
+   "after": true
+  },
+  "4099": {
+   "n": "of Ifrit",
+   "after": true
+  },
+  "4100": {
+   "n": "Soul-Enchanted"
+  },
+  "4101": {
+   "n": "of Gnome",
+   "after": true
+  },
+  "4102": {
+   "n": "Mocking"
+  },
+  "4103": {
+   "n": "Clairvoyant"
+  },
+  "4104": {
+   "n": "Chaos"
+  },
+  "4105": {
+   "n": "Unfrozen"
+  },
+  "4106": {
+   "n": "Ancient"
+  },
+  "4107": {
+   "n": "Fledged"
+  },
+  "4108": {
+   "n": "Innoxious"
+  },
+  "4109": {
+   "n": "Flameguard"
+  },
+  "4110": {
+   "n": "Viper's"
+  },
+  "4111": {
+   "n": "Decussate"
+  },
+  "4112": {
+   "n": "Peerless"
+  },
+  "4113": {
+   "n": "of Ghost",
+   "after": true
+  },
+  "4114": {
+   "n": "Poisoning"
+  },
+  "4115": {
+   "n": "Malicious"
+  },
+  "4116": {
+   "n": "Divine"
+  },
+  "4117": {
+   "n": "Hybrid"
+  },
+  "4118": {
+   "n": "Dragoon"
+  },
+  "4119": {
+   "n": "Evil"
+  },
+  "4120": {
+   "n": "of Dragoon",
+   "after": true
+  },
+  "4121": {
+   "n": "Perfect"
+  },
+  "4122": {
+   "n": "Adurate"
+  },
+  "4123": {
+   "n": "Bearer's"
+  },
+  "4124": {
+   "n": "Plasterer's"
+  },
+  "4125": {
+   "n": "Aqua"
+  },
+  "4126": {
+   "n": "Titan"
+  },
+  "4127": {
+   "n": "Insomniac"
+  },
+  "4128": {
+   "n": "of Deaf",
+   "after": true
+  },
+  "4129": {
+   "n": "of Rogue",
+   "after": true
+  },
+  "4130": {
+   "n": "Divine"
+  },
+  "4131": {
+   "n": "Hasty"
+  },
+  "4132": {
+   "n": "of Gemstone",
+   "after": true
+  },
+  "4133": {
+   "n": "Immune"
+  },
+  "4134": {
+   "n": "Spiritual"
+  },
+  "4135": {
+   "n": "Mirror"
+  },
+  "4136": {
+   "n": "from Hell",
+   "after": true
+  },
+  "4137": {
+   "n": "of Infinity",
+   "after": true
+  },
+  "4138": {
+   "n": "Satanic"
+  },
+  "4139": {
+   "n": "of Moonlight",
+   "after": true
+  },
+  "4140": {
+   "n": "Liberation"
+  },
+  "4141": {
+   "n": "Deadly"
+  },
+  "4142": {
+   "n": "of Berserk",
+   "after": true
+  },
+  "4143": {
+   "n": "Neutral"
+  },
+  "4144": {
+   "n": "of Eternity",
+   "after": true
+  },
+  "4145": {
+   "n": "of Bigmouth",
+   "after": true
+  },
+  "4146": {
+   "n": "Reflect"
+  },
+  "4147": {
+   "n": "Scythelike"
+  },
+  "4148": {
+   "n": "of Kirin",
+   "after": true
+  },
+  "4149": {
+   "n": "of Clear Sky",
+   "after": true
+  },
+  "4150": {
+   "n": "of Resist Spell Power",
+   "after": true
+  },
+  "4151": {
+   "n": "of Nature Destroyer",
+   "after": true
+  },
+  "4152": {
+   "n": "Juicy"
+  },
+  "4153": {
+   "n": "Cancer"
+  },
+  "4154": {
+   "n": "of Candy Smell",
+   "after": true
+  },
+  "4155": {
+   "n": "Fatal Goblin"
+  },
+  "4156": {
+   "n": "Fatal Frame"
+  },
+  "4157": {
+   "n": "Hard Hit"
+  },
+  "4158": {
+   "n": "of Slaughter",
+   "after": true
+  },
+  "4159": {
+   "n": "High Level"
+  },
+  "4160": {
+   "n": "High Level"
+  },
+  "4161": {
+   "n": "Anti-Magic"
+  },
+  "4162": {
+   "n": "of Blind",
+   "after": true
+  },
+  "4163": {
+   "n": "Wild"
+  },
+  "4164": {
+   "n": "Fisherman's"
+  },
+  "4165": {
+   "n": "Insect Soul Gain"
+  },
+  "4166": {
+   "n": "of Jinx",
+   "after": true
+  },
+  "4167": {
+   "n": "Beast Soul Gain"
+  },
+  "4168": {
+   "n": "of Doom",
+   "after": true
+  },
+  "4169": {
+   "n": "of Spell Master",
+   "after": true
+  },
+  "4170": {
+   "n": "of Hardening",
+   "after": true
+  },
+  "4171": {
+   "n": "Soul Drain"
+  },
+  "4172": {
+   "n": "Slash"
+  },
+  "4173": {
+   "n": "of Hypnotism",
+   "after": true
+  },
+  "4174": {
+   "n": "Deviant"
+  },
+  "4175": {
+   "n": "Pushing"
+  },
+  "4176": {
+   "n": "Fatal Serpent"
+  },
+  "4177": {
+   "n": "of Green Stone",
+   "after": true
+  },
+  "4178": {
+   "n": "of Bow Master",
+   "after": true
+  },
+  "4179": {
+   "n": "of Highlight",
+   "after": true
+  },
+  "4180": {
+   "n": "Dragonic Soul Gain"
+  },
+  "4181": {
+   "n": "of Silence",
+   "after": true
+  },
+  "4182": {
+   "n": "Demonic Soul Gain"
+  },
+  "4183": {
+   "n": "Werewolf"
+  },
+  "4184": {
+   "n": "Break"
+  },
+  "4185": {
+   "n": "of Wisdom",
+   "after": true
+  },
+  "4186": {
+   "n": "Strenuous"
+  },
+  "4187": {
+   "n": "of Gloomy Night",
+   "after": true
+  },
+  "4188": {
+   "n": "of Red Stone",
+   "after": true
+  },
+  "4189": {
+   "n": "of Misfortune"
+  },
+  "4190": {
+   "n": "of Laugh Maker",
+   "after": true
+  },
+  "4191": {
+   "n": "of Life Stream",
+   "after": true
+  },
+  "4192": {
+   "n": "Fatal Pisces"
+  },
+  "4193": {
+   "n": "of Patience",
+   "after": true
+  },
+  "4194": {
+   "n": "of Stun",
+   "after": true
+  },
+  "4195": {
+   "n": "of Blue Stone",
+   "after": true
+  },
+  "4196": {
+   "n": "of Jellopy",
+   "after": true
+  },
+  "4197": {
+   "n": "High Luck"
+  },
+  "4198": {
+   "n": "of True Sight",
+   "after": true
+  },
+  "4199": {
+   "n": "of Dash",
+   "after": true
+  },
+  "4200": {
+   "n": "of Resist Spell Power",
+   "after": true
+  },
+  "4201": {
+   "n": "Binding Stun"
+  },
+  "4202": {
+   "n": "Exorcism"
+  },
+  "4203": {
+   "n": "Burning"
+  },
+  "4204": {
+   "n": "Poacher's"
+  },
+  "4205": {
+   "n": "of Blue Cubic",
+   "after": true
+  },
+  "4206": {
+   "n": "Cubic"
+  },
+  "4207": {
+   "n": "Anti-Small"
+  },
+  "4208": {
+   "n": "of Full-energy",
+   "after": true
+  },
+  "4209": {
+   "n": "of Crack",
+   "after": true
+  },
+  "4210": {
+   "n": "Pressure"
+  },
+  "4211": {
+   "n": "Expert"
+  },
+  "4212": {
+   "n": "Knock-Back"
+  },
+  "4213": {
+   "n": "of Silence"
+  },
+  "4214": {
+   "n": "Man Eater"
+  },
+  "4215": {
+   "n": "of Food",
+   "after": true
+  },
+  "4216": {
+   "n": "of Freeze",
+   "after": true
+  },
+  "4217": {
+   "n": "Auto Healing"
+  },
+  "4218": {
+   "n": "Nightmare"
+  },
+  "4219": {
+   "n": "of Magic Stone",
+   "after": true
+  },
+  "4220": {
+   "n": "Faithful"
+  },
+  "4221": {
+   "n": "Insect Collector's"
+  },
+  "4222": {
+   "n": "of Sleep",
+   "after": true
+  },
+  "4223": {
+   "n": "of Sturdiness",
+   "after": true
+  },
+  "4224": {
+   "n": "of Rainy Day",
+   "after": true
+  },
+  "4225": {
+   "n": "Shooting"
+  },
+  "4226": {
+   "n": "High Level"
+  },
+  "4227": {
+   "n": "of Meat Smell",
+   "after": true
+  },
+  "4228": {
+   "n": "of Siesta",
+   "after": true
+  },
+  "4229": {
+   "n": "Faster"
+  },
+  "4230": {
+   "n": "of Coward",
+   "after": true
+  },
+  "4231": {
+   "n": "Charging"
+  },
+  "4232": {
+   "n": "Refresh"
+  },
+  "4233": {
+   "n": "Petit Luck"
+  },
+  "4234": {
+   "n": "of Stainless Mirror",
+   "after": true
+  },
+  "4235": {
+   "n": "Fallen Angel's"
+  },
+  "4236": {
+   "n": "of Protection",
+   "after": true
+  },
+  "4237": {
+   "n": "of God's Wrath",
+   "after": true
+  },
+  "4238": {
+   "n": "of Double Power",
+   "after": true
+  },
+  "4239": {
+   "n": "Veteran Hunter's"
+  },
+  "4240": {
+   "n": "of Resist Spell Power",
+   "after": true
+  },
+  "4241": {
+   "n": "Two Lucky Seven"
+  },
+  "4242": {
+   "n": "High Level"
+  },
+  "4243": {
+   "n": "of Escape",
+   "after": true
+  },
+  "4244": {
+   "n": "of Seeker",
+   "after": true
+  },
+  "4245": {
+   "n": "Assassin's"
+  },
+  "4246": {
+   "n": "Kill"
+  },
+  "4247": {
+   "n": "Starfish"
+  },
+  "4248": {
+   "n": "Shining Cross"
+  },
+  "4249": {
+   "n": "Exorcist's"
+  },
+  "4250": {
+   "n": "Anti-Large"
+  },
+  "4251": {
+   "n": "Invade"
+  },
+  "4252": {
+   "n": "of Four Leaf Clover",
+   "after": true
+  },
+  "4253": {
+   "n": "of Royal Guard",
+   "after": true
+  },
+  "4254": {
+   "n": "Anti-Medium"
+  },
+  "4255": {
+   "n": "Smash"
+  },
+  "4256": {
+   "n": "Desired"
+  },
+  "4257": {
+   "n": "Wing"
+  },
+  "4258": {
+   "n": "Prodigy"
+  },
+  "4259": {
+   "n": "of Nature",
+   "after": true
+  },
+  "4260": {
+   "n": "Confusion Guard"
+  },
+  "4261": {
+   "n": "Smoldering"
+  },
+  "4262": {
+   "n": "of Cloudy Day",
+   "after": true
+  },
+  "4263": {
+   "n": "Bloodlust"
+  },
+  "4264": {
+   "n": "Thunderbolt"
+  },
+  "4265": {
+   "n": "of Dawn",
+   "after": true
+  },
+  "4266": {
+   "n": "Resist Magic"
+  },
+  "4267": {
+   "n": "Dragon Slayer's"
+  },
+  "4268": {
+   "n": "Extending"
+  },
+  "4269": {
+   "n": "of Nightmare",
+   "after": true
+  },
+  "4270": {
+   "n": "of Venom",
+   "after": true
+  },
+  "4271": {
+   "n": "of Yellow Stone",
+   "after": true
+  },
+  "4272": {
+   "n": "Swift"
+  },
+  "4273": {
+   "n": "Shell"
+  },
+  "4274": {
+   "n": "Undead Soul Gain"
+  },
+  "4275": {
+   "n": "Undead Slayer's"
+  },
+  "4276": {
+   "n": "Crisis"
+  },
+  "4277": {
+   "n": "of Shooting Master",
+   "after": true
+  },
+  "4278": {
+   "n": "of Resist Spell Power",
+   "after": true
+  },
+  "4279": {
+   "n": "of Soul Collector",
+   "after": true
+  },
+  "4280": {
+   "n": "of Great Blessing"
+  },
+  "4281": {
+   "n": "Hard Working"
+  },
+  "4282": {
+   "n": "of Potion",
+   "after": true
+  },
+  "4283": {
+   "n": "Mana Sphere"
+  },
+  "4284": {
+   "n": "Gentle Touch"
+  },
+  "4285": {
+   "n": "Casted by Elf"
+  },
+  "4286": {
+   "n": "of Panic",
+   "after": true
+  },
+  "4287": {
+   "n": "of Resist Spell Power",
+   "after": true
+  },
+  "4288": {
+   "n": "High Level"
+  },
+  "4289": {
+   "n": "Plant Soul Gain"
+  },
+  "4290": {
+   "n": "Reflect"
+  },
+  "4291": {
+   "n": "Fatal Kobold"
+  },
+  "4292": {
+   "n": "Fatal Plant"
+  },
+  "4293": {
+   "n": "Chance"
+  },
+  "4294": {
+   "n": "Sneaky"
+  },
+  "4295": {
+   "n": "of Blackout",
+   "after": true
+  },
+  "4296": {
+   "n": "Greed"
+  },
+  "4297": {
+   "n": "Poaching"
+  },
+  "4298": {
+   "n": "of Chaos",
+   "after": true
+  },
+  "4299": {
+   "n": "Guardian"
+  },
+  "4300": {
+   "n": "of Poison Charge",
+   "after": true
+  },
+  "4301": {
+   "n": "of Bleeding",
+   "after": true
+  },
+  "4302": {
+   "n": "of High Risk",
+   "after": true
+  },
+  "4303": {
+   "n": "Mystic"
+  },
+  "4304": {
+   "n": "of Shield Master",
+   "after": true
+  },
+  "4305": {
+   "n": "Explosive"
+  },
+  "4306": {
+   "n": "of King",
+   "after": true
+  },
+  "4307": {
+   "n": "Seaforce Soul Gain"
+  },
+  "4308": {
+   "n": "Force Drain"
+  },
+  "4309": {
+   "n": "Hard Covering"
+  },
+  "4310": {
+   "n": "Fatal Evil"
+  },
+  "4311": {
+   "n": "Anti Evil Power"
+  },
+  "4312": {
+   "n": "Spirit"
+  },
+  "4313": {
+   "n": "of Bog",
+   "after": true
+  },
+  "4314": {
+   "n": "Frame Guard"
+  },
+  "4315": {
+   "n": "of Stone Curse",
+   "after": true
+  },
+  "4316": {
+   "n": "Angelic Soul Gain"
+  },
+  "4317": {
+   "n": "Aural"
+  },
+  "4318": {
+   "n": "Storm-Bringer"
+  },
+  "4319": {
+   "n": "of Sword Master",
+   "after": true
+  },
+  "4320": {
+   "n": "Meteoric"
+  },
+  "4321": {
+   "n": "of Polymorph",
+   "after": true
+  },
+  "4322": {
+   "n": "of Retaliation",
+   "after": true
+  },
+  "4323": {
+   "n": "Frost"
+  },
+  "4324": {
+   "n": "Arctic"
+  },
+  "4325": {
+   "n": "Vicious"
+  },
+  "4326": {
+   "n": "of Fish Smell",
+   "after": true
+  },
+  "4327": {
+   "n": "Spell Flow"
+  },
+  "4328": {
+   "n": "Hyper"
+  },
+  "4329": {
+   "n": "Soul Gain"
+  },
+  "4330": {
+   "n": "Curse Lift"
+  },
+  "4331": {
+   "n": "of Evade",
+   "after": true
+  },
+  "4332": {
+   "n": "of Talent",
+   "after": true
+  },
+  "4333": {
+   "n": "of Chaotic Venom",
+   "after": true
+  },
+  "4334": {
+   "n": "Anti-Sniping"
+  },
+  "4335": {
+   "n": "Gnome"
+  },
+  "4336": {
+   "n": "Cracking"
+  },
+  "4337": {
+   "n": "of Wild Cat",
+   "after": true
+  },
+  "4338": {
+   "n": "of Vital Switching",
+   "after": true
+  },
+  "4339": {
+   "n": "of Stone Wall",
+   "after": true
+  },
+  "4340": {
+   "n": "of Requiem",
+   "after": true
+  },
+  "4341": {
+   "n": "Disarm"
+  },
+  "4342": {
+   "n": "Mammoth"
+  },
+  "4343": {
+   "n": "of Creator",
+   "after": true
+  },
+  "4344": {
+   "n": "of Value",
+   "after": true
+  },
+  "4345": {
+   "n": "Sylph"
+  },
+  "4346": {
+   "n": "of Power Switching",
+   "after": true
+  },
+  "4347": {
+   "n": "Stamina"
+  },
+  "4348": {
+   "n": "Gangster"
+  },
+  "4349": {
+   "n": "Anti Arrow"
+  },
+  "4350": {
+   "n": "Undine"
+  },
+  "4351": {
+   "n": "Low Level"
+  },
+  "4352": {
+   "n": "of Regeneration",
+   "after": true
+  },
+  "4353": {
+   "n": "of Rejuvenation",
+   "after": true
+  },
+  "4354": {
+   "n": "of Stability",
+   "after": true
+  },
+  "4355": {
+   "n": "Healthy"
+  },
+  "4356": {
+   "n": "Magic Cancel"
+  },
+  "4357": {
+   "n": "of Fury",
+   "after": true
+  },
+  "4358": {
+   "n": "Lost-Power"
+  },
+  "4359": {
+   "n": "of Shadow",
+   "after": true
+  },
+  "4360": {
+   "n": "Assassin"
+  },
+  "4361": {
+   "n": "of Holgren",
+   "after": true
+  },
+  "4362": {
+   "n": "Hit"
+  },
+  "4363": {
+   "n": "Protection"
+  },
+  "4364": {
+   "n": "of Magic Sealing",
+   "after": true
+  },
+  "4365": {
+   "n": "of Tempest",
+   "after": true
+  },
+  "4366": {
+   "n": "of Caster",
+   "after": true
+  },
+  "4367": {
+   "n": "of Squeezing",
+   "after": true
+  },
+  "4368": {
+   "n": "Rapid"
+  },
+  "4369": {
+   "n": "of Luck Switching",
+   "after": true
+  },
+  "4370": {
+   "n": "Weaken"
+  },
+  "4371": {
+   "n": "of Paladin",
+   "after": true
+  },
+  "4372": {
+   "n": "Life Stream"
+  },
+  "4373": {
+   "n": "Cursed"
+  },
+  "4374": {
+   "n": "of Vision",
+   "after": true
+  },
+  "4375": {
+   "n": "Extra High Level"
+  },
+  "4376": {
+   "n": "Mana Pool"
+  },
+  "4377": {
+   "n": "of Sweety",
+   "after": true
+  },
+  "4378": {
+   "n": "Low Level"
+  },
+  "4379": {
+   "n": "Low Level"
+  },
+  "4380": {
+   "n": "Salamander"
+  },
+  "4381": {
+   "n": "of Wanderer",
+   "after": true
+  },
+  "4382": {
+   "n": "of Scholar",
+   "after": true
+  },
+  "4383": {
+   "n": "Chaotic"
+  },
+  "4384": {
+   "n": "Magic Eater"
+  },
+  "4385": {
+   "n": "Drink"
+  },
+  "4386": {
+   "n": "of Magic Shelter",
+   "after": true
+  },
+  "4387": {
+   "n": "of Agility Switching",
+   "after": true
+  },
+  "4388": {
+   "n": "Soul"
+  },
+  "4389": {
+   "n": "Elemental"
+  },
+  "4390": {
+   "n": "Bleeding"
+  },
+  "4391": {
+   "n": "Snack"
+  },
+  "4392": {
+   "n": "of Dexterity Switching",
+   "after": true
+  },
+  "4393": {
+   "n": "of Intelligence Switching",
+   "after": true
+  },
+  "4394": {
+   "n": "Divine Cross"
+  },
+  "4395": {
+   "n": "Slug"
+  },
+  "4396": {
+   "n": "Dull"
+  },
+  "4397": {
+   "n": "Thickheaded"
+  },
+  "4398": {
+   "n": "Darkness"
+  },
+  "4399": {
+   "n": "Penetration"
+  },
+  "4400": {
+   "n": "of Temptation",
+   "after": true
+  },
+  "4401": {
+   "n": "Swift"
+  },
+  "4402": {
+   "n": "Strange"
+  },
+  "4403": {
+   "n": "of Reload",
+   "after": true
+  },
+  "4404": {
+   "n": "of Chaotic Bleeding",
+   "after": true
+  },
+  "4405": {
+   "n": "of Magic Mirror",
+   "after": true
+  },
+  "4406": {
+   "n": "Twinkle"
+  },
+  "4407": {
+   "n": "of Elimination",
+   "after": true
+  },
+  "4408": {
+   "n": "Abyss"
+  },
+  "4409": {
+   "n": "Panic"
+  },
+  "4410": {
+   "n": "Madness"
+  },
+  "4411": {
+   "n": "Arta's"
+  },
+  "4412": {
+   "n": "Aria"
+  },
+  "4413": {
+   "n": "Resistance"
+  },
+  "4414": {
+   "n": "Gorgon's"
+  },
+  "4415": {
+   "n": "Sweet"
+  },
+  "4416": {
+   "n": "of Yana",
+   "after": true
+  },
+  "4417": {
+   "n": "of Flow",
+   "after": true
+  },
+  "4418": {
+   "n": "of Hail",
+   "after": true
+  },
+  "4419": {
+   "n": "Jack Frost's"
+  },
+  "4420": {
+   "n": "of Comfort",
+   "after": true
+  },
+  "4421": {
+   "n": "Chain Hook"
+  },
+  "4422": {
+   "n": "Breeze"
+  },
+  "4423": {
+   "n": "of Sharkia",
+   "after": true
+  },
+  "4424": {
+   "n": "Stony"
+  },
+  "4425": {
+   "n": "Beast"
+  },
+  "4426": {
+   "n": "Exceeding"
+  },
+  "4427": {
+   "n": "Force"
+  },
+  "4428": {
+   "n": "Shaft"
+  },
+  "4429": {
+   "n": "Nessus"
+  },
+  "4430": {
+   "n": "of Inferno",
+   "after": true
+  },
+  "4431": {
+   "n": "Stygian"
+  },
+  "4432": {
+   "n": "Scorching"
+  },
+  "4433": {
+   "n": "of Ignis",
+   "after": true
+  },
+  "4434": {
+   "n": "Miner's"
+  },
+  "4435": {
+   "n": "Outrageous"
+  },
+  "4436": {
+   "n": "Lunatic"
+  },
+  "4437": {
+   "n": "Rabid"
+  },
+  "4438": {
+   "n": "Mental"
+  },
+  "4439": {
+   "n": "of Anathema",
+   "after": true
+  },
+  "4440": {
+   "n": "Ignore"
+  },
+  "4441": {
+   "n": "Arrogant"
+  },
+  "4442": {
+   "n": "of Basis",
+   "after": true
+  },
+  "4443": {
+   "n": "of Saharic",
+   "after": true
+  },
+  "4444": {
+   "n": "of Underneath",
+   "after": true
+  },
+  "4445": {
+   "n": "of Windy",
+   "after": true
+  },
+  "4446": {
+   "n": "Sharpen"
+  },
+  "4447": {
+   "n": "of Envenom",
+   "after": true
+  },
+  "4448": {
+   "n": "of Damned",
+   "after": true
+  },
+  "4449": {
+   "n": "of Hallowed",
+   "after": true
+  },
+  "4450": {
+   "n": "Surplus"
+  },
+  "4451": {
+   "n": "of Excess",
+   "after": true
+  },
+  "4452": {
+   "n": "Magical"
+  },
+  "4453": {
+   "n": "Violent"
+  },
+  "4454": {
+   "n": "Sorry"
+  },
+  "4455": {
+   "n": "Love"
+  },
+  "4456": {
+   "n": "Spell Master"
+  },
+  "4457": {
+   "n": "Psychic"
+  },
+  "4458": {
+   "n": "of Illusion",
+   "after": true
+  },
+  "4459": {
+   "n": "of Fast",
+   "after": true
+  },
+  "4460": {
+   "n": "of Healing",
+   "after": true
+  },
+  "4461": {
+   "n": "of Sharp",
+   "after": true
+  },
+  "4462": {
+   "n": "Prime Defense"
+  },
+  "4463": {
+   "n": "Prime Attack"
+  },
+  "4464": {
+   "n": "Fatal"
+  },
+  "4465": {
+   "n": "Sweep"
+  },
+  "4466": {
+   "n": "Straight Shooting"
+  },
+  "4467": {
+   "n": "Heavy"
+  },
+  "4468": {
+   "n": "Pollution"
+  },
+  "4469": {
+   "n": "Marine"
+  },
+  "4470": {
+   "n": "Botany"
+  },
+  "4471": {
+   "n": "Draco"
+  },
+  "4472": {
+   "n": "Carnivore"
+  },
+  "4473": {
+   "n": "Undead"
+  },
+  "4474": {
+   "n": "Mortal"
+  },
+  "4475": {
+   "n": "Intangible"
+  },
+  "4476": {
+   "n": "Entomic"
+  },
+  "4477": {
+   "n": "Demonic"
+  },
+  "4478": {
+   "n": "Tell me"
+  },
+  "4479": {
+   "n": "Why did you"
+  },
+  "4480": {
+   "n": "of Half Reload"
+  },
+  "4481": {
+   "n": "Half Jack Frost"
+  },
+  "4482": {
+   "n": "of Half Regeneration",
+   "after": true
+  },
+  "4483": {
+   "n": "Half Spiritual"
+  },
+  "4484": {
+   "n": "of Half Gemstone",
+   "after": true
+  },
+  "4485": {
+   "n": "Half Abyss"
+  },
+  "4486": {
+   "n": "of Half Bigmouth",
+   "after": true
+  },
+  "4487": {
+   "n": "Half Inferno"
+  },
+  "4488": {
+   "n": "of Half Doom",
+   "after": true
+  },
+  "4489": {
+   "n": "of Half Kirin",
+   "after": true
+  },
+  "4490": {
+   "n": "Half Hasty"
+  },
+  "4491": {
+   "n": "of Half Squeezing",
+   "after": true
+  },
+  "4492": {
+   "n": "Half Neutral"
+  },
+  "4493": {
+   "n": "Half High Risk"
+  },
+  "4494": {
+   "n": "Half Explosive"
+  },
+  "4495": {
+   "n": "of Half Protection",
+   "after": true
+  },
+  "4496": {
+   "n": "of Half Infinity",
+   "after": true
+  },
+  "4497": {
+   "n": "Half Storm-Bringer"
+  },
+  "4498": {
+   "n": "Half Mana Pool"
+  },
+  "4499": {
+   "n": "Half Bloodlust"
+  },
+  "4500": {
+   "n": "Half Mirror"
+  },
+  "4501": {
+   "n": "Half Protection"
+  },
+  "4502": {
+   "n": "Half Holgren",
+   "after": true
+  },
+  "4503": {
+   "n": "of Half Vision",
+   "after": true
+  },
+  "4504": {
+   "n": "Half Bearer's"
+  },
+  "4505": {
+   "n": "of Mad Witch",
+   "after": true
+  },
+  "4506": {
+   "n": "of Archer",
+   "after": true
+  },
+  "4507": {
+   "n": "Scaraba"
+  },
+  "4508": {
+   "n": "of Mad Berserker",
+   "after": true
+  },
+  "4509": {
+   "n": "Insectproof"
+  },
+  "4510": {
+   "n": "Black-out"
+  },
+  "4511": {
+   "n": "Silentium"
+  },
+  "4512": {
+   "n": "of Acolyte",
+   "after": true
+  },
+  "4513": {
+   "n": "of Thief",
+   "after": true
+  },
+  "4514": {
+   "n": "Exorcism"
+  },
+  "4515": {
+   "n": "Flora"
+  },
+  "4516": {
+   "n": "of Stone Wall",
+   "after": true
+  },
+  "4517": {
+   "n": "of Magician",
+   "after": true
+  },
+  "4518": {
+   "n": "Burning"
+  },
+  "4519": {
+   "n": "Seraphim"
+  },
+  "4520": {
+   "n": "Screaming"
+  },
+  "4521": {
+   "n": "Mortal Blow"
+  },
+  "4522": {
+   "n": "Cold"
+  },
+  "4523": {
+   "n": "Aquarius"
+  },
+  "4524": {
+   "n": "of Swordman",
+   "after": true
+  },
+  "4525": {
+   "n": "Sweeping"
+  },
+  "4526": {
+   "n": "of Magic Defense",
+   "after": true
+  },
+  "4527": {
+   "n": "of Defense",
+   "after": true
+  },
+  "4528": {
+   "n": "Mental Power"
+  },
+  "4529": {
+   "n": "Strength"
+  },
+  "4530": {
+   "n": "of Merchant",
+   "after": true
+  },
+  "4531": {
+   "n": "Under Curse"
+  },
+  "4532": {
+   "n": "Sprinting"
+  },
+  "4533": {
+   "n": "Blinding"
+  },
+  "4534": {
+   "n": "Water Bomb"
+  },
+  "4536": {
+   "n": "Half Beast"
+  },
+  "4537": {
+   "n": "Half Perfect"
+  },
+  "4538": {
+   "n": "Half Life Stream"
+  },
+  "4539": {
+   "n": "Half Arrogant"
+  },
+  "4540": {
+   "n": "Half Crisis"
+  },
+  "4541": {
+   "n": "of Half Tempest",
+   "after": true
+  },
+  "4542": {
+   "n": "of Half Magic Shelter",
+   "after": true
+  },
+  "4543": {
+   "n": "Half Arctic"
+  },
+  "4544": {
+   "n": "Half Curse Lift"
+  },
+  "4545": {
+   "n": "Novice"
+  },
+  "4546": {
+   "n": "Screwed"
+  },
+  "4547": {
+   "n": "Half Exceeding"
+  },
+  "4548": {
+   "n": "Half Nessus"
+  },
+  "4549": {
+   "n": "of Half True Sight",
+   "after": true
+  },
+  "4550": {
+   "n": "Half Shaft"
+  },
+  "4556": {
+   "n": "Power Ward"
+  },
+  "4557": {
+   "n": "of Spell Power",
+   "after": true
+  },
+  "4559": {
+   "n": "Blitz"
+  },
+  "4560": {
+   "n": "of Bragi",
+   "after": true
+  },
+  "4561": {
+   "n": "of Magic Protection",
+   "after": true
+  },
+  "4562": {
+   "n": "of Infiltration",
+   "after": true
+  },
+  "4563": {
+   "n": "of Hydrochloric Acid",
+   "after": true
+  },
+  "4564": {
+   "n": "of Gentleman",
+   "after": true
+  },
+  "4565": {
+   "n": "of Grand Cross",
+   "after": true
+  },
+  "4566": {
+   "n": "of Fortune",
+   "after": true
+  },
+  "4567": {
+   "n": "of Bard",
+   "after": true
+  },
+  "4568": {
+   "n": "of Gnosis",
+   "after": true
+  },
+  "4569": {
+   "n": "of Origin",
+   "after": true
+  },
+  "4570": {
+   "n": "of Fast Recovery",
+   "after": true
+  },
+  "4571": {
+   "n": "of Bind",
+   "after": true
+  },
+  "4572": {
+   "n": "of Solidity",
+   "after": true
+  },
+  "4573": {
+   "n": "of Dancer",
+   "after": true
+  },
+  "4574": {
+   "n": "Sword Master"
+  },
+  "4575": {
+   "n": "Shortcut"
+  },
+  "4576": {
+   "n": "Educe"
+  },
+  "4577": {
+   "n": "Psychic"
+  },
+  "4578": {
+   "n": "Fear"
+  },
+  "4579": {
+   "n": "Morning Star"
+  },
+  "4580": {
+   "n": "of Devilish",
+   "after": true
+  },
+  "4581": {
+   "n": "Toilet"
+  },
+  "4582": {
+   "n": "Stamina"
+  },
+  "4583": {
+   "n": "of Poison Grass",
+   "after": true
+  },
+  "4584": {
+   "n": "Vampiric"
+  },
+  "4585": {
+   "n": "Cursed"
+  },
+  "4586": {
+   "n": "of Wind",
+   "after": true
+  },
+  "4587": {
+   "n": "Slasher"
+  },
+  "4588": {
+   "n": "of Power",
+   "after": true
+  },
+  "4589": {
+   "n": "of Richness",
+   "after": true
+  },
+  "4590": {
+   "n": "of Helpless",
+   "after": true
+  },
+  "4591": {
+   "n": "of Bloody",
+   "after": true
+  },
+  "4592": {
+   "n": "of Stone Curse",
+   "after": true
+  },
+  "4593": {
+   "n": "of Shooter",
+   "after": true
+  },
+  "4594": {
+   "n": "of Death Blow",
+   "after": true
+  },
+  "4595": {
+   "n": "of Acid",
+   "after": true
+  },
+  "4596": {
+   "n": "of Intellectual",
+   "after": true
+  },
+  "4597": {
+   "n": "of Water",
+   "after": true
+  },
+  "4598": {
+   "n": "of Telekinesis",
+   "after": true
+  },
+  "4599": {
+   "n": "of Fire",
+   "after": true
+  },
+  "4600": {
+   "n": "of Earth",
+   "after": true
+  },
+  "4601": {
+   "n": "of Explosion",
+   "after": true
+  },
+  "4602": {
+   "n": "of Fury",
+   "after": true
+  },
+  "4603": {
+   "n": "Evil Spirit"
+  },
+  "4604": {
+   "n": "Evil God"
+  },
+  "4605": {
+   "n": "of Hunger",
+   "after": true
+  },
+  "4606": {
+   "n": "of Revenge",
+   "after": true
+  },
+  "4607": {
+   "n": "Librarian"
+  },
+  "4608": {
+   "n": "Knight's"
+  },
+  "4609": {
+   "n": "Knight's"
+  },
+  "4610": {
+   "n": "of Bless",
+   "after": true
+  },
+  "4623": {
+   "n": "11th Anniversary"
+  },
+  "4625": {
+   "n": "Sage"
+  },
+  "4626": {
+   "n": "Echo"
+  },
+  "4627": {
+   "n": "Vibration"
+  },
+  "4628": {
+   "n": "of Invisible Horror",
+   "after": true
+  },
+  "4629": {
+   "n": "Sterile"
+  },
+  "4630": {
+   "n": "of Time Keeper",
+   "after": true
+  },
+  "4631": {
+   "n": "Volant"
+  },
+  "4632": {
+   "n": "Current"
+  },
+  "4633": {
+   "n": "Queen Bird"
+  },
+  "4634": {
+   "n": "Fatal"
+  },
+  "4635": {
+   "n": "Solid"
+  },
+  "4636": {
+   "n": "of Legion",
+   "after": true
+  },
+  "4637": {
+   "n": "of Drain",
+   "after": true
+  },
+  "4638": {
+   "n": "Plaid"
+  },
+  "4639": {
+   "n": "of Force",
+   "after": true
+  },
+  "4640": {
+   "n": "of Intelligence",
+   "after": true
+  },
+  "4641": {
+   "n": "of Soul Gathering",
+   "after": true
+  },
+  "4642": {
+   "n": "Side Step"
+  },
+  "4643": {
+   "n": "Strike"
+  },
+  "4644": {
+   "n": "Magic Shield"
+  },
+  "4645": {
+   "n": "Physical"
+  },
+  "4646": {
+   "n": "Chimera"
+  },
+  "4647": {
+   "n": "Immortal"
+  },
+  "4648": {
+   "n": "Provocation"
+  },
+  "4649": {
+   "n": "Fatal Blow"
+  },
+  "4650": {
+   "n": "Magic Stun"
+  },
+  "4651": {
+   "n": "Monarch"
+  },
+  "4652": {
+   "n": "Punishment"
+  },
+  "4653": {
+   "n": "Immortal Beast"
+  },
+  "4654": {
+   "n": "Tomb Raider"
+  },
+  "4655": {
+   "n": "Grave Keeper"
+  },
+  "4656": {
+   "n": "Hypnotist"
+  },
+  "4657": {
+   "n": "Flaming"
+  },
+  "4658": {
+   "n": "of Magic",
+   "after": true
+  },
+  "4659": {
+   "n": "Adventurer"
+  },
+  "4660": {
+   "n": "of Will",
+   "after": true
+  },
+  "4661": {
+   "n": "of Strength",
+   "after": true
+  },
+  "4662": {
+   "n": "Trinity"
+  },
+  "4663": {
+   "n": "Pretty"
+  },
+  "4664": {
+   "n": "Pure"
+  },
+  "4665": {
+   "n": "Honey"
+  },
+  "4666": {
+   "n": "Sugar"
+  },
+  "4667": {
+   "n": "Wake"
+  },
+  "4668": {
+   "n": "Silky"
+  },
+  "4669": {
+   "n": "Gust"
+  },
+  "4670": {
+   "n": "Blaze"
+  },
+  "4671": {
+   "n": "Sorcerer's",
+   "after": true
+  },
+  "4672": {
+   "n": "Sura's",
+   "after": true
+  },
+  "4673": {
+   "n": "Minstrel's",
+   "after": true
+  },
+  "4674": {
+   "n": "Guillotine Cross's",
+   "after": true
+  },
+  "4675": {
+   "n": "Archbishop's",
+   "after": true
+  },
+  "4676": {
+   "n": "Ranger's",
+   "after": true
+  },
+  "4677": {
+   "n": "Mechanic's",
+   "after": true
+  },
+  "4678": {
+   "n": "Warlock's",
+   "after": true
+  },
+  "4679": {
+   "n": "Rune Knight's",
+   "after": true
+  },
+  "4680": {
+   "n": "Royal Guard's",
+   "after": true
+  },
+  "4681": {
+   "n": "Geneticist's",
+   "after": true
+  },
+  "4682": {
+   "n": "Shadow Chaser's",
+   "after": true
+  },
+  "4683": {
+   "n": "Wanderer's",
+   "after": true
+  },
+  "4684": {
+   "n": "Cross"
+  },
+  "4685": {
+   "n": "Adoramus"
+  },
+  "4686": {
+   "n": "Crimson"
+  },
+  "4687": {
+   "n": "Cluster"
+  },
+  "4688": {
+   "n": "Power Storm"
+  },
+  "4689": {
+   "n": "Ignition"
+  },
+  "4690": {
+   "n": "Drive"
+  },
+  "4691": {
+   "n": "Neo Storm"
+  },
+  "4692": {
+   "n": "Varetyr"
+  },
+  "4693": {
+   "n": "Rampage Blaster"
+  },
+  "4694": {
+   "n": "Decoy"
+  },
+  "4695": {
+   "n": "Rainstorm"
+  },
+  "4696": {
+   "n": "Sound Shock"
+  },
+  "4697": {
+   "n": "Overload"
+  },
+  "4698": {
+   "n": "Boomerang"
+  },
+  "4699": {
+   "n": "Dual Cannon"
+  },
+  "8000": {
+   "n": "Sanguine"
+  },
+  "8001": {
+   "n": "of Premeditation",
+   "after": true
+  },
+  "8089": {
+   "n": "Antichemical"
+  },
+  "8090": {
+   "n": "Soulbreaking"
+  },
+  "8091": {
+   "n": "Herbicidal"
+  },
+  "8092": {
+   "n": "Wraithguard"
+  },
+  "8093": {
+   "n": "of Scourging",
+   "after": true
+  },
+  "8094": {
+   "n": "of Rime",
+   "after": true
+  },
+  "8095": {
+   "n": "of Abaddon",
+   "after": true
+  },
+  "8211": {
+   "n": "of Earthen Vitality",
+   "after": true
+  },
+  "8212": {
+   "n": "Gluttonous"
+  },
+  "8213": {
+   "n": "Bubble Bursting"
+  },
+  "8214": {
+   "n": "of Porings",
+   "after": true
+  },
+  "8216": {
+   "n": "Quicksilver"
+  },
+  "8217": {
+   "n": "of Thor",
+   "after": true
+  },
+  "8218": {
+   "n": "of Transfusion",
+   "after": true
+  },
+  "8219": {
+   "n": "of Greed",
+   "after": true
+  },
+  "8233": {
+   "n": "of Triage",
+   "after": true
+  },
+  "8234": {
+   "n": "of Guards",
+   "after": true
+  },
+  "8235": {
+   "n": "of Magical Fortitude",
+   "after": true
+  },
+  "8236": {
+   "n": "of Subterfuge",
+   "after": true
+  },
+  "8237": {
+   "n": "Deeply Discounted"
+  },
+  "8238": {
+   "n": "of Brutality",
+   "after": true
+  },
+  "8239": {
+   "n": "Magic Missile"
+  },
+  "8240": {
+   "n": "of the Holy Dragon",
+   "after": true
+  },
+  "8241": {
+   "n": "Frostflare"
+  },
+  "8242": {
+   "n": "Soul Tapping"
+  },
+  "8243": {
+   "n": "Earthen Gale"
+  },
+  "8244": {
+   "n": "of Sanctuary",
+   "after": true
+  },
+  "8245": {
+   "n": "Second Chance"
+  },
+  "8246": {
+   "n": "Exorcising"
+  },
+  "8247": {
+   "n": "Bento Box"
+  },
+  "8248": {
+   "n": "Clearcasting"
+  },
+  "27000": {
+   "n": "of Sorrow",
+   "after": true
+  },
+  "27001": {
+   "n": "of Hatred",
+   "after": true
+  },
+  "27002": {
+   "n": "of Frustration",
+   "after": true
+  },
+  "27003": {
+   "n": "of Chill",
+   "after": true
+  },
+  "27004": {
+   "n": "of Wrath",
+   "after": true
+  },
+  "27005": {
+   "n": "of Madness",
+   "after": true
+  },
+  "27006": {
+   "n": "of Despair",
+   "after": true
+  },
+  "27007": {
+   "n": "of Laugh",
+   "after": true
+  },
+  "27008": {
+   "n": "Rogue"
+  },
+  "27009": {
+   "n": "Evil God"
+  },
+  "27010": {
+   "n": "Knight"
+  },
+  "27011": {
+   "n": "Knight's"
+  },
+  "27012": {
+   "n": "Active Protection"
+  },
+  "27013": {
+   "n": "Vulcan"
+  },
+  "27014": {
+   "n": "Mirage"
+  },
+  "27015": {
+   "n": "Restore"
+  },
+  "27016": {
+   "n": "All Scan"
+  },
+  "27017": {
+   "n": "Temporary"
+  },
+  "27018": {
+   "n": "Overclock"
+  },
+  "27019": {
+   "n": "Debug"
+  },
+  "27020": {
+   "n": "System Error"
+  },
+  "27021": {
+   "n": "Brick King"
+  },
+  "27022": {
+   "n": "of Blaze Barrier",
+   "after": true
+  },
+  "27023": {
+   "n": "Milk Master"
+  },
+  "27024": {
+   "n": "Rabbit"
+  },
+  "27025": {
+   "n": "Noble"
+  },
+  "27026": {
+   "n": "Blazing"
+  },
+  "27027": {
+   "n": "Flaming"
+  },
+  "27028": {
+   "n": "Searing"
+  },
+  "27029": {
+   "n": "Flame Eater"
+  },
+  "27030": {
+   "n": "Firebug"
+  },
+  "27031": {
+   "n": "Extensive"
+  },
+  "27032": {
+   "n": "Astral"
+  },
+  "27033": {
+   "n": "Madman's"
+  },
+  "27034": {
+   "n": "Gust"
+  },
+  "27035": {
+   "n": "Twisted"
+  },
+  "27036": {
+   "n": "Sharp"
+  },
+  "27037": {
+   "n": "Queen Bird"
+  },
+  "27038": {
+   "n": "Spike"
+  },
+  "27039": {
+   "n": "of Big Runaway",
+   "after": true
+  },
+  "27040": {
+   "n": "Brinicle"
+  },
+  "27041": {
+   "n": "High Tension"
+  },
+  "27042": {
+   "n": "of Interrupt",
+   "after": true
+  },
+  "27043": {
+   "n": "of Mudd Candy",
+   "after": true
+  },
+  "27044": {
+   "n": "of Mudd Sherbet",
+   "after": true
+  },
+  "27045": {
+   "n": "of Soul Gathering",
+   "after": true
+  },
+  "27050": {
+   "n": "Dual Mirage"
+  },
+  "27051": {
+   "n": "Dual Spiritual"
+  },
+  "27052": {
+   "n": "Dual Whale"
+  },
+  "27053": {
+   "n": "Dual Jungle"
+  },
+  "27054": {
+   "n": "Dual Genie"
+  },
+  "27055": {
+   "n": "of Sorcerer"
+  },
+  "27056": {
+   "n": "of Sura"
+  },
+  "27057": {
+   "n": "of Minstrel"
+  },
+  "27058": {
+   "n": "of Guillotine Cross"
+  },
+  "27059": {
+   "n": "of Arc Bishop"
+  },
+  "27060": {
+   "n": "of Ranger"
+  },
+  "27061": {
+   "n": "of Mechanic"
+  },
+  "27062": {
+   "n": "of Warlock"
+  },
+  "27063": {
+   "n": "of Rune Knight"
+  },
+  "27064": {
+   "n": "of Royal guard"
+  },
+  "27065": {
+   "n": "of Geneticist"
+  },
+  "27066": {
+   "n": "of Shadow Chaser"
+  },
+  "27067": {
+   "n": "of Wanderer"
+  },
+  "27068": {
+   "n": "Venom Pressure"
+  },
+  "27069": {
+   "n": "Judex"
+  },
+  "27070": {
+   "n": "Comet"
+  },
+  "27071": {
+   "n": "Cluster"
+  },
+  "27072": {
+   "n": "Magma"
+  },
+  "27073": {
+   "n": "Ignition"
+  },
+  "27074": {
+   "n": "Drive"
+  },
+  "27075": {
+   "n": "Crazy"
+  },
+  "27076": {
+   "n": "Cloud Kill"
+  },
+  "27077": {
+   "n": "Lion's"
+  },
+  "27078": {
+   "n": "Triangle"
+  },
+  "27079": {
+   "n": "Reverberation"
+  },
+  "27080": {
+   "n": "Vibration"
+  },
+  "27081": {
+   "n": "Moonlight"
+  },
+  "27082": {
+   "n": "Foxtail"
+  },
+  "27083": {
+   "n": "of Growth",
+   "after": true
+  },
+  "27084": {
+   "n": "Creepy"
+  },
+  "27085": {
+   "n": "Delicate"
+  },
+  "27086": {
+   "n": "Shooter"
+  },
+  "27087": {
+   "n": "Truth"
+  },
+  "27088": {
+   "n": "of Agitation",
+   "after": true
+  },
+  "27089": {
+   "n": "System Boost"
+  },
+  "27090": {
+   "n": "of Mad Wizard",
+   "after": true
+  },
+  "27091": {
+   "n": "of Mad Warrior",
+   "after": true
+  },
+  "27092": {
+   "n": "Overclocking"
+  },
+  "27093": {
+   "n": "of Sniper",
+   "after": true
+  },
+  "27094": {
+   "n": "of physical",
+   "after": true
+  },
+  "27095": {
+   "n": "of Mad Biscuit",
+   "after": true
+  },
+  "27096": {
+   "n": "of Expert",
+   "after": true
+  },
+  "27097": {
+   "n": "of Angelman",
+   "after": true
+  },
+  "27098": {
+   "n": "Punisher's"
+  },
+  "27099": {
+   "n": "Judge's"
+  },
+  "27100": {
+   "n": "of Clap",
+   "after": true
+  },
+  "27101": {
+   "n": "Sorcery"
+  },
+  "27102": {
+   "n": "Fire Immune"
+  },
+  "27103": {
+   "n": "Vigor"
+  },
+  "27104": {
+   "n": "Compassion"
+  },
+  "27105": {
+   "n": "Sorrow"
+  },
+  "27106": {
+   "n": "Musician's"
+  },
+  "27107": {
+   "n": "Dancing"
+  },
+  "27108": {
+   "n": "Singing"
+  },
+  "27109": {
+   "n": "of Jitterbug",
+   "after": true
+  },
+  "27110": {
+   "n": "Quick"
+  },
+  "27111": {
+   "n": "Refreshing"
+  },
+  "27112": {
+   "n": "Sturdy"
+  },
+  "27113": {
+   "n": "Frozen"
+  },
+  "27114": {
+   "n": "Solid"
+  },
+  "27115": {
+   "n": "Wise"
+  },
+  "27116": {
+   "n": "Dual Critical"
+  },
+  "27117": {
+   "n": "Reduce"
+  },
+  "27118": {
+   "n": "of Pierce",
+   "after": true
+  },
+  "27119": {
+   "n": "of Turtle Shell",
+   "after": true
+  },
+  "27120": {
+   "n": "Recovery"
+  },
+  "27121": {
+   "n": "Serrasalmus"
+  },
+  "27122": {
+   "n": "Tidal wave"
+  },
+  "27123": {
+   "n": "Insect Collector's"
+  },
+  "27124": {
+   "n": "Hunter's"
+  },
+  "27125": {
+   "n": "Aqua Benedict"
+  },
+  "27126": {
+   "n": "Python"
+  },
+  "27127": {
+   "n": "of Abyss",
+   "after": true
+  },
+  "27128": {
+   "n": "Ancient Blood"
+  },
+  "27129": {
+   "n": "Hundred"
+  },
+  "27130": {
+   "n": "Expansion"
+  },
+  "27131": {
+   "n": "Arrow Storm"
+  },
+  "27132": {
+   "n": "Cannon"
+  },
+  "27133": {
+   "n": "Rolling"
+  },
+  "27134": {
+   "n": "Adoramus"
+  },
+  "27135": {
+   "n": "Over Brand"
+  },
+  "27136": {
+   "n": "Diamond Dust"
+  },
+  "27137": {
+   "n": "Rainstorm"
+  },
+  "27138": {
+   "n": "Tornado"
+  },
+  "27139": {
+   "n": "Bomb"
+  },
+  "27140": {
+   "n": "of heaven and earth",
+   "after": true
+  },
+  "27141": {
+   "n": "Volcanic"
+  },
+  "27142": {
+   "n": "Assault"
+  },
+  "27143": {
+   "n": "of Death Valley",
+   "after": true
+  },
+  "27144": {
+   "n": "Elemental"
+  },
+  "27145": {
+   "n": "of Deep Impact",
+   "after": true
+  },
+  "27146": {
+   "n": "Cutie"
+  },
+  "27147": {
+   "n": "Intensive"
+  },
+  "27148": {
+   "n": "Deft"
+  },
+  "27149": {
+   "n": "Sniper"
+  },
+  "27150": {
+   "n": "of High Level",
+   "after": true
+  },
+  "27151": {
+   "n": "of Freezing"
+  },
+  "27152": {
+   "n": "Prompt"
+  },
+  "27157": {
+   "n": "of Aqua Wood",
+   "after": true
+  },
+  "27158": {
+   "n": "of Windiness",
+   "after": true
+  },
+  "27159": {
+   "n": "Demon Hunter's"
+  },
+  "27160": {
+   "n": "Dodge"
+  },
+  "27161": {
+   "n": "Land Blast"
+  },
+  "27162": {
+   "n": "Soul Steal"
+  },
+  "27163": {
+   "n": "of Abranchia",
+   "after": true
+  },
+  "27164": {
+   "n": "Koya"
+  },
+  "27165": {
+   "n": "of Albion",
+   "after": true
+  },
+  "27166": {
+   "n": "Prio"
+  },
+  "27167": {
+   "n": "Glacial"
+  },
+  "27168": {
+   "n": "of Padre",
+   "after": true
+  },
+  "27169": {
+   "n": "Infantry"
+  },
+  "27170": {
+   "n": "of Dust",
+   "after": true
+  },
+  "27171": {
+   "n": "of Sunset",
+   "after": true
+  },
+  "27172": {
+   "n": "Sharp Sword"
+  },
+  "27173": {
+   "n": "Dusty"
+  },
+  "27174": {
+   "n": "Sunset"
+  },
+  "27175": {
+   "n": "Small Hunter"
+  },
+  "27176": {
+   "n": "of Dirty",
+   "after": true
+  },
+  "27177": {
+   "n": "of Marsh",
+   "after": true
+  },
+  "27178": {
+   "n": "of Zero Guard",
+   "after": true
+  },
+  "27179": {
+   "n": "of Wild Fang",
+   "after": true
+  },
+  "27180": {
+   "n": "Power Brake"
+  },
+  "27181": {
+   "n": "Bane Band"
+  },
+  "27182": {
+   "n": "Hammer Shooter"
+  },
+  "27183": {
+   "n": "Onslaught"
+  },
+  "27184": {
+   "n": "Salvation"
+  },
+  "27185": {
+   "n": "Funnel"
+  },
+  "27186": {
+   "n": "of Bluff",
+   "after": true
+  },
+  "27187": {
+   "n": "of frame",
+   "after": true
+  },
+  "27188": {
+   "n": "Trigger Happy"
+  },
+  "27189": {
+   "n": "Speedster"
+  },
+  "27190": {
+   "n": "of Ice Barrier",
+   "after": true
+  },
+  "27191": {
+   "n": "of Mist Guard",
+   "after": true
+  },
+  "27192": {
+   "n": "Force of Mind"
+  },
+  "27194": {
+   "n": "Magic Boost"
+  },
+  "27195": {
+   "n": "Power Boost"
+  },
+  "27196": {
+   "n": "Heine"
+  },
+  "27197": {
+   "n": "Lugenburg"
+  },
+  "27198": {
+   "n": "Wigner"
+  },
+  "27199": {
+   "n": "Nerius"
+  },
+  "27200": {
+   "n": "Nihil"
+  },
+  "27201": {
+   "n": "Agnes"
+  },
+  "27202": {
+   "n": "Jurgen"
+  },
+  "27203": {
+   "n": "Spica"
+  },
+  "27209": {
+   "n": "Half Scaraba"
+  },
+  "27211": {
+   "n": "Half Scythelike"
+  },
+  "27212": {
+   "n": "Half Reflect"
+  },
+  "27213": {
+   "n": "of Half Bragi",
+   "after": true
+  },
+  "27214": {
+   "n": "of Half Magic Protection",
+   "after": true
+  },
+  "27215": {
+   "n": "of Half Infiltration",
+   "after": true
+  },
+  "27216": {
+   "n": "of Half Hydrochloric Acid",
+   "after": true
+  },
+  "27217": {
+   "n": "of Half Gentleman",
+   "after": true
+  },
+  "27218": {
+   "n": "of Half Grand Cross",
+   "after": true
+  },
+  "27219": {
+   "n": "of Half Fortune",
+   "after": true
+  },
+  "27220": {
+   "n": "Half Sword Master"
+  },
+  "27221": {
+   "n": "Half Educe"
+  },
+  "27222": {
+   "n": "Half Fear"
+  },
+  "27224": {
+   "n": "of Half Devilish",
+   "after": true
+  },
+  "27225": {
+   "n": "Half Sage"
+  },
+  "27237": {
+   "n": "Transformation"
+  },
+  "27238": {
+   "n": "Unpetrified"
+  },
+  "27239": {
+   "n": "of Wind Barrier",
+   "after": true
+  },
+  "27240": {
+   "n": "Habitation"
+  },
+  "27241": {
+   "n": "Jet"
+  },
+  "27242": {
+   "n": "of Elder",
+   "after": true
+  },
+  "27243": {
+   "n": "of Soldier",
+   "after": true
+  },
+  "27244": {
+   "n": "Sing"
+  },
+  "27245": {
+   "n": "Perform"
+  },
+  "27246": {
+   "n": "Fort"
+  },
+  "27247": {
+   "n": "Fortissimo"
+  },
+  "27248": {
+   "n": "Phantom"
+  },
+  "27249": {
+   "n": "Airi"
+  },
+  "27250": {
+   "n": "Anemos"
+  },
+  "27251": {
+   "n": "Gangster"
+  },
+  "27252": {
+   "n": "Bully"
+  },
+  "27253": {
+   "n": "Shoplifter"
+  },
+  "27254": {
+   "n": "Faymont"
+  },
+  "27255": {
+   "n": "Ordre"
+  },
+  "27256": {
+   "n": "Haase"
+  },
+  "27257": {
+   "n": "Akuma"
+  },
+  "27258": {
+   "n": "Ifodes"
+  },
+  "27259": {
+   "n": "Licheniyes"
+  },
+  "27260": {
+   "n": "Odoric"
+  },
+  "27261": {
+   "n": "Ju"
+  },
+  "27262": {
+   "n": "Dwigh"
+  },
+  "27263": {
+   "n": "Kanavian"
+  },
+  "27264": {
+   "n": "of Evil Shadow",
+   "after": true
+  },
+  "27265": {
+   "n": "Evil Fanatic"
+  },
+  "27286": {
+   "n": "Romping"
+  },
+  "27287": {
+   "n": "of Liniment",
+   "after": true
+  },
+  "27288": {
+   "n": "of Worker",
+   "after": true
+  },
+  "27289": {
+   "n": "Proper"
+  },
+  "27290": {
+   "n": "of Obsidian",
+   "after": true
+  },
+  "29230": {
+   "n": "Tainy Ale"
+  },
+  "29363": {
+   "n": "Burning Fire"
+  },
+  "31000": {
+   "n": "of Toilet",
+   "after": true
+  },
+  "31001": {
+   "n": "Morning Star"
+  },
+  "31002": {
+   "n": "Psychic"
+  },
+  "31003": {
+   "n": "Will"
+  },
+  "31004": {
+   "n": "Twister"
+  },
+  "31005": {
+   "n": "Sword Master"
+  },
+  "31006": {
+   "n": "of Praise Death Lord",
+   "after": true
+  },
+  "31007": {
+   "n": "of Immortal Grudge",
+   "after": true
+  },
+  "31008": {
+   "n": "Spirit Amulet"
+  },
+  "31009": {
+   "n": "of Wish Song",
+   "after": true
+  },
+  "31010": {
+   "n": "Shubha~~~n!"
+  },
+  "31011": {
+   "n": "Kimakima Time"
+  },
+  "31012": {
+   "n": "Dragon Fear"
+  },
+  "31013": {
+   "n": "Mega Flare"
+  },
+  "31014": {
+   "n": "of Golden End",
+   "after": true
+  },
+  "31015": {
+   "n": "of God of Fate",
+   "after": true
+  },
+  "31016": {
+   "n": "of Sorrow",
+   "after": true
+  },
+  "31017": {
+   "n": "of Hatred",
+   "after": true
+  },
+  "31018": {
+   "n": "Frustration"
+  },
+  "31019": {
+   "n": "of Chill",
+   "after": true
+  },
+  "31020": {
+   "n": "of Wrath",
+   "after": true
+  },
+  "31021": {
+   "n": "Madness"
+  },
+  "31022": {
+   "n": "of Despair",
+   "after": true
+  },
+  "31023": {
+   "n": "Maniac"
+  },
+  "31024": {
+   "n": "Volcanic Ball"
+  },
+  "31025": {
+   "n": "Deadly"
+  },
+  "31026": {
+   "n": "Auto Magic"
+  },
+  "90000": {
+   "n": "of Endurance",
+   "after": true
+  },
+  "90001": {
+   "n": "Repulsing"
+  },
+  "90002": {
+   "n": "Far-reaching"
+  },
+  "90003": {
+   "n": "Balanced"
+  },
+  "90004": {
+   "n": "Fireproof"
+  },
+  "90005": {
+   "n": "Overclocked"
+  },
+  "90006": {
+   "n": "Perilous"
+  },
+  "90007": {
+   "n": "of Pyromania",
+   "after": true
+  },
+  "90008": {
+   "n": "of Relocating",
+   "after": true
+  },
+  "90009": {
+   "n": "Subduing"
+  },
+  "90010": {
+   "n": "Spry"
+  },
+  "90011": {
+   "n": "Menacing"
+  },
+  "90012": {
+   "n": "Immovable"
+  },
+  "90013": {
+   "n": "of Arson",
+   "after": true
+  },
+  "90014": {
+   "n": "of Crawling",
+   "after": true
+  },
+  "90015": {
+   "n": "of Slithering",
+   "after": true
+  },
+  "90016": {
+   "n": "Craven's"
+  },
+  "90017": {
+   "n": "of Simpleton",
+   "after": true
   }
+ }
 }

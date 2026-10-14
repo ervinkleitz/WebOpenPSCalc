@@ -1669,87 +1669,37 @@ Special mechanics (need a dedicated branch, not a plain ratio):
 Also drop **HT_POWER** from the picker — it's not a real PS player skill (internal Hercules ID,
 `−50 + 8×STR`), not a damage skill to model.
 
-## Payon Stories custom card names — open punch-list (2026-10-14)
+## Payon Stories card names — CLOSED (2026-10-14)
 
 An equipped item is titled the way the game titles it ("+7 Double Boned Bloody Gladius"),
-and the word each card contributes comes from the CLIENT's `cardprefixnametable` /
-`cardpostfixnametable`, generated into `src/engine/data/card_names.json` by
-`tools/gen-card-names.mjs`.
+and the word each card contributes used to come only from the official CLIENT tables
+(`tools/gen-card-names.mjs` -> `data/card_names.json`). Those know vanilla cards only, so
+all 47 Payon Stories customs contributed nothing and a slotted PS card left the host item
+titled as if the slot were empty. This was logged here as a punch-list of 47 names that
+could only be collected by reading each item in game.
 
-Those tables only know VANILLA cards. Every Payon Stories custom is absent from them, so
-it contributes no word and the host item is titled as if that slot were empty. This is
-not a bug to fix in code and it cannot be derived from anything we have: the names exist
-only in the client, and the PS item API does not publish them. Each one has to be read
-off the item in game and written into `src/engine/data/ps/ps_card_names.json`, which is
-merged OVER the generated table (PS wins on a clash — it is the server we model).
+That turned out to be unnecessary: **PS publishes the table themselves** at
+`tools.payonstories.com/card_database`, server-rendered, every card as
+`Name (ID: n) | Prefix | Suffix`. `tools/gen-ps-card-names.mjs` parses it into
+`data/ps/ps_card_names.json` — 1,003 cards, all 47 customs covered, nothing left to
+collect by hand.
 
-Already recorded there:
+Two things worth keeping in mind:
 
-| id | card | word |
-|----|------|------|
-| 8218 | Corruptor Card | `of Transfusion` (suffix) |
-| 8239 | Shade of Payon Card | `Magic Missile` (prefix) |
-| 8244 | Moon Rabbit Card | `of Sanctuary` (suffix) |
+- **It also disagrees with the client on vanilla cards PS has reworked.** Stalactic Golem
+  4223 is "Resist Stun" in the client and *of Sturdiness* on PS; Wootan Fighter 4261 is
+  "Bleeding Guard" vs *Smoldering*; Ungoliant 4336 flips from a suffix to the prefix
+  *Cracking*. PS wins on PS (PS_SOURCES.md), so the two tables are resolved PER SERVER in
+  `cardNames.js` — the vanilla profile keeps the client's words, because a PS rework is
+  not a vanilla fact.
+- **The three names collected by hand before this landed all matched the table exactly**
+  (Corruptor *of Transfusion*, Shade of Payon *Magic Missile*, Moon Rabbit *of
+  Sanctuary*), which is the only independent check available that the parse is reading
+  the right columns.
 
-Still unnamed — these add nothing to an item's name until filled in:
-
-| id | card | fits | word |
-|----|------|------|------|
-| 8000 | Assassin Fly Card | EQP_WEAPON | |
-| 8001 | Cave Viper Card | EQP_HEAD_LOW, EQP_HEAD_TOP, EQP_HEAD_MID | |
-| 8089 | Twinorc Card | EQP_WEAPON | |
-| 8090 | Indignant Soul Card | EQP_HEAD_LOW, EQP_HEAD_TOP, EQP_HEAD_MID | |
-| 8091 | Roper Card | EQP_SHOES | |
-| 8092 | Ghost Shroom Card | EQP_SHIELD | |
-| 8093 | Miasmus Card | EQP_ACC | |
-| 8094 | Frigid Lich Card | EQP_HEAD_LOW, EQP_HEAD_TOP, EQP_HEAD_MID | |
-| 8095 | Logi Card | EQP_ARMOR | |
-| 8211 | Protoring Card | EQP_ACC | |
-| 8212 | Doughring Card | EQP_GARMENT | |
-| 8213 | Jelring Card | EQP_WEAPON | |
-| 8214 | Abomring Card | EQP_ACC | |
-| 8216 | Spectring Card | EQP_SHOES | |
-| 8217 | Conductring Card | EQP_ACC | |
-| 8219 | King Poring Card | EQP_ACC | |
-| 8233 | Tomb Crawler Card | EQP_ACC | |
-| 8235 | Kalec Card | EQP_SHOES | |
-| 8236 | Yser Card | EQP_SHOES | |
-| 8237 | Flame Beetle Card | EQP_ACC | |
-| 8238 | Bonechewer Card | EQP_WEAPON | |
-| 8240 | Puck Card | EQP_SHIELD | |
-| 8241 | Dory Card | EQP_WEAPON | |
-| 8242 | Jabberwock Card | EQP_ARMOR | |
-| 8243 | Wolpertinger Card | EQP_WEAPON | |
-| 8245 | Kodama Card | EQP_GARMENT | |
-| 8246 | Gyokuto Card | EQP_HEAD_LOW, EQP_HEAD_TOP, EQP_HEAD_MID | |
-| 8247 | Onigiring Card | EQP_ACC | |
-| 8248 | Lady Huo Card | EQP_ACC | |
-| 90000 | Magmawhip Card | EQP_ARMOR | |
-| 90001 | SCOUT Card | EQP_HEAD_LOW, EQP_HEAD_TOP, EQP_HEAD_MID | |
-| 90002 | Rekenber Soldier Card | EQP_ARMOR | |
-| 90003 | WELDER Card | EQP_GARMENT | |
-| 90004 | CORE card | EQP_SHIELD | |
-| 90005 | DRILL Card | EQP_WEAPON | |
-| 90006 | Living Magma Card | EQP_SHOES | |
-| 90007 | FUEL Card | EQP_SHOES | |
-| 90008 | Rekenber Guard Card | EQP_ACC | |
-| 90009 | Rekenber Mercenary Card | EQP_HEAD_LOW, EQP_HEAD_TOP, EQP_HEAD_MID | |
-| 90010 | Magma Familiar Card | EQP_HEAD_LOW, EQP_HEAD_TOP, EQP_HEAD_MID | |
-| 90011 | MAID Card | EQP_GARMENT | |
-| 90012 | Rekenber General Card | EQP_GARMENT | |
-| 90013 | Ignis Card | EQP_HEAD_LOW, EQP_HEAD_TOP, EQP_HEAD_MID | |
-| 90014 | Pill Bug Card | EQP_SHOES | |
-| 90015 | Great Snake Card | EQP_SHOES | |
-| 90016 | Elite Punk Card | EQP_SHIELD | |
-| 90017 | Spurus Card | EQP_HEAD_LOW, EQP_HEAD_TOP, EQP_HEAD_MID
-
-To add one: put `"<id>": { "n": "Word" }` in `ps_card_names.json`, or
-`{ "n": "of Word", "after": true }` when it follows the item name. No code change is
-needed; `cardNames.js` picks it up and `/data/items/:id` serves it as `card_name`.
-
-Regenerate this list with the snippet in the commit that added this section, or by
-diffing `getItemsByType("IT_CARD")` against `CARD_NAMES` (excluding the synthetic
-convenience cards at 4700-4799 and the negative wildcard ids).
+Re-run `node tools/gen-ps-card-names.mjs` after a patch that adds cards. It refuses to
+write if it parses fewer than 500 rows, so a markup change on their side fails loudly
+rather than silently emptying the table.
 
 ## Suggested order for finishing the port
 

@@ -33,12 +33,15 @@ instead of release version. Dates are taken from actual git commit history.
   drawn in the page’s own light text colour on top of the system’s white dropdown, so
   every level except the one already selected faded into the background. The dropdown
   now follows whichever theme you are using.
-- **Three Payon Stories cards now name the item they are slotted into.** **Corruptor
-  Card** gives *“of Transfusion”*, **Shade of Payon Card** gives *“Magic Missile”* and
-  **Moon Rabbit Card** gives *“of Sanctuary”*, so a pair of Shoes reads **Shoes of
-  Transfusion**. The words for custom cards are not in any file the game ships — they
-  have to be read off the item in game — so the other 47 still add nothing to a name
-  until someone tells us what they say.
+- **Every Payon Stories card now names the item it is slotted into.** A slotted custom
+  card used to leave an item titled as though the slot were empty, because the words
+  only existed in the game client, which ships nothing for PS’s own cards. Payon Stories
+  publishes the whole table, so all of them are in now — **Shoes of Transfusion**,
+  **Magic Missile Safety Ring**, **Jewel Crown of Sanctuary**, and 1,000 more.
+  A few vanilla cards read differently on Payon Stories than they do elsewhere, because
+  PS reworked them: Stalactic Golem is *of Sturdiness* here rather than “Resist Stun”,
+  Wootan Fighter is *Smoldering*, Ungoliant is *Cracking*. Switch the server to standard
+  pre-renewal and you get the ordinary words back.
 
 ## 2026-10-13
 

@@ -11,21 +11,32 @@
  * these are display names, which no server-side rework changes. A card with no entry —
  * every PS custom, and a few vanilla ones — contributes no word, exactly as in-game.
  */
+// The official client's tables: the vanilla words, and the right answer for a vanilla
+// pre-renewal server.
 const CLIENT_NAMES = require("./data/card_names.json").cards;
-// Payon Stories customs. The client tables only know vanilla cards, so every PS custom
-// is missing from them and silently contributes no word — which is right until someone
-// reads the real name off the item in-game and records it here. PS entries WIN over the
-// client's: if an id ever appears in both, the server we actually model is the authority.
+// Payon Stories' own published table (tools.payonstories.com/card_database). It covers
+// their customs, which the client tables know nothing about, AND it disagrees with the
+// client on a handful of vanilla cards they have reworked — Stalactic Golem is "Resist
+// Stun" in the client and "of Sturdiness" on PS, Wootan Fighter "Bleeding Guard" vs
+// "Smoldering", Ungoliant flips suffix to prefix. On PS mechanics a PS tool outranks a
+// vanilla scrape (PS_SOURCES.md), so PS wins — but ONLY on the PS profile, which is why
+// this is resolved per server rather than merged once at load.
 const PS_NAMES = require("./data/ps/ps_card_names.json").cards;
-const CARD_NAMES = { ...CLIENT_NAMES, ...PS_NAMES };
+const PS_MERGED = { ...CLIENT_NAMES, ...PS_NAMES };
 
 /**
- * The name fragment for a card id, or null.
+ * The name fragment for a card id on a given server, or null.
+ *
+ * @param {number|string} id
+ * @param {string} [server] profile id; anything other than "payon_stories" gets the
+ *   vanilla client words, because PS's reworked names are PS's. Defaults to PS, which
+ *   is this calculator's primary server and what every existing caller wants.
  * @returns {{name: string, after: boolean}|null}
  */
-function cardNameFragment(id) {
-  const e = CARD_NAMES[String(id)];
+function cardNameFragment(id, server = "payon_stories") {
+  const table = server === "payon_stories" ? PS_MERGED : CLIENT_NAMES;
+  const e = table[String(id)];
   return e ? { name: e.n, after: !!e.after } : null;
 }
 
-module.exports = { cardNameFragment, CARD_NAMES };
+module.exports = { cardNameFragment, CARD_NAMES: PS_MERGED, CLIENT_NAMES, PS_NAMES };
