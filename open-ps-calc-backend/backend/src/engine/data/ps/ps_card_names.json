@@ -1,0 +1,9 @@
+{
+  "_note": "Payon Stories custom cards: the word they lend to a host item's name. The client's own cardprefixnametable (card_names.json, generated from the official tables) only knows vanilla cards, so every PS custom is absent from it and contributes no word until it is listed here. Hand-maintained from what the game shows — the PS item API does not publish these.",
+  "_format": "id -> { n: \"word\", after: true when it follows the item name }",
+  "_source": "maintainer, reading the name off the item in-game",
+  "cards": {
+    "8218": { "n": "of Transfusion", "after": true },
+    "8239": { "n": "Magic Missile" }
+  }
+}

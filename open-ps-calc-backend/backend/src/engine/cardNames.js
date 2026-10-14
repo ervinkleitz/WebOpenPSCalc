@@ -11,7 +11,13 @@
  * these are display names, which no server-side rework changes. A card with no entry —
  * every PS custom, and a few vanilla ones — contributes no word, exactly as in-game.
  */
-const CARD_NAMES = require("./data/card_names.json").cards;
+const CLIENT_NAMES = require("./data/card_names.json").cards;
+// Payon Stories customs. The client tables only know vanilla cards, so every PS custom
+// is missing from them and silently contributes no word — which is right until someone
+// reads the real name off the item in-game and records it here. PS entries WIN over the
+// client's: if an id ever appears in both, the server we actually model is the authority.
+const PS_NAMES = require("./data/ps/ps_card_names.json").cards;
+const CARD_NAMES = { ...CLIENT_NAMES, ...PS_NAMES };
 
 /**
  * The name fragment for a card id, or null.

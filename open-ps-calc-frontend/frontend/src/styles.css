@@ -898,23 +898,39 @@ label {
 }
 
 .selected-pill {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 0.4rem;
   background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 0.5rem 0.65rem; font-size: 0.85rem;
+  padding: 0.32rem 0.4rem; font-size: 0.85rem;
 }
+.selected-pill__name { flex: 1; min-width: 0; }
 .selected-pill button { padding: 0.2rem 0.5rem; font-size: 0.75rem; }
-/* Refine sits to the LEFT of the name, so the row reads "+7 <item>" the way an
-   inventory line does while staying one click from editable. Fixed width so the
-   names below it stay aligned down the column whether the slot is +0 or +10. */
-.equip-row { display: flex; gap: 0.35rem; align-items: stretch; }
-.equip-row .selected-pill { flex: 1; min-width: 0; }
-.refine-select {
-  flex: 0 0 auto; width: 3.4rem; padding: 0.5rem 0.3rem;
-  text-align: center; text-align-last: center; font-size: 0.85rem;
-  border-radius: var(--radius); background: var(--bg);
-  border: 1px solid var(--border); color: var(--accent);
+/* Refine is a segment INSIDE the item's own field, divided off by a rule, so a slot
+   reads as one line — "+7 | Double Boned Bloody Gladius" — the way an inventory entry
+   does, while staying one click from editable.
+
+   appearance:none is load-bearing. A native select reserves room for its own arrow
+   INSIDE its width, so at any width narrow enough to look like part of the field,
+   "+10" was clipped. The caret below is drawn by the wrapper instead, which leaves
+   the control's whole width for the digits. */
+.refine-wrap { position: relative; display: inline-flex; align-items: center; flex: 0 0 auto; }
+.refine-wrap::after {
+  content: ""; position: absolute; right: 0.42rem; top: 50%; margin-top: -1px;
+  width: 0; height: 0; pointer-events: none;
+  border-left: 3px solid transparent; border-right: 3px solid transparent;
+  border-top: 4px solid var(--text-faint);
 }
-.refine-select:hover { border-color: var(--accent-dim); }
+.refine-select {
+  appearance: none; -webkit-appearance: none;
+  border: 0; border-right: 1px solid var(--border); border-radius: 0;
+  background: transparent; color: var(--accent);
+  font-size: 0.85rem; line-height: 1.1;
+  padding: 0.18rem 0.95rem 0.18rem 0.1rem;
+}
+.refine-select:hover { color: var(--text); }
+.refine-wrap:hover::after { border-top-color: var(--accent); }
+/* The native dropdown list does NOT inherit the transparent background above; without
+   this it can render unreadably on some platforms in dark mode. */
+.refine-select option { background: var(--panel); color: var(--text); }
 /* One "take this off" affordance for the whole panel: the same x on an equipped
    item as on a card. Square so a row of them lines up, and it only takes the
    accent on hover so a grid of slots is not covered in red. */

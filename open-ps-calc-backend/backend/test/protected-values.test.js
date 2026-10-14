@@ -121,37 +121,36 @@ test("upstream attribution survives", () => {
     "the attribution must stay a working link to the upstream project");
 });
 
-// Our OWN authorship line, which is a different thing from the licence condition
-// above and is protected for a different reason.
+// Our OWN credit, which is a different thing from the licence condition above and is
+// protected for a different reason.
 //
-// It used to be a link to github.com/ervinkleitz/WebOpenPSCalc, and the link was its
-// own proof: anyone could click through to a public, timestamped commit history. The
-// repo went private on 2026-10-13, so the href came off and the credit stayed. What
-// is left is one short span of text — no link, nothing fetching it, nothing else in
-// the app referring to it. That makes it the easiest thing in this codebase to delete
-// by accident in a topbar refactor, and if it goes, the running app no longer says who
-// wrote it anywhere at all.
+// It is the repo name, linked, and nothing else — no personal name, by the
+// maintainer's choice (2026-10-14). That makes it one short element that nothing else
+// in the app refers to and nothing fetches, which makes it the easiest thing in this
+// codebase to delete by accident in a topbar refactor. If it goes, the running app no
+// longer says anywhere where it came from.
 //
-// This is also the only authorship record a copy of this app would have to strip on
-// purpose, which is the other reason it is worth a test.
-test("the app still says who built it", () => {
+// It is also the one credit a copy of this app would have to strip on purpose, which
+// is the other reason it is worth pinning.
+test("the app still says where it came from", () => {
   const src = read(FRONTEND, "src", "pages", "BuildEditor.tsx");
 
-  const row = src.match(/<span>This build<\/span>\s*<span>([^<]+)<\/span>/);
-  assert.ok(row, "the authorship row is gone from the credits tooltip");
-  assert.ok(/WebOpenPSCalc/.test(row[1]),
-    `the authorship row must name this codebase — got "${row[1]}"`);
-  assert.ok(/&copy;|©/.test(row[1]),
-    `the authorship row must carry a copyright notice — got "${row[1]}"`);
+  const row = src.match(/<span>This build<\/span>\s*<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/);
+  assert.ok(row, "the credit row is gone from the credits tooltip, or is no longer a link");
+  assert.ok(/WebOpenPSCalc/.test(row[2]),
+    `the credit must name this codebase — got "${row[2]}"`);
+  assert.ok(/^https:\/\/github\.com\/[^/]+\/WebOpenPSCalc$/.test(row[1]),
+    `the credit must link to this repo — got "${row[1]}"`);
+  // Deliberately NOT asserting a personal name: the maintainer asked for the repo name
+  // alone. Re-adding one is a decision, not a fix, so it does not belong behind a test.
 
-  // No LICENSE file means all rights reserved by default, which is a real position but
-  // an invisible one. If a licence is ever added, that is the moment to decide whether
-  // the app should name it on screen the way it names upstream's.
+  // A LICENSE exists, so the tooltip has to name the licence the way it names
+  // upstream's — a network-facing AGPL app has nowhere else to tell a user the terms.
   const licensed = ["LICENSE", "LICENSE.md", "LICENSE.txt"]
     .some((f) => fs.existsSync(path.join(REPO, f)));
   if (licensed) {
     assert.ok(/This build[\s\S]{0,400}(licen[cs]e|AGPL|MIT|GPL)/i.test(src),
-      "a LICENSE file was added but the credits tooltip does not name the licence — "
+      "a LICENSE file exists but the credits tooltip does not name the licence — "
       + "upstream's is named there, so ours should be too");
   }
 });

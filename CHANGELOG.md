@@ -14,9 +14,21 @@ instead of release version. Dates are taken from actual git commit history.
   the way it looks in your inventory, and picking a level is one click instead of
   selecting and retyping a number. The refine no longer appears inside the item name
   as well, because the box beside it is already showing it.
+- **The refine box sits inside the item's own field now**, divided off by a thin rule
+  rather than floating beside it, and both are less padded — a slot is one line to
+  read. **+10** no longer gets cut off: the control was reserving space for its own
+  dropdown arrow and squeezing out the digits.
 - **Taking something off is an × everywhere.** The **Unequip** button on an equipped
   item is now the same small × that removes a card, so there is one way to clear a slot
   rather than two that look unrelated.
+
+### Fixed
+
+- **Two Payon Stories cards now name the item they are slotted into.** **Corruptor Card**
+  gives *“of Transfusion”* and **Shade of Payon Card** gives *“Magic Missile”*, so a
+  pair of Shoes reads **Shoes of Transfusion**. The words for custom cards are not in
+  any file the game ships — they have to be read off the item in game — so the rest of
+  the custom cards still add nothing to a name until someone tells us what they say.
 
 ## 2026-10-13
 

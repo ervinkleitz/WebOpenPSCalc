@@ -2362,10 +2362,11 @@ export default function BuildEditor() {
                   repo is public and the licence asks for the attribution.
                   The second is THIS codebase: the API, the breakpoints, the build
                   comparison, the imports and the PS-specific modelling were written
-                  here, none of it upstream. It was a link to the repo until
-                  2026-10-13, when the repo went private — a dead link is worse than
-                  no link, so the authorship stayed and the href went. Do not quietly
-                  drop this row; it is the only place the app says who built it.
+                  here, none of it upstream. The row is the repo name and nothing
+                  else: no personal name, by the maintainer's choice. Do not quietly
+                  drop it — it is the only place the running app says where it came
+                  from. If the repo is ever made private the href has to go, because
+                  a credit that leads to a sign-in page is worse than a plain one.
                   The licence row is not decoration either: AGPL-3.0 asks that the
                   notices stay with the work, and for a thing people only ever reach
                   over the network this tooltip is the one place a user can see the
@@ -2377,7 +2378,7 @@ export default function BuildEditor() {
               </span>
               <span className="tooltip-row">
                 <span>This build</span>
-                <span>WebOpenPSCalc &middot; &copy; 2026 Vin Gonzales</span>
+                <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">WebOpenPSCalc</a>
               </span>
               <span className="tooltip-row">
                 <span>Licence</span>
@@ -2957,25 +2958,29 @@ export default function BuildEditor() {
                     <label>{slot.label}</label>
                     {equippedId != null ? (
                       <>
-                      {/* The refine sits in its own +N control immediately left of the
-                          name, so the row still reads "+7 Double Boned Bloody Gladius"
-                          while the number stays editable in one click. It is not also
-                          printed into the name — that showed it twice. */}
-                      <div className="equip-row">
-                      {isRefineable && (
-                        <select
-                          className="refine-select mono"
-                          value={data.refine[slot.key] || 0}
-                          onChange={(e) => updateField(["refine", slot.key], Number(e.target.value))}
-                          title="Refine level"
-                          aria-label={`Refine level for ${slot.label}`}
-                        >
-                          {Array.from({ length: 11 }, (_, n) => (
-                            <option key={n} value={n}>+{n}</option>
-                          ))}
-                        </select>
-                      )}
-                      <div className={`selected-pill${isInvalid ? " selected-pill--invalid" : ""}`}>
+                      {/* The refine lives INSIDE the item's own field, as a segment on
+                          its left, so a slot is one box reading "+7 Double Boned Bloody
+                          Gladius" rather than two boxes side by side. It is not also
+                          printed into the name — that showed it twice.
+                          The caret is drawn by .refine-wrap::after: the NATIVE select
+                          arrow is what clipped the digits, because it reserves room
+                          inside the control's own width and "+10" had nowhere to go. */}
+                      <div className={`selected-pill${isInvalid ? " selected-pill--invalid" : ""}${isRefineable ? " selected-pill--refinable" : ""}`}>
+                        {isRefineable && (
+                          <span className="refine-wrap">
+                            <select
+                              className="refine-select mono"
+                              value={data.refine[slot.key] || 0}
+                              onChange={(e) => updateField(["refine", slot.key], Number(e.target.value))}
+                              title="Refine level"
+                              aria-label={`Refine level for ${slot.label}`}
+                            >
+                              {Array.from({ length: 11 }, (_, n) => (
+                                <option key={n} value={n}>+{n}</option>
+                              ))}
+                            </select>
+                          </span>
+                        )}
                         <HoverDescription
                           id={equippedId as number}
                           fetchDescription={fetchItemTooltip}
@@ -3025,7 +3030,6 @@ export default function BuildEditor() {
                         >
                           ×
                         </button>
-                      </div>
                       </div>
                       {isInvalid && (
                         <span style={{ fontSize: "0.72rem", color: "var(--crit)", marginTop: "0.2rem", display: "block" }}>
