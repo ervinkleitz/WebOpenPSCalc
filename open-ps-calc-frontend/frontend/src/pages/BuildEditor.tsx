@@ -2947,10 +2947,18 @@ export default function BuildEditor() {
                           {displayItemName(
                             item,
                             isRefineable ? (data.refine[slot.key] || 0) : 0,
-                            [1, 2, 3, 4].map((i) => {
-                              const cid = data.equipped[`${slot.key}_card${i}`] as number | null | undefined;
-                              return cid != null ? itemCache[cid] : null;
-                            }),
+                            // A slot in wildcard mix is named as if it were uncarded.
+                            // Switching to the mix deliberately LEAVES the real cards
+                            // equipped so switching back restores them, so reading
+                            // data.equipped here would keep titling the weapon after
+                            // cards the engine is no longer pricing — the mix's own
+                            // bonuses are generic ("race +20%") and have no names.
+                            wildcardMode[slot.key]
+                              ? []
+                              : [1, 2, 3, 4].map((i) => {
+                                const cid = data.equipped[`${slot.key}_card${i}`] as number | null | undefined;
+                                return cid != null ? itemCache[cid] : null;
+                              }),
                             `Item #${equippedId}`,
                           )}
                         </HoverDescription>

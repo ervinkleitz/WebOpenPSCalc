@@ -104,6 +104,42 @@ name = await pillName({ armor: COTTON_SHIRT, armor_card1: RODA_FROG },
 check(name === "Cotton Shirt of Champion",
   "a suffix card follows the item name", name);
 
+// --- 6. switching to wildcard mix drops the real cards' words ------------------
+// Reported 2026-10-13: "switching to wildcard mix from a previous selection retains
+// the prefixes of the previous set."
+//
+// Switching to the mix deliberately LEAVES the real cards equipped, so that switching
+// back restores them — which means data.equipped still holds them and naming the pill
+// from it kept titling the weapon after cards the engine had stopped pricing. This is
+// the TRANSITION, clicked rather than loaded from a link, because that is the path the
+// report came from and because it also covers the restore on the way back.
+await page.goto(link(carded, { right_hand: 7 }), { waitUntil: "domcontentloaded" });
+await page.waitForTimeout(7000);
+
+const rightHand = page.locator(".equip-grid > .field")
+  .filter({ has: page.locator('label:text-is("Right hand (weapon)")') });
+const shownName = () => page.evaluate(() => {
+  const f = [...document.querySelectorAll(".equip-grid > .field")]
+    .find((x) => x.querySelector("label")?.textContent?.trim() === "Right hand (weapon)");
+  return f?.querySelector(".selected-pill__name")?.textContent.replace(/\s+/g, " ").trim() ?? null;
+});
+
+check(await shownName() === "+7 Double Boned Bloody Gladius",
+  "starts carded", await shownName());
+
+await rightHand.getByRole("button", { name: /^Wildcard mix$/ }).click();
+await page.waitForTimeout(2500);
+name = await shownName();
+check(name === "+7 Gladius",
+  "in wildcard mix the weapon is named as if uncarded — the mix's bonuses have no names",
+  name);
+
+await rightHand.getByRole("button", { name: /^Cards$/ }).click();
+await page.waitForTimeout(2500);
+name = await shownName();
+check(name === "+7 Double Boned Bloody Gladius",
+  "switching back restores the real cards' words", name);
+
 check(errors.length === 0, "no page errors", errors);
 await browser.close();
 console.log(ok ? "\nPASS" : "\nFAIL");
