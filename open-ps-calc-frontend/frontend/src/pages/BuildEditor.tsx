@@ -2356,11 +2356,19 @@ export default function BuildEditor() {
               A pre-renewal Ragnarok Online damage calculator for vanilla
               and Payon Stories servers — equip gear, pick a skill and
               target, and see the full step-by-step damage breakdown.
-              {/* The upstream credit stays — that is someone else's project and the
-                  MIT licence it ships under. Our own repository is not advertised. */}
+              {/* Both links are here on purpose. The first is the upstream project
+                  and the MIT licence this is built under. The second is THIS codebase:
+                  the API, the breakpoints, the build comparison, the imports and the
+                  PS-specific modelling were written here, and the link is the public
+                  record of that. It was briefly removed on 2026-10-13 and put back the
+                  same day — an authorship record is worth more than the quiet. */}
               <span className="tooltip-row">
                 <span>Based on</span>
                 <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
+              </span>
+              <span className="tooltip-row">
+                <span>This repo</span>
+                <a href="https://github.com/ervinkleitz/WebOpenPSCalc" target="_blank" rel="noreferrer">WebOpenPSCalc</a>
               </span>
             </InfoTooltip>
           </span>
