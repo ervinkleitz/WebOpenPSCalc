@@ -34,3 +34,10 @@ tools/e2e/*.png
 
 # e2e screenshots, written next to wherever the script was run from
 /ps-import-*.png
+
+# Local working notes and their evidence — research, competitor reviews, UI audits
+# and the screenshots/scripts behind them. Kept out of history on purpose: they are
+# a snapshot of someone else's site at a moment in time, they go stale fast, and
+# `git add -A` should never sweep them in.
+/NOTES-*.local.md
+/local-notes/

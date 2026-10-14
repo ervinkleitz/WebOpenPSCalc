@@ -26,7 +26,10 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DB = path.join(HERE, "../src/engine/data/ps/ps_skill_db.json");
 const OUT = path.join(HERE, "../src/engine/data/ps/ps_skill_cooldowns.json");
-const UA = "Mozilla/5.0 (compatible; WebOpenPSCalc/1.0; +https://github.com/ervinkleitz/WebOpenPSCalc)";
+// Identifies the tool to Payon Stories' servers without naming the repository:
+// a contactable public address is the polite half, the source location is not theirs
+// to need.
+const UA = "Mozilla/5.0 (compatible; OpenPSCalc/1.0; +https://openpscalc.com)";
 const DELAY_MS = 250;
 
 const args = process.argv.slice(2);

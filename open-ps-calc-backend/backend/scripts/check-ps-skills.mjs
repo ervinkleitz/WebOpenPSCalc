@@ -43,7 +43,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const SNAPSHOT = path.join(HERE, "../src/engine/data/ps/ps_tools_skill_snapshot.json");
 const ORIGIN = "https://tools.payonstories.com";
-const UA = "Mozilla/5.0 (compatible; WebOpenPSCalc/1.0; +https://github.com/ervinkleitz/WebOpenPSCalc)";
+// Identifies the tool to Payon Stories' servers without naming the repository:
+// a contactable public address is the polite half, the source location is not theirs
+// to need.
+const UA = "Mozilla/5.0 (compatible; OpenPSCalc/1.0; +https://openpscalc.com)";
 const ACCEPT = process.argv.includes("--accept");
 
 /** id -> display name, straight out of the chunk source. */

@@ -57,7 +57,10 @@ import { createRequire } from "node:module";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const ORIGIN = "https://tools.payonstories.com";
-const UA = "Mozilla/5.0 (compatible; WebOpenPSCalc/1.0; +https://github.com/ervinkleitz/WebOpenPSCalc)";
+// Identifies the tool to Payon Stories' servers without naming the repository:
+// a contactable public address is the polite half, the source location is not theirs
+// to need.
+const UA = "Mozilla/5.0 (compatible; OpenPSCalc/1.0; +https://openpscalc.com)";
 
 const PS_DB = path.join(HERE, "../src/engine/data/ps/ps_skill_db.json");
 const BASELINE = path.join(HERE, "../src/engine/data/ps/ps_skill_audit_baseline.json");

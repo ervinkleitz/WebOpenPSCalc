@@ -70,7 +70,10 @@ const BASELINE = path.join(PS_DIR, "ps_item_audit_baseline.json");
 const REPORT = path.join(HERE, "ps-item-audit-report.json");
 
 const API = "https://tools.payonstories.com/api/pc/item?id=";
-const UA = "Mozilla/5.0 (compatible; WebOpenPSCalc/1.0; +https://github.com/ervinkleitz/WebOpenPSCalc)";
+// Identifies the tool to Payon Stories' servers without naming the repository:
+// a contactable public address is the polite half, the source location is not theirs
+// to need.
+const UA = "Mozilla/5.0 (compatible; OpenPSCalc/1.0; +https://openpscalc.com)";
 const CONCURRENCY = 4;
 const PAUSE_MS = 120;
 
