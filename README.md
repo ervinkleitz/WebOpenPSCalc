@@ -416,3 +416,21 @@ Every calculation the API returns includes the full step-by-step breakdown
 (the same kind of `DamageStep` data the original GUI showed, with the
 Hercules source citation each step is based on), so any number can be
 checked against the original Python tool's output for the same build.
+
+## Licence
+
+This project is licensed under the **GNU Affero General Public License v3.0**
+— see [`LICENSE`](LICENSE).
+
+It is a web migration of
+[StatGameDev/Open_PS_Calc](https://github.com/StatGameDev/Open_PS_Calc), whose
+ported calculation engine remains under its original MIT licence. Everything
+that makes this a web application — the HTTP API, the whole front end,
+breakpoints, build comparison, share links, the imports, the survivability
+model and the Payon Stories server profile — was written here and is AGPL.
+[`NOTICE`](NOTICE) sets out which parts are which, and why a network-facing
+calculator is licensed this way rather than permissively.
+
+Ragnarok Online is the property of Gravity Co., Ltd.; Payon Stories is an
+independent server. This is a fan-made tool, unaffiliated with either, and the
+game data it models belongs to neither licence above.

@@ -19,6 +19,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **Equipment is now named the way the game names it.** A slot used to read
+  “Gladius +7” with its cards listed separately underneath, which matched nothing you
+  see in your own inventory. The refine now leads and the cards are folded in, so two
+  Skel Worker and a Hydra in a +7 Gladius reads **+7 Double Boned Bloody Gladius** —
+  same words, same order, same Double/Triple/Quadruple counting as in game. Cards that
+  name the back of an item still do (“Cotton Shirt of Champion”). A card the client has
+  no name for, which is every Payon Stories custom, simply adds no word.
+- **A slot with something in it now reads in gold.** Worn gear stands out from the
+  empty slots at a glance, without having to read any of it. A slot holding something
+  your class cannot use is still red, as before.
 - **The credits no longer link to this calculator's own source.** The source repository
   is private from today, so the link would only have gone to a sign-in page. The credit
   itself is still there under the title, and the link to the upstream project this is

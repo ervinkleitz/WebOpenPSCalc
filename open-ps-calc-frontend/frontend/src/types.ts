@@ -124,6 +124,12 @@ export interface EquippedItemInfo {
   // Minimum base level to wear it.
   equip_level?: number;
   weapon_type?: string;
+  // For a CARD: the word it lends to the name of whatever it is slotted into
+  // ("Bloody" for Hydra), and whether that word follows the item name instead of
+  // preceding it ("of Champion"). Null on non-cards, and on cards the client has no
+  // name for — every PS custom. See lib/itemName.ts.
+  card_name?: string | null;
+  card_name_after?: boolean;
 }
 
 export interface SearchResult {

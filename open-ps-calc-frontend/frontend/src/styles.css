@@ -895,6 +895,12 @@ label {
   padding: 0.5rem 0.65rem; font-size: 0.85rem;
 }
 .selected-pill button { padding: 0.2rem 0.5rem; font-size: 0.75rem; }
+/* A filled slot reads in the accent, so a glance down the equipment column separates
+   what is worn from the empty slots' placeholder text without needing to read any of
+   it. Same gold the headline metrics use — this is the "something is here" colour
+   throughout. Kept weaker than --invalid below, which must still win on a slot that
+   is worn but not legal for the class. */
+.selected-pill__name { color: var(--accent); }
 .selected-pill--invalid { border-color: var(--crit); background: rgba(226,104,92,0.08); }
 .selected-pill--invalid > span:first-child { color: var(--crit); }
 

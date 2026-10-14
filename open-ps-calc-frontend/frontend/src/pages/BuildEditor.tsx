@@ -16,6 +16,7 @@ import KofiModal from "../components/KofiModal";
 import { summaryMetrics, type ComparePin } from "../components/CompareView";
 import { BreakpointsView } from "../components/BreakpointsView";
 import starterBuildsJson from "../data/starterBuilds.json";
+import { displayItemName } from "../lib/itemName";
 import {
   BuildData, SkillState, CustomTarget, TargetMode, TargetMods, ManualEnemyEdits,
   UrlEditorState, SearchResult, PassiveSkill, EquippedItemInfo, ConsumableBuffs,
@@ -2364,7 +2365,12 @@ export default function BuildEditor() {
                   here, none of it upstream. It was a link to the repo until
                   2026-10-13, when the repo went private — a dead link is worse than
                   no link, so the authorship stayed and the href went. Do not quietly
-                  drop this row; it is the only place the app says who built it. */}
+                  drop this row; it is the only place the app says who built it.
+                  The licence row is not decoration either: AGPL-3.0 asks that the
+                  notices stay with the work, and for a thing people only ever reach
+                  over the network this tooltip is the one place a user can see the
+                  terms at all. NOTICE at the repo root says which parts are upstream's
+                  MIT work and which are ours. */}
               <span className="tooltip-row">
                 <span>Based on</span>
                 <a href="https://github.com/StatGameDev/Open_PS_Calc" target="_blank" rel="noreferrer">Open PS Calc</a>
@@ -2372,6 +2378,10 @@ export default function BuildEditor() {
               <span className="tooltip-row">
                 <span>This build</span>
                 <span>WebOpenPSCalc &middot; &copy; 2026 Vin Gonzales</span>
+              </span>
+              <span className="tooltip-row">
+                <span>Licence</span>
+                <span>AGPL-3.0 &middot; see NOTICE</span>
               </span>
             </InfoTooltip>
           </span>
@@ -2928,9 +2938,21 @@ export default function BuildEditor() {
                           id={equippedId as number}
                           fetchDescription={fetchItemTooltip}
                           title={isInvalid ? invalidSlots.get(slot.key) : undefined}
+                          className="selected-pill__name"
                         >
-                          {item ? item.name : `Item #${equippedId}`}
-                          {isRefineable ? ` +${data.refine[slot.key] || 0}` : ""}
+                          {/* Written the way the game writes it — "+7 Double Boned
+                              Bloody Gladius" — so the pill matches what the player
+                              sees in their own inventory. A forged weapon takes no
+                              cards, so its card list is empty by construction. */}
+                          {displayItemName(
+                            item,
+                            isRefineable ? (data.refine[slot.key] || 0) : 0,
+                            [1, 2, 3, 4].map((i) => {
+                              const cid = data.equipped[`${slot.key}_card${i}`] as number | null | undefined;
+                              return cid != null ? itemCache[cid] : null;
+                            }),
+                            `Item #${equippedId}`,
+                          )}
                         </HoverDescription>
                         <button
                           onClick={() => {
@@ -3202,7 +3224,7 @@ export default function BuildEditor() {
                                 <div key={cardKey} className="card-slot">
                                   {cardId != null ? (
                                     <div className="selected-pill">
-                                      <HoverDescription id={cardId} fetchDescription={fetchItemTooltip}>
+                                      <HoverDescription id={cardId} fetchDescription={fetchItemTooltip} className="selected-pill__name">
                                         {card ? card.name : `Card #${cardId}`}
                                       </HoverDescription>
                                       <button onClick={() => updateField(["equipped", cardKey], null)}>×</button>
@@ -3212,7 +3234,18 @@ export default function BuildEditor() {
                                       placeholder={`Card slot ${i + 1}…`}
                                       search={itemSearch("IT_CARD", cardLoc)}
                                       onSelect={(r) => {
-                                        setItemCache((prev) => ({ ...prev, [r.id]: { id: r.id, name: r.label } }));
+                                        // The stub lands first so the pill names the card
+                                        // immediately. It must then be REPLACED by the full
+                                        // record: the "resolve names for equipped items"
+                                        // effect skips any id already in the cache, so a
+                                        // stub left here is permanent — and a stub has no
+                                        // card_name, which is what titles the host weapon.
+                                        setItemCache((prev) => prev[r.id]
+                                          ? prev
+                                          : { ...prev, [r.id]: { id: r.id, name: r.label } });
+                                        api.getItem(r.id, data.server)
+                                          .then((full) => setItemCache((prev) => ({ ...prev, [r.id]: full })))
+                                          .catch(() => {});
                                         updateField(["equipped", cardKey], r.id);
                                       }}
                                       fetchTooltip={fetchItemTooltip}
