@@ -424,7 +424,7 @@ no browsers; these drive the one you already have.
 (cd tools/e2e && npm install)             # once; pulls playwright-core
 
 # with BOTH dev servers running (5173 and 4000):
-node tools/e2e/run-all.mjs                # all 49, ~25 min
+node tools/e2e/run-all.mjs                # all 49, ~30 min (measured, Chrome, one machine)
 node tools/e2e/run-all.mjs card           # only scripts whose name contains "card"
 node tools/e2e/run-all.mjs --bail         # stop at the first failure
 node tools/e2e/run-all.mjs --url https://openpscalc.com/
