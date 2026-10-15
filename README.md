@@ -354,6 +354,23 @@ motivated several changes beyond a straight 1:1 port:
   Mace / Crossbow / Artisan / Vile Wind — +stats and MaxHP/SP); and a **pet**
   selector applies Cute Pet System loyalty bonuses (profile `pet_bonuses`). All
   three are URL-encoded alongside the build.
+- **Importing a build from elsewhere** — two one-way imports, because most players
+  already have their build somewhere. `POST /api/data/import/jaludev` decodes a
+  [payonrocalc.jaludev.com](https://payonrocalc.jaludev.com) share hash into a whole
+  build (job, stats, gear, cards) and replaces what is on screen;
+  `POST /api/data/import/ps-tools-skills` decodes a
+  [tools.payonstories.com/skill](https://tools.payonstories.com/skill) planner link,
+  which carries only a job and skill levels, and therefore *merges* into the build on
+  screen rather than replacing it. The import dialog reports what it kept and what it
+  could not map, rather than silently dropping skills this calculator does not model.
+- **Equipment is titled the way the game titles it** — `+7 Double Boned Bloody
+  Gladius`, not `Gladius +7` with the cards listed separately. The refine is a control
+  immediately left of the name; the cards contribute their own words, repeats collapsing
+  into Double/Triple/Quadruple, in slot order, with suffix cards following the name
+  (`Cotton Shirt of Champion`). The algorithm is the client's, transcribed from
+  roBrowser's `getItemName()`. The words come from two generated tables — see
+  **Generated data** below.
+
 - **CI/CD**: a GitHub Actions pipeline (`.github/workflows/deploy.yml`)
   that typechecks/builds on every push and deploys to an EC2 instance
   (pm2 + nginx) on pushes to `main` — see `DEPLOYMENT.md`.
@@ -379,26 +396,101 @@ Linux and Windows). See
 
 ## Contributing
 
-Run the backend test suite before opening a PR — CI runs it and it gates the
-deploy:
+### What CI actually runs
+
+`deploy.yml` runs four things, and a failure in any of them blocks the deploy. Run all
+four before pushing — not just the tests:
 
 ```bash
-cd open-ps-calc-backend/backend && npm test
+cd open-ps-calc-backend/backend   && npx tsc --noEmit && npm test
+cd open-ps-calc-frontend/frontend && npx tsc --noEmit && npm run build
 ```
 
-A handful of values are pinned by `test/protected-values.test.js`: the Ko-fi
+The frontend half catches a real class of break on its own: the two packages are
+typechecked separately, so a backend change that alters a response shape compiles fine
+on its side and fails on the frontend's.
+
+### The end-to-end suite
+
+`tools/e2e/` holds 50 scripts that drive the real UI in a real browser against a local
+dev server. **They do not run in CI** — they need a browser, so CI would need one — which
+means they only run when you run them. They are also the only thing that tests the front
+end at all, so for a UI change they are the check that matters:
+
+```bash
+(cd tools/e2e && npm install)                   # once; pulls playwright-core
+
+# with both dev servers running, from the repo root:
+node tools/e2e/equip-item-naming.mjs            # one of them
+for f in tools/e2e/*.mjs; do node "$f"; done    # all 50, the better part of an hour
+```
+
+They resolve `playwright-core` from `tools/e2e/node_modules` by their own location, so
+they run from anywhere; the paths above assume the repo root. They drive Chrome via
+`channel: "chrome"` — your installed browser, not a downloaded one.
+
+Most are named after the bug they were written for and open with a comment quoting the
+report. Keep that habit: a test whose reason is written down survives a refactor that a
+nameless assertion does not.
+
+### Both themes, every time
+
+This app ships a dark theme and a light one and **they do not fail together** — the
+accent is `#d8a657` on dark and `#754d11` on light, so white-on-accent is fine in one
+and unreadable in the other. A screenshot in one theme is half a check. Toggle with
+`document.documentElement.setAttribute("data-theme", "light")`.
+
+```bash
+node tools/e2e/theme-contrast.mjs          # both themes, fails on anything NEW below AA
+node tools/e2e/theme-contrast.mjs --list   # everything currently failing
+node tools/e2e/theme-contrast.mjs --accept # re-record after a deliberate change
+```
+
+It measures every visible string against the background actually painted behind it. The
+baseline (`theme_contrast_baseline.json`) is **empty** and worth keeping that way.
+
+Two related traps, both of which shipped bugs here:
+
+- **A native `<select>`'s open list is an OS window.** It never appears in a page
+  screenshot, so a screenshot of the closed control proves nothing about the open one.
+  To see it, launch headed and take an OS-level screen capture.
+- **Don't leave a visual decision to the browser.** Selection colours, `color-scheme`,
+  focus rings — anything undeclared is decided per engine, which looks fine on your
+  machine and gets reported by a player on another.
+
+### Guards worth knowing about
+
+`test/protected-values.test.js` pins the handful of values that can be changed in a
+one-line diff that looks harmless in review and does real damage if it lands: the Ko-fi
 donation page, the site's canonical domain, the upstream attribution to
-StatGameDev/Open_PS_Calc, and the hosts the audit tooling fetches from. They are
-pinned because each one can be changed in a one-line diff that looks harmless in
-review and does real damage if it lands — swap eight characters of the Ko-fi id
-and every donation goes somewhere else, with nothing on screen looking different.
+StatGameDev/Open_PS_Calc, this project's own credit, and the hosts the audit tooling
+fetches from. Swap eight characters of the Ko-fi id and every donation goes somewhere
+else with nothing on screen looking different.
 
-None of them are frozen. If you have reason to change one, change it in that test
-too, in the same commit. That is the entire point: it turns a silent edit into a
-visible one a reviewer is asked to confirm on purpose.
+None of them are frozen. If you have reason to change one, change it in that test too,
+in the same commit — that is the entire point: it turns a silent edit into a visible one
+a reviewer is asked to confirm on purpose.
 
-If that suite fails and you did not mean to touch any of it, look closely at the
-diff before pushing.
+`test/frontend-source.test.js` additionally fails on any `var(--token)` naming a custom
+property that is defined nowhere. CSS does not warn about those: the declaration is
+silently dropped, or a fallback nobody tuned is used forever. Two separate theme bugs
+here were exactly that.
+
+### Generated data — don't hand-edit
+
+| file | generator | source |
+|------|-----------|--------|
+| `data/card_names.json` | `tools/gen-card-names.mjs` | the RO client's own `card{prefix,postfix}nametable`, pinned to a commit |
+| `data/ps/ps_card_names.json` | `tools/gen-ps-card-names.mjs` | [tools.payonstories.com/card_database](https://tools.payonstories.com/card_database) |
+
+Card display names live only in the client, so neither can be derived from Hercules or
+the PS item API. The PS table also *overrides* the client's on cards Payon Stories has
+reworked, and that is resolved **per server** — the vanilla profile keeps the vanilla
+words. See `PS_SOURCES.md`.
+
+The PS item and skill audits (`npm run ps:audit-items`, `ps:audit-skills`) run weekly in
+their own workflows and are baselined the same way: quiet until Payon Stories actually
+changes something.
 
 ## What's accurate vs. what's a placeholder
 
