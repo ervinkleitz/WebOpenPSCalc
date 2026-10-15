@@ -29,6 +29,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **The refine dropdown was unreadable when opened.** The list of levels came up as pale
+  grey on white — only the one already selected was legible. It now matches whichever
+  theme you are using, dark or light. This is the one a player screenshotted twice; the
+  earlier attempts fixed the wrong thing because the open list is drawn by the browser
+  itself and never showed up in our own screenshots of the page.
+
 - **Text that was too faint to read, in both themes.** A sweep of every visible string
   against the colour actually behind it found 7 in dark and 16 in light below the
   readable-contrast standard — the **Cards** toggle was nearly invisible in dark, and in

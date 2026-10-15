@@ -235,6 +235,52 @@ test("the page declares its colour scheme and styles its own selection", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Every custom property referenced must actually exist
+// ---------------------------------------------------------------------------
+test("no CSS variable is referenced that is never defined", () => {
+  // This exact mistake shipped twice in one week, and both times it was invisible in
+  // review because the CSS looks perfectly reasonable:
+  //
+  //   .refine-select option { background: var(--panel); color: var(--text); }
+  //     There is no --panel token. The background was dropped as invalid while the
+  //     colour applied, giving near-white text on the browser's white dropdown — the
+  //     refine numbers a player screenshotted as unreadable.
+  //
+  //   color: var(--text-muted, #888)
+  //     No --text-muted either, so all four of these silently used the #888 fallback:
+  //     a fixed grey that cannot respond to the theme at all.
+  //
+  // A var() naming something undefined does not warn, it just quietly does nothing (or
+  // takes a fallback that nobody tuned). That is exactly the kind of thing a test is
+  // for and a reader is not.
+  // Comments are stripped first: this very test's own comment names var(--panel) as the
+  // example, and a mention in prose is not a reference.
+  const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+  const css = strip(read("src", "styles.css"));
+  const editor = strip(read("src", "pages", "BuildEditor.tsx"));
+
+  // Everything the stylesheet DEFINES, anywhere — :root, a theme block, a component.
+  const defined = new Set([...css.matchAll(/(--[a-z0-9-]+)\s*:/gi)].map((m) => m[1]));
+
+  // Properties the browser defines itself, which are legitimately referenced undefined.
+  const BUILT_IN = new Set();
+
+  const missing = new Map();
+  for (const [src, label] of [[css, "styles.css"], [editor, "BuildEditor.tsx"]]) {
+    for (const m of src.matchAll(/var\(\s*(--[a-z0-9-]+)\s*([,)])/gi)) {
+      const [, name, next] = m;
+      if (defined.has(name) || BUILT_IN.has(name)) continue;
+      const key = `${name} (${label}${next === "," ? ", has a fallback" : ""})`;
+      missing.set(key, (missing.get(key) || 0) + 1);
+    }
+  }
+  assert.deepEqual([...missing.keys()].sort(), [],
+    "these var() references name a custom property that is defined nowhere. Either "
+    + "define it, or use the token that was meant. A fallback is not an excuse: it is "
+    + "a hard-coded value that no theme can reach.");
+});
+
+// ---------------------------------------------------------------------------
 // CHANGELOG structure
 // ---------------------------------------------------------------------------
 test("CHANGELOG.md is well formed", () => {

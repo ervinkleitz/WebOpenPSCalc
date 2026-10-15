@@ -831,7 +831,7 @@ label {
 }
 .card-mode-toggle button:not(:last-child) { border-right: 1px solid var(--border-soft); }
 .card-mode-toggle button.active { background: var(--accent); color: var(--on-accent); }
-.card-mode-toggle button:not(.active):hover { background: var(--bg-hover); color: var(--text); }
+.card-mode-toggle button:not(.active):hover { background: var(--bg-panel-raised); color: var(--text); }
 
 .card-slots { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.4rem; }
 .card-slot .selected-pill { font-size: 0.85rem; }
@@ -854,7 +854,7 @@ label {
   min-width: 0;
   font-size: 0.75rem;
   padding: 0.18rem 0.3rem;
-  background: var(--bg-input, var(--bg-panel));
+  background: var(--bg-panel);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius);
   color: var(--text);
@@ -949,17 +949,27 @@ label {
 .refine-select {
   appearance: none; -webkit-appearance: none;
   border: 0; border-right: 1px solid var(--border); border-radius: 0;
-  background: transparent; color: var(--accent);
+  /* Opaque, matching the pill it sits in. NOT transparent: a select with no background
+     of its own leaves the open list to the engine, which draws it light. */
+  background: var(--bg); color: var(--accent);
   font-size: 0.85rem; line-height: 1.1;
   padding: 0.18rem 0.95rem 0.18rem 0.1rem;
 }
 .refine-select:hover { color: var(--text); }
 .refine-wrap:hover::after { border-top-color: var(--accent); }
-/* A <select>'s open list is drawn by the OS and ignores the colours above; the
-   color-scheme now declared on :root is what makes the browser draw that popup to match
-   the app, so the options need no colours of their own. This used to be scoped to
-   `select` to avoid touching other native furniture — that was too narrow: it left the
-   PAGE undeclared, so forced-dark browsers still second-guessed the palette. */
+/* THE OPEN LIST. Verified by opening it in a real browser and screen-grabbing it — a
+   native popup is an OS window and never appears in a page screenshot, which is how two
+   wrong fixes shipped before this one.
+
+   It needs BOTH halves, and the first attempt had neither working:
+     - color-scheme on :root, so an engine that honours it draws a dark list.
+     - explicit colours on the options, for engines that do not.
+   The original rule here set `background: var(--panel)`, and there is no --panel token
+   in this project. The background was therefore dropped as invalid while `color:
+   var(--text)` applied — near-white text on the engine's white list. Removing the rule
+   then left the options inheriting the control's accent gold, still on a white list,
+   which is the state a player screenshotted. Both colours, both real tokens. */
+.refine-select option { background: var(--bg-panel); color: var(--text); }
 /* One "take this off" affordance for the whole panel: the same x on an equipped
    item as on a card. Square so a row of them lines up, and it only takes the
    accent on hover so a grid of slots is not covered in red. */
@@ -999,9 +1009,9 @@ label {
 .branch-toggle { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; flex-wrap: wrap; align-items: center; }
 .branch-toggle button { font-size: 0.8rem; padding: 0.35rem 0.8rem; }
 .branch-toggle button.active { border-color: var(--accent); color: var(--accent); }
-.branch-skill-pill { background: var(--accent-subtle, rgba(99,179,237,0.08)); border-color: var(--accent) !important; font-weight: 600; }
-.branch-skill-pill.active { background: var(--accent-subtle, rgba(99,179,237,0.15)); }
-.branch-falcon-pill { border-color: var(--success, #68d391) !important; color: var(--success, #68d391); }
+.branch-skill-pill { background: var(--accent-soft); border-color: var(--accent) !important; font-weight: 600; }
+.branch-skill-pill.active { background: var(--accent-soft); }
+.branch-falcon-pill { border-color: var(--good) !important; color: var(--good); }
 .branch-falcon-pill.active { background: rgba(104,211,145,0.12); }
 
 .step-list { display: flex; flex-direction: column; gap: 0.35rem; max-height: 480px; overflow-y: auto; }
@@ -1112,7 +1122,7 @@ label {
 .falcon-row .falcon-value { font-family: var(--mono); font-size: 0.95rem; color: var(--accent); }
 .falcon-note { font-size: 0.74rem; color: var(--text-faint); padding: 0.15rem 0.2rem; }
 .dw-section-label { font-size: 0.74rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0; margin-bottom: 0.25rem; }
-.dw-ps-bonus-row { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.75rem; padding: 0.35rem 0.5rem; background: var(--surface2); border-radius: 6px; }
+.dw-ps-bonus-row { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.75rem; padding: 0.35rem 0.5rem; background: var(--bg-panel-raised); border-radius: 6px; }
 .dw-ps-bonus-label { font-size: 0.8rem; color: var(--text); flex: 1; }
 .dw-ps-bonus-val { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); font-weight: 600; }
 .dw-ps-bonus-note { font-size: 0.72rem; color: var(--text-faint); }
@@ -1243,7 +1253,7 @@ label {
   cursor: pointer;
   flex-shrink: 0;
 }
-.reworks-banner-dismiss:hover { color: var(--accent); background: var(--accent-soft-hover, rgba(255,255,255,0.04)); }
+.reworks-banner-dismiss:hover { color: var(--accent); background: var(--accent-soft); }
 .reworks-banner-toggle {
   display: flex;
   align-items: center;
@@ -1256,7 +1266,7 @@ label {
   text-align: left;
   gap: 0.5rem;
 }
-.reworks-banner-toggle:hover { background: var(--accent-soft-hover, rgba(255,255,255,0.04)); }
+.reworks-banner-toggle:hover { background: var(--accent-soft); }
 .reworks-banner-toggle strong {
   color: var(--accent);
   font-size: 0.95rem;
@@ -1295,7 +1305,7 @@ label {
 .share-error {
   display: flex; align-items: center; justify-content: center; gap: 0.75rem;
   padding: 0.5rem 1rem; font-size: 0.85rem;
-  background: color-mix(in srgb, var(--crit) 15%, var(--panel));
+  background: color-mix(in srgb, var(--crit) 15%, var(--bg-panel));
   color: var(--text); border-bottom: 1px solid var(--crit);
 }
 .share-error button {
@@ -1507,7 +1517,7 @@ label {
 
 /* ── Stats page ─────────────────────────────────────────── */
 .stats-login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-.stats-login { display: flex; flex-direction: column; gap: 0.75rem; width: 280px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; }
+.stats-login { display: flex; flex-direction: column; gap: 0.75rem; width: 280px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; }
 .stats-login-title { font-family: var(--serif); font-size: 1.2rem; color: var(--text); margin: 0 0 0.25rem; text-align: center; }
 .stats-login-input { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 0.45rem 0.65rem; font-size: 0.9rem; }
 .stats-login-btn { background: var(--accent); color: #fff; border: none; border-radius: 4px; padding: 0.45rem; font-size: 0.9rem; cursor: pointer; font-weight: 600; }
@@ -1518,20 +1528,20 @@ label {
 .stats-header { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-bottom: 1.75rem; }
 .stats-title { font-family: var(--serif); font-size: 1.4rem; color: var(--text); margin: 0; flex: 1 1 100%; }
 .stats-presets { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.stats-preset-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); padding: 0.3rem 0.75rem; font-size: 0.8rem; cursor: pointer; }
+.stats-preset-btn { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); padding: 0.3rem 0.75rem; font-size: 0.8rem; cursor: pointer; }
 .stats-preset-btn.active, .stats-preset-btn:hover { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
 .stats-date-range { display: flex; align-items: center; gap: 0.5rem; }
-.stats-date-range input[type="date"] { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 0.28rem 0.5rem; font-size: 0.8rem; }
+.stats-date-range input[type="date"] { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 0.28rem 0.5rem; font-size: 0.8rem; }
 .stats-date-range span { font-size: 0.8rem; color: var(--text-faint); }
 .stats-logout { margin-left: auto; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-faint); padding: 0.28rem 0.65rem; font-size: 0.78rem; cursor: pointer; }
 .stats-logout:hover { color: var(--text); border-color: var(--text-dim); }
 
 .stats-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
-.stats-metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; text-align: center; }
+.stats-metric { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; text-align: center; }
 .stats-metric-val { font-family: var(--mono); font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1.1; }
 .stats-metric-label { font-size: 0.78rem; color: var(--text-faint); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
-.stats-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.stats-section { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1rem; }
 .stats-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
 .stats-section-title { font-family: var(--serif); font-size: 0.95rem; color: var(--text); margin: 0 0 0.75rem; }
 .stats-section-header .stats-section-title { margin: 0; }
