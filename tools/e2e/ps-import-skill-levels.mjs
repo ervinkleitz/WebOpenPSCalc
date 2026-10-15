@@ -24,7 +24,9 @@ const URL_BASE = process.argv[2] || "http://localhost:5173/";
 // into whatever is on screen, so this also exercises that it leaves gear alone — and
 // it is what makes the damage comparison below mean anything: on the default empty
 // build a Knight's Pierce does 0 at Lv5 and 4 at Lv10, and "4 > 0" proves nothing.
-const FE = new URL("file:///C:/Users/ervin/WebOpenPSCalc/open-ps-calc-frontend/frontend/");
+// Resolved from this script's own location, so the suite runs from any checkout on
+// any OS. It used to be an absolute path to one developer's machine.
+const FE = new URL("../../open-ps-calc-frontend/frontend/", import.meta.url);
 const LZ = createRequire(new URL("package.json", FE))("lz-string");
 const feSrc = readFileSync(new URL("src/pages/BuildEditor.tsx", FE), "utf8");
 const CARD_SLOTS = ["right_hand", "left_hand", "head_top", "head_mid", "head_low",

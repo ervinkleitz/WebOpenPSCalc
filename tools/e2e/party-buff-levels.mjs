@@ -18,7 +18,9 @@ const check = (c, m) => { if (!c) { console.error("FAIL: " + m); ok = false; } e
 const num = (s) => Number(String(s ?? "").replace(/[^\d.]/g, ""));
 
 // Share-link encoder, for the stale-build case at the end.
-const FE = new URL("file:///C:/Users/ervin/WebOpenPSCalc/open-ps-calc-frontend/frontend/");
+// Resolved from this script's own location, so the suite runs from any checkout on
+// any OS. It used to be an absolute path to one developer's machine.
+const FE = new URL("../../open-ps-calc-frontend/frontend/", import.meta.url);
 const LZ = createRequire(new URL("package.json", FE))("lz-string");
 const feSrc = readFileSync(new URL("src/pages/BuildEditor.tsx", FE), "utf8");
 const SLOTS = ["right_hand", "left_hand", "head_top", "head_mid", "head_low",

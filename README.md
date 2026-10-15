@@ -412,22 +412,33 @@ on its side and fails on the frontend's.
 
 ### The end-to-end suite
 
-`tools/e2e/` holds 50 scripts that drive the real UI in a real browser against a local
+`tools/e2e/` holds 49 scripts that drive the real UI in a real browser against a local
 dev server. **They do not run in CI** — they need a browser, so CI would need one — which
 means they only run when you run them. They are also the only thing that tests the front
-end at all, so for a UI change they are the check that matters:
+end at all, so for a UI change they are the check that matters.
+
+**You need Google Chrome (or Edge) installed.** `playwright-core` deliberately bundles
+no browsers; these drive the one you already have.
 
 ```bash
-(cd tools/e2e && npm install)                   # once; pulls playwright-core
+(cd tools/e2e && npm install)             # once; pulls playwright-core
 
-# with both dev servers running, from the repo root:
-node tools/e2e/equip-item-naming.mjs            # one of them
-for f in tools/e2e/*.mjs; do node "$f"; done    # all 50, the better part of an hour
+# with BOTH dev servers running (5173 and 4000):
+node tools/e2e/run-all.mjs                # all 49, ~25 min
+node tools/e2e/run-all.mjs card           # only scripts whose name contains "card"
+node tools/e2e/run-all.mjs --bail         # stop at the first failure
+node tools/e2e/run-all.mjs --url https://openpscalc.com/
+node tools/e2e/equip-item-naming.mjs      # or just run one directly
 ```
 
-They resolve `playwright-core` from `tools/e2e/node_modules` by their own location, so
-they run from anywhere; the paths above assume the repo root. They drive Chrome via
-`channel: "chrome"` — your installed browser, not a downloaded one.
+The runner checks its prerequisites first and says which one is missing in a sentence —
+no browser, no dev server, API down — because each of those otherwise fails as a stack
+trace that looks like a broken test. It reports a script as failed if it exits non-zero
+**or** never prints `PASS`: most of these scripts print their own verdict and exit 0
+regardless, so an exit-code-only runner would call half the suite green.
+
+Scripts resolve both `playwright-core` and the frontend directory from their own
+location, so they run from any checkout on any OS, invoked from anywhere.
 
 Most are named after the bug they were written for and open with a comment quoting the
 report. Keep that habit: a test whose reason is written down survives a refactor that a
@@ -445,6 +456,9 @@ node tools/e2e/theme-contrast.mjs          # both themes, fails on anything NEW 
 node tools/e2e/theme-contrast.mjs --list   # everything currently failing
 node tools/e2e/theme-contrast.mjs --accept # re-record after a deliberate change
 ```
+
+It is not in `run-all.mjs`: it is a standing check on the palette rather than a
+regression test for one bug, and you want to run it after touching CSS specifically.
 
 It measures every visible string against the background actually painted behind it. The
 baseline (`theme_contrast_baseline.json`) is **empty** and worth keeping that way.

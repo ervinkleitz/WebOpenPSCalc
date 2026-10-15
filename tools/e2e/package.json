@@ -2,6 +2,13 @@
   "name": "openpscalc-e2e",
   "private": true,
   "type": "module",
-  "description": "Browser regression tests. Not part of npm test or the deploy workflow - see README.",
-  "dependencies": { "playwright-core": "^1.49.0" }
+  "description": "Browser regression tests. Not part of npm test or the deploy workflow - they need an installed Chrome, so CI would need one too. Run them yourself: npm test here, or node run-all.mjs from anywhere.",
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  },
+  "scripts": {
+    "test": "node run-all.mjs",
+    "test:bail": "node run-all.mjs --bail",
+    "contrast": "node theme-contrast.mjs"
+  }
 }
