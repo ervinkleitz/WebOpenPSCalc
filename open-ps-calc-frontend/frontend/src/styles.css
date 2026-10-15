@@ -3,8 +3,16 @@
      browser running in forced-dark ("dark mode" in Brave/Edge, a dark-mode add-on in
      Firefox) that this page already handles dark and must not be auto-inverted on top
      of its own palette. Without it the engine decides for itself, which is why the
-     same page looked different to three players in three browsers. */
-  color-scheme: dark;
+     same page looked different to three players in three browsers.
+
+     BOTH schemes are listed, not just the active one, and that is the part that
+     matters. Chromium skips auto-darkening any page whose color-scheme includes
+     `dark`; a page declaring only `light` is exactly what it thinks it is there to
+     fix. With `color-scheme: light` alone on the light theme, a browser in forced
+     dark re-inverted 99% of its pixels into a muddy brown that is not our design.
+     Listing both says "this page handles either" and the browser leaves it alone.
+     The first value is the preferred one, so each theme still asks for its own. */
+  color-scheme: dark light;
   /* Selected text. Left unstyled, every browser picks its own — Chromium paints a
      solid blue block that swallows the accent and link colours, Firefox picks
      something else again. Translucent so it tints whatever it covers instead of
@@ -35,7 +43,7 @@
 }
 
 [data-theme="light"] {
-  color-scheme: light;
+  color-scheme: light dark;
   /* The light theme's accent is DARK gold, so its readable foreground is white —
      the opposite of the dark theme's. This is why it has to be a token. */
   --on-accent: #ffffff;

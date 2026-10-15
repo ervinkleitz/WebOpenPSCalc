@@ -217,10 +217,16 @@ test("the page declares its colour scheme and styles its own selection", () => {
   //      second-guess an already-dark palette.
   const css = read("src", "styles.css");
 
-  assert.ok(/:root\s*\{[^}]*color-scheme:\s*dark/s.test(css),
-    "the page must declare color-scheme: dark, or forced-dark browsers re-invert it");
-  assert.ok(/\[data-theme="light"\]\s*\{[^}]*color-scheme:\s*light/s.test(css),
-    "the light theme must declare its own scheme too");
+  // BOTH schemes on BOTH themes, preferred one first. Listing only the active scheme
+  // is not enough and the light theme proves it: Chromium skips auto-darkening a page
+  // whose color-scheme includes `dark`, so `color-scheme: light` alone was an invitation
+  // — a browser in forced dark re-inverted 99% of the light theme's pixels (measured).
+  assert.ok(/:root\s*\{[^}]*color-scheme:\s*dark\s+light\s*;/s.test(css),
+    "the page must declare `color-scheme: dark light` — dark first for its own "
+    + "preference, light listed so forced-dark browsers leave the page alone");
+  assert.ok(/\[data-theme="light"\]\s*\{[^}]*color-scheme:\s*light\s+dark\s*;/s.test(css),
+    "the light theme must declare `color-scheme: light dark`. With `light` alone a "
+    + "browser in forced dark re-inverts the whole theme.");
 
   assert.ok(/::selection\s*\{[^}]*background:/.test(css), "::selection is unstyled again");
   assert.ok(/::-moz-selection\s*\{[^}]*background:/.test(css), "::-moz-selection is gone");

@@ -29,6 +29,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Light mode looked wrong if your browser has its own dark mode turned on.** Browsers
+  with a “dark mode for websites” setting (Brave, Edge, Chrome’s Ultra dark theme, a
+  Firefox add-on) were darkening the light theme a second time on top of its own
+  colours, turning the cream page into a muddy brown. The calculator now tells the
+  browser it handles both light and dark itself, so it is left alone either way. Dark
+  mode was already unaffected — the two renders are pixel-identical.
+
 - **The refine dropdown was unreadable when opened.** The list of levels came up as pale
   grey on white — only the one already selected was legible. It now matches whichever
   theme you are using, dark or light. This is the one a player screenshotted twice; the
