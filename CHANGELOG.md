@@ -29,6 +29,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Highlighting text looked wrong, and looked wrong differently in each browser.**
+  Selected text was never given a colour of its own, so every browser used its own
+  default — Chrome and Edge paint a solid blue block that swallows the gold and blue
+  text underneath it, and Firefox does something else again. It now uses a soft
+  highlight from the calculator’s own palette, in both light and dark. Reported by
+  Sandrea and Noobitaa, who spotted it by comparing their screens.
+- **The page now tells your browser it already has a dark mode.** Browsers with their
+  own dark mode switched on (Brave, Edge, or a Firefox add-on) were free to darken the
+  calculator a second time on top of its own colours, which is the other reason it did
+  not look the same to everyone.
+
 - **The refine list was almost unreadable when you opened it.** The numbers were being
   drawn in the page’s own light text colour on top of the system’s white dropdown, so
   every level except the one already selected faded into the background. The dropdown

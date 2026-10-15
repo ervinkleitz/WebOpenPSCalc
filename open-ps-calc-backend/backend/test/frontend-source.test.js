@@ -202,6 +202,39 @@ test("the editor titles an equipped item through the shared helper", () => {
 });
 
 // ---------------------------------------------------------------------------
+// What the browser is allowed to decide for itself
+// ---------------------------------------------------------------------------
+test("the page declares its colour scheme and styles its own selection", () => {
+  // Reported by two players comparing browsers (Sandrea on Firefox, Noobitaa on Brave,
+  // 2026-10-14): "the selection looks weird in dark mode", and it looked different to
+  // each of them. Two causes, both "we left it to the browser":
+  //
+  //   1. ::selection was never styled, so each engine used its own default. Chromium
+  //      paints a solid blue block, which swallows the accent and link colours in the
+  //      features list; Firefox picks something else.
+  //   2. color-scheme was declared only on `select`, never on the page, so a browser in
+  //      forced-dark ("dark mode" in Brave/Edge, an add-on in Firefox) was free to
+  //      second-guess an already-dark palette.
+  const css = read("src", "styles.css");
+
+  assert.ok(/:root\s*\{[^}]*color-scheme:\s*dark/s.test(css),
+    "the page must declare color-scheme: dark, or forced-dark browsers re-invert it");
+  assert.ok(/\[data-theme="light"\]\s*\{[^}]*color-scheme:\s*light/s.test(css),
+    "the light theme must declare its own scheme too");
+
+  assert.ok(/::selection\s*\{[^}]*background:/.test(css), "::selection is unstyled again");
+  assert.ok(/::-moz-selection\s*\{[^}]*background:/.test(css), "::-moz-selection is gone");
+
+  // The reason they are two rules. A selector LIST containing a pseudo-element the
+  // engine does not recognise invalidates the whole rule, so "::selection,
+  // ::-moz-selection { ... }" silently styles nothing in one browser or the other —
+  // which is precisely the cross-browser inconsistency this fixed.
+  assert.ok(!/::selection\s*,|,\s*::-moz-selection/.test(css),
+    "::selection and ::-moz-selection must stay SEPARATE rules — combining them into "
+    + "one selector list makes a browser that does not know one of them drop both");
+});
+
+// ---------------------------------------------------------------------------
 // CHANGELOG structure
 // ---------------------------------------------------------------------------
 test("CHANGELOG.md is well formed", () => {

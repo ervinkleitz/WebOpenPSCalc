@@ -1,4 +1,17 @@
 :root {
+  /* Declaring the scheme on the PAGE, not just on form controls, is what tells a
+     browser running in forced-dark ("dark mode" in Brave/Edge, a dark-mode add-on in
+     Firefox) that this page already handles dark and must not be auto-inverted on top
+     of its own palette. Without it the engine decides for itself, which is why the
+     same page looked different to three players in three browsers. */
+  color-scheme: dark;
+  /* Selected text. Left unstyled, every browser picks its own — Chromium paints a
+     solid blue block that swallows the accent and link colours, Firefox picks
+     something else again. Translucent so it tints whatever it covers instead of
+     replacing it, with the foreground forced so contrast does not depend on which
+     colour the covered text happened to be. */
+  --selection-bg: rgba(216, 166, 87, 0.34);
+  --selection-fg: #ffffff;
   --bg: #12141c;
   --bg-panel: #181b26;
   --bg-panel-raised: #1f2330;
@@ -20,6 +33,9 @@
 }
 
 [data-theme="light"] {
+  color-scheme: light;
+  --selection-bg: rgba(150, 100, 25, 0.26);
+  --selection-fg: #1e1a10;
   --bg: #f0ebe0;
   --bg-panel: #e8e2d4;
   --bg-panel-raised: #ddd6c4;
@@ -66,6 +82,12 @@ body {
 h1, h2, h3 { font-family: var(--serif); font-weight: 600; margin: 0; letter-spacing: 0.01em; }
 
 a { color: var(--link); text-decoration: none; }
+
+/* Deliberately two rules, not one comma-separated list: a selector list containing a
+   prefix the engine does not recognise invalidates the WHOLE rule, so pairing these
+   would silently lose selection styling in one browser or the other. */
+::selection { background: var(--selection-bg); color: var(--selection-fg); }
+::-moz-selection { background: var(--selection-bg); color: var(--selection-fg); }
 a:hover { text-decoration: underline; }
 
 button {
@@ -928,15 +950,11 @@ label {
 }
 .refine-select:hover { color: var(--text); }
 .refine-wrap:hover::after { border-top-color: var(--accent); }
-/* A <select>'s open list is drawn by the OS, not by this stylesheet. It ignores the
-   colours above and, with no color-scheme declared, defaults to a LIGHT popup — so the
-   `option { color: var(--text) }` that used to live here painted near-white text onto a
-   white list and the refine numbers were barely readable. color-scheme is the switch
-   that makes the browser draw the popup to match the app; with it set, the options need
-   no colours of their own. Scoped to selects rather than :root so scrollbars and other
-   native furniture are left alone. */
-select { color-scheme: dark; }
-[data-theme="light"] select { color-scheme: light; }
+/* A <select>'s open list is drawn by the OS and ignores the colours above; the
+   color-scheme now declared on :root is what makes the browser draw that popup to match
+   the app, so the options need no colours of their own. This used to be scoped to
+   `select` to avoid touching other native furniture — that was too narrow: it left the
+   PAGE undeclared, so forced-dark browsers still second-guessed the palette. */
 /* One "take this off" affordance for the whole panel: the same x on an equipped
    item as on a card. Square so a row of them lines up, and it only takes the
    accent on hover so a grid of slots is not covered in red. */
