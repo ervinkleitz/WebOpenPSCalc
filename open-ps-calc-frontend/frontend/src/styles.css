@@ -10,6 +10,8 @@
      something else again. Translucent so it tints whatever it covers instead of
      replacing it, with the foreground forced so contrast does not depend on which
      colour the covered text happened to be. */
+  /* Readable ON the accent — see the note by --accent in the light theme. */
+  --on-accent: #1a1306;
   --selection-bg: rgba(216, 166, 87, 0.34);
   --selection-fg: #ffffff;
   --bg: #12141c;
@@ -19,9 +21,9 @@
   --border-soft: #232838;
   --text: #e8e6df;
   --text-dim: #9a9fb0;
-  --text-faint: #5d6276;
+  --text-faint: #9196a6;
   --accent: #d8a657;
-  --accent-dim: #a3793c;
+  --accent-dim: #b4884a;
   --accent-soft: rgba(216, 166, 87, 0.12);
   --crit: #e2685c;
   --good: #6fb98f;
@@ -34,6 +36,9 @@
 
 [data-theme="light"] {
   color-scheme: light;
+  /* The light theme's accent is DARK gold, so its readable foreground is white —
+     the opposite of the dark theme's. This is why it has to be a token. */
+  --on-accent: #ffffff;
   --selection-bg: rgba(150, 100, 25, 0.26);
   --selection-fg: #1e1a10;
   --bg: #f0ebe0;
@@ -43,13 +48,13 @@
   --border-soft: #c8c0ac;
   --text: #1e1a10;
   --text-dim: #56493a;
-  --text-faint: #8a7a64;
-  --accent: #966419;
-  --accent-dim: #7a5015;
+  --text-faint: #655741;
+  --accent: #754d11;
+  --accent-dim: #6e4510;
   --accent-soft: rgba(150, 100, 25, 0.12);
   --crit: #b83028;
-  --good: #2d7a4a;
-  --link: #2060a0;
+  --good: #16472c;
+  --link: #1d5894;
 }
 [data-theme="light"] body {
   background-image:
@@ -108,7 +113,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 button.primary {
   background: var(--accent);
-  color: #1a1306;
+  color: var(--on-accent);
   border-color: var(--accent);
   font-weight: 600;
 }
@@ -176,7 +181,7 @@ label {
   border-radius: 20px;
   background: var(--accent);
   border: 1px solid var(--accent);
-  color: #1a1306;
+  color: var(--on-accent);
   font-size: 0.78rem;
   font-weight: 600;
   text-decoration: none;
@@ -479,7 +484,7 @@ label {
 .info-tooltip:hover .info-tooltip-icon,
 .info-tooltip:focus-visible .info-tooltip-icon {
   background: var(--accent);
-  color: #1a1306;
+  color: var(--on-accent);
   transform: scale(1.08);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
@@ -825,7 +830,7 @@ label {
   transition: background 0.12s, color 0.12s;
 }
 .card-mode-toggle button:not(:last-child) { border-right: 1px solid var(--border-soft); }
-.card-mode-toggle button.active { background: var(--accent); color: #fff; }
+.card-mode-toggle button.active { background: var(--accent); color: var(--on-accent); }
 .card-mode-toggle button:not(.active):hover { background: var(--bg-hover); color: var(--text); }
 
 .card-slots { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.4rem; }

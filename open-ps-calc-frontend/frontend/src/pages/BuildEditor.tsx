@@ -3372,7 +3372,7 @@ export default function BuildEditor() {
 
           <Panel eyebrow="05" title="Passive skills">
             {passiveSkills.length === 0 ? (
-              <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
+              <p style={{ color: "var(--text-faint)", fontSize: "0.875rem" }}>
                 {data.job_id ? "No passive skills for this job." : "Select a job to see passive skills."}
               </p>
             ) : (
@@ -3416,7 +3416,7 @@ export default function BuildEditor() {
                         }));
                       }}
                     />
-                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted, #888)" }}>/ {ps.max_level}</span>
+                    <span style={{ fontSize: "0.75rem", color: "var(--text-faint)" }}>/ {ps.max_level}</span>
                   </div>
                 ))}
               </div>
@@ -3487,7 +3487,7 @@ export default function BuildEditor() {
                         });
                       }}
                     />
-                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted, #888)" }}>/ {plagiarizedMax}</span>
+                    <span style={{ fontSize: "0.75rem", color: "var(--text-faint)" }}>/ {plagiarizedMax}</span>
                   </div>
                 </div>
               </>
@@ -3645,7 +3645,7 @@ export default function BuildEditor() {
               return (
                 <>
                   {!hasSelfSection ? (
-                    <p style={{ color: "var(--text-muted, #888)", fontSize: "0.875rem" }}>
+                    <p style={{ color: "var(--text-faint)", fontSize: "0.875rem" }}>
                       {data.job_id ? "No self-cast buffs modeled for this job yet." : "Select a job to see its self buffs."}
                     </p>
                   ) : (

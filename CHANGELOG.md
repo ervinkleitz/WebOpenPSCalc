@@ -29,6 +29,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Text that was too faint to read, in both themes.** A sweep of every visible string
+  against the colour actually behind it found 7 in dark and 16 in light below the
+  readable-contrast standard — the **Cards** toggle was nearly invisible in dark, and in
+  light the **Calculate damage** button, the stat numbers and the item names were all
+  washed out. The muted greys, the gold and the link blue have been retuned so
+  everything clears the standard in both themes. Nothing moved and nothing changed
+  colour family; it is the same look, legible.
+
 - **Highlighting text looked wrong, and looked wrong differently in each browser.**
   Selected text was never given a colour of its own, so every browser used its own
   default — Chrome and Edge paint a solid blue block that swallows the gold and blue
