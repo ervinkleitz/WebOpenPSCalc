@@ -1,0 +1,31 @@
+{
+ "_note": "Text already below WCAG AA when this check was written. Known, not endorsed — the point of the file is that a NEW failure is loud. Shrink it when you touch one of these, and re-run with --accept.",
+ "_accepted": "2026-10-15",
+ "dark": [
+  "active",
+  "bp-sub",
+  "credits-link",
+  "credits-support-text",
+  "eyebrow",
+  "ro-stat-cost",
+  "span"
+ ],
+ "light": [
+  "active",
+  "b",
+  "bp-sub",
+  "credits-link",
+  "credits-support-text",
+  "hover-description",
+  "primary",
+  "ro-stat-bonus",
+  "ro-stat-cost",
+  "sec-stat-value",
+  "selected-pill__name",
+  "span",
+  "stat-pts-counter",
+  "strong",
+  "theme-hint",
+  "topbar-kofi-btn"
+ ]
+}
