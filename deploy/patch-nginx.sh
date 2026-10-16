@@ -73,17 +73,24 @@ fi
 #     location / { try_files $uri =404; }
 #     location = / { try_files /index.html =404; }
 #     location = /stats { try_files /index.html =404; }
+#     location = /changelog { try_files /index.html =404; }
 #     error_page 404 /404.html;  location = /404.html { internal; }
 #
-# The SPA owns exactly two routes (see src/App.tsx), so those two keep the app
-# shell and everything else becomes a genuine 404 against the static files.
+# The SPA's routes are enumerated so that everything else becomes a genuine 404
+# against the static files rather than silently serving the app shell.
+#
+# THIS LIST MUST MATCH src/App.tsx. A route added there and not here works when you
+# click to it — React handles that in the browser — and 404s when someone opens the
+# link directly, which is exactly what sharing a URL does. /changelog shipped that way
+# and was caught by tools/e2e/changelog-page.mjs loading the path directly.
 # ---------------------------------------------------------------------------
+SPA_ROUTES="/stats /changelog"
 if grep -q 'try_files $uri =404;' "$LIVE"; then
   echo "nginx: 404 fallback already present, skipping"
 elif ! grep -q 'try_files $uri /index.html;' "$LIVE"; then
   echo "nginx: no SPA catch-all found to patch, skipping" >&2
 else
-  sudo awk '
+  sudo awk -v routes="$SPA_ROUTES" '
     /^[[:space:]]*location \/ \{/ { inloc = 1; print; next }
     inloc && /try_files \$uri \/index\.html;/ {
       print "        try_files $uri =404;"; next
@@ -96,10 +103,13 @@ else
       print "        try_files /index.html =404;"
       print "    }"
       print ""
-      print "    location = /stats {"
-      print "        try_files /index.html =404;"
-      print "    }"
-      print ""
+      split(routes, r, " ")
+      for (i in r) if (r[i] != "") {
+        print "    location = " r[i] " {"
+        print "        try_files /index.html =404;"
+        print "    }"
+        print ""
+      }
       print "    error_page 404 /404.html;"
       print "    location = /404.html {"
       print "        internal;"
@@ -159,6 +169,45 @@ else
   CHANGED=1
   echo "nginx: SPA cache headers added"
 fi
+
+# ---------------------------------------------------------------------------
+# 2b. SPA routes added after the first patch
+#
+# The block above only runs on a server that still has the original catch-all, so on
+# an already-patched server a NEW route in src/App.tsx would never get its location
+# and would 404 on a direct hit. This adds any that are missing, one at a time, and
+# is a no-op once they are all there.
+#
+# Separate from the block above on purpose: that one converts an old config, this one
+# keeps a converted config in step with the app. They run on different servers.
+# ---------------------------------------------------------------------------
+for route in $SPA_ROUTES; do
+  # -F: a literal match. With grep's default BRE, "\{" opens an interval expression
+  # and errors out ("Unmatched \{"), so the guard never fired and every deploy would
+  # have appended another copy of the location until nginx -t failed on a duplicate.
+  if grep -qF "location = $route {" "$LIVE"; then
+    continue
+  fi
+  if ! grep -q 'location = / {' "$LIVE"; then
+    echo "nginx: no 'location = /' to anchor $route against, skipping" >&2
+    continue
+  fi
+  sudo awk -v route="$route" '
+    { print }
+    # Insert after the closing brace of the "location = / { ... }" block.
+    /^[[:space:]]*location = \/ \{/ { inroot = 1; next }
+    inroot && /^[[:space:]]*\}/ {
+      print ""
+      print "    location = " route " {"
+      print "        try_files /index.html =404;"
+      print "    }"
+      inroot = 0
+    }
+  ' "$LIVE" | sudo tee "$LIVE.tmp" > /dev/null
+  sudo mv "$LIVE.tmp" "$LIVE"
+  CHANGED=1
+  echo "nginx: added SPA route $route"
+done
 
 if [ "$CHANGED" -eq 0 ]; then
   echo "nginx: nothing to patch"
