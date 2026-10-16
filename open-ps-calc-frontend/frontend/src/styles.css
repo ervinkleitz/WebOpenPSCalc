@@ -2009,6 +2009,15 @@ html[data-density="compact"] .panel h2.panel-header { margin-bottom: 0; }
 html[data-density="compact"] .panel-content { margin-top: 0.45rem; }
 html[data-density="compact"] .field { margin-bottom: 0.55rem; }
 html[data-density="compact"] .editor-grid { column-gap: 0.85rem; }
+/* Compact: build name, job, base level and job level share one line. The two
+   .field-rows become display:contents so their four fields are the wrapper's own
+   flex items — no markup moves, so comfortable density is unaffected.
+   Not below 700px: four fields on one line at phone width is unreadable, and
+   compact is a density choice, not a request to be squeezed off the screen. */
+@media (min-width: 700px) {
+  html[data-density="compact"] .character-identity { display: flex; gap: 0.6rem; }
+  html[data-density="compact"] .character-identity > .field-row { display: contents; }
+}
 html[data-density="compact"] label { margin-bottom: 0.15rem; }
 
 /* Form controls — the most repeated element on the page, so their height drives

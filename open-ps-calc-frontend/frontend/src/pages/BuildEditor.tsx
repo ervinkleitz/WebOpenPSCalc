@@ -2667,6 +2667,12 @@ export default function BuildEditor() {
           </Panel>
 
           <Panel eyebrow="01" title="Character">
+            {/* Wrapper so compact mode can pull all four of these onto one line. The
+                two rows below stay two rows at comfortable density; in compact the
+                wrapper becomes the flex container and the rows go display:contents,
+                which drops their boxes and makes the four fields its direct items.
+                Nothing moves in the markup, so the comfortable layout is untouched. */}
+            <div className="character-identity">
             <div className="field-row">
               <div className="field">
                 <label>Build name</label>
@@ -2722,6 +2728,7 @@ export default function BuildEditor() {
                   onChange={(e) => updateField(["job_level"], Math.max(1, Math.min(getJobLevelCap(data.job_id), Number(e.target.value))))}
                 />
               </div>
+            </div>
             </div>
             <label style={{ marginTop: "0.3rem" }} className="section-label">
               Base stats

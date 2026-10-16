@@ -5,6 +5,16 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-16
+
+### Changed
+
+- **Compact mode puts build name, job, base level and job level on one line.** They
+  were two rows of two, which is the right shape when you have the space and wasted a
+  row when you have asked for compact. Comfortable density is unchanged, and on a
+  narrow screen compact still splits them over two rows — four fields across a phone
+  is not readable.
+
 ## 2026-10-15
 
 ### Changed

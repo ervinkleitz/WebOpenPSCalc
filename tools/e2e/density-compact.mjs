@@ -191,6 +191,42 @@ for (const [w, h, label] of [[390, 844, "iPhone"], [820, 1180, "tablet"]]) {
   await page.close();
 }
 
+// === Compact puts the character identity on one line =====================
+// Build name, Job, Base level and Job level are two rows of two at comfortable
+// density and one row of four in compact — the point of compact being to see more
+// at once. Guarded below 700px, where four on a line is unreadable.
+{
+  const idRows = async (density, width) => {
+    const p = await b.newPage({ viewport: { width, height: 1000 } });
+    await p.goto(URL, { waitUntil: "domcontentloaded" });
+    await p.waitForTimeout(6000);
+    await p.evaluate((d) => document.documentElement.setAttribute("data-density", d), density);
+    await p.waitForTimeout(600);
+    const r = await p.evaluate(() => {
+      const wrap = document.querySelector(".character-identity");
+      if (!wrap) return null;
+      const fields = [...wrap.querySelectorAll(".field")];
+      // Distinct top offsets = how many visual rows these four occupy.
+      return { n: fields.length, rows: new Set(fields.map((f) => Math.round(f.getBoundingClientRect().top))).size };
+    });
+    await p.close();
+    return r;
+  };
+
+  const wide = await idRows("compact", 1440);
+  if (!wide || wide.n !== 4) { console.error(`FAIL: expected 4 identity fields, got ${JSON.stringify(wide)}`); ok = false; }
+  else if (wide.rows !== 1) { console.error(`FAIL: compact should put all four on one row, got ${wide.rows}`); ok = false; }
+  else console.log("ok  compact keeps build name / job / base level / job level on one row");
+
+  const comfy = await idRows("comfortable", 1440);
+  if (comfy && comfy.rows !== 2) { console.error(`FAIL: comfortable should stay two rows, got ${comfy.rows}`); ok = false; }
+  else console.log("ok  and comfortable density is left as two rows of two");
+
+  const narrow = await idRows("compact", 640);
+  if (narrow && narrow.rows !== 2) { console.error(`FAIL: at 640px compact must fall back to two rows, got ${narrow.rows}`); ok = false; }
+  else console.log("ok  and falls back to two rows on a narrow screen");
+}
+
 console.log(ok ? "PASS" : "see failures");
 await b.close();
 process.exit(ok ? 0 : 1);
