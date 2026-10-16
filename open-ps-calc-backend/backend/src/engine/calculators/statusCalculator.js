@@ -610,10 +610,6 @@ class StatusCalculator {
       }
     }
 
-    // Clan HP lands AFTER the equipment rate, not inside it: it comes from a clan
-    // buff (a status change), where gear and pet bonuses are folded into the base
-    // before APPLY_RATE. See the note in buildApplicator.
-    status.max_hp += build.clan_maxhp || 0;
 
     // === MAX SP ===
     const spBase = loader.getSpAtLevel(build.job_id, build.base_level);

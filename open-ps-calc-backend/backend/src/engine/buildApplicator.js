@@ -130,14 +130,19 @@ function applyGearBonuses(build, gearBonuses) {
     equip_def: build.equip_def + gb.def_ + (ma.def || 0),
     bonus_def2: build.bonus_def2 + gb.def2,
     equip_mdef: build.equip_mdef + gb.mdef_ + (ma.mdef || 0),
-    // Clan HP/SP is deliberately NOT in these two. Equipment and pet `bonus bMaxSP`
+    // Clan SP is deliberately NOT in bonus_maxsp. Equipment and pet `bonus bMaxSP`
     // accumulate into bstatus->max_sp and are added to the base BEFORE the equipment
     // rate is applied (Hercules status.c status_calc_pc_), so a +15% card multiplies
-    // them. A clan bonus arrives as a status change from clan->buff_start and lands
-    // after that multiplication. See clan_maxhp / clan_maxsp below.
-    bonus_maxhp: build.bonus_maxhp + gb.maxhp + (ma.maxhp || 0),
+    // them; a clan bonus arrives later as a status change from clan->buff_start and
+    // lands after that multiplication. Confirmed against a player's in-game SP.
+    //
+    // Clan HP stays where it was, INSIDE the rate. The same reasoning would move it,
+    // but nobody has read a MaxHP% build's HP off the game to confirm that, and this
+    // is a damage calculator whose numbers get trusted — a plausible mechanism is not
+    // a reason to change a figure. If someone reports an HP mismatch on a build with
+    // a MaxHP% item, this is the line to change. See ROADMAP.
+    bonus_maxhp: build.bonus_maxhp + gb.maxhp + (ma.maxhp || 0) + (cl.maxhp || 0),
     bonus_maxsp: build.bonus_maxsp + gb.maxsp + (ma.maxsp || 0),
-    clan_maxhp: cl.maxhp || 0,
     clan_maxsp: cl.maxsp || 0,
     bonus_aspd_percent: build.bonus_aspd_percent + gb.aspd_percent + (ma.aspd_pct || 0) + (cons.aspd_percent || 0),
     bonus_aspd_add: build.bonus_aspd_add + gb.aspd_add,

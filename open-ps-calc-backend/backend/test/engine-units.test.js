@@ -2614,6 +2614,12 @@ test("clan MaxSP is not multiplied by a MaxSP% card", () => {
   assert.strictEqual(withCard.max_sp, 999);
   assert.strictEqual(withCard.sp_regen, 1 + Math.floor(withCard.int_ / 6) + 9,
     "999 SP is 9 regen steps, not 10 — the threshold the build was built for");
+
+  // Clan HP is deliberately still INSIDE the rate. The same reasoning would move it,
+  // but there is no in-game HP reading to confirm it and a plausible mechanism is not
+  // a reason to change a number players trust — see the open question in ROADMAP.
+  // Not asserted here: there is nothing to assert except the current behaviour, and
+  // pinning a value nobody has verified would dress a guess up as a decision.
 });
 
 // ---------------------------------------------------------------------------

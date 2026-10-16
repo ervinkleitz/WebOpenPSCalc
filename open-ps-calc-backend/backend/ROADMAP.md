@@ -1701,6 +1701,32 @@ Re-run `node tools/gen-ps-card-names.mjs` after a patch that adds cards. It refu
 write if it parses fewer than 500 rows, so a markup change on their side fails loudly
 rather than silently emptying the table.
 
+## Open question: does clan HP also sit outside the equipment rate? (2026-10-15)
+
+Clan SP does. Metan reported a Monk reading 1000 SP here and 999 in game, and the
+difference was exactly the clan's flat +10 being multiplied by a Sohee Card's +15%
+before the card was applied. Hercules folds equipment and pet `bonus bMaxSP` into
+`bstatus->max_sp` and adds it to the base BEFORE `APPLY_RATE(sprate)` (status.c
+`status_calc_pc_`), while a clan bonus arrives afterwards as a status change started
+by `clan->buff_start`. Clan SP now applies after the rate; verified against his
+in-game number.
+
+**Clan HP is still applied INSIDE the rate**, and the same reasoning says it probably
+should not be. It was changed to match and then deliberately reverted: there is no
+in-game HP reading to confirm it, and a plausible mechanism is not a good enough
+reason to move a number players trust. The two are also not guaranteed to behave
+alike — HP and SP take different paths through `status_calc_pc_`, and PS is a custom
+server whose clan implementation we have not seen.
+
+To settle it, we need one in-game Max HP from a character in any clan wearing a MaxHP%
+item (Ghostring Card, an HP% armour). If it is 30 lower than we show, move
+`cl.maxhp` out of `bonus_maxhp` in `buildApplicator.js` exactly as `cl.maxsp` was, and
+add the clan HP line back to `statusCalculator.js`. If it matches, record that here so
+nobody re-opens it.
+
+All six clans carry +30 HP / +10 SP, so this affects any clan member wearing a MaxHP%
+item.
+
 ## Suggested order for finishing the port
 
 1. ~~Fill in the rest of `skill_ratio.js`'s `BF_WEAPON_RATIOS` table~~ — done, see above.
