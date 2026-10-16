@@ -996,6 +996,38 @@ label {
 .selected-pill--invalid { border-color: var(--crit); background: rgba(226,104,92,0.08); }
 .selected-pill--invalid > span:first-child { color: var(--crit); }
 
+/* ---------------- Changelog page ---------------- */
+/* One line per change. The write-ups live in CHANGELOG.md and git; this page is for
+   "is the thing I reported in yet?", which is a scanning question, not a reading one. */
+.changelog-page { max-width: 820px; }
+.changelog-page-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem;
+}
+.changelog-page-head h1 { margin: 0; font-size: 1.6rem; }
+.changelog-page-sub { margin: 0.25rem 0 0; color: var(--text-dim); font-size: 0.85rem; }
+.changelog-back { white-space: nowrap; font-size: 0.85rem; }
+/* The date is the scanning anchor, so it gets the weight; the section label under it
+   is a quiet qualifier, not a heading competing with it. */
+.cl-date {
+  margin: 1.6rem 0 0.1rem; font-size: 0.95rem; font-family: var(--mono);
+  color: var(--accent); border-top: 1px solid var(--border-soft); padding-top: 0.9rem;
+}
+.changelog-rows > .cl-date:first-child { margin-top: 0; border-top: 0; padding-top: 0; }
+.cl-section {
+  margin: 0.7rem 0 0.3rem; font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-faint);
+}
+.cl-line {
+  margin: 0 0 0.45rem; padding-left: 0.9rem; position: relative;
+  font-size: 0.9rem; line-height: 1.5;
+}
+.cl-line::before {
+  content: ""; position: absolute; left: 0; top: 0.62em;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--text-faint);
+}
+.cl-line strong { font-weight: 600; color: var(--text); }
+
 /* ---------------- Summary ---------------- */
 .summary-headline { display: flex; gap: 1.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .metric { min-width: 100px; }

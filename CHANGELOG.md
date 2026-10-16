@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **The changelog is its own page now, at /changelog, and shows one line per change.**
+  It used to be a pop-up where every entry opened into the full write-up. Those are
+  written for whoever has to maintain the fix, so finding out whether the thing you
+  reported had shipped meant opening them one at a time. Now it is a list you can scan
+  — and a page you can link someone to.
+
 - **Compact mode puts build name, job, base level and job level on one line.** They
   were two rows of two, which is the right shape when you have the space and wasted a
   row when you have asked for compact. Comfortable density is unchanged, and on a

@@ -489,22 +489,41 @@ test("CHANGELOG.md uses only markup the changelog modal renders", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The modal has to keep implementing that grammar
+// The changelog page shows headlines only
 // ---------------------------------------------------------------------------
-test("the changelog modal still handles continuations and nested bullets", () => {
-  // The test above says the file stays inside the grammar; this one says the
-  // parser still implements it. Both halves have to hold - the mangling that
-  // prompted these came from the parser lacking the two branches below while the
-  // markdown used them freely.
-  const src = fs.readFileSync(
-    path.join(FRONTEND, "src", "components", "ChangelogModal.tsx"), "utf8");
+test("the changelog page renders one line per entry, not the write-ups", () => {
+  // It used to be a modal where each entry was a <details> you expanded into the
+  // full explanation. Those explanations are written for whoever maintains the fix —
+  // which number moved and why — and a player scanning for "is my report in yet?"
+  // had to open every one. It is a page now, at /changelog, showing the bold lead of
+  // each entry and nothing else.
+  //
+  // This pins the two things that would quietly undo that: rendering an entry's
+  // continuation lines, and going back to a disclosure widget.
+  // Comments stripped first: this page's own comment explains the <details> it
+  // replaced, and a mention in prose is not a disclosure widget. Same trap that the
+  // undefined-var test hit.
+  const strip = (t) => t.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+  const src = strip(read("src", "pages", "ChangelogPage.tsx"));
 
-  assert.ok(/next\.trim\(\) === ""/.test(src),
-    "modal no longer looks past a blank line - trailing paragraphs will spill out of their entry");
-  assert.ok(/kind: "ul"/.test(src),
-    "modal no longer builds nested lists - sub-bullets will flatten into the parent as literal '- ' text");
-  assert.ok(/<em /.test(src),
-    "modal no longer renders italics - *asterisks* will show literally");
+  assert.ok(/headline\(/.test(src), "the page no longer reduces an entry to its headline");
+  assert.ok(!/<details/.test(src),
+    "the changelog is a list of headlines, not expandable entries — if the detail is "
+    + "wanted back, it belongs on its own route, not behind a disclosure on this one");
+
+  // The parser's whole vocabulary is three line shapes. Anything else in the file is
+  // an entry's continuation, and continuations are exactly what this page omits.
+  for (const shape of ["^## ", "^### ", "^- "]) {
+    assert.ok(src.includes(shape), `the page must still recognise ${shape} lines`);
+  }
+
+  // And it has to be reachable, or it is a page nobody can get to.
+  const app = read("src", "App.tsx");
+  assert.ok(/path="\/changelog"/.test(app), "no /changelog route");
+  const editor = read("src", "pages", "BuildEditor.tsx");
+  assert.ok(/navigate\("\/changelog"\)/.test(editor),
+    "the Changelog button must navigate to the page");
+  assert.ok(!/ChangelogModal/.test(editor), "the old modal is still mounted");
 });
 
 // ---------------------------------------------------------------------------

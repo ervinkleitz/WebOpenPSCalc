@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState, useMemo, useRef, type ReactNode } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import LZString from "lz-string";
 import { api, statsApi, shareApi } from "../api/client";
 import SearchPicker from "../components/SearchPicker";
@@ -8,7 +8,6 @@ import InfoTooltip from "../components/InfoTooltip";
 import HoverNote from "../components/HoverNote";
 import HoverDescription from "../components/HoverDescription";
 import AttackRateNote from "../components/AttackRateNote";
-import ChangelogModal from "../components/ChangelogModal";
 import ResultsPanel from "../components/ResultsPanel";
 import SavedBuildsModal from "../components/SavedBuildsModal";
 import ImportBuildModal from "../components/ImportBuildModal";
@@ -963,6 +962,7 @@ const DEFAULT_ENCODED = encodeState(DEFAULT_URL_STATE);
 
 export default function BuildEditor() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const initialState = (() => {
     const param = searchParams.get("b");
@@ -1384,7 +1384,6 @@ export default function BuildEditor() {
   const [calcError, setCalcError] = useState("");
   const [forceProcs, setForceProcs] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [changelogOpen, setChangelogOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [savedBuildsOpen, setSavedBuildsOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -2497,7 +2496,7 @@ export default function BuildEditor() {
               Import
             </button>
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
-            <button onClick={() => { statsApi.trackFeature("changelog_open"); setChangelogOpen(true); setMenuOpen(false); }}>Changelog</button>
+            <button onClick={() => { statsApi.trackFeature("changelog_open"); setMenuOpen(false); navigate("/changelog"); }}>Changelog</button>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
             <button type="button" className="topbar-kofi-btn" onClick={() => { statsApi.trackDonateClick("topbar"); setMenuOpen(false); setTipOpen(true); }}>🍵 Support the calc</button>
           </div>
@@ -2520,7 +2519,6 @@ export default function BuildEditor() {
       </div>
 
       <div className="page">
-        <ChangelogModal open={changelogOpen} onClose={() => setChangelogOpen(false)} />
         <KofiModal open={tipOpen} onClose={() => setTipOpen(false)} />
         <SavedBuildsModal
           open={savedBuildsOpen}
