@@ -1934,9 +1934,21 @@ export default function BuildEditor() {
   // Buffs whose level only sets duration (Gloria, Adrenaline Rush, Weapon Perfection)
   // are declared max: 1 and keep a plain checkbox — a selector with one entry would
   // imply a choice that does not exist.
-  const partyBuffField = (b: { key: string; label: string; max: number }) => {
-    const support = (data.support_buffs as Record<string, number> | undefined) || {};
-    const stored = Number(support[b.key] ?? 0);
+  // One renderer for every buff that comes FROM SOMEONE ELSE: a tick to say it is on
+  // you, and a level only once it is, because a level selector on an unticked buff is
+  // asking about something that is not happening. Songs render through this too — they
+  // used to be bare number inputs, which made the same question look like a different
+  // kind of control depending on which half of the panel you were in.
+  //
+  // The group differs: party buffs live in support_buffs, songs in song_state. Wrapped
+  // below rather than curried at the call site, because these are passed straight to
+  // .map() and a second parameter would silently collect the array index.
+  const buffCheckboxField = (
+    b: { key: string; label: string; max: number; hint?: string },
+    group: "support_buffs" | "song_state",
+  ) => {
+    const bucket = (data[group] as Record<string, number> | undefined) || {};
+    const stored = Number(bucket[b.key] ?? 0);
     // A build shared before a cap came down (Over Thrust was offered at 10, the real
     // max is 5) must not show a level the engine will not use — it clamps too.
     const current = stored > 0 ? Math.min(stored, b.max) : 0;
@@ -1947,11 +1959,11 @@ export default function BuildEditor() {
     const leveled = current > 0 && b.max > 1;
     return (
       <div className={`field field-checkbox${leveled ? " field-checkbox--leveled" : ""}`} key={b.key}>
-        <label title={b.key}>
+        <label title={b.hint ? `${b.key} — ${b.hint}` : b.key}>
           <input
             type="checkbox"
             checked={current > 0}
-            onChange={(e) => updateBuffField("support_buffs", b.key, e.target.checked ? onLevel : 0)}
+            onChange={(e) => updateBuffField(group, b.key, e.target.checked ? onLevel : 0)}
           />
           <span>{b.label}</span>
         </label>
@@ -1959,7 +1971,7 @@ export default function BuildEditor() {
           <select
             title={`What level the caster has. ${b.label} is ${b.max} ranks; the effect scales with it.`}
             value={current}
-            onChange={(e) => updateBuffField("support_buffs", b.key, Number(e.target.value))}
+            onChange={(e) => updateBuffField(group, b.key, Number(e.target.value))}
           >
             {Array.from({ length: b.max }, (_, i) => b.max - i).map((lv) => (
               <option key={lv} value={lv}>Lv {lv}</option>
@@ -1969,6 +1981,11 @@ export default function BuildEditor() {
       </div>
     );
   };
+
+  const partyBuffField = (b: { key: string; label: string; max: number }) =>
+    buffCheckboxField(b, "support_buffs");
+  const songBuffField = (b: { key: string; label: string; max: number; hint?: string }) =>
+    buffCheckboxField(b, "song_state");
 
   // scrollToResults: the results panel pulls itself into view when a calculation
   // finishes, which is right when the user pressed "Calculate damage" and wrong when
@@ -3888,20 +3905,7 @@ export default function BuildEditor() {
 
                   <div className="buff-section-header" title="From a party member, never filtered by your own job">Bard / Dancer songs</div>
                   <div className="passive-grid">
-                    {SONG_BUFFS.map((b) => (
-                      <div className="field" key={b.key}>
-                        <label title={`${b.key}${b.hint ? ` — ${b.hint}` : ""}`}>{b.label}</label>
-                        <input
-                          className="mono"
-                          type="number"
-                          min={0}
-                          max={b.max}
-                          value={data.song_state?.[b.key] ?? 0}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => updateBuffField("song_state", b.key, Math.max(0, Math.min(b.max, Number(e.target.value))))}
-                        />
-                      </div>
-                    ))}
+                    {SONG_BUFFS.map(songBuffField)}
                   </div>
 
                   {(hasBardSong || hasDancerSong) && (

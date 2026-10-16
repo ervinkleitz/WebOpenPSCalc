@@ -136,6 +136,89 @@ if (await copy.count()) {
   await p3.context().close();
 }
 
+// === Songs use the same control ===========================================
+// Bard/Dancer songs were bare number inputs while every other buff from another
+// player was a tick plus a level. Same question, two different-looking controls,
+// in one panel. They render through the shared field now, so the behaviour above
+// has to hold for them too.
+//
+// On its own PAGE, with a job and a weapon: the default build has neither, so the
+// combat readout this needs is not rendered at all — the first version of this
+// check read ATK as null and "passed" the shape assertions while proving nothing
+// about the engine.
+{
+  // Explicit viewport, like the stale-build case below: at the default 1280x720 the
+  // layout collapses and the combat readout this measures is not rendered.
+  const sp = await (await browser.newContext({ viewport: { width: 1500, height: 1800 } })).newPage();
+  const songErrors = [];
+  sp.on("pageerror", (e) => songErrors.push(e.message));
+  await sp.goto(shareLink({
+    build: {
+      job_id: 15, base_level: 99, job_level: 50,
+      base_stats: { str: 80, agi: 60, vit: 40, int: 20, dex: 50, luk: 10 },
+      equipped: { right_hand: 1802 }, refine: {}, target_mob_id: 1002,
+    },
+    skill: { id: 0, level: 1, label: "Normal Attack" }, targetMode: "monster",
+  }), { waitUntil: "domcontentloaded" });
+  // Wait for the READOUT, not for a duration: this page has to fetch the weapon and
+  // run a calculation before ATK exists, and a fixed sleep that is a second short
+  // reads null — which then compares equal to the next null and passes vacuously.
+  // Wait for the READOUT, not a duration: this page fetches the weapon and runs a
+  // calculation before ATK exists, and a sleep that is a second short reads null —
+  // which then compares equal to the next null and passes while proving nothing.
+  // A plain wait, and then a hard check that the readout actually arrived. A
+  // waitForFunction was tried here and timed out even though the text was present
+  // within 12s — not worth more of a fight, because the assertion below gives the
+  // same guarantee: if ATK is null the test fails loudly instead of comparing two
+  // nulls and calling it a pass, which is how the first version of this slipped by.
+  await sp.waitForTimeout(12000);
+
+  const song = sp.locator(".field-checkbox", { hasText: "Battle Theme" }).first();
+  // DEF, not ATK. Battle Theme's ATK is applied inside the damage pipeline, but the
+  // STATUS effect statusCalculator gives it is def_ += (level + 1) * 2 — so DEF is
+  // what moves in this readout, by 22 at Lv10 and 4 at Lv1. Reading ATK here showed
+  // 194 at every level and proved only that the page had loaded.
+  // The readout prints "DEF 0+46", base and equipment; sum them.
+  const def = () => sp.evaluate(() => {
+    const m = document.body.innerText.replace(/\s+/g, " ").match(/[^A-Z]DEF (\d+)\+(\d+)/);
+    return m ? Number(m[1]) + Number(m[2]) : null;
+  });
+
+  check(await song.count() > 0, "a song is offered with the party-buff control");
+  check(await song.locator('input[type="number"]').count() === 0,
+    "and not as a bare number input any more");
+  check(await song.locator("select").count() === 0,
+    "no level selector on a song nobody is playing");
+
+  const defOff = await def();
+  check(defOff != null, `the combat readout is present to measure against (DEF ${defOff})`);
+
+  await song.locator('input[type="checkbox"]').check();
+  await sp.waitForTimeout(2000);
+  check(await song.locator("select").count() === 1, "ticking the song reveals its level");
+  check(await song.locator("select").inputValue() === "10", "starting at the highest level");
+  const def10 = await def();
+
+  await song.locator("select").selectOption("1");
+  await sp.waitForTimeout(2000);
+  const def1 = await def();
+
+  // The engine, not the DOM: Battle Theme is +ATK and scales with its level.
+  check(def10 - def1 === 18, `Lv10 Battle Theme gives 18 more DEF than Lv1 (${def1} -> ${def10})`);
+  check(def1 - defOff === 4, `and Lv1 gives exactly its 4 (${defOff} -> ${def1})`);
+
+  await song.locator('input[type="checkbox"]').uncheck();
+  await sp.waitForTimeout(2000);
+  check(await song.locator("select").count() === 0, "unticking hides the level again");
+  const defBack = await def();
+  check(defBack != null && defBack === defOff,
+    `and puts the DEF back exactly where it started (${defOff} -> ${defBack})`);
+
+  check(songErrors.length === 0, "no page errors on the song page"
+    + (songErrors.length ? ": " + songErrors.join(" | ") : ""));
+  await sp.context().close();
+}
+
 check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
 console.log(ok ? "\nPASS - party buffs run at the level you set." : "\nsee failures above");
 await browser.close();

@@ -7,6 +7,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-15
 
+### Changed
+
+- **Bard and Dancer songs now work like every other party buff.** They were number
+  boxes you typed a level into, sitting directly under buffs that were a tick plus a
+  level — the same question asked two different ways in one panel. Tick a song and it
+  comes on at its highest level, with the level picker appearing beside it, exactly as
+  Blessing or Over Thrust do. The performer’s stats and Lesson level are unchanged
+  below, since those are the caster’s and not a buff you switch on.
+
 ### Fixed
 
 - **Clan SP was being inflated by a percentage card.** A clan’s flat +10 SP was added
