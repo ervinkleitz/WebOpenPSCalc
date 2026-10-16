@@ -33,6 +33,10 @@ function createPlayerBuild(overrides = {}) {
     bonus_aspd_add: 0,
     bonus_maxhp: 0,
     bonus_maxsp: 0,
+    // Clan HP/SP, kept apart from the gear totals because it applies after the
+    // equipment rate rather than inside it. See buildApplicator.
+    clan_maxhp: 0,
+    clan_maxsp: 0,
     bonus_crit_atk_rate: 0,
     bonus_status_crit_atk_rate: 0, // Brutality status (Bonechewer Card): a separate crit-damage multiplier
     bonus_matk_rate: 0,

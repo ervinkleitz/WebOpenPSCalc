@@ -2562,6 +2562,61 @@ test("Sphere Mine is flat 1000 + 200*lv + 25*total VIT, Fire, and skips DEF/size
 });
 
 // ---------------------------------------------------------------------------
+// A clan's flat HP/SP applies AFTER the equipment rate, not inside it
+// ---------------------------------------------------------------------------
+test("clan MaxSP is not multiplied by a MaxSP% card", () => {
+  // Reported by Metan, 2026-10-15, from a build he had made for a friend: he was
+  // aiming at 1000 SP to cross an SP-regen threshold, the calculator agreed, and the
+  // character logged in with 999.
+  //
+  // Monk 99, 60 total INT, Crown of Mistress (+100 SP), Sohee Card (+15% SP), Arch &
+  // Wand clan (+10 SP):
+  //
+  //   SP table 475, +60% INT   -> 760
+  //   + 100 from the crown     -> 860        equipment flat is INSIDE the rate
+  //   x 1.15 from the card     -> 989
+  //   + 10 from the clan       -> 999        the clan bonus is OUTSIDE it
+  //
+  // We were folding the clan's +10 in before the card and reading 1000. Hercules
+  // accumulates equipment and pet `bonus bMaxSP` into bstatus->max_sp and adds it to
+  // the base before APPLY_RATE(sprate) (status.c status_calc_pc_), while a clan bonus
+  // arrives later as a status change from clan->buff_start.
+  //
+  // The point of the bug rather than the point of the arithmetic: SP regen is
+  // 1 + INT/6 + maxSP/100, so 1000 vs 999 is the difference between +10 and +9. The
+  // whole build existed to land on that threshold.
+  const data = {
+    job_id: 15, base_level: 99, job_level: 50, server: "payon_stories",
+    base_stats: { str: 80, agi: 87, vit: 1, int: 45, dex: 47, luk: 2 },
+    equipped: { head_top: 5081, shoes: 2404, shoes_card1: 4100 },
+    refine: {},
+    clan: "arch_wand_clan",
+    support_buffs: { SC_BLESSING: 10 },   // part of how he reaches 60 INT
+  };
+  const run = (equipped) => {
+    const [, , , st] = resolvePlayerState(
+      buildFromSaveSchema({ ...data, equipped }), createBattleConfig(), getProfile("payon_stories"));
+    return st;
+  };
+
+  // Isolate on the CARD, not on the clan: this clan also grants +1 INT, so dropping
+  // it moves the base SP too and the comparison would prove nothing.
+  const withCard = run({ head_top: 5081, shoes: 2404, shoes_card1: 4100 });
+  const noCard = run({ head_top: 5081, shoes: 2404 });
+
+  assert.strictEqual(withCard.int_, 60, "the build's 60 INT is the premise");
+  assert.strictEqual(noCard.max_sp, 870);      // 760 + 100 crown + 10 clan
+
+  // 15% of the 860 that is inside the rate = 129. If the clan's 10 were inside too it
+  // would be 130, and the total would read 1000 — the bug.
+  assert.strictEqual(withCard.max_sp - noCard.max_sp, 129,
+    "the card must multiply only what is inside the rate, not the clan's flat SP");
+  assert.strictEqual(withCard.max_sp, 999);
+  assert.strictEqual(withCard.sp_regen, 1 + Math.floor(withCard.int_ / 6) + 9,
+    "999 SP is 9 regen steps, not 10 — the threshold the build was built for");
+});
+
+// ---------------------------------------------------------------------------
 // Bard / Dancer songs scale with the PERFORMER, not the listener
 // ---------------------------------------------------------------------------
 test("song strength comes from the performer's stats and Lesson level", () => {

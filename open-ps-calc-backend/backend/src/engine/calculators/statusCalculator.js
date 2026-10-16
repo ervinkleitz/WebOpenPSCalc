@@ -610,6 +610,11 @@ class StatusCalculator {
       }
     }
 
+    // Clan HP lands AFTER the equipment rate, not inside it: it comes from a clan
+    // buff (a status change), where gear and pet bonuses are folded into the base
+    // before APPLY_RATE. See the note in buildApplicator.
+    status.max_hp += build.clan_maxhp || 0;
+
     // === MAX SP ===
     const spBase = loader.getSpAtLevel(build.job_id, build.base_level);
     status.max_sp = Math.floor(spBase * (100 + status.int_) / 100);
@@ -622,6 +627,12 @@ class StatusCalculator {
         if (build.base_level >= Number(thresh)) status.max_sp += bonus;
       }
     }
+
+    // Same for clan SP, and this is the case a player caught: a Monk with 60 INT, a
+    // Crown of Mistress (+100 SP) and a Sohee Card (+15%) in the Arch & Wand clan
+    // read 1000 here and 999 in game. Multiplying the clan's +10 by the card is what
+    // produced the extra point — (760 + 100) x 1.15 = 989, + 10 = 999.
+    status.max_sp += build.clan_maxsp || 0;
 
     // === MATK ===
     status.matk_min = status.int_ + Math.floor(status.int_ / 7) ** 2;

@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-15
+
+### Fixed
+
+- **Clan HP and SP were being inflated by a percentage card.** A clan’s flat +30 HP /
+  +10 SP was added before an item like **Sohee Card** multiplied your total, so the
+  card grew the clan bonus too. It is applied after now, the way the server does it.
+  The reported case: a Monk with 60 INT, a Crown of Mistress and a Sohee Card in the
+  Arch & Wand clan showed **1000 SP here and 999 in game**. That one point mattered —
+  SP regen steps every 100 SP, so the build had been put together to land on 1000 and
+  was never going to. All six clans are affected, and only builds wearing a MaxHP% or
+  MaxSP% item change. Reported by Metan.
+
 ## 2026-10-14
 
 ### Changed
