@@ -5,6 +5,22 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-17
+
+### Fixed
+
+- **The calculator no longer slides sideways on a phone.** Every screen could be
+  dragged 133px to the right, with nothing out there to find. The culprit was the
+  little "i" explanation bubbles: closed, they were invisible but still took up
+  their full 320px of space off the edge of the screen. They now take up none until
+  you open one.
+
+- **And when you do open one on a phone, you can read it.** A 320px bubble cannot
+  sit beside the icon that opens it on a 390px screen — some ran off the right
+  edge, one off the left. On a narrow screen the explanation now appears as a panel
+  across the bottom of the screen instead, wholly visible wherever you opened it
+  from. On a desktop it is the same bubble as before.
+
 ## 2026-10-16
 
 ### Changed

@@ -523,16 +523,23 @@ label {
   text-transform: none;
   letter-spacing: normal;
   z-index: 30;
+  /* display, not visibility. A hidden-but-visible:hidden box still takes part in
+     layout, and these are 320px wide and absolutely positioned at their trigger —
+     so on a 390px phone five of them hung off the right edge (the worst started
+     210px in and ran to 524px) and EVERY screen scrolled 133px sideways, for
+     tooltips a player cannot even see. Measured on production, 2026-10-17.
+     `allow-discrete` + the @starting-style below keep the fade; where a browser
+     lacks them the bubble simply appears, which is the correct degradation. */
+  display: none;
   opacity: 0;
-  visibility: hidden;
   transform: translateY(-4px) scale(0.98);
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  transition: opacity 0.15s ease, transform 0.15s ease, display 0.15s allow-discrete;
   pointer-events: none;
 }
 .info-tooltip:hover .info-tooltip-bubble,
 .info-tooltip:focus-visible .info-tooltip-bubble {
+  display: block;
   opacity: 1;
-  visibility: visible;
   transform: translateY(0) scale(1);
   pointer-events: auto;
 }
@@ -556,10 +563,22 @@ label {
 .hover-note { position: relative; cursor: help; outline: none; }
 .hover-note:hover > .info-tooltip-bubble,
 .hover-note:focus-visible > .info-tooltip-bubble {
+  display: block;
   opacity: 1;
-  visibility: visible;
   transform: translateY(0) scale(1);
   pointer-events: auto;
+}
+/* The state each bubble animates FROM on the frame it gains `display: block`.
+   Without it a box going from display:none has no previous value to transition
+   out of and would snap straight to opacity 1. */
+@starting-style {
+  .info-tooltip:hover .info-tooltip-bubble,
+  .info-tooltip:focus-visible .info-tooltip-bubble,
+  .hover-note:hover > .info-tooltip-bubble,
+  .hover-note:focus-visible > .info-tooltip-bubble {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
 }
 .hover-note:focus-visible { box-shadow: 0 0 0 2px var(--accent-soft); border-radius: var(--radius); }
 /* Equipped item / card name that reveals its description on hover or focus. The
@@ -1676,6 +1695,28 @@ label {
   .panel h2 { font-size: 0.95rem; margin-bottom: 0.75rem; }
   .panel-content { margin-top: 0.75rem; }
   .panel-highlight { position: static; top: auto; } /* don't stick on a narrow scroll */
+
+  /* A 320px bubble cannot sit beside its trigger on a 390px screen — anchored to
+     an icon two thirds of the way across it runs off the edge, and the one on the
+     right-hand stat card (which flips to `right: 0`) ran off the LEFT edge by the
+     same amount. Taking it out of layout when closed stops the phantom sideways
+     scroll; this stops it being unreadable when open.
+
+     So below 600px it stops being a bubble and becomes a sheet pinned to the
+     bottom of the screen: always wholly on screen, always in the same place, and
+     it needs no anchor arithmetic. `inset` overrides top/left here and also the
+     `right: 0` flip further down, and the little arrow goes with the anchoring. */
+  .info-tooltip .info-tooltip-bubble,
+  .hover-note > .info-tooltip-bubble {
+    position: fixed;
+    inset: auto 0.7rem 0.7rem;
+    width: auto;
+    max-width: none;
+    box-shadow: 0 -10px 40px -6px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--accent-soft);
+  }
+  .info-tooltip .info-tooltip-bubble::before,
+  .hover-note > .info-tooltip-bubble::before { display: none; }
+
   .ro-stat-grid { gap: 0.5rem; }
   .sec-stat-grid { grid-template-columns: 1fr 1fr; }
 
