@@ -63,8 +63,15 @@ async function pickSkill(page, query) {
   await box.fill(query);
   await page.waitForTimeout(1600);
 }
-const pill = (page) => page.locator(".selected-pill").first();
-const rankInput = (page) => pill(page).locator("input[type=number]").first();
+// The chosen skill is the skill row's field value. It used to be a .selected-pill,
+// and since the skill row no longer has one, ".selected-pill" now matches the
+// TARGET monster's pill — which read "Teddy Bear (Lv.71)" and failed confusingly.
+const chosenSkill = async (page) =>
+  (await page.locator(".skill-row input").first().inputValue().catch(() => "")).trim();
+// The rank is a Lv select now, not a number box, so the cap is how many options it
+// offers rather than the input's max attribute.
+const rankInput = (page) => page.locator(".skill-row .skill-level").first();
+const rankCap = async (page) => String(await rankInput(page).locator("option").count());
 
 // The headline's "Damage range" card, as a mid-point — one number to compare ranks by.
 async function damage(page) {
@@ -81,10 +88,10 @@ async function damage(page) {
 {
   const page = await openEditor(7); // Knight
   await pickSkill(page, "spear boom");
-  const label = (await pill(page).innerText()).replace(/\s+/g, " ").trim();
+  const label = await chosenSkill(page);
   console.log("knight, typed 'spear boom':", label);
   check(/Spear Boomerang/i.test(label),
-    `typing "spear boom" should select Spear Boomerang, the pill reads "${label}"`);
+    `typing "spear boom" should select Spear Boomerang, the field reads "${label}"`);
   check(!/Sonic Wave/i.test(label), `the picker still calls it Sonic Wave: "${label}"`);
   await page.context().close();
 }
@@ -93,14 +100,14 @@ async function damage(page) {
 {
   const page = await openEditor(17); // Rogue
   await pickSkill(page, "water ball");
-  const cap = await rankInput(page).getAttribute("max");
+  const cap = await rankCap(page);
   console.log("rogue, water ball rank cap:", cap);
   check(cap === "10", `a Rogue's copied Water Ball should offer 10 ranks, the input caps at ${cap}`);
 
-  await rankInput(page).fill("10");
+  await rankInput(page).selectOption("10");
   await page.waitForTimeout(400);
   const at10 = await damage(page);
-  await rankInput(page).fill("5");
+  await rankInput(page).selectOption("5");
   await page.waitForTimeout(400);
   const at5 = await damage(page);
   console.log(`rogue water ball: Lv5 = ${at5}, Lv10 = ${at10}`);
@@ -123,7 +130,7 @@ async function damage(page) {
 {
   const page = await openEditor(9); // Wizard — its own Water Ball is a 5-rank skill
   await pickSkill(page, "water ball");
-  const cap = await rankInput(page).getAttribute("max");
+  const cap = await rankCap(page);
   console.log("wizard, water ball rank cap:", cap);
   check(cap === "5", `a Wizard's own Water Ball stops at 5, the input caps at ${cap}`);
   await page.context().close();

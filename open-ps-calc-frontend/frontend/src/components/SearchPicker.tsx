@@ -14,12 +14,21 @@ interface Props {
   // slot empty) and steal focus the user never asked for.
   autoFocus?: boolean;
   onAutoFocus?: () => void;
+  // What is currently chosen, shown in the box when the user is not typing. This
+  // makes one field both the display and the search — used by the Skill panel, where
+  // you swap skills constantly and a separate pill plus a separate search box meant
+  // two controls for one decision.
+  //
+  // Deliberately the input's VALUE and not its placeholder: a placeholder is styled
+  // as absent-and-dim, and the current selection is neither.
+  selectedLabel?: string;
 }
 
-export default function SearchPicker({ placeholder, search, onSelect, fetchTooltip, autoFocus, onAutoFocus }: Props) {
+export default function SearchPicker({ placeholder, search, onSelect, fetchTooltip, autoFocus, onAutoFocus, selectedLabel }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -187,14 +196,25 @@ export default function SearchPicker({ placeholder, search, onSelect, fetchToolt
       <input
         ref={inputRef}
         placeholder={placeholder}
-        value={query}
+        // Typing wins; otherwise the box shows what is chosen. Deliberately NOT
+        // conditioned on focus: selecting a result clears the query while the box
+        // still has focus, and keying this off `focused` left the field blank with a
+        // skill plainly selected. select-on-focus below is what makes typing replace
+        // the shown selection rather than append to it.
+        value={query || (selectedLabel ?? "")}
+        className={!query && selectedLabel ? "search-input--chosen" : undefined}
         onChange={(e) => setQuery(e.target.value)}
-        onFocus={() => {
+        onFocus={(e) => {
+          setFocused(true);
+          // So the first keystroke replaces the shown selection instead of being
+          // appended to it ("Envenom" + "s").
+          e.target.select();
           if (results.length > 0) { setOpen(true); return; }
           if (!query.trim()) {
             search("").then((rows) => { setResults(rows); setActiveIndex(-1); setOpen(rows.length > 0); }).catch(() => {});
           }
         }}
+        onBlur={() => setFocused(false)}
         onKeyDown={handleKeyDown}
       />
       {open && results.length > 0 && (

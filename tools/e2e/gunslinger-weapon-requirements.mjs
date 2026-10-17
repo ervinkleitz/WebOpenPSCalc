@@ -61,9 +61,18 @@ const state = (weaponId) => ({
   skill: { id: 0, level: 1, label: "Normal Attack" }, targetMode: "monster",
 });
 
-// The Skill panel's pill — "Wounding Shot Lv.5" — i.e. the skill being priced.
-const skillPill = page.locator(".panel", { has: page.locator(".panel-title", { hasText: /^Skill$/ }) })
-  .locator(".selected-pill span").first();
+// What the Skill panel is actually pricing. The panel is one row now: a field that
+// shows the typed QUERY while searching and the CHOSEN skill otherwise, plus a Lv
+// select that exists only once something is really selected. So the select is what
+// decides "is anything selected", and the field supplies the name — reading the
+// field alone would report a half-typed query as a selection.
+const skillRow = page.locator(".panel", { has: page.locator(".panel-title", { hasText: /^Skill$/ }) })
+  .locator(".skill-row");
+const selectedSkill = async () => {
+  const hasLevel = await skillRow.locator(".skill-level").count();
+  if (!hasLevel) return "";
+  return (await skillRow.locator("input").first().inputValue().catch(() => "")).trim();
+};
 
 // Both phrasings of the weapon warning, and nothing else that can appear in a
 // .notice.warn (DamageSummary uses the same class for calculation notes).
@@ -75,12 +84,12 @@ async function warningFor(weaponId, skillLabel) {
   const box = page.locator(".search-combo input").last();
   await box.fill(skillLabel);
   await page.waitForTimeout(1800);
-  // Typing is not selecting. The search box CLEARS on select and the choice moves to
-  // the Skill panel's pill, so that pill is the only honest read of what is actually
-  // being priced. Without this check every "must not warn" assertion below passes
-  // when the skill was never selected — which is how the first draft of this file
-  // asserted five things about Disarm, a skill the picker does not even offer.
-  const selected = (await skillPill.innerText().catch(() => "")).replace(/\s+/g, " ").trim();
+  // Typing is not selecting. Without this check every "must not warn" assertion
+  // below passes when the skill was never selected — which is how the first draft of
+  // this file asserted five things about Disarm, a skill the picker does not offer.
+  // (The box used to clear on select; now it shows the choice, which is why this
+  // reads the Lv select rather than the field's text.)
+  const selected = await selectedSkill();
   check(selected.toLowerCase().includes(skillLabel.toLowerCase()),
     `the picker should have selected "${skillLabel}", the Skill panel shows "${selected}"`);
   const t = await page.locator(".notice.warn").first().innerText().catch(() => "");

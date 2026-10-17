@@ -3973,48 +3973,62 @@ export default function BuildEditor() {
           </Panel>
 
           <Panel eyebrow="08" title="Skill">
-            <div className="selected-pill" style={{ marginBottom: "0.6rem" }}>
-              <span className="selected-pill__name">{skill.label}{skill.id !== 0 ? ` Lv.${skill.level}` : ""}</span>
-              {skill.id !== 0 && (
-                <input
-                  className="mono"
-                  type="number"
-                  min={1}
-                  max={skill.max_level}
-                  style={{ width: 60 }}
-                  value={skill.level}
-                  onFocus={(e) => e.target.select()}
-                  onChange={(e) => setSkill((s) => ({ ...s, level: Math.max(1, Math.min(s.max_level, Number(e.target.value))) }))}
-                />
-              )}
-            </div>
-            {weaponRequirementWarning && (
-              <div className="notice warn" style={{ marginBottom: "0.6rem" }}>{weaponRequirementWarning}</div>
-            )}
-            <div className="field-row">
-              <button onClick={() => setSkill(DEFAULT_SKILL)}>Use normal attack</button>
-            </div>
-            <div className="field" style={{ marginTop: "0.6rem" }}>
-              <label>Or search a skill</label>
+            {/* One row for one decision. This was a pill showing the chosen skill, a
+                number box for its rank, a "Use normal attack" button and a separately
+                labelled search field — four controls deciding one thing. It now
+                matches the buff rows: the thing, its level as a Lv select, and an x
+                to clear. The search IS the field: idle it shows the chosen skill,
+                typing searches, and picking replaces it. */}
+            <div className="skill-row">
               <SearchPicker
                 placeholder="Search skills…"
+                selectedLabel={skill.id !== 0 ? skill.label : undefined}
                 search={skillSearch}
-                // Default to the skill's MAX rank: that's what a build is nearly
-                // always planned around, and Lv1 made every fresh pick look
-                // pointlessly weak. The rank input right next to it still moves.
                 onSelect={(r) => {
                   const cap = r.max_level ?? 10;
                   // Default to the rank this character actually has, when a PS planner
                   // import told us. Before this the picker always opened at the skill's
                   // MAX, so a player with Fire Bolt 5 was shown Lv10 damage and had to
                   // notice and correct it by hand. Still capped by the skill's own max,
-                  // and still freely editable in the stepper beside it.
+                  // and still freely editable in the selector beside it.
                   const known = (data.known_skill_levels || {})[r.constant ?? ""] ?? null;
                   const level = known != null && known > 0 ? Math.min(known, cap) : cap;
                   setSkill({ id: r.id, level, label: r.label, max_level: cap });
                 }}
               />
+              {/* `?? 10` matters: a share link STRIPS skill.max_level (it is re-synced
+                  from the skill DB on load, see the encoder), so between opening a
+                  shared build and that request returning there is no cap here. Keyed
+                  off max_level directly, the level control simply would not exist for
+                  that window — and not at all if the request failed. */}
+              {skill.id !== 0 && (skill.max_level ?? 10) > 1 && (() => {
+                const cap = skill.max_level ?? 10;
+                return (
+                  <select
+                    className="skill-level"
+                    title={`What rank of ${skill.label} to calculate. It has ${cap}.`}
+                    aria-label={`${skill.label} level`}
+                    value={Math.min(skill.level, cap)}
+                    onChange={(e) => setSkill((sk) => ({ ...sk, level: Number(e.target.value) }))}
+                  >
+                    {Array.from({ length: cap }, (_, i) => cap - i).map((lv) => (
+                      <option key={lv} value={lv}>Lv {lv}</option>
+                    ))}
+                  </select>
+                );
+              })()}
+              {skill.id !== 0 && (
+                <button
+                  className="pill-remove"
+                  title="Use normal attack"
+                  aria-label="Use normal attack"
+                  onClick={() => setSkill(DEFAULT_SKILL)}
+                >×</button>
+              )}
             </div>
+            {weaponRequirementWarning && (
+              <div className="notice warn" style={{ marginTop: "0.6rem" }}>{weaponRequirementWarning}</div>
+            )}
             {skill.id === 212 && data.server === "payon_stories" && (
               <div className="field field-checkbox" style={{ marginTop: "0.5rem" }}>
                 <label title="PS Rogue rework: monster not currently targeting the Rogue (PvP: player not facing the Rogue) — grants ×1.4 multiplicative damage bonus">

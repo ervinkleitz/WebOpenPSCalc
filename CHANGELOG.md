@@ -9,6 +9,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **Choosing a skill is one row now, like the buffs.** It was a pill showing the
+  skill, a number box for its rank, a **Use normal attack** button and a separate
+  search field — four controls for one decision. The search box itself now shows
+  whichever skill is chosen, with a **Lv** picker and an × beside it. Type in it to
+  change skill; press the × to go back to a normal attack.
+
 - **The changelog is its own page now, at /changelog, and shows one line per change.**
   It used to be a pop-up where every entry opened into the full write-up. Those are
   written for whoever has to maintain the fix, so finding out whether the thing you

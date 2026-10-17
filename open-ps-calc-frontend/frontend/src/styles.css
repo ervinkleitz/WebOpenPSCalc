@@ -996,6 +996,14 @@ label {
 .selected-pill--invalid { border-color: var(--crit); background: rgba(226,104,92,0.08); }
 .selected-pill--invalid > span:first-child { color: var(--crit); }
 
+/* The Skill row: the search field IS the display, with the rank and a clear beside
+   it — the same shape as a buff row. */
+.skill-row { display: flex; align-items: center; gap: 0.4rem; }
+.skill-row > :first-child { flex: 1; min-width: 0; }
+.skill-level { flex: 0 0 auto; width: 5.4rem; }
+/* Idle, the box is showing a choice rather than a search, so it reads as content. */
+.search-input--chosen { color: var(--accent); }
+
 /* ---------------- Changelog page ---------------- */
 /* One line per change. The write-ups live in CHANGELOG.md and git; this page is for
    "is the thing I reported in yet?", which is a scanning question, not a reading one. */

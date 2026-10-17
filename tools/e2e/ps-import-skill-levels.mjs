@@ -67,10 +67,24 @@ const check = (c, m) => { if (!c) { console.error("FAIL: " + m); ok = false; } }
 
 const skillBox = () => page.locator('.search-combo input[placeholder*="skill" i]').first();
 const skillPanel = () => page.locator(".panel", { has: page.locator(".panel-title", { hasText: /^Skill$/ }) });
-const readSkill = async () => ({
-  pill: (await skillPanel().locator(".selected-pill span").first().innerText().catch(() => "")).replace(/\s+/g, " ").trim(),
-  rank: await skillPanel().locator('input[type="number"]').first().inputValue().catch(() => ""),
-});
+// The skill row is one field plus a Lv select, not a pill plus a number box. The
+// field shows the TYPED QUERY while you are searching and the CHOSEN SKILL when you
+// are not, so its text alone cannot tell "Pierce is selected" from "I have typed
+// Pierce" — reading it naively made pickSkill below believe every query had already
+// auto-selected, and it never clicked a result. The Lv select and the clear button
+// exist only once something is actually selected, so they are the real signal.
+const readSkill = async () => {
+  const rank = await skillPanel().locator(".skill-row .skill-level").first()
+    .inputValue().catch(() => "");
+  const selected = rank !== "" ||
+    (await skillPanel().locator(".skill-row .pill-remove").count()) > 0;
+  const name = selected
+    ? await skillPanel().locator(".skill-row input").first().inputValue().catch(() => "")
+    : "";
+  // "pill" keeps its old name and shape ("Pierce Lv.5") so the assertions below
+  // still read the way they did against the pill this replaced.
+  return { pill: [name, rank].filter(Boolean).join(" Lv."), rank };
+};
 
 /** Fresh load + import, so the picker is in its first-search state. */
 async function loadImported() {
@@ -130,7 +144,7 @@ check(/Lv\.?\s*5\b/.test(pierce.pill), `the pill should read Lv.5, got "${pierce
 
 // ---- 2. that rank is priced, not merely displayed ---------------------------
 const five = await calcDamage();
-await skillPanel().locator('input[type="number"]').first().fill("10");
+await skillPanel().locator(".skill-row .skill-level").first().selectOption("10");
 await page.waitForTimeout(800);
 const ten = await calcDamage();
 console.log(`damage: rank 5 -> ${five}, rank 10 -> ${ten}`);

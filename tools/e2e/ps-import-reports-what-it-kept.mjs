@@ -45,10 +45,15 @@ const pickSkill = async (name) => {
   const row = page.locator(".search-result-item").first();
   if (await row.count()) { await row.click(); await page.waitForTimeout(1400); }
   const panel = page.locator(".panel", { has: page.locator(".panel-title", { hasText: /^Skill$/ }) });
-  return {
-    pill: (await panel.locator(".selected-pill span").first().innerText().catch(() => "")).replace(/\s+/g, " ").trim(),
-    rank: await panel.locator('input[type="number"]').first().inputValue().catch(() => ""),
-  };
+  // One field plus a Lv select, not a pill plus a number box. The field shows the
+  // typed QUERY while searching and the CHOSEN skill otherwise, so its text alone
+  // cannot tell the two apart; the Lv select exists only on a real selection, so it
+  // is what decides whether there is anything to report.
+  const rank = await panel.locator(".skill-row .skill-level").first().inputValue().catch(() => "");
+  const chosen = rank !== ""
+    ? await panel.locator(".skill-row input").first().inputValue().catch(() => "")
+    : "";
+  return { pill: [chosen, rank].filter(Boolean).join(" Lv."), rank };
 };
 
 // === the reported case: a tree with no passives at all =====================
