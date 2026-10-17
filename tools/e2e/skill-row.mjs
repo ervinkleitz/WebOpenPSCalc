@@ -40,8 +40,13 @@ const row = () => page.evaluate(() => {
 });
 
 const before = await row();
-check(before && before.value === "", "the row starts as an empty search field", before);
-check(before && before.level === null, "with no level until a skill is chosen", before);
+// It must SAY what it is pricing. With nothing chosen the row showed only the
+// "Search skills…" placeholder, which reads as an empty state — but a normal attack
+// is what the calculator is actually costing, and the panel used to say so.
+check(before && /normal attack/i.test(before.value || ""),
+  "with no skill chosen the row still says Normal Attack", before);
+check(before && before.level === null, "with no level, since a normal attack has no rank", before);
+check(before && !before.clear, "and no x, since there is nothing to clear back to", before);
 check(before && before.numberInputs === 0, "and no number box anywhere in the row", before);
 
 // --- picking happens in the same field --------------------------------------
@@ -95,8 +100,9 @@ check(atMax > atLv1, `the Lv select changes the damage (${atLv1} -> ${atMax})`, 
 await page.locator(".skill-row .pill-remove").click();
 await page.waitForTimeout(1500);
 const cleared = await row();
-check(cleared && cleared.level === null && !cleared.clear && cleared.value === "",
-  "the x clears back to an empty search field", cleared);
+check(cleared && cleared.level === null && !cleared.clear
+  && /normal attack/i.test(cleared.value || ""),
+  "the x returns the row to Normal Attack, not to a blank field", cleared);
 
 check(errors.length === 0, "no page errors", errors);
 await browser.close();

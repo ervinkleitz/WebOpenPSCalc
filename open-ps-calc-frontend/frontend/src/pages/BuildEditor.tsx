@@ -3982,7 +3982,12 @@ export default function BuildEditor() {
             <div className="skill-row">
               <SearchPicker
                 placeholder="Search skills…"
-                selectedLabel={skill.id !== 0 ? skill.label : undefined}
+                // Always, including Normal Attack. With no skill chosen the row
+                // showed only the "Search skills…" placeholder, so nothing on screen
+                // said what was being priced — and a normal attack IS what is being
+                // priced, not an empty state. The Lv select and the x stay off for
+                // it: there is no rank to pick and nothing to clear.
+                selectedLabel={skill.label}
                 search={skillSearch}
                 onSelect={(r) => {
                   const cap = r.max_level ?? 10;
