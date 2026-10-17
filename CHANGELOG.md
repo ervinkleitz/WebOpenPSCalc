@@ -16,6 +16,19 @@ instead of release version. Dates are taken from actual git commit history.
   the rank picker appears once you do. **Max all** and **Reset** still work, and a
   skill tree you import still arrives ticked at the ranks it imported.
 
+- **The calculator opens on your last build.** Close the tab, come back tomorrow,
+  and the character you were working on is still there — it used to survive a
+  refresh but not closing the browser. A line at the top says so, with **Start
+  fresh** beside it. A link someone sends you always wins over it, and so does
+  whatever the tab you are in was already editing.
+
+- **The Features list starts closed, and the starter builds are buttons.** The
+  feature list was taking 303px of a desktop screen and 513px of a phone one —
+  more than half your first screen — above a build with nothing in it. It is one
+  line now; click it to read it. In its place the starter builds are a row of
+  class buttons instead of a dropdown that hid them, so a build is one click, and
+  that panel folds itself away once you have a build going.
+
 - **Everything is big enough to tap.** On a phone, 130 controls were smaller than a
   fingertip in compact mode and 87 in comfortable — compact was buying its extra
   rows out of the buttons rather than out of the spacing. Every control now has a

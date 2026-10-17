@@ -242,6 +242,30 @@ const BUILD_TEMPLATES: BuildTemplate[] = STARTER_BUILDS.map((b) => ({
   note: b.note,
 }));
 
+// Chip text for the template buttons. The stored labels run to "Alchemist — Acid
+// Demonstration (SAD)", which is right in a dropdown and far too long for a grid of
+// chips in a 440px column — eighteen of those wrap to eight rows and cost more of
+// the fold than the dropdown they replace. So a chip says the CLASS, and adds a
+// qualifier only where that class appears twice (Sage, Hunter) and the chip would
+// otherwise be ambiguous. The full label stays on the button's title, and the note
+// below still names the build in full once one is loaded.
+const TEMPLATE_CHIP_LABEL: Record<string, string> = (() => {
+  const className = (label: string) => label.split(/[—-]/)[0].trim();
+  const seen: Record<string, number> = {};
+  for (const t of BUILD_TEMPLATES) seen[className(t.label)] = (seen[className(t.label)] || 0) + 1;
+  const out: Record<string, string> = {};
+  for (const t of BUILD_TEMPLATES) {
+    const cls = className(t.label);
+    if (seen[cls] === 1) { out[t.label] = cls; continue; }
+    const variant = t.label.slice(cls.length).replace(/^\s*[—-]\s*/, "");
+    // "Double Strafe (DS)" → "DS"; "Hindsight (Auto Spell)" → "Auto Spell";
+    // "Bolter" → "Bolter". The parenthetical is the name players actually use.
+    const paren = variant.match(/\(([^)]+)\)/);
+    out[t.label] = `${cls} · ${paren ? paren[1] : variant.trim()}`;
+  }
+  return out;
+})();
+
 // Maps a guide-page slug (?t=…) to a template label — derived from the shared
 // starterBuilds.json (same source scripts/gen-guides.mjs uses), so a guide's
 // "Open in the calculator" deep-link always resolves to the matching build.
@@ -950,6 +974,13 @@ function hydrateState(state: Partial<UrlEditorState> | null | undefined): UrlEdi
 // Working-draft autosave (sessionStorage): keeps in-progress edits across a refresh
 // even though the URL only changes on Save/Copy-link. Per-tab; cleared on tab close.
 const DRAFT_KEY = "opscalc.draft";
+// The same state in localStorage, which outlives the tab. Players come back to the
+// same character over days, and the empty form they used to land on was a worse
+// answer than the build they left. It is read ONLY when there is no ?b link and no
+// session draft — i.e. a genuinely fresh visit — which is also what keeps two tabs
+// from fighting: each tab keeps its own session draft, and this is only the floor
+// beneath them.
+const LAST_BUILD_KEY = "opscalc.lastBuild";
 const DEFAULT_URL_STATE: UrlEditorState = {
   build: DEFAULT_BUILD,
   skill: DEFAULT_SKILL,
@@ -964,7 +995,17 @@ export default function BuildEditor() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const initialState = (() => {
+  // Resolved ONCE. The block below re-runs on every render — it always did, and that
+  // was harmless while its only consumers were useState initialisers — but it now
+  // also reports whether the last build was restored, and a flag recomputed every
+  // render can never be turned off: dismissing the notice re-renders, the read runs
+  // again, and the notice comes back.
+  const bootstrap = useRef<{
+    state: Partial<UrlEditorState> | null; restored: boolean; isEmptyBuild: boolean;
+  } | null>(null);
+  if (bootstrap.current === null) bootstrap.current = (() => {
+    let restored = false;
+    const state = ((): Partial<UrlEditorState> | null => {
     const param = searchParams.get("b");
     const urlState = param ? decodeState(param) : null;
     let draft: { state: UrlEditorState; sourceParam: string | null } | null = null;
@@ -977,8 +1018,27 @@ export default function BuildEditor() {
     if (param && (!draft || draft.sourceParam !== param)) return urlState;
     // Otherwise restore the working draft (refresh / continue editing).
     if (draft?.state) return draft.state;
-    return urlState;
+    if (urlState) return urlState;
+    // Nothing in the URL and nothing in this tab: the last build from a previous
+    // visit, if there is one. Last in the order on purpose — it must never win over
+    // a link someone sent you or over what you were just editing.
+    try {
+      const raw = localStorage.getItem(LAST_BUILD_KEY);
+      if (raw) {
+        const last = JSON.parse(raw) as UrlEditorState;
+        if (last && last.build) { restored = true; return last; }
+      }
+    } catch { /* ignore */ }
+    return null;
+    })();
+    // Compared through encodeState rather than by eye, so "empty" means the same
+    // thing here as it does to the Save button and the share link: a build that is
+    // byte-for-byte the untouched default, whatever route it arrived by.
+    const isEmptyBuild = state === null || encodeState(hydrateState(state)) === DEFAULT_ENCODED;
+    return { state, restored, isEmptyBuild };
   })();
+  const initialState = bootstrap.current.state;
+  const [lastBuildNotice, setLastBuildNotice] = useState(bootstrap.current.restored);
 
   const hydrated = hydrateState(initialState);
   const [data, setData] = useState<BuildData>(hydrated.build);
@@ -1493,7 +1553,13 @@ export default function BuildEditor() {
     (localStorage.getItem("density") as "comfortable" | "compact") || "comfortable"
   );
   // Features banner: expanded by default (collapsed only if the user explicitly collapsed it).
-  const [featuresBannerCollapsed, setFeaturesBannerCollapsed] = useState(() => localStorage.getItem("featuresBannerCollapsed") === "1");
+  // Collapsed unless the player has opened it, rather than open unless they have
+  // closed it. Measured on production: expanded, this is 303px of the 1080px fold
+  // on a desktop and 513px of an 844px phone screen — 61% of a first-time visitor's
+  // first screen is a feature list, above a build with nothing in it. It is
+  // reference material, not onboarding; one labelled line that opens on a click is
+  // the right default. "0" (explicitly opened) is the only value that expands it.
+  const [featuresBannerCollapsed, setFeaturesBannerCollapsed] = useState(() => localStorage.getItem("featuresBannerCollapsed") !== "0");
   // Dismissed outright (distinct from merely collapsed) — the banner disappears
   // and only a small topbar button, shown solely in this state, brings it back.
   const [featuresBannerHidden, setFeaturesBannerHidden] = useState(() => localStorage.getItem("featuresBannerHidden") === "1");
@@ -1580,6 +1646,11 @@ export default function BuildEditor() {
       try {
         const state: UrlEditorState = { build: data, skill, targetMode, customTarget, targetMods };
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ state, sourceParam: searchParams.get("b") }));
+        // The same state, somewhere that outlives the tab, for the next visit. No
+        // sourceParam: this is not "what this tab was editing", it is "the last
+        // thing you worked on", and on a fresh visit there is no link to compare
+        // it against.
+        localStorage.setItem(LAST_BUILD_KEY, JSON.stringify(state));
       } catch { /* storage full / disabled — ignore */ }
     }, 400);
     return () => clearTimeout(timer);
@@ -2189,6 +2260,11 @@ export default function BuildEditor() {
     setCalcError("");
     setResultsOpen(false);
     try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    // Starting over has to mean it. Leaving the cross-visit copy behind would hand
+    // the discarded build back on the next visit, which is the one thing this was
+    // never allowed to do.
+    try { localStorage.removeItem(LAST_BUILD_KEY); } catch { /* ignore */ }
+    setLastBuildNotice(false);
     setSearchParams({}, { replace: true }); // drop the ?b param so a refresh stays on the new build
   }
 
@@ -2659,24 +2735,39 @@ export default function BuildEditor() {
           onTuAttempt={handleTuAttempt}
         />
 
+        {lastBuildNotice && (
+          <div className="resume-notice">
+            <span>Picked up your last build.</span>
+            <button className="resume-notice-action" onClick={onNewBuild}>Start fresh</button>
+            <button
+              className="resume-notice-dismiss"
+              onClick={() => setLastBuildNotice(false)}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <div className="editor-grid" ref={editorGridRef}>
-          <Panel eyebrow="00" title="Start from a template">
-            <div className="field-row">
-              <div className="field" style={{ flex: 1 }}>
-                <label>Load a PS wiki build</label>
-                <select
-                  value=""
-                  onChange={(e) => {
-                    const t = BUILD_TEMPLATES.find((x) => x.label === e.target.value);
-                    if (t) applyTemplate(t);
-                  }}
+          {/* Open only on a build that has nothing in it — which is exactly when
+              someone needs a starting point. With the last build restored across
+              visits, most arrivals already have one, and a panel of eighteen class
+              buttons above it is a menu for a choice already made. */}
+          <Panel eyebrow="00" title="Start from a template" defaultOpen={bootstrap.current.isEmptyBuild}>
+            {/* Buttons, not a dropdown: a dropdown hides that these exist at all,
+                and costs two clicks to a build that should cost one. */}
+            <div className="template-chips">
+              {BUILD_TEMPLATES.map((t) => (
+                <button
+                  key={t.label}
+                  className={`template-chip${templateHint?.label === t.label ? " template-chip--on" : ""}`}
+                  title={`${t.label} — ${t.note}`}
+                  onClick={() => applyTemplate(t)}
                 >
-                  <option value="">Choose a class build…</option>
-                  {BUILD_TEMPLATES.map((t) => (
-                    <option key={t.label} value={t.label}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
+                  {TEMPLATE_CHIP_LABEL[t.label] ?? t.label}
+                </button>
+              ))}
             </div>
             {templateHint ? (
               <p className="build-template-hint">
