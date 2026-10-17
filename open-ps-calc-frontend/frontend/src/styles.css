@@ -2183,3 +2183,71 @@ html[data-density="compact"] .perf-stat-card input[type="number"] { padding: 0.1
 html[data-density="compact"] .breakdown-view,
 html[data-density="compact"] .surv-line,
 html[data-density="compact"] .step-row { line-height: 1.35; }
+
+/* ===========================================================================
+   TAP TARGETS — a floor that density does not get to lower.
+
+   Measured on production 2026-10-17, on a geared build at 390px: 87 interactive
+   elements were under 28px in their short dimension at comfortable density and
+   130 in compact. Compact made it HALF AS BAD AGAIN, which is the wrong trade.
+   Compact is a request for more rows per screen; it is supposed to take that out
+   of padding, type size and gaps, and where it takes it out of the hit area
+   instead the page gets denser by getting harder to use. A phone is also where
+   compact is most tempting and where a finger is least forgiving.
+
+   The floor is set with min-height, which no density rule touches — they all set
+   padding — so it holds at both densities without a specificity fight.
+   =========================================================================== */
+
+/* Controls that are small in BOTH dimensions, so there is no generous edge to
+   aim at: 28px for a mouse, 32px for a finger. */
+:where(input:not([type="checkbox"]):not([type="radio"]), select, textarea,
+       button:not(.pill-remove), .topbar-link) {
+  min-height: 28px;
+}
+/* Width too, or an icon-only button (the banner's ×) passes on height and still
+   gives you a 28px-wide sliver to aim at. Every button with words in it is already
+   wider than this, so it only ever bites on the square ones. */
+button:not(.pill-remove) { min-width: 28px; }
+.panel h2.panel-header { min-height: 32px; }   /* the disclosure for a whole panel */
+
+/* A target grown without growing the thing you see. Both of these are deliberately
+   small — a 24px × on a card pill, a 21px "i" beside a label — and making them
+   bigger would be worse design, so the HALO is what grows. Only works on elements
+   the browser lets us draw into: a <select> is replaced, which is why the refine
+   picker is left to the min-height above instead. */
+.pill-remove, .info-tooltip { position: relative; }
+.pill-remove::after,
+.info-tooltip::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+}
+
+@media (pointer: coarse) {
+  :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea,
+         button:not(.pill-remove), .topbar-link) {
+    min-height: 32px;
+  }
+  button:not(.pill-remove) { min-width: 32px; }
+  .pill-remove::after, .info-tooltip::after { inset: -7px; }
+
+  /* Checkbox rows are the big population — ~70 buff and passive rows — and they
+     pay for their target out of the gap between them rather than out of the page.
+     The row grows to 30px and the row-gap and top margin go to nothing, so the
+     PITCH barely moves while the thumb target gains a third. Their label is the
+     control (clicking it ticks the box), so the row height is the real measure;
+     the box itself stays 16px, because a bigger tick is not what was wrong.
+     Both selectors are spelled out because the compact rules carry an extra
+     attribute and would otherwise win. */
+  .passive-grid,
+  html[data-density="compact"] .passive-grid { row-gap: 0.1rem; }
+  .field-checkbox,
+  html[data-density="compact"] .field-checkbox { margin-top: 0; }
+  .field-checkbox label,
+  .debuff-field label { min-height: 30px; }
+
+  /* Footer links sat at 16px tall. They are the one place a mis-tap is annoying
+     rather than costly, but they cost nothing to fix. */
+  .credits-link { display: inline-block; padding: 0.45rem 0; }
+}

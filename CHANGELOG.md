@@ -7,6 +7,22 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-17
 
+### Changed
+
+- **Passive skills are a tick and a rank now, like the party buffs.** They were a
+  row of number boxes, so "do I have Spear Mastery at all" was a question you had
+  to answer by reading a number, and the same decision looked like a different
+  kind of control depending on which panel you were in. Tick the ones you have;
+  the rank picker appears once you do. **Max all** and **Reset** still work, and a
+  skill tree you import still arrives ticked at the ranks it imported.
+
+- **Everything is big enough to tap.** On a phone, 130 controls were smaller than a
+  fingertip in compact mode and 87 in comfortable — compact was buying its extra
+  rows out of the buttons rather than out of the spacing. Every control now has a
+  floor it cannot go below, whichever density you pick. The buff and passive rows
+  got there without growing the page: the extra height comes out of the gap that
+  was already between them.
+
 ### Fixed
 
 - **The calculator no longer slides sideways on a phone.** Every screen could be
