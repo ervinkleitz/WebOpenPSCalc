@@ -16,11 +16,12 @@ instead of release version. Dates are taken from actual git commit history.
   what is being calculated — with a **Lv** picker and an × beside it. Type in it to
   change skill; press the × to go back to a normal attack.
 
-- **The changelog is its own page now, at /changelog, and shows one line per change.**
-  It used to be a pop-up where every entry opened into the full write-up. Those are
-  written for whoever has to maintain the fix, so finding out whether the thing you
-  reported had shipped meant opening them one at a time. Now it is a list you can scan
-  — and a page you can link someone to.
+- **The changelog is its own page now, at /changelog.html, and shows one line per
+  change.** It used to be a pop-up where every entry opened into the full write-up.
+  Those are written for whoever has to maintain the fix, so finding out whether the
+  thing you reported had shipped meant opening them one at a time. Now it is a list
+  you can scan, a page you can link someone to, and a plain web page that search
+  engines can actually read.
 
 - **Compact mode puts build name, job, base level and job level on one line.** They
   were two rows of two, which is the right shape when you have the space and wasted a

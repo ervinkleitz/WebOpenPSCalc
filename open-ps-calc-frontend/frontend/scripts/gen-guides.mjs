@@ -453,6 +453,108 @@ function indexPage() {
   return shell({ title: "Payon Stories Build Guides — every class | Open PS Calc", desc: "Starter build guides for every Payon Stories class (pre-renewal RO): recommended stats and signature skills, ready to open in the damage calculator.", canonical, body, jsonLd, modified: LASTMOD.guides });
 }
 
+// --- changelog ------------------------------------------------------------
+// Real HTML rather than an SPA route, for the same reason the guides are: a
+// crawler (and an answer engine) gets the text without running JavaScript. It is
+// also the page most likely to be linked from Discord when someone asks whether a
+// fix has shipped.
+//
+// Only the HEADLINE of each entry, matching the in-app page: every entry in
+// CHANGELOG.md is written as `- **What changed.** then the detail`, so the bold
+// lead is the summary. The detail stays in the file and in git.
+const CHANGELOG_MD = path.join(__dirname, "..", "..", "..", "CHANGELOG.md");
+
+function changelogRows() {
+  const src = fs.readFileSync(CHANGELOG_MD, "utf8");
+  const plain = (t) => t
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*([^*]+?)\*/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1");
+  const rows = [];
+  for (const line of src.split("\n")) {
+    if (/^## /.test(line)) rows.push({ kind: "date", text: line.slice(3).trim() });
+    else if (/^### /.test(line)) rows.push({ kind: "section", text: line.slice(4).trim() });
+    else if (/^- /.test(line)) {
+      const first = line.slice(2);
+      const bold = first.match(/^\*\*(.+?)\*\*/);
+      let text;
+      if (bold) text = bold[1];
+      else {
+        const p2 = plain(first);
+        const stop = p2.indexOf(". ");
+        text = stop > 0 && stop < 140 ? p2.slice(0, stop + 1)
+          : p2.length <= 140 ? p2 : p2.slice(0, p2.lastIndexOf(" ", 130)).trim() + "…";
+      }
+      rows.push({ kind: "entry", text: plain(text) });
+    }
+  }
+  return rows;
+}
+
+function changelogPage(rows) {
+  const canonical = `${SITE}/changelog.html`;
+  const dates = rows.filter((r) => r.kind === "date");
+  const entries = rows.filter((r) => r.kind === "entry");
+  const latest = dates.length ? dates[0].text : LASTMOD.app;
+  const title = "Changelog — every change | Open PS Calc";
+  const desc = `What has changed in the Payon Stories damage calculator: ${entries.length} fixes and features across ${dates.length} days, newest first. Last updated ${latest}.`;
+
+  // One <section> per date so the structure a crawler sees matches the one a
+  // reader sees, rather than a flat run of paragraphs.
+  let body = "";
+  let open = false;
+  for (const r of rows) {
+    if (r.kind === "date") {
+      if (open) body += "</ul></section>";
+      body += `<section><h2>${esc(r.text)}</h2>`;
+      open = "section";
+      continue;
+    }
+    if (r.kind === "section") {
+      if (open === "ul") body += "</ul>";
+      body += `<h3>${esc(r.text)}</h3><ul>`;
+      open = "ul";
+      continue;
+    }
+    if (open !== "ul") { body += "<ul>"; open = "ul"; }
+    body += `<li>${esc(r.text)}</li>`;
+  }
+  if (open) body += "</ul></section>";
+
+  const jsonLd = [
+    breadcrumb([["Open PS Calc", `${SITE}/`], ["Changelog", canonical]]),
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "Open PS Calc changelog",
+      url: canonical,
+      description: desc,
+      dateModified: latest,
+      isPartOf: { "@type": "WebSite", name: "Open PS Calc", url: `${SITE}/` },
+    },
+    softwareApp,
+  ];
+
+  return shell({
+    title,
+    desc,
+    canonical,
+    modified: latest,
+    jsonLd,
+    body: `
+<header><nav><a href="/">Open PS Calc</a> › Changelog</nav></header>
+<span class="eyebrow">Payon Stories</span>
+<h1>Changelog</h1>
+<p class="lead">Every change to the <a href="/">Payon Stories damage calculator</a>, newest first — ${entries.length} of them across ${dates.length} days. Most come from a player reporting a number that did not match the game.</p>
+${body}
+<footer>Open PS Calc is an unofficial, fan-made <a href="/">Payon Stories damage calculator</a>.</footer>`,
+  });
+}
+
+const CHANGELOG_ROWS = changelogRows();
+const CHANGELOG_LATEST = (CHANGELOG_ROWS.find((r) => r.kind === "date") || {}).text || LASTMOD.app;
+
 // --- write flat .html files ---
 // Flat files (not <slug>/index.html) so the host serves them via `try_files $uri`
 // without needing directory-index resolution ($uri/), which it isn't configured for.
@@ -463,6 +565,7 @@ for (const g of GUIDES_DATA) {
   fs.writeFileSync(path.join(GUIDES, `${g.slug}.html`), guidePage(g));      // → /guides/<slug>.html
 }
 fs.writeFileSync(path.join(PUBLIC, "mechanics.html"), mechanicsIndexPage()); // → /mechanics.html
+fs.writeFileSync(path.join(PUBLIC, "changelog.html"), changelogPage(CHANGELOG_ROWS)); // → /changelog.html
 fs.writeFileSync(path.join(PUBLIC, "404.html"), notFoundPage());            // → nginx error_page
 for (const m of MECHANICS) {
   fs.writeFileSync(path.join(MECH, `${m.slug}.html`), mechanicsPage(m));    // → /mechanics/<slug>.html
@@ -477,6 +580,9 @@ const urls = [
   { loc: `${SITE}/`, lastmod: LASTMOD.app, freq: "weekly", pri: "1.0" },
   { loc: `${SITE}/guides.html`, lastmod: LASTMOD.guides, freq: "weekly", pri: "0.8" },
   { loc: `${SITE}/mechanics.html`, lastmod: LASTMOD.mechanics, freq: "weekly", pri: "0.8" },
+  // lastmod comes from the newest dated section in CHANGELOG.md — the one page
+  // here whose real modification date is written down in its own source.
+  { loc: `${SITE}/changelog.html`, lastmod: CHANGELOG_LATEST, freq: "weekly", pri: "0.5" },
   ...MECHANICS.map((m) => ({ loc: `${SITE}/mechanics/${m.slug}.html`, lastmod: LASTMOD.mechanics, freq: "monthly", pri: "0.7" })),
   ...GUIDES_DATA.map((g) => ({ loc: `${SITE}/guides/${g.slug}.html`, lastmod: LASTMOD.guides, freq: "monthly", pri: "0.6" })),
 ];

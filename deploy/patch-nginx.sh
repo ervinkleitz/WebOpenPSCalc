@@ -84,7 +84,12 @@ fi
 # link directly, which is exactly what sharing a URL does. /changelog shipped that way
 # and was caught by tools/e2e/changelog-page.mjs loading the path directly.
 # ---------------------------------------------------------------------------
-SPA_ROUTES="/stats /changelog"
+SPA_ROUTES="/stats"
+# /changelog was an SPA route for a day and is now a generated static page
+# (public/changelog.html, scripts/gen-guides.mjs) so crawlers get the text without
+# running the app. The short URL was live and may have been shared, so it redirects
+# rather than 404s. Keyed on the OLD line so this converts once and then no-ops.
+REDIRECTS="/changelog:/changelog.html"
 if grep -q 'try_files $uri =404;' "$LIVE"; then
   echo "nginx: 404 fallback already present, skipping"
 elif ! grep -q 'try_files $uri /index.html;' "$LIVE"; then
@@ -207,6 +212,50 @@ for route in $SPA_ROUTES; do
   sudo mv "$LIVE.tmp" "$LIVE"
   CHANGED=1
   echo "nginx: added SPA route $route"
+done
+
+# ---------------------------------------------------------------------------
+# 2c. Paths that became static pages
+#
+# A route that used to be served by the SPA and now has a real file. Rewrites the
+# old "try_files /index.html" location into a 301, or adds the redirect outright if
+# there is no location for it yet. Idempotent either way: once the location says
+# `return 301`, both branches skip.
+# ---------------------------------------------------------------------------
+for pair in $REDIRECTS; do
+  from="${pair%%:*}"
+  to="${pair##*:}"
+  if grep -qF "return 301 $to;" "$LIVE"; then
+    continue
+  fi
+  if grep -qF "location = $from {" "$LIVE"; then
+    # Replace that one location's body with the redirect.
+    sudo awk -v from="$from" -v to="$to" '
+      # "[{]" rather than "\{": awk warns "escape sequence \{ treated as plain {"
+      # on every deploy otherwise, which is noise in a log people skim.
+      $0 ~ ("^[[:space:]]*location = " from " [{]") { print "    location = " from " {"; print "        return 301 " to ";"; inblk = 1; next }
+      inblk && /^[[:space:]]*\}/ { print; inblk = 0; next }
+      inblk { next }
+      { print }
+    ' "$LIVE" | sudo tee "$LIVE.tmp" > /dev/null
+    sudo mv "$LIVE.tmp" "$LIVE"
+    echo "nginx: $from now redirects to $to"
+  else
+    sudo awk -v from="$from" -v to="$to" '
+      { print }
+      /^[[:space:]]*location = \/ \{/ { inroot = 1; next }
+      inroot && /^[[:space:]]*\}/ {
+        print ""
+        print "    location = " from " {"
+        print "        return 301 " to ";"
+        print "    }"
+        inroot = 0
+      }
+    ' "$LIVE" | sudo tee "$LIVE.tmp" > /dev/null
+    sudo mv "$LIVE.tmp" "$LIVE"
+    echo "nginx: added redirect $from -> $to"
+  fi
+  CHANGED=1
 done
 
 if [ "$CHANGED" -eq 0 ]; then

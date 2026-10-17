@@ -1,67 +1,75 @@
-// The changelog is a PAGE of headlines, not a modal of expandable write-ups.
+// The changelog is a generated static HTML page, not an app route.
 //
-// It used to be a modal where each entry was a <details>: a one-line summary you
-// opened to get the full explanation. Those explanations are written for whoever
-// maintains the fix — which number moved, why, what the source says — so a player
-// scanning for "is the thing I reported in yet?" had to open every one of them. And
-// a modal is not somewhere you can send someone a link to.
+// It was a modal of expandable write-ups, then an SPA route showing headlines, and
+// is now public/changelog.html — produced by scripts/gen-guides.mjs from the same
+// CHANGELOG.md, like the guides. The point of that last move is that THE TEXT IS IN
+// THE RESPONSE, so this checks it with a plain fetch rather than a rendered page: a
+// rendered page cannot tell you whether a crawler would have seen anything.
 //
 // Run: node tools/e2e/changelog-page.mjs [baseUrl]
 import { chromium } from "playwright-core";
 
-const URL_BASE = process.argv[2] || "http://localhost:5173/";
+const URL_BASE = (process.argv[2] || "http://localhost:5173/").replace(/\/$/, "");
 let ok = true;
 const check = (c, m, saw) => {
-  if (!c) { console.error(`FAIL: ${m}${saw !== undefined ? `\n      saw: ${JSON.stringify(saw)}` : ""}`); ok = false; }
-  else console.log("ok  " + m);
+  if (!c) {
+    console.error(`FAIL: ${m}${saw !== undefined ? `\n      saw: ${JSON.stringify(saw)}` : ""}`);
+    ok = false;
+  } else console.log("ok  " + m);
 };
 
-const browser = await chromium.launch({ channel: "chrome", headless: true });
-// Wide enough that the topbar has not collapsed its buttons into the hamburger.
-const page = await (await browser.newContext({ viewport: { width: 1500, height: 1400 } })).newPage();
-const errors = [];
-page.on("pageerror", (e) => errors.push(e.message));
-
-// --- reached the way a player reaches it ------------------------------------
-await page.goto(URL_BASE, { waitUntil: "domcontentloaded" });
-await page.waitForTimeout(8000);
-await page.getByRole("button", { name: /^Changelog$/ }).first().click();
-await page.waitForTimeout(2500);
-check(new URL(page.url()).pathname === "/changelog",
-  "the Changelog button goes to /changelog", new URL(page.url()).pathname);
-
-const shape = () => page.evaluate(() => ({
-  dates: document.querySelectorAll(".cl-date").length,
-  sections: document.querySelectorAll(".cl-section").length,
-  lines: document.querySelectorAll(".cl-line").length,
-  details: document.querySelectorAll("details").length,
-  longest: Math.max(0, ...[...document.querySelectorAll(".cl-line")].map((e) => e.textContent.length)),
-}));
-const s = await shape();
-check(s.lines > 100, `every entry is listed (${s.lines} of them)`, s);
-check(s.dates > 10, `grouped by date (${s.dates})`, s);
-check(s.details === 0, "and nothing is hidden behind a disclosure", s);
-// The whole point: a headline, not a write-up. The longest entry in CHANGELOG.md
-// runs to several hundred characters; a headline does not.
-check(s.longest > 0 && s.longest < 180,
-  `the longest line is a headline, not a paragraph (${s.longest} chars)`, s);
-
-// --- a deep link works, which is why it is a page ---------------------------
+// --- the part that matters for SEO: raw HTML, no JavaScript -----------------
 {
-  const p2 = await (await browser.newContext({ viewport: { width: 1500, height: 1000 } })).newPage();
-  await p2.goto(URL_BASE.replace(/\/$/, "") + "/changelog", { waitUntil: "domcontentloaded" });
-  await p2.waitForTimeout(6000);
-  const direct = await p2.evaluate(() => document.querySelectorAll(".cl-line").length);
-  check(direct > 100, `/changelog loads directly, not just via the button (${direct} lines)`, direct);
-  await p2.context().close();
+  const res = await fetch(`${URL_BASE}/changelog.html`);
+  const html = await res.text();
+  check(res.ok, `/changelog.html is served (HTTP ${res.status})`, res.status);
+
+  const entries = (html.match(/<li>/g) || []).length;
+  const dates = (html.match(/<h2>/g) || []).length;
+  check(entries > 100, `the entries are in the HTML itself (${entries} <li>)`, entries);
+  check(dates > 10, `grouped into dated sections (${dates} <h2>)`, dates);
+  check(html.includes("<h1>Changelog</h1>"), "with an h1");
+  check(html.includes('rel="canonical" href="https://openpscalc.com/changelog.html"'),
+    "and a canonical url");
+  check(/<meta name="description" content="[^"]{60,}"/.test(html), "and a real description");
+  check(html.includes("application/ld+json"), "and structured data");
+
+  // The whole reason for the move: this has to hold with scripts off.
+  check(!html.includes('<div id="root"></div>'),
+    "the page is not the empty SPA shell", html.slice(0, 160));
 }
 
-// --- and back again ----------------------------------------------------------
-await page.getByRole("link", { name: /Back to the calculator/ }).click();
-await page.waitForTimeout(2500);
-check(new URL(page.url()).pathname === "/", "the back link returns to the calculator");
+// --- and it is in the sitemap, dated from CHANGELOG.md ----------------------
+{
+  const res = await fetch(`${URL_BASE}/sitemap.xml`);
+  const xml = await res.text();
+  check(xml.includes("changelog.html"), "the sitemap lists it");
+  const m = xml.match(/changelog\.html<\/loc><lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>/);
+  check(!!m, `with a lastmod taken from the newest entry${m ? ` (${m[1]})` : ""}`, m && m[1]);
+}
 
-check(errors.length === 0, "no page errors", errors);
-await browser.close();
+// --- reachable from the app, as a real link ---------------------------------
+{
+  const browser = await chromium.launch({ channel: "chrome", headless: true });
+  const page = await (await browser.newContext({ viewport: { width: 1500, height: 1200 } })).newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(URL_BASE + "/", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(8000);
+
+  const link = page.getByRole("link", { name: /^Changelog$/ }).first();
+  check(await link.count() > 0, "the menu item is a link, not a button");
+  const href = await link.getAttribute("href");
+  check(href === "/changelog.html", "pointing at the static page", href);
+
+  await link.click();
+  await page.waitForTimeout(3000);
+  check(new URL(page.url()).pathname === "/changelog.html",
+    "and clicking it lands there", new URL(page.url()).pathname);
+  check(await page.locator("li").count() > 100, "which renders the entries");
+  check(errors.length === 0, "no page errors", errors);
+  await browser.close();
+}
+
 console.log(ok ? "\nPASS" : "\nsee failures above");
 process.exit(ok ? 0 : 1);

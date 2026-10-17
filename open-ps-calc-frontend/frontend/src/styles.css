@@ -103,7 +103,12 @@ a { color: var(--link); text-decoration: none; }
 ::-moz-selection { background: var(--selection-bg); color: var(--selection-fg); }
 a:hover { text-decoration: underline; }
 
-button {
+.topbar-link { display: inline-block; text-decoration: none; color: var(--text); }
+/* .topbar-link is an <a> that has to sit in a row of <button>s without
+   looking like a stranger: the Changelog entry is a real link so it is
+   crawlable and middle-clickable, but it is still a menu item. */
+button,
+.topbar-link {
   font-family: var(--sans);
   cursor: pointer;
   border-radius: var(--radius);
@@ -114,8 +119,9 @@ button {
   font-size: 0.9rem;
   transition: border-color 0.15s, background 0.15s;
 }
-button:hover { border-color: var(--accent-dim); }
-button:focus-visible, input:focus-visible, select:focus-visible {
+button:hover,
+.topbar-link:hover { border-color: var(--accent-dim); }
+button:focus-visible, .topbar-link:focus-visible, input:focus-visible, select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
