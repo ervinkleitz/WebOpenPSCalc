@@ -1861,7 +1861,12 @@ export default function BuildEditor() {
     });
   }, []);
 
-  const updateBuffField = useCallback((group: "active_buffs" | "song_state" | "support_buffs", key: string, level: number) => {
+  // `mastery_levels` is in the union because passive skills are now the same control
+  // as a buff. Dropping the key rather than storing a 0 is safe there for the same
+  // reason it is for buffs: every reader takes `mastery[key] || 0`, and the engine
+  // prunes the map to the job anyway (playerStateBuilder.filterMasteryLevelsForJob).
+  // It also keeps the untaken passives out of the share link.
+  const updateBuffField = useCallback((group: "active_buffs" | "song_state" | "support_buffs" | "mastery_levels", key: string, level: number) => {
     setData((prev) => {
       const next: Record<string, unknown> = { ...((prev[group] as Record<string, unknown>) || {}) };
       if (level <= 0) delete next[key];
@@ -1944,7 +1949,7 @@ export default function BuildEditor() {
   // .map() and a second parameter would silently collect the array index.
   const buffCheckboxField = (
     b: { key: string; label: string; max: number; hint?: string },
-    group: "support_buffs" | "song_state",
+    group: "support_buffs" | "song_state" | "mastery_levels",
   ) => {
     const bucket = (data[group] as Record<string, number> | undefined) || {};
     const stored = Number(bucket[b.key] ?? 0);
@@ -1952,8 +1957,11 @@ export default function BuildEditor() {
     // max is 5) must not show a level the engine will not use — it clamps too.
     const current = stored > 0 ? Math.min(stored, b.max) : 0;
     // What a tick turns it on at: the rank a planner import says you have, where that
-    // applies to a buff you cast on yourself, else the highest it goes.
-    const known = (data.known_buff_levels || {})[b.key];
+    // applies to a buff you cast on yourself, else the highest it goes. A passive is
+    // your OWN skill, so the import's record of your tree (known_skill_levels, keyed
+    // by the same constant) is the right source for it rather than known_buff_levels.
+    const own = group === "mastery_levels";
+    const known = (own ? data.known_skill_levels : data.known_buff_levels || {})?.[b.key];
     const onLevel = known != null && known > 0 ? Math.min(known, b.max) : b.max;
     const leveled = current > 0 && b.max > 1;
     return (
@@ -1968,7 +1976,9 @@ export default function BuildEditor() {
         </label>
         {leveled && (
           <select
-            title={`What level the caster has. ${b.label} is ${b.max} ranks; the effect scales with it.`}
+            title={own
+              ? `What rank you have it at. ${b.label} is ${b.max} ranks; what it gives scales with it.`
+              : `What level the caster has. ${b.label} is ${b.max} ranks; the effect scales with it.`}
             value={current}
             onChange={(e) => updateBuffField(group, b.key, Number(e.target.value))}
           >
@@ -1985,6 +1995,18 @@ export default function BuildEditor() {
     buffCheckboxField(b, "support_buffs");
   const songBuffField = (b: { key: string; label: string; max: number; hint?: string }) =>
     buffCheckboxField(b, "song_state");
+  // A passive asks exactly what a party buff asks — do you have this, and at what
+  // rank — so it is now the same control. It used to be a 0..max number box per
+  // skill, which made an identical decision look like a different kind of question
+  // depending on which panel you were in, and turned "do I have Sword Mastery at
+  // all" into something you had to read a number to find out. `description` is the
+  // human name (Sword Mastery) and `mastery_key` is the constant the engine reads;
+  // the constant stays as the label's title, as it was.
+  const passiveSkillField = (ps: PassiveSkill) =>
+    buffCheckboxField(
+      { key: ps.mastery_key, label: ps.description, max: ps.max_level },
+      "mastery_levels",
+    );
 
   // scrollToResults: the results panel pulls itself into view when a calculation
   // finishes, which is right when the user pressed "Calculate damage" and wrong when
@@ -3419,8 +3441,11 @@ export default function BuildEditor() {
                 </button>
                 <button
                   onClick={() => setData((prev) => {
+                    // Deleted, not set to 0, so an untaken passive leaves nothing
+                    // behind in the build or its share link. Every reader treats a
+                    // missing key as 0.
                     const next = { ...(prev.mastery_levels || {}) };
-                    for (const ps of passiveSkills) next[ps.mastery_key] = 0;
+                    for (const ps of passiveSkills) delete next[ps.mastery_key];
                     return { ...prev, mastery_levels: next };
                   })}
                 >
@@ -3428,27 +3453,7 @@ export default function BuildEditor() {
                 </button>
               </div>
               <div className="passive-grid">
-                {passiveSkills.map((ps) => (
-                  <div className="field" key={ps.name}>
-                    <label title={ps.name}>{ps.description}</label>
-                    <input
-                      className="mono"
-                      type="number"
-                      min={0}
-                      max={ps.max_level}
-                      value={(data.mastery_levels || {})[ps.mastery_key] ?? 0}
-                      onFocus={(e) => e.target.select()}
-                      onChange={(e) => {
-                        const lv = Math.max(0, Math.min(ps.max_level, Number(e.target.value)));
-                        setData((prev) => ({
-                          ...prev,
-                          mastery_levels: { ...(prev.mastery_levels || {}), [ps.mastery_key]: lv },
-                        }));
-                      }}
-                    />
-                    <span style={{ fontSize: "0.75rem", color: "var(--text-faint)" }}>/ {ps.max_level}</span>
-                  </div>
-                ))}
+                {passiveSkills.map(passiveSkillField)}
               </div>
               </>
             )}
