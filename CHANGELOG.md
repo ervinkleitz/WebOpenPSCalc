@@ -22,12 +22,11 @@ instead of release version. Dates are taken from actual git commit history.
   fresh** beside it. A link someone sends you always wins over it, and so does
   whatever the tab you are in was already editing.
 
-- **The Features list starts closed, and the starter builds are buttons.** The
-  feature list was taking 303px of a desktop screen and 513px of a phone one —
-  more than half your first screen — above a build with nothing in it. It is one
-  line now; click it to read it. In its place the starter builds are a row of
-  class buttons instead of a dropdown that hid them, so a build is one click, and
-  that panel folds itself away once you have a build going.
+- **The Features list starts closed.** It was taking 303px of a desktop screen and
+  513px of a phone one — more than half your first screen — above a build with
+  nothing in it. It is one line now; click it to read it. **Start from a template**
+  also folds itself away once you have a build going, since by then it is a menu
+  for a choice you have already made.
 
 - **Everything is big enough to tap.** On a phone, 130 controls were smaller than a
   fingertip in compact mode and 87 in comfortable — compact was buying its extra

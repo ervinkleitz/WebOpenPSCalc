@@ -242,30 +242,6 @@ const BUILD_TEMPLATES: BuildTemplate[] = STARTER_BUILDS.map((b) => ({
   note: b.note,
 }));
 
-// Chip text for the template buttons. The stored labels run to "Alchemist — Acid
-// Demonstration (SAD)", which is right in a dropdown and far too long for a grid of
-// chips in a 440px column — eighteen of those wrap to eight rows and cost more of
-// the fold than the dropdown they replace. So a chip says the CLASS, and adds a
-// qualifier only where that class appears twice (Sage, Hunter) and the chip would
-// otherwise be ambiguous. The full label stays on the button's title, and the note
-// below still names the build in full once one is loaded.
-const TEMPLATE_CHIP_LABEL: Record<string, string> = (() => {
-  const className = (label: string) => label.split(/[—-]/)[0].trim();
-  const seen: Record<string, number> = {};
-  for (const t of BUILD_TEMPLATES) seen[className(t.label)] = (seen[className(t.label)] || 0) + 1;
-  const out: Record<string, string> = {};
-  for (const t of BUILD_TEMPLATES) {
-    const cls = className(t.label);
-    if (seen[cls] === 1) { out[t.label] = cls; continue; }
-    const variant = t.label.slice(cls.length).replace(/^\s*[—-]\s*/, "");
-    // "Double Strafe (DS)" → "DS"; "Hindsight (Auto Spell)" → "Auto Spell";
-    // "Bolter" → "Bolter". The parenthetical is the name players actually use.
-    const paren = variant.match(/\(([^)]+)\)/);
-    out[t.label] = `${cls} · ${paren ? paren[1] : variant.trim()}`;
-  }
-  return out;
-})();
-
 // Maps a guide-page slug (?t=…) to a template label — derived from the shared
 // starterBuilds.json (same source scripts/gen-guides.mjs uses), so a guide's
 // "Open in the calculator" deep-link always resolves to the matching build.
@@ -2752,22 +2728,28 @@ export default function BuildEditor() {
         <div className="editor-grid" ref={editorGridRef}>
           {/* Open only on a build that has nothing in it — which is exactly when
               someone needs a starting point. With the last build restored across
-              visits, most arrivals already have one, and a panel of eighteen class
-              buttons above it is a menu for a choice already made. */}
+              visits, most arrivals already have one, and a starter-build picker
+              above it is a menu for a choice already made.
+              The picker itself stays a dropdown: as buttons it was eighteen chips
+              over five rows in a 440px column, which costs more of the fold than
+              the two clicks it saves are worth. */}
           <Panel eyebrow="00" title="Start from a template" defaultOpen={bootstrap.current.isEmptyBuild}>
-            {/* Buttons, not a dropdown: a dropdown hides that these exist at all,
-                and costs two clicks to a build that should cost one. */}
-            <div className="template-chips">
-              {BUILD_TEMPLATES.map((t) => (
-                <button
-                  key={t.label}
-                  className={`template-chip${templateHint?.label === t.label ? " template-chip--on" : ""}`}
-                  title={`${t.label} — ${t.note}`}
-                  onClick={() => applyTemplate(t)}
+            <div className="field-row">
+              <div className="field" style={{ flex: 1 }}>
+                <label>Load a PS wiki build</label>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const t = BUILD_TEMPLATES.find((x) => x.label === e.target.value);
+                    if (t) applyTemplate(t);
+                  }}
                 >
-                  {TEMPLATE_CHIP_LABEL[t.label] ?? t.label}
-                </button>
-              ))}
+                  <option value="">Choose a class build…</option>
+                  {BUILD_TEMPLATES.map((t) => (
+                    <option key={t.label} value={t.label}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             {templateHint ? (
               <p className="build-template-hint">

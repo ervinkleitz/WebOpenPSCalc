@@ -1987,31 +1987,6 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
   line-height: 1.45;
   color: var(--text-dim);
 }
-/* Starter templates as buttons rather than a dropdown. A dropdown hid that these
-   existed and charged two clicks for a build that should cost one; the trade is
-   vertical space, which is paid back by the panel folding itself shut on any build
-   that is not empty. Chips wrap, and the grid is intrinsic rather than fixed so a
-   short one ("Knight") does not get the same width as a long one ("Sage - Auto
-   Spell") and leave a hole. */
-.template-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
-.template-chip {
-  padding: 0.3rem 0.6rem;
-  font-size: 0.78rem;
-  line-height: 1.2;
-  border-radius: 999px;
-  background: var(--bg);
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-.template-chip:hover { color: var(--text); border-color: var(--accent-dim); }
-/* The one that is loaded, so the panel still answers "which of these am I on"
-   after it has been used — the same job the dropdown's selected value did. */
-.template-chip--on {
-  background: var(--accent-soft);
-  border-color: var(--accent-dim);
-  color: var(--accent);
-}
-
 /* "Picked up your last build." A build the player did not ask for, appearing in
    place of the empty form they expected, has to say so — otherwise it is a bug
    with extra steps. One line, above the editor, with the way out in it. */

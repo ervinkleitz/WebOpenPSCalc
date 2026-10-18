@@ -54,6 +54,7 @@ const SHARED_WIZARD = `${URL_BASE}/?b=z3_` + LZ.compressToEncodedURIComponent(JS
   skill: { id: 0, level: 1, label: "Normal Attack" }, targetMode: "monster",
 })));
 
+const ASSASSIN = "Assassin — Sonic Blow (PvE)";
 const jobOf = (page) => page.evaluate(() => {
   const sel = document.querySelector(".character-identity select");
   return sel ? sel.selectedOptions[0]?.text ?? null : null;
@@ -82,23 +83,20 @@ let visited;   // storage carried forward to play the "returning player" below
   check(await page.locator(".reworks-banner-toggle").count() === 1,
     "and is still one click from opening");
 
-  const chips = await page.locator(".template-chip").count();
-  check(chips >= 16, `every starter build is a button on the page (${chips})`, chips);
-  check(await page.locator(".panel select option", { hasText: "Choose a class build" }).count() === 0,
-    "and the dropdown that hid them is gone");
-  // The chips are what a narrow column has to survive, so check the shortening ran:
-  // "Knight — Hybrid" should read "Knight", and a class with two builds keeps a
-  // qualifier so the two are told apart.
-  const labels = await page.locator(".template-chip").allInnerTexts();
-  check(labels.includes("Knight"), "a class with one build is just its name", labels.slice(0, 4));
-  check(labels.filter((l) => l.startsWith("Hunter")).length === 2
-    && labels.filter((l) => l.startsWith("Hunter")).every((l) => l.includes("·")),
-    "a class with two keeps them apart", labels.filter((l) => l.startsWith("Hunter")));
+  // The picker is a dropdown, deliberately. It was briefly a row of eighteen class
+  // buttons — one click instead of two, and it advertised that the templates exist
+  // — but in a 440px column that is five rows where the dropdown is one, which
+  // costs more of the fold than it saves. Reverted 2026-10-17 at the maintainer's
+  // call; this asserts it stays a dropdown so it does not drift back.
+  const picker = page.locator(".panel select").first();
+  const options = await picker.locator("option").count();
+  check(options >= 17, `every starter build is in the picker (${options - 1})`, options);
+  check(await page.locator(".template-chip").count() === 0,
+    "and it is one control, not a grid of buttons");
 
-  // One click, one build.
-  await page.locator(".template-chip", { hasText: "Assassin" }).first().click();
+  await picker.selectOption({ label: ASSASSIN });
   await page.waitForTimeout(2500);
-  check(await jobOf(page) === "Assassin", "clicking one loads that build", await jobOf(page));
+  check(await jobOf(page) === "Assassin", "choosing one loads that build", await jobOf(page));
 
   check(errors.length === 0, "no page errors", errors);
   visited = await ctx.storageState();
@@ -120,7 +118,7 @@ let visited;   // storage carried forward to play the "returning player" below
 
   // The template panel folds itself away once there is a build: eighteen class
   // buttons above a finished Assassin is a menu for a choice already made.
-  check(await page.locator(".template-chips").count() === 0,
+  check(await page.locator(".panel select option", { hasText: "Choose a class build" }).count() === 0,
     "the template panel collapses itself when the build is not empty");
   check(await page.locator(".panel-title", { hasText: "Start from a template" }).count() === 1,
     "but is still there to open");
@@ -152,7 +150,7 @@ let visited;   // storage carried forward to play the "returning player" below
   const sp = await seed.newPage();
   await sp.goto(`${URL_BASE}/`, { waitUntil: "domcontentloaded" });
   await settle(sp);
-  await sp.locator(".template-chip", { hasText: "Assassin" }).first().click();
+  await sp.locator(".panel select").first().selectOption({ label: ASSASSIN });
   await sp.waitForTimeout(2500);
   const stored = await seed.storageState();
   await seed.close();
