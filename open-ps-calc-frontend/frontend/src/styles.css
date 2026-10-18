@@ -768,9 +768,13 @@ label {
   flex: 0 0 auto; width: auto; min-width: 4.1rem;
   padding: 0.12rem 0.3rem; font-size: 0.75rem;
 }
-/* Leveled target debuffs (Quagmire/Provoke) use a select instead of a checkbox;
-   match their label size to the sibling checkbox-debuff rows (0.85rem). */
-.debuff-field label { font-size: 0.85rem; }
+/* Two of the leveled target debuffs carry an explanatory line under them — the
+   Quagmire "your hit chance is already capped" note and Burning's per-stack
+   arithmetic. .field-checkbox is a flex ROW, so a hint dropped into it becomes a
+   third item next to the label and the level picker and squeezes both. Let the row
+   wrap and give the hint the full width, so it sits under them as a paragraph. */
+.field-checkbox { flex-wrap: wrap; }
+.field-checkbox > .hint-text { flex: 1 0 100%; margin-top: 0.2rem; }
 
 /* Carries the small-caps section typography itself rather than relying on the
    element being a <label>. Two of the three section headings are <label>s and
@@ -2151,15 +2155,12 @@ html[data-density="compact"] button { padding: 0.3rem 0.65rem; }
    it stays put while its label shrinks), and the label size — buff names sit at
    0.85rem while every other small label here (field labels, stat labels) is
    0.72rem, which is the inconsistency you see once everything else tightens.
-   .debuff-field labels are deliberately matched to the checkbox rows upstream,
-   so they move with them.
    This block must precede .manual-stat-grid below: both resolve to the same
    specificity on that element, so source order decides its gap. */
 html[data-density="compact"] .passive-grid { gap: 0.3rem 0.6rem; }
 html[data-density="compact"] .field-checkbox { margin-top: 0.1rem; }
 html[data-density="compact"] .field-checkbox label { font-size: 0.72rem; gap: 0.32rem; line-height: 1.25; }
 html[data-density="compact"] .field-checkbox input[type="checkbox"] { width: 13px; height: 13px; }
-html[data-density="compact"] .debuff-field label { font-size: 0.72rem; }
 /* Class-group separators: 1rem between groups plus a 1rem section header margin
    adds up to a lot of empty rule-line across a dozen jobs. */
 html[data-density="compact"] .buff-section-header { margin-top: 0.55rem; margin-bottom: 0.3rem; padding-bottom: 0.2rem; }
@@ -2272,8 +2273,7 @@ button:not(.pill-remove) { min-width: 28px; }
   html[data-density="compact"] .passive-grid { row-gap: 0.1rem; }
   .field-checkbox,
   html[data-density="compact"] .field-checkbox { margin-top: 0; }
-  .field-checkbox label,
-  .debuff-field label { min-height: 30px; }
+  .field-checkbox label { min-height: 30px; }
 
   /* Footer links sat at 16px tall. They are the one place a mis-tap is annoying
      rather than costly, but they cost nothing to fix. */

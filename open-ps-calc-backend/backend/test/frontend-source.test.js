@@ -573,9 +573,16 @@ test("Decrease AGI is applied as a target debuff: flat 3/level, flee 1:1, no bos
   assert.ok(/target\.flee = Math\.max\(0, target\.flee - agiCut\)/.test(block.slice(0, 900)),
     "and the AGI cut must lower flee 1:1, as Quagmire's does");
 
-  // The UI must offer it, or the engine support is unreachable.
+  // The UI must offer it, or the engine support is unreachable. This used to pin the
+  // literal inline handler `decrease_agi: Number(e.target.value)`, which broke the day
+  // the five leveled target debuffs were moved onto one shared renderer — the control
+  // was still there and still worked. So it now checks the two things that actually
+  // make it reachable: the shared renderer writes its key into targetMods, and
+  // decrease_agi is one of the keys handed to it.
   const editor = read("src", "pages", "BuildEditor.tsx");
-  assert.ok(/decrease_agi: Number\(e\.target\.value\)/.test(editor), "a control must set it");
+  assert.ok(/setTargetMods\(\(m\) => \(\{ \.\.\.m, \[d\.key\]: lv \}\)\)/.test(editor),
+    "the shared debuff renderer must write its key into targetMods");
+  assert.ok(/key: "decrease_agi"/.test(editor), "and decrease_agi must be one of its fields");
   assert.ok(/"decrease_agi"/.test(editor), "and its key must be in the share dictionary");
 });
 

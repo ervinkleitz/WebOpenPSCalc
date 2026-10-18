@@ -2042,6 +2042,56 @@ export default function BuildEditor() {
     );
   };
 
+  // A target debuff that has a MAGNITUDE — a skill level, a coin count, a stack
+  // count. These were a label above a select whose first option was "Off", sitting
+  // among on/off debuffs that were checkboxes: the same question in two shapes,
+  // depending only on whether the skill happened to have ranks. They now use the
+  // party-buff row — a tick for "this is on the target", and the magnitude only
+  // once it is, because a level selector on a debuff nobody has cast is asking
+  // about something that is not happening.
+  //
+  // The unit is NOT always a level, which is why the option text is passed in:
+  // Fling counts a Gunslinger's coins and Burning counts stacks.
+  //
+  // `value` is passed rather than read from targetMods because two of these are
+  // already normalised upstream — Quagmire and Provoke tolerate the boolean shape
+  // that older shared URLs carry (true → max) — and that normalisation must not be
+  // bypassed here.
+  const debuffLevelField = (d: {
+    key: string; label: string; title: string; max: number; value: number;
+    unit?: (n: number) => string; hint?: ReactNode;
+  }) => {
+    const current = Math.min(d.value, d.max);
+    const on = current > 0;
+    const leveled = on && d.max > 1;
+    const unit = d.unit ?? ((n: number) => `Lv ${n}`);
+    const set = (lv: number) => setTargetMods((m) => ({ ...m, [d.key]: lv }));
+    return (
+      <div className={`field field-checkbox${leveled ? " field-checkbox--leveled" : ""}`} key={d.key}>
+        <label title={d.title}>
+          <input
+            type="checkbox"
+            checked={on}
+            onChange={(e) => set(e.target.checked ? d.max : 0)}
+          />
+          <span>{d.label}</span>
+        </label>
+        {leveled && (
+          <select
+            title={`How much of it is on the target. ${d.label.replace(/\s*\(.*$/, "")} goes up to ${unit(d.max)}.`}
+            value={current}
+            onChange={(e) => set(Number(e.target.value))}
+          >
+            {Array.from({ length: d.max }, (_, i) => d.max - i).map((n) => (
+              <option key={n} value={n}>{unit(n)}</option>
+            ))}
+          </select>
+        )}
+        {on && d.hint}
+      </div>
+    );
+  };
+
   const partyBuffField = (b: { key: string; label: string; max: number }) =>
     buffCheckboxField(b, "support_buffs");
   const songBuffField = (b: { key: string; label: string; max: number; hint?: string }) =>
@@ -4529,26 +4579,17 @@ export default function BuildEditor() {
             </div>
 
             <span className="buff-group-label" style={{ display: "block", marginTop: "0.75rem" }}>Debuff skills &amp; statuses</span>
-            <div className="field debuff-field">
-              <label title="WZ_QUAGMIRE: cuts the target's AGI/DEX by 10% per level (max 50% at Lv5). Its AGI is its flee, so you hit it more often; its DEX is its HIT, so it lands on you less often (see Survivability). Does NOT guarantee a hit; no effect on bosses; halved vs players.">
-                Quagmire (−AGI/DEX → lower flee &amp; its HIT)
-              </label>
-              <select
-                value={quagmireLv}
-                onChange={(e) => setTargetMods((m) => ({ ...m, quagmire: Number(e.target.value) }))}
-              >
-                <option value={0}>Off</option>
-                {[1, 2, 3, 4, 5].map((lv) => (
-                  <option key={lv} value={lv}>Lv {lv}{lv === 5 ? " (max)" : ""}</option>
-                ))}
-              </select>
-              {quagmireRedundant && (
+            {debuffLevelField({
+              key: "quagmire", max: 5, value: quagmireLv,
+              label: "Quagmire (−AGI/DEX → lower flee & its HIT)",
+              title: "WZ_QUAGMIRE: cuts the target's AGI/DEX by 10% per level (max 50% at Lv5). Its AGI is its flee, so you hit it more often; its DEX is its HIT, so it lands on you less often (see Survivability). Does NOT guarantee a hit; no effect on bosses; halved vs players.",
+              hint: quagmireRedundant ? (
                 <div className="hint-text">
                   Your hit chance is already at the 100% cap — Quagmire only helps when you're missing
                   (it lowers flee, not damage). It still lowers the monster's HIT, so you dodge more.
                 </div>
-              )}
-            </div>
+              ) : undefined,
+            })}
             <div className="field field-checkbox">
               <label title="Hypothermia (PS status, e.g. Frost Nova Lv5): −10 DEX, −20% ASPD and −20% movement speed on the target for 10 seconds, and it cannot be resisted. Only the DEX cut is modelled here — it lowers the monster's HIT, so you dodge more; this panel reports damage per hit and dodge chance, never the monster's attack rate. No effect on bosses.">
                 <input
@@ -4583,75 +4624,41 @@ export default function BuildEditor() {
             {/* Decrease AGI: a FLAT −3 AGI per level (PS condensed it to 5 ranks),
                 where Quagmire is a percentage. Same effect on flee, so it helps only
                 when you are actually missing. */}
-            <div className="field debuff-field">
-              <label title="AL_DECAGI: cuts the target's AGI by a flat 3 per level (−15 at Lv5), lowering its flee. Does NOT guarantee a hit; no effect on bosses.">
-                Decrease AGI (−AGI → lower flee)
-              </label>
-              <select
-                value={decreaseAgiLv}
-                onChange={(e) => setTargetMods((m) => ({ ...m, decrease_agi: Number(e.target.value) }))}
-              >
-                <option value={0}>Off</option>
-                {[1, 2, 3, 4, 5].map((lv) => (
-                  <option key={lv} value={lv}>Lv {lv}{lv === 5 ? " (max)" : ""}</option>
-                ))}
-              </select>
-            </div>
+            {debuffLevelField({
+              key: "decrease_agi", max: 5, value: decreaseAgiLv,
+              label: "Decrease AGI (−AGI → lower flee)",
+              title: "AL_DECAGI: cuts the target's AGI by a flat 3 per level (−15 at Lv5), lowering its flee. Does NOT guarantee a hit; no effect on bosses.",
+            })}
             <div className="field field-checkbox">
               <label title={signumApplicable ? "AL_CRUCIS Lv10 (PS): hard DEF −50% (10 + 4×lv). Undead-element or Demon-race only." : "Signum Crucis only affects Undead-element or Demon-race targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>
                 <input type="checkbox" checked={targetMods.signum_crucis} disabled={!signumApplicable} onChange={(e) => setTargetMods((m) => ({ ...m, signum_crucis: e.target.checked }))} />
                 <span>Signum Crucis Lv10 (−50% hard DEF)</span>
               </label>
             </div>
-            <div className="field debuff-field">
-              <label title="SC_PROVOKE: target DEF −(5 + 5×lv)% (−55% at Lv10). No effect on Boss monsters. Independent of the player's own Auto Berserk self-buff.">
-                Provoke (−DEF)
-              </label>
-              <select
-                value={provokeLv}
-                onChange={(e) => setTargetMods((m) => ({ ...m, provoke: Number(e.target.value) }))}
-              >
-                <option value={0}>Off</option>
-                {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
-                  <option key={lv} value={lv}>Lv {lv}{lv === 10 ? " (max)" : ""}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field debuff-field">
-              <label title="GS_FLING: a Gunslinger throws coins at the target — each one cut its DEF by 3% for 20s (15% at the full 5 coins). Against a monster this reduces hard and soft DEF; against a player, soft DEF only. Whether Boss monsters resist it is not documented, so it is applied to them too.">
-                Fling (−3% DEF per coin)
-              </label>
-              <select
-                value={Number(targetMods.fling) || 0}
-                onChange={(e) => setTargetMods((m) => ({ ...m, fling: Number(e.target.value) }))}
-              >
-                <option value={0}>Off</option>
-                {Array.from({ length: 5 }, (_, i) => i + 1).map((c) => (
-                  <option key={c} value={c}>{c} coin{c === 1 ? "" : "s"} (−{3 * c}%){c === 5 ? " (max)" : ""}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field debuff-field">
-              <label title="Burning (PS): a 5-second stacking debuff — the Alchemist's Remote Detonator applies all 5 stacks at once when a Marine Sphere Bottle is carried. Each stack cuts the target's hard MDEF by 2 (which is what raises your magic damage here) and ticks 60 Fire magic damage per second.">
-                Burning (−2 MDEF per stack)
-              </label>
-              <select
-                value={burningStacks}
-                onChange={(e) => setTargetMods((m) => ({ ...m, burning: Number(e.target.value) }))}
-              >
-                <option value={0}>Off</option>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>{n} stack{n > 1 ? "s" : ""}{n === 5 ? " (max)" : ""}</option>
-                ))}
-              </select>
-              {burningStacks > 0 && (
+            {debuffLevelField({
+              key: "provoke", max: 10, value: provokeLv,
+              label: "Provoke (−DEF)",
+              title: "SC_PROVOKE: target DEF −(5 + 5×lv)% (−55% at Lv10). No effect on Boss monsters. Independent of the player's own Auto Berserk self-buff.",
+            })}
+            {debuffLevelField({
+              key: "fling", max: 5, value: Number(targetMods.fling) || 0,
+              label: "Fling (−3% DEF per coin)",
+              title: "GS_FLING: a Gunslinger throws coins at the target — each one cut its DEF by 3% for 20s (15% at the full 5 coins). Against a monster this reduces hard and soft DEF; against a player, soft DEF only. Whether Boss monsters resist it is not documented, so it is applied to them too.",
+              unit: (c) => `${c} coin${c === 1 ? "" : "s"} (−${3 * c}%)`,
+            })}
+            {debuffLevelField({
+              key: "burning", max: 5, value: burningStacks,
+              label: "Burning (−2 MDEF per stack)",
+              title: "Burning (PS): a 5-second stacking debuff — the Alchemist's Remote Detonator applies all 5 stacks at once when a Marine Sphere Bottle is carried. Each stack cuts the target's hard MDEF by 2 (which is what raises your magic damage here) and ticks 60 Fire magic damage per second.",
+              unit: (n) => `${n} stack${n > 1 ? "s" : ""}`,
+              hint: (
                 <div className="hint-text">
                   −{2 * burningStacks} hard MDEF for 5s. The Burning itself also ticks{" "}
                   {60 * burningStacks} Fire magic damage/s — that figure is before the target's
                   Fire resistance and MDEF, and it is the debuff's own damage, not part of your hit.
                 </div>
-              )}
-            </div>
+              ),
+            })}
             <div className="field field-checkbox">
               <label title="SC_SLEEP: target cannot evade (auto-hit) and crit rate is doubled">
                 <input type="checkbox" checked={targetMods.sleep} onChange={(e) => setTargetMods((m) => ({ ...m, sleep: e.target.checked }))} />

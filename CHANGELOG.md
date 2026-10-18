@@ -7,6 +7,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-18
 
+### Changed
+
+- **Target debuffs are a tick and an amount now, like the buffs.** Quagmire,
+  Decrease AGI, Provoke, Fling and Burning were a dropdown whose first option was
+  **Off**, sitting among debuffs that were checkboxes — so whether you ticked
+  something or picked something came down to whether the skill happened to have
+  ranks. Tick the ones that are on your target; the amount appears once you do, and
+  it is counted in that debuff's own units — levels for Quagmire, coins for Fling,
+  stacks for Burning.
+
 ### Fixed
 
 - **The damage strip no longer sits on top of the credits.** It covered the whole
