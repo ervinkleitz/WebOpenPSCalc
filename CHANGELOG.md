@@ -5,6 +5,17 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-18
+
+### Added
+
+- **The damage stays on screen, and keeps itself up to date.** A strip along the
+  bottom of the window now carries your damage range, DPS and time-to-kill, and once
+  you have pressed **Calculate damage** once, it refreshes by itself every time you
+  change something — no second press, no scrolling back up. When a number moves it
+  says by how much (`−51 (−18.1%)`), which is the part you actually wanted when you
+  swapped that card.
+
 ## 2026-10-17
 
 ### Changed

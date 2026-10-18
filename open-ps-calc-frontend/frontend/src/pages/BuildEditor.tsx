@@ -13,6 +13,7 @@ import SavedBuildsModal from "../components/SavedBuildsModal";
 import ImportBuildModal from "../components/ImportBuildModal";
 import KofiModal from "../components/KofiModal";
 import { summaryMetrics, type ComparePin } from "../components/CompareView";
+import DamageBar from "../components/DamageBar";
 import { BreakpointsView } from "../components/BreakpointsView";
 import starterBuildsJson from "../data/starterBuilds.json";
 import { displayItemName } from "../lib/itemName";
@@ -1417,6 +1418,9 @@ export default function BuildEditor() {
     && !!calcResult?.normal_attack?.result
     && calcResult.normal_attack.result.hit_chance >= 100;
   const [calculating, setCalculating] = useState(false);
+  // A live refresh in flight, as opposed to a Calculate the player pressed. Only the
+  // damage bar reads it, and only to dim itself while the next number lands.
+  const [refreshing, setRefreshing] = useState(false);
   const [calcError, setCalcError] = useState("");
   const [forceProcs, setForceProcs] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -2060,16 +2064,25 @@ export default function BuildEditor() {
   // the recompute was a side effect of loading a pinned build — there it dragged the
   // user back to the compare table they clicked Load from, so the load had no visible
   // effect and got reported as a button that does nothing.
-  async function onCalculate(fpOverride?: boolean, scrollToResults = true) {
+  // `background`: a recalculation the player did not ask for — the live refresh that
+  // keeps the damage bar current while they edit. It must not take over the page the
+  // way a pressed Calculate does, so it leaves the results panel's open/closed state
+  // alone and reports through `refreshing` rather than `calculating`; otherwise the
+  // header button would flicker to "Calculating…" on every keystroke.
+  async function onCalculate(fpOverride?: boolean, scrollToResults = true, background = false) {
     // A MANUAL Calculate flushes the Turn Undead iteration (CC-specified reset rule);
     // recalcs triggered by the iteration itself carry scrollToResults=false. The local
     // variable matters: setState wouldn't reach THIS call's payload closure.
     const tuN = scrollToResults ? 0 : tuFailedCasts;
     if (scrollToResults && tuFailedCasts !== 0) setTuFailedCasts(0);
     const fp = fpOverride !== undefined ? fpOverride : forceProcs;
-    setCalculating(true);
+    if (background) {
+      setRefreshing(true);
+    } else {
+      setCalculating(true);
+      setResultsOpen(true);
+    }
     setCalcError("");
-    setResultsOpen(true);
     try {
       const target = targetMode === "monster"
         ? { mob_id: data.target_mob_id }
@@ -2212,12 +2225,48 @@ export default function BuildEditor() {
     } catch (e: any) {
       setCalcError(e.message);
     } finally {
-      setCalculating(false);
+      if (background) setRefreshing(false);
+      else setCalculating(false);
       if (scrollToResults) {
         setTimeout(() => resultsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
       }
     }
   }
+
+  // ---- Live recalculation -------------------------------------------------------
+  // Once a first result exists, every edit refreshes it, so the damage bar is never
+  // stale and "swap the card, see what it does" costs one action instead of four.
+  //
+  // It deliberately does NOT fire before the first manual Calculate. An arriving
+  // visitor has not asked for anything yet, and with the last build restored across
+  // visits an auto-calculate on load would put a request on every page view; pressing
+  // Calculate once is the opt-in.
+  //
+  // Keyed on the ENCODED state rather than on the state objects: `data` gets a new
+  // identity whenever any field is rewritten, including rewrites that change nothing
+  // (the item-name resolver repopulating the same cache), and each of those would
+  // otherwise cost a calculation. encodeState is the same comparison the Save button
+  // uses for "has anything actually changed".
+  const liveKey = useMemo(
+    () => encodeState({ build: data, skill, targetMode, customTarget, targetMods }),
+    [data, skill, targetMode, customTarget, targetMods],
+  );
+  // onCalculate is redeclared every render, so it cannot go in the dep array without
+  // re-running the effect constantly — the ref keeps the effect keyed on the build.
+  const onCalculateRef = useRef(onCalculate);
+  onCalculateRef.current = onCalculate;
+  const liveSeen = useRef<string | null>(null);
+  useEffect(() => {
+    if (!calcResult) { liveSeen.current = null; return; }
+    // The first result is the one that was just asked for; adopt its key rather than
+    // immediately recalculating it.
+    if (liveSeen.current === null) { liveSeen.current = liveKey; return; }
+    if (liveSeen.current === liveKey) return;
+    liveSeen.current = liveKey;
+    const t = setTimeout(() => onCalculateRef.current(undefined, false, true), 450);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveKey, calcResult]);
 
   function handleToggleForceProcs() {
     const nextFP = !forceProcs;
@@ -2430,7 +2479,9 @@ export default function BuildEditor() {
   const currentEditorState: UrlEditorState = { build: data, skill, targetMode, customTarget, targetMods };
 
   return (
-    <div className="app-shell">
+    // `has-damage-bar` reserves the strip's height at the foot of the page while it
+    // is up, so the bar never covers the footer or the last panel's final row.
+    <div className={`app-shell${summaryMetrics(calcResult) ? " has-damage-bar" : ""}`}>
       {shareError && (
         <div className="share-error" role="alert">
           {shareError}
@@ -4795,6 +4846,19 @@ export default function BuildEditor() {
           <a className="credits-link" href="https://cp.payonstories.com/" target="_blank" rel="noreferrer">PS Website</a>
         </div>
       </footer>
+
+      {/* Last in the shell so it paints over everything, and outside .page so the
+          page's own padding does not inset it. The body gets a matching bottom
+          padding while it is up (see .has-damage-bar) so the footer stays reachable. */}
+      <DamageBar
+        metrics={summaryMetrics(calcResult)}
+        targetName={targetMode === "monster" ? (mobInfo?.name ?? null) : "custom target"}
+        refreshing={refreshing}
+        onOpenDetails={() => {
+          setResultsOpen(true);
+          setTimeout(() => resultsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+        }}
+      />
     </div>
   );
 }
