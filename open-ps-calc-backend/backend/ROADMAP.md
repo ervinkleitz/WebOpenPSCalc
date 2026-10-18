@@ -1746,6 +1746,81 @@ a target debuff. So these are not missing damage — they are damage that no lon
   but `BF_WEAPON` is exactly how "when the user receives **Physical** Damage" is
   expressed — so whoever implements the consumer has to read it as a BF mask.
 
+## TODO — readings only the game can give (2026-10-18)
+
+One place to look before logging in, because every item below is blocked on a
+number no source we have publishes. Nothing here is a guess waiting to be made:
+each one has been checked against the PS wiki and the PS item API first, and this
+is what was left over.
+
+### 1. When-hit autocast proc RATES — 7 items
+
+All seven are confirmed by the PS item API as real when-hit autocasts (see the
+verification pass above). What PS never states for any of them is **how often**:
+the text reads "Add the chance of", "a low chance", "Low Chance". Every rate below
+is from the Hercules scrape and is unverified on PS, so none of them is priced.
+
+| item | id / slot | proc | scrape rate | level |
+|---|---|---|---|---|
+| Dark Lord Card | 4168, shoes | Meteor Storm Lv5 | 10% | PS confirms |
+| Campfire Hat | 5414, head top | Fire Ball Lv5 | 10% | PS confirms |
+| Mask of Ifrit | 5420, head | Meteor Storm Lv3 | 5% | PS confirms |
+| Little Angel Doll | 5324, head top | Grand Cross Lv3 | 3% | PS confirms — **melee hits only** |
+| Bass Guitar | 1919, weapon | Heaven's Drive Lv3 | 3% | PS confirms |
+| Ifrit Card | 4430, accessory | Earthquake Lv2 | 1% | **unconfirmed** |
+| Magic Rabit Hat | 5503, head top | 3 bolts Lv1, each | 2% | **unconfirmed** |
+
+**To settle it:** stand in front of something that hits you physically, take a
+counted number of hits, and count the procs. **Dark Lord Card is the one to measure
+first** — the highest claimed rate, so it needs the fewest hits to separate 10% from
+anything else, and Meteor Storm is unmistakable on screen.
+
+Two notes for whoever prices these afterwards:
+
+- **Little Angel Doll's Grand Cross hurts you too.** The recoil is already modelled
+  in the outgoing direction, so a when-hit proc is partly self-damage and belongs in
+  the survivability panel as both.
+- Ifrit Card and Magic Rabit Hat need a **level** as well as a rate; the other five
+  only need the rate.
+
+### 2. Magic Rabbit Hat J (5561) — the on-attack bolts
+
+PS: "a chance of casting Lighting Bolt, Fire Bolt or Cold Bolt **between Level 1 to
+3** while physically attacking a target." The when-hit copies were removed (see
+ps_item_manual.json), and they are deliberately not re-added on the attack side
+because "Level 1 to 3" is not a level. Need: is it a fixed rank or rolled per cast,
+and at what chance. The on-attack autocast path is live, so once those are known it
+is three `bonus3 bAutoSpell,MG_*BOLT,<lv>,<rate>` lines in the manual override.
+
+### 3. Radio Antenna (5333) — the whole item
+
+PS describes **"Mdef +2"** and **"Able to use Lightning_Bolt Lv1"**, and nothing
+else. Ours carries `bMdef,5` + `bCritical,5` + `bFlee,5` + a Thunderstorm Lv5
+when-hit autocast. A description that omits something is weaker evidence than one
+that replaces it — which is why this was left alone while Ktullanux and Sea Witch's
+Foot were corrected — but Crit +5 and Flee +5 are not lines a tooltip usually drops.
+Need: the in-game tooltip. If it matches PS, the stats come down and the autocast goes.
+
+### 4. Incoming damage rounding — one damage number
+
+The engine `scaleFloor`s the pmf once per reduction; Hercules accumulates a single
+per-mille factor and multiplies once at the end. Worth ~1 per reduction step, and it
+compounds. Hercules is the authority for arithmetic PS has not reworked, but moving
+every incoming golden on a structural argument alone is the same mistake clan HP
+was reverted for, so it wants a measurement.
+
+**To settle it:** take a hit from a monster while wearing two stacked reductions —
+a −5% size card and a −30% race card is the worked example in the punch-list entry —
+and read the damage. On 13564 raw, Hercules gives 9020 and we give 9019. One number
+decides it.
+
+### Already open elsewhere, same kind of blocker
+
+- **Clan HP** — one Max HP from a clan member wearing a MaxHP% item. See the clan
+  HP section below.
+- **NJ_HUUMA cast/delay** — whether the `0.5 + 0.5*lv` cast is DEX-reducible. The two
+  readings land 1.7x apart in opposite directions. See the punch-list.
+
 ## Open question: does clan HP also sit outside the equipment rate? (2026-10-15)
 
 Clan SP does. Metan reported a Monk reading 1000 SP here and 999 in game, and the
@@ -2009,7 +2084,8 @@ unmodeled — it needs the target to already carry that status.
   race term since a player caster IS Demi-Human, but it skips the size (players are Medium) and
   boss terms. Deliberate — passing a caster there would move PvP numbers with nobody having
   verified them.
-- **Incoming damage rounds slightly high vs the client** [low, ~1 per reduction step] — Hercules
+- **Incoming damage rounds slightly high vs the client** [low, ~1 per reduction step] —
+  **blocked on one in-game reading, see "TODO — readings only the game can give".** Hercules
   accumulates every cardfix reduction into ONE integer per-mille factor (`cardfix`, starting 1000)
   and applies a single `damage * cardfix / 1000` at the end, whereas this engine `scaleFloor`s the
   pmf once per reduction, flooring at each step. With −5% size and −30% race on 13564: Hercules
@@ -2091,9 +2167,11 @@ unmodeled — it needs the target to already carry that status.
   overridden. NB ours is right where jaludev is wrong on the same skill: hit count is
   `min(BlitzLv, job_level/10 + 1, 5)`, matching both Hercules and the wiki's "job level 40+ can reach
   the full 5 hits"; jaludev's `⌊(JobLV−1)/10⌋+1` gives 4 at job level 40.
-- **`bAutoSpellWhenHit` has no consumer at all** [med] — **scoped 2026-10-18, see the PS
-  verification pass below: only 7 of the 14 damaging items survive checking against the PS
-  item API, and 4 are contradicted outright.** 42 distinct skills across ~90 items
+- **`bAutoSpellWhenHit` has no consumer at all** [med] — **scoped 2026-10-18, and now
+  blocked on measurements, not on code.** Only 7 of the 14 damaging items survive checking
+  against the PS item API (4 are contradicted outright — see the verification pass below),
+  and PS publishes no proc RATE for any of the 7, so none can be priced yet; the shopping
+  list is under "TODO — readings only the game can give". 42 distinct skills across ~90 items
   (Dark Lord Card's Meteor Storm, Ifrit Card's Earthquake, Ring of Resonance's Venom Splasher,
   and a long tail of defensive Heal/Assumptio/Kyrie). `gearBonuses.autocast_when_hit` is
   populated and then read by nobody. The offensive ones are real damage a tank deals, but they
