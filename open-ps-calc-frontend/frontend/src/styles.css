@@ -2350,9 +2350,16 @@ button:not(.pill-remove) { min-width: 28px; }
 .damage-bar-stat b { color: var(--text); font-family: var(--mono); }
 .damage-bar-details { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
 
-/* Room at the foot of the page for the strip, so it never covers the footer or
-   the last row of the last panel. Only while the bar is actually up. */
-.has-damage-bar .page { padding-bottom: 4.5rem; }
+/* Room at the foot of the DOCUMENT for the strip. This has to sit on the shell,
+   not on .page: the credits footer is a SIBLING of .page, so padding there pushed
+   the panels up and left the footer exactly where it was — measured on production
+   2026-10-18, the bar covered the whole credits row (testers, the base-engine
+   credit, and the guides / mechanics / Discord / PS Website links) at every width.
+   Generous rather than exact, because the bar's height follows its own text and
+   the root font-size changes with density: 4rem is 64px at comfortable and 56px at
+   compact, against a bar that measures 45–47px. tools/e2e/damage-bar.mjs asserts
+   the real clearance at both densities rather than trusting this arithmetic. */
+.has-damage-bar { padding-bottom: 4rem; }
 
 @media (max-width: 700px) {
   /* A phone cannot hold all of it. Keep what answers the question — the damage
@@ -2361,5 +2368,4 @@ button:not(.pill-remove) { min-width: 28px; }
   .damage-bar-label { display: none; }
   .damage-bar-stat--wide { display: none; }
   .damage-bar-range { font-size: 1rem; }
-  .has-damage-bar .page { padding-bottom: 4rem; }
 }

@@ -7,6 +7,12 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-18
 
+### Fixed
+
+- **The damage strip no longer sits on top of the credits.** It covered the whole
+  bottom row of the footer — the testers, the engine credit, and the Build guides /
+  How it's calculated / Discord / PS Website links — on every screen size.
+
 ### Added
 
 - **The damage stays on screen, and keeps itself up to date.** A strip along the

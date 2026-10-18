@@ -91,13 +91,48 @@ check(/DPS/.test(first), "and DPS");
 const box = await page.evaluate(() => {
   const el = document.querySelector(".damage-bar");
   const b = el.getBoundingClientRect();
-  return { bottom: Math.round(b.bottom), vh: innerHeight, pos: getComputedStyle(el).position,
-    padBottom: getComputedStyle(document.querySelector(".page")).paddingBottom };
+  return { bottom: Math.round(b.bottom), vh: innerHeight, pos: getComputedStyle(el).position };
 });
 check(box.pos === "fixed" && Math.abs(box.bottom - box.vh) <= 1,
   "sitting on the bottom edge of the viewport", box);
-check(parseFloat(box.padBottom) >= 40,
-  "and the page reserves room so it covers nothing", box.padBottom);
+
+// THE BAR MUST NOT COVER THE CREDITS. Reported 2026-10-18, and the first version of
+// this test had waved it through: it asserted `padding-bottom` on .page, but the
+// footer is a SIBLING of .page, so that padding pushed the panels up and left the
+// footer exactly where it was. The whole credits row — the testers, the base-engine
+// credit and the guides / mechanics / Discord / PS Website links — sat underneath
+// the bar at every width.
+//
+// So this measures the thing that actually matters: scroll to the very bottom and
+// compare the footer's real bottom edge with the bar's real top edge. Both
+// densities, because the root font-size changes with them and the reservation is
+// in rem.
+// Both densities (the reservation is in rem and the root font-size moves with
+// density) and both widths (the footer wraps to a different height on a phone, and
+// the bar drops its label and its wide stats there).
+for (const [w, h] of [[1500, 900], [390, 760]]) {
+  await page.setViewportSize({ width: w, height: h });
+  for (const density of ["comfortable", "compact"]) {
+    await page.evaluate((d) => document.documentElement.setAttribute("data-density", d), density);
+    await page.waitForTimeout(500);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(600);
+    const clear = await page.evaluate(() => {
+      const bar = document.querySelector(".damage-bar").getBoundingClientRect();
+      const foot = document.querySelector(".credits-footer").getBoundingClientRect();
+      const covered = [...document.querySelectorAll(".credits-footer > div, .credits-footer a")]
+        .filter((el) => el.getBoundingClientRect().bottom > bar.top + 0.5)
+        .map((el) => (el.className || el.textContent || "").toString().trim().slice(0, 30));
+      return { gap: Math.round(bar.top - foot.bottom), barH: Math.round(bar.height), covered };
+    });
+    check(clear.covered.length === 0,
+      `${w}px / ${density}: the bar covers nothing in the footer (bar ${clear.barH}px, gap ${clear.gap}px)`,
+      clear);
+  }
+}
+await page.evaluate(() => document.documentElement.setAttribute("data-density", "comfortable"));
+await page.setViewportSize({ width: 1500, height: 900 });
+await page.waitForTimeout(400);
 
 // It has to survive a scroll — that is the entire point.
 await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
