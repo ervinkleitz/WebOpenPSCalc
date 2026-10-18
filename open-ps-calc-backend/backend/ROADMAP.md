@@ -1701,6 +1701,51 @@ Re-run `node tools/gen-ps-card-names.mjs` after a patch that adds cards. It refu
 write if it parses fewer than 500 rows, so a markup change on their side fails loudly
 rather than silently emptying the table.
 
+## bAutoSpellWhenHit — PS verification pass (2026-10-18)
+
+Before implementing the when-hit procs, every item carrying `bAutoSpellWhenHit` whose
+autocast skill deals damage was checked against the PS item API. **Four of fourteen are
+contradicted by PS and must not be priced.** Implementing straight from the Hercules
+scrape would have shipped damage PS does not grant.
+
+**The API has a detail form nobody had used: `?id=<classic id>` returns the full
+description, where `?name=` returns only `{id,name,refine,slots}`.** That is how each row
+below was checked. `curl "https://tools.payonstories.com/api/pc/item?id=4168"`.
+
+| id | item | our script | PS item API says | verdict |
+|---|---|---|---|---|
+| 4168 | Dark Lord Card | `WZ_METEOR,5,100` | "auto casting Level 5 Meteor Storm … when the user receives Physical Damage" | **confirmed** |
+| 4430 | Ifrit Card | `NPC_EARTHQUAKE,2,10` | "low chance of autocast Earthquake when receives a physical attack" (level unstated) | **confirmed** |
+| 1919 | Bass Guitar | `WZ_HEAVENDRIVE,3,30` | "chance to cast Lv.3 Heaven's Drive each time the wearer is attacked" | **confirmed** |
+| 5324 | Little Angel Doll | `CR_GRANDCROSS,3,30` | "Low Chance of casting Level 3 Grand Cross when hit by **melee** physical attack" | **confirmed, melee-only** |
+| 5414 | Campfire Hat | `MG_FIREBALL,5,100` | "chance autocast Level 5 Fire Ball on enemy when the user receives Physical Damage" | **confirmed** |
+| 5420 | Mask of Ifrit | `WZ_METEOR,3,50` | "chance of auto-casting Lv. 3 Meteor Storm when receiving physical attack" | **confirmed** |
+| 5503 | Magic Rabit Hat | 3 bolts Lv1 2% | "chance to auto cast random Bolt spells when attacked" | **confirmed** |
+| 4419 | Ktullanux Card | `WZ_FROSTNOVA,10,20` | "chance of inflict **Hypothermia** when the wearer receives physical damage" | **CONTRADICTED** — PS swapped the nuke for a status we already model as a target debuff |
+| 1973 | Sea Witch's Foot | `WZ_FROSTNOVA,3,50` when-hit | "inflicting Hypothermia each time **when attacking**" — wrong skill AND wrong trigger | **CONTRADICTED** |
+| 5561 | Magic Rabbit Hat (J) | 3 bolts Lv3 when-hit | the when-hit proc is **Heal Lv1**; the bolts fire "while physically **attacking**" | **CONTRADICTED** — right skills, wrong direction |
+| 5333 | Radio Antenna | `MG_THUNDERSTORM,5,30` | describes only "Able to use Lightning_Bolt Lv1" — no autocast at all | **not described by PS** — do not price |
+| 2679 | Ring of Resonance | `AS_SPLASHER,10,20` | "Randomly autocasts various skills while receiving physical attack" — never names them | **partial** — mechanic yes, skill unnamed |
+| 5473 | Nipper Crab Hairpin | `MG_COLDBOLT,1,100` | `No data` | **unverifiable** |
+| 2793 | Ring of Resonance (I) | `AS_SPLASHER,10,20` | `No data` | **unverifiable** |
+
+The pattern in the contradictions is consistent and worth remembering: **PS replaced Frost
+Nova when-hit procs with the Hypothermia status**, which the calculator already carries as
+a target debuff. So these are not missing damage — they are damage that no longer exists.
+
+### Two side findings, recorded rather than acted on
+
+- **Radio Antenna's stats diverge too.** Our script is `bMdef,5; bCritical,5; bFlee,5`;
+  PS describes only "Mdef +2". A description can abbreviate, so this is not proof — but
+  Crit +5 and Flee +5 are not the kind of line a tooltip drops. Worth one in-game check.
+- **The 4th argument of `bAutoSpellWhenHit` is a `BF_` damage-type mask, not an `ATF_`
+  range flag.** `gearBonusAggregator.buildAutocastSpec` reads `p[3]` for `ATF_SHORT` /
+  `ATF_LONG`, which is right for `bAutoSpell` and wrong here: Ktullanux carries
+  `BF_WEAPON|BF_MAGIC` and Magic Rabbit Hat (J) carries the bare `3`. Nothing is
+  mispriced today because the strings never match `ATF_*` and the specs are unconsumed,
+  but `BF_WEAPON` is exactly how "when the user receives **Physical** Damage" is
+  expressed — so whoever implements the consumer has to read it as a BF mask.
+
 ## Open question: does clan HP also sit outside the equipment rate? (2026-10-15)
 
 Clan SP does. Metan reported a Monk reading 1000 SP here and 999 in game, and the
@@ -2046,7 +2091,9 @@ unmodeled — it needs the target to already carry that status.
   overridden. NB ours is right where jaludev is wrong on the same skill: hit count is
   `min(BlitzLv, job_level/10 + 1, 5)`, matching both Hercules and the wiki's "job level 40+ can reach
   the full 5 hits"; jaludev's `⌊(JobLV−1)/10⌋+1` gives 4 at job level 40.
-- **`bAutoSpellWhenHit` has no consumer at all** [med] — 42 distinct skills across ~90 items
+- **`bAutoSpellWhenHit` has no consumer at all** [med] — **scoped 2026-10-18, see the PS
+  verification pass below: only 7 of the 14 damaging items survive checking against the PS
+  item API, and 4 are contradicted outright.** 42 distinct skills across ~90 items
   (Dark Lord Card's Meteor Storm, Ifrit Card's Earthquake, Ring of Resonance's Venom Splasher,
   and a long tail of defensive Heal/Assumptio/Kyrie). `gearBonuses.autocast_when_hit` is
   populated and then read by nobody. The offensive ones are real damage a tank deals, but they
