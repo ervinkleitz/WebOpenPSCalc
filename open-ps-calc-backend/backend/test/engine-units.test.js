@@ -7527,3 +7527,62 @@ test("a self-targeted AoE does not put its ailment in the self-buff ranks", () =
   assert.equal(knight.known_buff_levels.SC_TWOHANDQUICKEN, 7);
   assert.equal(knight.known_buff_levels.SC_ENDURE, 3);
 });
+
+// ---------------------------------------------------------------------------
+// When-hit autocasts: Payon Stories grants fewer of them than vanilla does
+// ---------------------------------------------------------------------------
+// Groundwork audit, 2026-10-18. Fourteen items carry a `bAutoSpellWhenHit` whose
+// skill deals damage; checked one by one against the PS item API (?id=<classic id>,
+// which is the form that returns a description — ?name= returns a bare search list),
+// three of them turned out to grant something else entirely. Nothing consumes
+// `autocast_when_hit` yet, so none of this moves a number today — and that is the
+// point: the corrections go in BEFORE the consumer, so the first consumer cannot
+// price damage Payon Stories does not grant. Overrides live in ps_item_manual.json
+// with the quoted PS text in each `_note`.
+test("PS replaced Ktullanux Card's Frost Nova with a status, so nothing autocasts", () => {
+  const gearBonusAggregator = require("../src/engine/gearBonusAggregator");
+  const gb = gearBonusAggregator.compute({ armor: 2302, armor_card1: 4419 }, {}, null, false);
+  const froz = (gb.autocast_when_hit || []).filter((s) => s.skill_name === "WZ_FROSTNOVA");
+  assert.equal(froz.length, 0,
+    "PS: 'adds a chance of inflict Hypothermia when the wearer receives physical damage'");
+  // The half PS DOES still grant has to survive the override.
+  assert.equal(gb.add_ele?.Ele_Fire ?? 0, 50,
+    "the +50% vs Fire monsters is unchanged and must not be lost with the autocast");
+});
+
+test("Sea Witch's Foot keeps its Silence and loses its when-hit Frost Nova", () => {
+  const gearBonusAggregator = require("../src/engine/gearBonusAggregator");
+  const gb = gearBonusAggregator.compute({ right_hand: 1973 }, {}, null, false);
+  assert.equal((gb.autocast_when_hit || []).length, 0,
+    "PS puts the Hypothermia proc on ATTACK, not on being hit");
+  assert.ok((gb.autocast_on_attack || []).some((s) => s.skill_name === "NPC_WIDESILENCE"),
+    "PS: 'Each attack has a chance of inflicting the Silence status' — still there");
+});
+
+test("Magic Rabbit Hat (J) keeps the when-hit Heal and drops the when-hit bolts", () => {
+  const gearBonusAggregator = require("../src/engine/gearBonusAggregator");
+  const gb = gearBonusAggregator.compute({ head_top: 5561 }, {}, null, false);
+  const whenHit = gb.autocast_when_hit || [];
+  assert.ok(whenHit.some((s) => s.skill_name === "AL_HEAL"),
+    "PS: 'casting Level 1 Heal on its wearer when being attacked physically'");
+  assert.equal(whenHit.filter((s) => /BOLT$/.test(s.skill_name)).length, 0,
+    "PS casts the three bolts 'while physically ATTACKING', so they are not when-hit");
+  // Deliberately NOT re-added on the attack side: PS says "between Level 1 to 3" and
+  // gives neither a level nor a chance, and a guessed level is priced damage.
+  assert.equal((gb.autocast_on_attack || []).filter((s) => /BOLT$/.test(s.skill_name)).length, 0,
+    "and are not guessed onto the attack side either, for want of a level and a rate");
+});
+
+test("the when-hit autocasts PS confirms are still intact", () => {
+  const gearBonusAggregator = require("../src/engine/gearBonusAggregator");
+  // Dark Lord Card: "auto casting Level 5 Meteor Storm ... when the user receives
+  // Physical Damage". The audit corrected three items; it must not have shaved the
+  // seven it verified.
+  // In SHOES: Dark Lord Card's loc is EQP_SHOES, and the aggregator correctly ignores
+  // a card in a slot it cannot compound on — which is how the first draft of this test
+  // "proved" the card was broken.
+  const gb = gearBonusAggregator.compute({ shoes: 2403, shoes_card1: 4168 }, {}, null, false);
+  const ms = (gb.autocast_when_hit || []).find((s) => s.skill_name === "WZ_METEOR");
+  assert.ok(ms, "Dark Lord Card's Meteor Storm is confirmed by PS and must survive");
+  assert.equal(ms.skill_level, 5, "at the level PS names");
+});
