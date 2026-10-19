@@ -837,11 +837,23 @@ label {
 .equip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 0.7rem; }
 @media (max-width: 600px) { .equip-grid { grid-template-columns: 1fr; } }
 
-/* Each slot is as tall as ITS OWN content. A grid item stretches to its row by
-   default, so opening one slot dragged the neighbouring slot's separator line down
-   with it - the row beside an open Headgear (mid) grew from 31px to 77px and left
-   its rule floating 46px under its own text. */
-.equip-slot { align-self: start; }
+/* Closed slots STRETCH to their grid row, so the two columns' separator lines meet
+   even when one holds a name that wraps and the other does not. Line counts cannot
+   be equalised by styling alone - a long enough item name simply takes three lines
+   where its neighbour takes two - so the row has to do it.
+
+   The reason this was align-self: start before is that an OPEN slot then dragged
+   its closed neighbour down with it, leaving that neighbour's rule floating ~46px
+   under its own text. An open slot now takes a row to itself instead (below), so
+   there is no neighbour to stretch - and its cards, refine and forge controls get
+   the full width of the panel, which they wanted anyway. */
+.equip-slot { align-self: stretch; }
+.equip-slot--open { grid-column: 1 / -1; }
+/* Stretching the slot is only half of it: the rule lives on the slot box, so the
+   HEAD has to fill that box for the rule to sit at the row's bottom edge.
+   CLOSED slots only - on an open one the slot box also contains the body, and a
+   full-height head covers it, painting the pill and the card rows underneath. */
+.equip-slot:not(.equip-slot--open) .equip-slot-head { height: 100%; align-content: start; }
 
 /* Left at 160px. Raising it to 170 to buy the labels room cost a whole COLUMN once
    the 0.7rem gaps are counted ((512 - 22) / 3 = 163), which made the long buff lists
@@ -2568,13 +2580,13 @@ button:not(.pill-remove) { min-width: 28px; }
 .equip-slot-head:hover .equip-slot-value { color: var(--text); }
 
 .equip-slot-label {
-  /* Allowed to shrink and WRAP. On an empty slot the label and the word "Empty"
-     share one line, and at 0 0 auto the label took its full max-content width and
-     squeezed "Empty" out of a narrow cell - visible at 1800px+, where the editor
-     goes four-wide and leaves this panel its narrowest. Wrapping "LEFT HAND
-     (SHIELD / WEAPON)" over two lines is the better loss. */
-  flex: 0 1 auto;
+  /* It has the row to itself now, so it neither has to shrink nor to wrap.
+     Its line height is a LENGTH, shared with the value below, so that a line of
+     label and a line of name are the same height despite their different font
+     sizes. Without that, a narrow cell whose LABEL wraps sat 3px off from one whose
+     NAME wraps - both three lines, different heights. */
   min-width: 0;
+  line-height: 1.1rem;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -2584,13 +2596,9 @@ button:not(.pill-remove) { min-width: 28px; }
    runs long and wrapping it would undo the one-line-per-slot shape; the pill
    inside shows it in full. */
 .equip-slot-value {
-  /* Does not shrink: on an empty slot this is one short word and cutting it is
-     never the right trade against wrapping the label. The FILLED case overrides
-     this below, where the name is on its own line and takes the full width. */
-  flex: 0 0 auto;
-  margin-left: auto;
   min-width: 0;
-  text-align: right;
+  text-align: left;
+  line-height: 1.1rem;   /* the same LENGTH as the label above it - see there */
   font-size: 0.84rem;
   color: var(--accent-text);
   white-space: nowrap;
@@ -2613,7 +2621,17 @@ button:not(.pill-remove) { min-width: 28px; }
    Dropping the column minimum to 240px goes with it — a stacked cell needs far
    less width than one trying to fit a label and a long item name side by side, so
    two columns come back wherever there is room for them. */
-.equip-slot--filled .equip-slot-head {
+/* EVERY slot stacks, not just the ones holding something.
+   Keeping empty slots on one line saved a little height and cost two things that
+   matter more. Alignment: a filled slot was two lines and an empty one was one, so
+   any row pairing them put its two separators 18px apart (10px in compact) and the
+   grid read as broken. And wrapping: on one line the label had to share the cell
+   with the word "Empty" and the chevron, which left "LEFT HAND (SHIELD / WEAPON)"
+   too little room and wrapped it to a second line - making that slot three lines
+   tall and misaligning the row all over again.
+   Stacked, every closed slot is exactly two lines whatever it holds, and the label
+   has the full width of the cell to itself. */
+.equip-slot-head {
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-areas:
@@ -2622,13 +2640,14 @@ button:not(.pill-remove) { min-width: 28px; }
   row-gap: 0.1rem;
   align-items: center;
 }
-.equip-slot--filled .equip-slot-label { grid-area: label; }
-.equip-slot--filled .equip-slot-chevron { grid-area: chevron; }
-.equip-slot--filled .equip-slot-value {
+.equip-slot-label { grid-area: label; }
+.equip-slot-chevron { grid-area: chevron; }
+.equip-slot-value {
   grid-area: value;
   margin-left: 0;
   text-align: left;   /* reads as a continuation of the label above it */
   padding-bottom: 0.1rem;
+  line-height: 1.1rem;
   /* WRAPS instead of truncating. On its own line in a two-column grid a long name
      still outruns the cell - "+7 Double Boned Double Untouchable Gladius" wants
      ~290px and a half-width cell gives ~220 - and an ellipsis hides exactly the

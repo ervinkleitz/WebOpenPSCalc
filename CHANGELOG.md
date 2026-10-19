@@ -9,6 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **The two equipment columns line up.** Rows holding an item were taller than empty
+  ones, so the dividing lines across the two columns never matched. Every slot is
+  the same height now, in both normal and compact mode. Opening a slot also gives it
+  the full width of the panel, so its cards and refine have room.
+
 - **Highlighted text stands out properly in light mode.** Item names, the damage
   figure and the rest of the highlighted text blended into the ordinary text around
   them instead of standing out. They are a clear rust now, the light-mode
