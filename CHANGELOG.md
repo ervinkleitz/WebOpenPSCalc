@@ -9,6 +9,16 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **The equipment list is readable again at normal window sizes.** It was squeezing
+  eleven slots into two narrow columns, which cut off the longer labels and shortened
+  **Empty** to *E.*, and opening one slot dragged the line under its neighbour halfway
+  down the panel. The slots are one column now, each as tall as its own contents.
+
+- **The off-hand explanation fits on a phone.** A two-handed weapon blocks your
+  off-hand, and the row said so — but the sentence was too long for a narrow screen
+  and got cut off partway. It reads **Two-handed** now, with the full explanation on
+  hover.
+
 - **The buff and passive lists line up again.** Where a skill's name was too long for
   its column, its **Lv** picker dropped onto a second line while its neighbours' did
   not, leaving the Passive skills and Buffs panels ragged. The names also broke

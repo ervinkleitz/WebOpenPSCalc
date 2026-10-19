@@ -77,7 +77,11 @@ await load(build({ equipped: { right_hand: 1163 } }));
 const claymoreAlone = await damage();
 const offHandText = (await slotField(/Left hand/i).innerText()).replace(/\s+/g, " ");
 console.log("two-handed, empty off-hand slot reads:", JSON.stringify(offHandText));
-check(/no off-hand/i.test(offHandText),
+// The row states the CAUSE ("Two-handed") rather than the consequence: the label
+// beside it already says LEFT HAND, and the full sentence needed 230px where a
+// phone row has about 105, so it was being cut off mid-explanation. The whole
+// sentence lives on the row's title.
+check(/two-handed|no off-hand/i.test(offHandText),
   `the off-hand slot should explain itself under a two-hander, got "${offHandText}"`);
 check(!(await slotField(/Left hand/i).locator("input").count()),
   "no search box should be offered for a hand you do not have");

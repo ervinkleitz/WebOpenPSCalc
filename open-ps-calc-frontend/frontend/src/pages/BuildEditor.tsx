@@ -3288,8 +3288,13 @@ export default function BuildEditor() {
                 // on the row means the player does not have to open a slot they
                 // cannot use to find out why they cannot use it.
                 const offHandBlocked = slot.key === "left_hand" && mainHandFillsBothHands;
+                // Short on purpose. The row label already says LEFT HAND, so naming
+                // the CAUSE is the useful half - and the full sentence needs 230px
+                // where a 390px phone leaves this row 105, so it was being cut off
+                // mid-explanation, which is worse than the "Empty" it replaced. The
+                // whole sentence is on the row's title instead.
                 const slotSummary = offHandBlocked
-                  ? "No off-hand \u2014 two-handed weapon"
+                  ? "Two-handed"
                   : equippedId == null || !item
                   ? null
                   : `${(data.refine?.[slot.key] ?? 0) > 0 ? `+${data.refine[slot.key]} ` : ""}`
@@ -3312,7 +3317,9 @@ export default function BuildEditor() {
                       className="equip-slot-head"
                       aria-expanded={slotOpen}
                       onClick={() => toggleSlot(slot.key)}
-                      title={isInvalid ? invalidSlots.get(slot.key) : undefined}
+                      title={offHandBlocked
+                        ? "Your weapon is two-handed and fills both hands, so there is no off-hand."
+                        : isInvalid ? invalidSlots.get(slot.key) : undefined}
                     >
                       <span className="equip-slot-label">{slot.label}</span>
                       {/* Only while closed, for the same reason Panel hides its

@@ -740,7 +740,20 @@ label {
 .stat-pts-counter--low  .stat-pts-bar__fill { background: var(--accent); }
 .stat-pts-counter--over .stat-pts-bar__fill { background: var(--crit); }
 
-.equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+/* ONE column until there is real room for two.
+   This was a fixed 1fr 1fr, which was right while a slot was a stacked field (label
+   on its own line, control under it). A slot is a ROW now - label on the left, item
+   name on the right - and that needs horizontal room the old halves do not have: an
+   editor column is about 440px, so each half came to ~215px, which clipped
+   "LEFT HAND (SHIELD / WEAPON)" and truncated the word "Empty" to "E.".
+   auto-fit gives one column at a normal panel width and two on a wide screen. */
+.equip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 0.7rem; }
+
+/* Each slot is as tall as ITS OWN content. A grid item stretches to its row by
+   default, so opening one slot dragged the neighbouring slot's separator line down
+   with it - the row beside an open Headgear (mid) grew from 31px to 77px and left
+   its rule floating 46px under its own text. */
+.equip-slot { align-self: start; }
 
 /* Left at 160px. Raising it to 170 to buy the labels room cost a whole COLUMN once
    the 0.7rem gaps are counted ((512 - 22) / 3 = 163), which made the long buff lists
