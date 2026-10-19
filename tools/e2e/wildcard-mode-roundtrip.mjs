@@ -66,8 +66,16 @@ const inWildcard = (p) => p.evaluate(() => {
 
 // A carded weapon, switched to wildcard mix with the cards left underneath.
 await page.goto(link(state({ equipped: { right_hand: GLADIUS3, right_hand_card1: PHREEONI } })), { waitUntil: "domcontentloaded" });
+// Equipment slots collapse by default (UX 5, 2026-10-18), so a slot'
+// s search box and its Cards / Wildcard mix toggle are invisible - and
+//  unclickable - until the row is opened. Expanding them first is what a player does.
+const expandSlots = async () => {
+  const btn = page.locator('.equip-slot-actions button', { hasText: 'Expand all' }).first();
+  if (await btn.count()) { await btn.click(); await page.waitForTimeout(400); }
+};
 await settle();
 const carded = await readHit(page);
+await expandSlots();
 await page.getByRole("button", { name: /^Wildcard mix$/ }).first().click();
 await settle();
 const mixed = await readHit(page);

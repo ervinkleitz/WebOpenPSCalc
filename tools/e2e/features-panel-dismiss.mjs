@@ -33,6 +33,12 @@ await page.waitForTimeout(400);
 check(await banner.count() === 1, "panel did not come back when restored");
 check(await restore.count() === 0, "restore button still showing once the panel is back");
 // Content, not just the shell: restoring must give back the actual list.
+// The banner starts COLLAPSED since 2026-10-18 (it was 303px of a desktop fold and
+// 513px of a phone one), so a restored panel is a closed one - correctly. Open it,
+// then check there is something behind the header. Without the expand this asserted
+// that restore re-opens the banner, which was never the claim.
+await page.locator(".reworks-banner-toggle").first().click();
+await page.waitForTimeout(400);
 check((await page.locator(".reworks-banner li").count()) > 5, "restored panel has no feature list");
 
 await page.reload({ waitUntil: "networkidle" });

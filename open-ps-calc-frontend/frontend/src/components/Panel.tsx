@@ -1,4 +1,4 @@
-import { useEffect, useState, ReactNode } from "react";
+import { useState, ReactNode } from "react";
 
 interface PanelProps {
   eyebrow?: string;
@@ -48,18 +48,24 @@ export default function Panel({
     return typeof stored === "boolean" ? stored : defaultOpen;
   });
 
-  // Written on change rather than on every render, and tolerant of storage being
-  // unavailable (private windows, blocked site data) — the panel still works, it
-  // just forgets.
-  useEffect(() => {
-    if (!collapsible) return;
+  // Written ONLY when the player toggles the panel, never on mount.
+  //
+  // This started as an effect keyed on `open`, which also fired on first render and
+  // so wrote the DEFAULT as though it were a decision. That quietly broke the one
+  // panel whose default is dynamic: "Start from a template" opens itself on an empty
+  // build, the effect recorded that as a preference, and from then on it stayed open
+  // over a finished build forever — a menu for a choice already made, which is
+  // exactly what defaultOpen was computed to avoid. A remembered state has to come
+  // from a click.
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
     try {
       const all = readState();
-      if (all[title] === open) return;
-      all[title] = open;
+      all[title] = next;
       localStorage.setItem(KEY, JSON.stringify(all));
-    } catch { /* storage unavailable — the panel simply will not remember */ }
-  }, [open, title, collapsible]);
+    } catch { /* storage unavailable — the panel still works, it just forgets */ }
+  };
 
   const isOpen = !collapsible || open;
 
@@ -67,7 +73,7 @@ export default function Panel({
     <div className={`panel${highlight ? " panel-highlight" : ""}`}>
       <h2
         className={collapsible ? "panel-header" : undefined}
-        onClick={collapsible ? () => setOpen((o) => !o) : undefined}
+        onClick={collapsible ? toggle : undefined}
         role={collapsible ? "button" : undefined}
         aria-expanded={collapsible ? isOpen : undefined}
       >

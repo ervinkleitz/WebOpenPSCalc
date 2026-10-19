@@ -132,8 +132,19 @@ const WIZARD = (extra = {}) => ({
   check(dodgeHypo != null && dodge0 != null && dodgeHypo > dodge0,
     `Hypothermia takes 10 DEX off the monster, so you should dodge more (${dodge0}% -> ${dodgeHypo}%)`);
 
-  const quag = page.locator(".debuff-field", { has: page.locator("label", { hasText: /^Quagmire/ }) }).first();
-  if (await quag.count()) await quag.locator("select").first().selectOption("5");
+  // Leveled target debuffs are checkbox rows since 2026-10-18 (.debuff-field is
+  // gone): ticking one applies it at its maximum, which for Quagmire is Lv5.
+  //
+  // The previous version was `if (await quag.count()) ...` against a selector that
+  // no longer matched anything, so it silently applied NOTHING and then blamed the
+  // engine for the dodge not moving. A setup step that can quietly not happen is
+  // worse than one that throws, so this asserts it took.
+  const quag = page.locator(".field-checkbox", { hasText: /^Quagmire/ }).first();
+  check(await quag.count() === 1, "the Quagmire row is not where this test expects it");
+  await quag.locator('input[type="checkbox"]').check();
+  await page.waitForTimeout(400);
+  check(await quag.locator("select").first().inputValue() === "5",
+    "ticking Quagmire should apply it at Lv5, its maximum");
   await page.waitForTimeout(500);
   await calculate(page);
   const dodgeBoth = await dodgePct(page);

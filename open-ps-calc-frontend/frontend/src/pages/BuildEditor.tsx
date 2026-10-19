@@ -3307,7 +3307,14 @@ export default function BuildEditor() {
                       `Item #${equippedId}`,
                     );
                 return (
-                  <div key={slot.key} className={`equip-slot${slotOpen ? " equip-slot--open" : ""}${isInvalid ? " equip-slot--invalid" : ""}`}>
+                  <div key={slot.key} className={`equip-slot${slotOpen ? " equip-slot--open" : ""}${isInvalid ? " equip-slot--invalid" : ""}`
+                    // A slot holding a real item puts the name on its OWN line under
+                    // the label; the name is what varies and what runs long, and
+                    // sharing a line with the label left "Double Bloody Double
+                    // Beholder Gladius" showing as "Double Bloody Double Be...".
+                    // Empty slots stay on one line - stacking "Empty" under a label
+                    // would cost a row apiece for no information.
+                    + (slotSummary && !offHandBlocked ? " equip-slot--filled" : "")}>
                     {/* The whole row is the control, so the target is the line and
                         not a chevron. An invalid slot is flagged here too: it is
                         excluded from the calculation, and a player must be able to

@@ -52,16 +52,26 @@ await page.waitForTimeout(2500);
 
 // Scoped to the Passive skills grid, and keyed on the label's own text (CSS
 // upper-cases it on screen but textContent keeps the authored case).
+// Passives are checkbox rows since 2026-10-18: the rank is the value of a <select>
+// that exists only once the passive is ticked, where it used to be a number input.
+// An unticked passive is level 0 - that is what "not learned" looks like now, and
+// reporting it as 0 rather than omitting it keeps the before/after comparison
+// honest about skills the import did not touch.
 const passiveLevels = () => page.evaluate(() => {
   const out = {};
-  for (const f of document.querySelectorAll(".passive-grid .field")) {
-    const label = f.querySelector("label")?.textContent?.trim();
-    const input = f.querySelector("input[type=number]");
-    if (label && input) out[label] = Number(input.value);
+  for (const row of document.querySelectorAll(".passive-grid .field-checkbox")) {
+    const label = row.querySelector("label span")?.textContent?.trim();
+    if (!label) continue;
+    const ticked = row.querySelector('input[type=checkbox]')?.checked;
+    const sel = row.querySelector("select");
+    // Ticked with no selector means a one-rank passive, which is level 1.
+    out[label] = !ticked ? 0 : (sel ? Number(sel.value) : 1);
   }
   return out;
 });
-const weaponSlot = () => page.locator(".field", { has: page.locator("label", { hasText: /Right hand/i }) }).first().innerText();
+// A slot is a collapsed row since 2026-10-18; its label lives in .equip-slot-label
+// and the item name is on the row itself, so the row text is all this needs.
+const weaponSlot = () => page.locator(".equip-slot", { has: page.locator(".equip-slot-label", { hasText: /Right hand/i }) }).first().innerText();
 
 const damage = async () => {
   await page.getByRole("button", { name: /calculate damage/i }).first().click();

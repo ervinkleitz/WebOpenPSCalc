@@ -91,6 +91,13 @@ const engineHit = (equipped) => page.evaluate(async (eq) => {
 await page.goto(`${URL_BASE}?b=z3_${LZ.compressToEncodedURIComponent(JSON.stringify(ren(state)))}`, { waitUntil: "domcontentloaded" });
 await page.evaluate((b) => { window.__e2eBuild = b; }, state.build);
 await page.waitForTimeout(6000);
+// Equipment slots collapse by default (UX 5, 2026-10-18), so a slot'
+// s search box and its Cards / Wildcard mix toggle are invisible - and
+//  unclickable - until the row is opened. Expanding them first is what a player does.
+const expandSlots = async () => {
+  const btn = page.locator('.equip-slot-actions button', { hasText: 'Expand all' }).first();
+  if (await btn.count()) { await btn.click(); await page.waitForTimeout(400); }
+};
 
 const hitCarded = await engineHit(CARDED);
 const hitBare = await engineHit({ right_hand: WEAPON });
@@ -106,6 +113,7 @@ check(dexWithCard > 0, `Drops Card's +1 DEX should show as an equip bonus (got +
 
 // Flip the right hand to Wildcard mix. The real cards stay in the build — that is
 // the whole point: only the mode changes.
+await expandSlots();
 const wildcardBtn = page.getByRole("button", { name: /^Wildcard mix$/ }).first();
 check((await wildcardBtn.count()) > 0, "the Wildcard mix toggle should be offered for a slotted weapon");
 await wildcardBtn.click();

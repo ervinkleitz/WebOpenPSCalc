@@ -747,7 +747,13 @@ label {
    editor column is about 440px, so each half came to ~215px, which clipped
    "LEFT HAND (SHIELD / WEAPON)" and truncated the word "Empty" to "E.".
    auto-fit gives one column at a normal panel width and two on a wide screen. */
-.equip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 0.7rem; }
+/* 320px: another column only once each is wide enough for the longest name the card
+   namer can build - "+7 Double Boned Double Untouchable Gladius" wants ~290px, and
+   the cell needs a little over that. Checked by walking the widths: 240 split a
+   566px panel into two 277px columns and clipped it, and 280 still clipped at a
+   980px viewport, where the editor drops to one column and hands this panel 916px
+   to split three ways. */
+.equip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0 0.7rem; }
 
 /* Each slot is as tall as ITS OWN content. A grid item stretches to its row by
    default, so opening one slot dragged the neighbouring slot's separator line down
@@ -2508,6 +2514,29 @@ button:not(.pill-remove) { min-width: 28px; }
   transform: rotate(-90deg);
 }
 .equip-slot-chevron.open { transform: rotate(0deg); }
+
+/* A slot with something in it gives the name its own line, full width, under the
+   label. Done with grid areas so the markup is the same either way: the label and
+   the chevron share the top row, the name takes the whole second one.
+   Dropping the column minimum to 240px goes with it — a stacked cell needs far
+   less width than one trying to fit a label and a long item name side by side, so
+   two columns come back wherever there is room for them. */
+.equip-slot--filled .equip-slot-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "label chevron"
+    "value value";
+  row-gap: 0.1rem;
+  align-items: center;
+}
+.equip-slot--filled .equip-slot-label { grid-area: label; }
+.equip-slot--filled .equip-slot-chevron { grid-area: chevron; }
+.equip-slot--filled .equip-slot-value {
+  grid-area: value;
+  text-align: left;   /* reads as a continuation of the label above it */
+  padding-bottom: 0.1rem;
+}
 
 .equip-slot-body { padding: 0.1rem 0 0.7rem; }
 /* `hidden` is overridden by the display on .equip-slot-body, so restore it —

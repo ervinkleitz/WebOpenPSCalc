@@ -54,8 +54,10 @@ const plain = await cards();
 console.log("plain:      ", ["AGI", "DEX", "Flee", "Flee 95%", "HIT 100%"].map((k) => `${k}=${plain[k]}`).join("  "));
 check(plain["Flee"] === "226" && plain["Flee 95%"] === "267", `undebuffed baseline moved: ${JSON.stringify(plain)}`);
 
-await page.locator(".debuff-field", { has: page.locator("label", { hasText: /^Quagmire/ }) }).first()
-  .locator("select").first().selectOption("5");
+// Leveled target debuffs are checkbox rows since 2026-10-18 (.debuff-field is gone).
+// Ticking one applies it at its maximum, which for Quagmire is the Lv5 this wants.
+await page.locator(".field-checkbox", { hasText: /^Quagmire/ }).first()
+  .locator('input[type="checkbox"]').first().check();
 await page.waitForTimeout(700);
 await page.locator(".field-checkbox", { has: page.locator("span", { hasText: /^Hypothermia/ }) }).first()
   .locator("input[type=checkbox]").first().check();

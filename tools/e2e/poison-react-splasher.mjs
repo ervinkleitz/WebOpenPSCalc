@@ -51,17 +51,29 @@ const calculate = async (page) => {
   await page.waitForTimeout(2500);
 
   const panel = page.locator(".panel", { has: page.locator("h2", { hasText: /Passive skills/i }) }).first();
-  const field = panel.locator(".field", { has: page.locator("label", { hasText: /^Poison React$/i }) }).first();
+  // Passives are checkbox rows since 2026-10-18: ticking one IS learning it, and the
+  // cap shows as the top entry of the rank selector rather than as "/ 10" printed
+  // beside a number box.
+  const field = panel.locator(".field-checkbox", { hasText: /Poison React/i }).first();
   check(await field.count() === 1, "Poison React is not in the Assassin's Passive skills panel");
-  const fieldText = (await field.innerText()).replace(/\s+/g, " ");
-  check(/\/\s*10\b/.test(fieldText), `Poison React should cap at 10, field reads: ${fieldText}`);
+  check(await field.locator("select").count() === 0,
+    "an unlearned passive must not already offer a rank");
 
   const lastFor = (id) => responses.filter((x) => x.skill === id).at(-1)?.res;
   const ratioOf = (r) => r?.result?.normal?.steps?.find((s) => /ratio/i.test(s.name));
+  // BASELINE FIRST, with the passive unlearned. Ticking the box IS learning it at
+  // the skill's max, so doing that before this measurement would compare Lv10 with
+  // Lv10 and report no gain at all.
   await calculate(page);
   const before = lastFor(141);
   const avg0 = before?.result?.normal?.avg_damage;
-  await field.locator("input").first().fill("10");
+  await field.locator('input[type="checkbox"]').check();
+  await page.waitForTimeout(500);
+  // The cap now shows as the top entry of the rank selector, where it used to be
+  // the "/ 10" printed beside a number box.
+  const opts = await field.locator("select option").allInnerTexts();
+  check(opts[0] === "Lv 10" && opts.length === 10,
+    `Poison React should cap at 10, selector reads: ${JSON.stringify(opts)}`);
   await page.waitForTimeout(800);
   await calculate(page);
   const after = lastFor(141);

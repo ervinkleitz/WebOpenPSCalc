@@ -9,6 +9,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Equipment names are shown in full.** A slot's item sat beside its label and
+  competed with it for the same line, so anything long came out cut off —
+  *Double Bloody Double Be...*. The name now has its own line under the label, at the
+  full width of the slot, so you can read what you are wearing without opening it.
+  Empty slots stay on one line.
+
+- **Sections no longer remember a state you never chose.** **Start from a template**
+  opens itself on an empty build; that was being recorded as if you had opened it,
+  so it then stayed open over a finished build for good. Only sections you open or
+  close yourself are remembered now.
+
 - **The equipment list is readable again at normal window sizes.** It was squeezing
   eleven slots into two narrow columns, which cut off the longer labels and shortened
   **Empty** to *E.*, and opening one slot dragged the line under its neighbour halfway

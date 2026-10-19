@@ -18,6 +18,13 @@ try {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(URL, { waitUntil: "networkidle" });
+  // Equipment slots collapse by default (UX 5, 2026-10-18), so a slot'
+  // s search box and its Cards / Wildcard mix toggle are invisible - and
+  //  unclickable - until the row is opened. Expanding them first is what a player does.
+  const expandSlots = async () => {
+    const btn = page.locator('.equip-slot-actions button', { hasText: 'Expand all' }).first();
+    if (await btn.count()) { await btn.click(); await page.waitForTimeout(400); }
+  };
 
   const calc = async () => {
     await page.getByRole("button", { name: "Calculate damage" }).click();
@@ -42,6 +49,7 @@ try {
     .filter((t) => !/Choose a class build/.test(t));
   await tpl.selectOption({ label: opts[0] });
   await page.waitForTimeout(1200);
+  await expandSlots();
   const weapon = page.getByPlaceholder("Search right hand (weapon)…");
   await weapon.click();
   await weapon.fill("Sword");
