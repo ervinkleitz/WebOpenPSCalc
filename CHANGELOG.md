@@ -9,6 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Sections stop jumping between columns.** Collapsing a section, or opening an
+  equipment slot, could shuffle the whole editor — a section would hop from one
+  column to the next and drag everything below it along. Each section now keeps its
+  column whatever else changes size.
+
 - **Equipment names are shown in full.** A slot's item sat beside its label and
   competed with it for the same line, so anything long came out cut off —
   *Double Bloody Double Be...*. The name now has its own line under the label, at the

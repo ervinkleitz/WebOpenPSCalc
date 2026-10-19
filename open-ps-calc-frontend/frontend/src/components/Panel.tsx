@@ -8,6 +8,13 @@ interface PanelProps {
   collapsible?: boolean;
   highlight?: boolean;
   /**
+   * Stable name for this panel, emitted as `data-panel`. The editor pins each panel
+   * to a column with it (see "COLUMN PINNING" in styles.css). Deliberately NOT
+   * nth-child: Pet only exists on Payon Stories and the manual-target panel only in
+   * custom-target mode, so position is not a reliable identifier.
+   */
+  id?: string;
+  /**
    * What this panel holds, shown in the header while it is CLOSED. The point of a
    * collapsed panel is that you can still tell whether you have set anything in it,
    * so a summary has to name what is there ("Blessing 10 · Inc AGI 10 · +2 more")
@@ -40,7 +47,7 @@ const readState = (): Record<string, boolean> => {
 };
 
 export default function Panel({
-  eyebrow, title, children, defaultOpen = true, collapsible = true, highlight = false, summary,
+  eyebrow, title, children, defaultOpen = true, collapsible = true, highlight = false, summary, id,
 }: PanelProps) {
   const [open, setOpen] = useState(() => {
     if (!collapsible) return true;
@@ -70,7 +77,7 @@ export default function Panel({
   const isOpen = !collapsible || open;
 
   return (
-    <div className={`panel${highlight ? " panel-highlight" : ""}`}>
+    <div className={`panel${highlight ? " panel-highlight" : ""}`} data-panel={id}>
       <h2
         className={collapsible ? "panel-header" : undefined}
         onClick={collapsible ? toggle : undefined}

@@ -638,6 +638,47 @@ label {
 @media (min-width: 1800px) { .editor-grid { columns: 4; } }
 @media (max-width: 980px) { .editor-grid { columns: 1; } }
 
+/* ===========================================================================
+   COLUMN PINNING
+
+   .editor-grid is a MULTI-COLUMN layout, which treats the panels as one
+   continuous stream and BALANCES them across the columns. That means the browser
+   re-decides where each column breaks whenever any panel changes height — so
+   collapsing a panel, or opening an equipment slot, could throw a panel into a
+   different column and shift everything after it. Measured at 1500px: collapsing
+   the Character panel moved 6 panels and changed 2 of their columns; "Expand all"
+   in Equipment threw Pet from column 1 to column 2.
+
+   A forced `break-before: column` pins the boundaries: the browser must start a
+   new column there, so a panel can never migrate. Each column keeps a CONTIGUOUS
+   run of the panels, because the eyebrow numbers (00…10) have to keep ascending as
+   you read column by column.
+
+   The trade is that columns no longer self-balance, so their bottoms are ragged.
+   The splits below are chosen from the measured heights of a defaults build —
+   Character 960, Equipment 472, Buffs 1169, Target 1080 — but any fixed assignment
+   is only balanced for one state, and that is the cost of not moving.
+
+   Pinned by `data-panel`, never nth-child: Pet exists only on Payon Stories and
+   the manual-target panel only in custom-target mode, so position is not stable.
+   =========================================================================== */
+@media (min-width: 981px) and (max-width: 1499px) {
+  /* 2 columns: 00–06 | 07–10  (≈2912 / 2374) */
+  .editor-grid > [data-panel="buffs"] { break-before: column; }
+}
+@media (min-width: 1500px) and (max-width: 1799px) {
+  /* 3 columns: 00–03 | 04–07 | 08–10  (≈1853 / 2228 / 1205) — the same grouping
+     the balancer was already choosing, so nothing moves on upgrade. */
+  .editor-grid > [data-panel="clan"],
+  .editor-grid > [data-panel="skill"] { break-before: column; }
+}
+@media (min-width: 1800px) {
+  /* 4 columns: 00–01 | 02–05 | 06–07 | 08–10  (≈1215 / 1147 / 1719 / 1205) */
+  .editor-grid > [data-panel="equipment"],
+  .editor-grid > [data-panel="consumables"],
+  .editor-grid > [data-panel="skill"] { break-before: column; }
+}
+
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);

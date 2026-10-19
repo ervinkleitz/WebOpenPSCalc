@@ -2928,7 +2928,7 @@ export default function BuildEditor() {
               The picker itself stays a dropdown: as buttons it was eighteen chips
               over five rows in a 440px column, which costs more of the fold than
               the two clicks it saves are worth. */}
-          <Panel eyebrow="00" title="Start from a template" defaultOpen={bootstrap.current.isEmptyBuild}>
+          <Panel eyebrow="00" title="Start from a template" id="template" defaultOpen={bootstrap.current.isEmptyBuild}>
             <div className="field-row">
               <div className="field" style={{ flex: 1 }}>
                 <label>Load a PS wiki build</label>
@@ -2962,7 +2962,7 @@ export default function BuildEditor() {
             </p>
           </Panel>
 
-          <Panel eyebrow="01" title="Character" summary={`${jobs.find((j) => j.id === data.job_id)?.name?.replace(/_/g, " ") ?? data.job_name ?? ""} · Lv ${data.base_level}/${data.job_level}`}>
+          <Panel eyebrow="01" title="Character" id="character" summary={`${jobs.find((j) => j.id === data.job_id)?.name?.replace(/_/g, " ") ?? data.job_name ?? ""} · Lv ${data.base_level}/${data.job_level}`}>
             {/* Wrapper so compact mode can pull all four of these onto one line. The
                 two rows below stay two rows at comfortable density; in compact the
                 wrapper becomes the flex container and the rows go display:contents,
@@ -3216,7 +3216,7 @@ export default function BuildEditor() {
             />
           </Panel>
 
-          <Panel eyebrow="02" title="Equipment" summary={equipSummary}>
+          <Panel eyebrow="02" title="Equipment" id="equipment" summary={equipSummary}>
             {/* One way back to the old all-open view, for anyone who would rather
                 see everything at once than click through slots. */}
             <div className="equip-slot-actions">
@@ -3709,7 +3709,7 @@ export default function BuildEditor() {
           </Panel>
 
           {data.server === "payon_stories" && (
-            <Panel eyebrow="03" title="Pet" summary={data.selected_pet ? String(data.selected_pet).replace(/_/g, " ") : EMPTY}>
+            <Panel eyebrow="03" title="Pet" id="pet" summary={data.selected_pet ? String(data.selected_pet).replace(/_/g, " ") : EMPTY}>
               <div className="field">
                 <label>
                   Active pet
@@ -3740,7 +3740,7 @@ export default function BuildEditor() {
             </Panel>
           )}
 
-          <Panel eyebrow="04" title="Clan" summary={data.clan ? clanLabel(data.clan) : EMPTY}>
+          <Panel eyebrow="04" title="Clan" id="clan" summary={data.clan ? clanLabel(data.clan) : EMPTY}>
             <div className="passive-grid">
               <div className="field">
                 <label>Clan membership</label>
@@ -3760,7 +3760,7 @@ export default function BuildEditor() {
             </div>
           </Panel>
 
-          <Panel eyebrow="05" title="Passive skills" summary={passiveSummary}>
+          <Panel eyebrow="05" title="Passive skills" id="passives" summary={passiveSummary}>
             {passiveSkills.length === 0 ? (
               <p style={{ color: "var(--text-faint)", fontSize: "0.875rem" }}>
                 {data.job_id ? "No passive skills for this job." : "Select a job to see passive skills."}
@@ -3867,7 +3867,7 @@ export default function BuildEditor() {
             )}
           </Panel>
 
-          <Panel eyebrow="06" title="Consumables">
+          <Panel eyebrow="06" title="Consumables" id="consumables">
             <div className="field">
               <label>ASPD potion</label>
               <select
@@ -3956,7 +3956,7 @@ export default function BuildEditor() {
             ))}
           </Panel>
 
-          <Panel eyebrow="07" title="Buffs" summary={buffsSummary}>
+          <Panel eyebrow="07" title="Buffs" id="buffs" summary={buffsSummary}>
             {(() => {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id)
                 && !((b as { psRemoved?: boolean }).psRemoved && data.server === "payon_stories"));
@@ -4323,7 +4323,7 @@ export default function BuildEditor() {
             })()}
           </Panel>
 
-          <Panel eyebrow="08" title="Skill" summary={skill.id ? `${skill.label} Lv ${skill.level}` : "Normal Attack"}>
+          <Panel eyebrow="08" title="Skill" id="skill" summary={skill.id ? `${skill.label} Lv ${skill.level}` : "Normal Attack"}>
             {/* One row for one decision. This was a pill showing the chosen skill, a
                 number box for its rank, a "Use normal attack" button and a separately
                 labelled search field — four controls deciding one thing. It now
@@ -4438,7 +4438,7 @@ export default function BuildEditor() {
             )}
           </Panel>
 
-          <Panel eyebrow="09" title="Target" summary={debuffSummary}>
+          <Panel eyebrow="09" title="Target" id="target" summary={debuffSummary}>
             <div className="tabs">
               <button className={targetMode === "monster" ? "active" : ""} onClick={() => setTargetMode("monster")}>Monster</button>
               <button className={targetMode === "custom" ? "active" : ""} onClick={() => setTargetMode("custom")}>Custom stats</button>
@@ -4864,7 +4864,7 @@ export default function BuildEditor() {
               fourth column at full width however tightly it was packed. As its own
               panel the layout can simply place it in another column. */}
           {targetMode === "custom" && (
-            <Panel eyebrow="10" title="Target — manual edits">
+            <Panel eyebrow="10" title="Target — manual edits" id="target-manual">
               {/* Manual edits, as part of the custom target. The fields above describe
                 the enemy; these are deltas on top of them, which is what you want
                 right after copying a monster in — "that, but 50 more DEF" — plus the
