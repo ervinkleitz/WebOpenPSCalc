@@ -361,7 +361,14 @@ const SELF_BUFFS = [
   // Zeny Pincher (PS_BS_ZENYPINCHER, quest skill, toggled): Mammonite costs no zeny
   // and, after the PS Merchant rework, deals 100 + 25×lv% instead of 100 + 50×lv%
   // (350% vs 600% at Lv10). Only affects Mammonite.
-  { key: "SC_PS_ZENYPINCHER", label: "Zeny Pincher", max: 1, jobs: [10, 4011] },
+  // MERCHANT line, not Blacksmith-only — exactly the same correction Crazy Uproar
+  // below already carries. wiki.payonstories.com/Zeny_Pincher files it under
+  // Category:Merchant and in the "Merchant Skills" navbox, and Mammonite itself is a
+  // Merchant skill, so every class that can cast Mammonite can have this toggled.
+  // Found by scripts/audit-ps-custom-jobs.mjs, 2026-10-18. The engine was never
+  // gated — calculate.ts reads the status for any job — so an Alchemist running
+  // Zeny Pincher was priced at FULL Mammonite damage with no way to say otherwise.
+  { key: "SC_PS_ZENYPINCHER", label: "Zeny Pincher", max: 1, jobs: [5, 10, 18, 4011, 4019] },
   // Crazy Uproar (MC_LOUD) — PS Merchant rework: 4 ranks, +1 STR / +1 VIT per level
   // and +3×lv soft DEF to the caster. Merchant line (Merchant/Blacksmith/Alchemist
   // and their transcendent forms) — it is a Merchant tree skill, not a Blacksmith one.

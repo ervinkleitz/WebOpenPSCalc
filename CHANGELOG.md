@@ -7,6 +7,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-18
 
+### Fixed
+
+- **Merchants and Alchemists can switch on Zeny Pincher.** It was offered to
+  Blacksmiths only, even though it is a Merchant skill and Mammonite — the one
+  thing it changes — is a Merchant skill too. Anyone running it on an Alchemist was
+  being shown Mammonite at full damage with no way to say otherwise; on Payon
+  Stories it deals 100 + 25×lv% instead of 100 + 50×lv%.
+
 ### Changed
 
 - **Target debuffs are a tick and an amount now, like the buffs.** Quagmire,

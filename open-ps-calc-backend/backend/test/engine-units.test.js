@@ -4578,8 +4578,11 @@ test("Throw Shuriken rolls hit/flee like a normal attack on PS, not vanilla's au
   const [expectedHit] = calculateHitChance(st, target, cfg, "NJ_SYURIKEN", 1, { mastery: gb.effective_mastery });
   assert.ok(expectedHit < 100, "test setup must actually produce a hit chance below 100% to be meaningful");
 
-  const r = new BattlePipeline(cfg).calculate(st, w, createSkillInstance({ id, level: 1 }), target, eff, gb);
+  const psSkill = createSkillInstance({ id, level: 1 });
+  const r = new BattlePipeline(cfg).calculate(st, w, psSkill, target, eff, gb);
   assert.equal(r.hit_chance, expectedHit, "must use the real accuracy formula, not a guaranteed hit");
+  assert.equal(psSkill.nk_ignore_flee, false,
+    "and the override must be what did it - PS clears nk_ignore_flee on the skill instance");
 
   // Regression guard: the override lives in the pipeline, not the DB - vanilla data
   // must keep saying IgnoreFlee, or the STANDARD-profile assertion below is meaningless.
@@ -4587,15 +4590,31 @@ test("Throw Shuriken rolls hit/flee like a normal attack on PS, not vanilla's au
   assert.ok((skillData.damage_type || []).includes("IgnoreFlee"),
     "vanilla data must still say IgnoreFlee - PS's override must be a pipeline-level fix, not a data edit");
 
-  // The override must stay PS-only: STANDARD keeps vanilla's auto-hit behaviour.
+  // The override must stay PS-only. This used to assert `rStd.hit_chance === 100` on
+  // the STANDARD profile and it COULD NOT FAIL: vanilla has no ratio for NJ_SYURIKEN,
+  // so the BF_MISC guard short-circuits to a canned "not implemented" result -
+  // hit_chance 100, avg 0, dps_valid false, no steps - and that 100 is a literal that
+  // never consults nk_ignore_flee. Demonstrated by sabotage: deleting the flag from
+  // the profile correctly failed the test, but making the override UNCONDITIONAL -
+  // the actual leak it exists to catch - left the whole suite green.
+  //
+  // So it reads the flag itself. `calculate()` mutates the skill instance it is
+  // handed (battlePipeline.js sets skill.nk_ignore_flee from the DB, then clears it
+  // for PS), which makes the gating directly observable without needing a profile
+  // that prices the skill. PS -> false, vanilla -> true; an unconditional override
+  // makes both false and this fails, which is the whole point.
   const stdBuild = buildFromSaveSchema({
     server: "standard", job_id: 25, base_level: 60, job_level: 30,
     base_stats: { str: 20, agi: 20, vit: 20, int: 1, dex: 20, luk: 1 },
     equipped: {},
   });
   const [gbStd, effStd, wStd, stStd] = resolvePlayerState(stdBuild, cfg, STANDARD);
-  const rStd = new BattlePipeline(cfg).calculate(stStd, wStd, createSkillInstance({ id, level: 1 }), target, effStd, gbStd);
-  assert.equal(rStd.hit_chance, 100, "STANDARD (vanilla) profile must still auto-hit");
+  const stdSkill = createSkillInstance({ id, level: 1 });
+  new BattlePipeline(cfg).calculate(stStd, wStd, stdSkill, target, effStd, gbStd);
+  assert.equal(stdSkill.nk_ignore_flee, true,
+    "vanilla must keep IgnoreFlee - the PS override has leaked out of its profile");
+  assert.notEqual(stdSkill.nk_ignore_flee, psSkill.nk_ignore_flee,
+    "the two profiles must disagree, or neither assertion above is measuring anything");
 });
 
 // ---------------------------------------------------------------------------

@@ -294,7 +294,19 @@ without re-auditing everything from scratch.
 These come from a "what would help a player simulate their character" review. The engine
 already returns everything both need — they're largely frontend work.
 
-### 1. Build-vs-build comparison  (in progress — on a feature branch)
+### 1. Build-vs-build comparison  (DONE — shipped; this entry is the original design note)
+
+**Shipped.** `components/CompareView.tsx` does what is described below and a little
+more: the comparison carries DPS, average damage per hit, min/max, hits-to-kill,
+time-to-kill, crit chance and ASPD, and each pin can be loaded back into the editor
+or removed. The entry stayed marked "in progress — on a feature branch" long after
+it landed, which is how a 2026-10 review came to recommend building it again. Left
+in place because the design note still explains the shape; the status line is the
+only thing that was wrong.
+
+One thing the review did surface that is still true: it is only reachable from
+inside the results panel, which does not exist until a first calculation is run, so
+nobody finds it. The damage bar (2026-10-18) is the first step toward fixing that.
 
 The single most-used interaction for a damage calc: *"is A or B better?"* (card swaps, refine
 levels, stat splits, gear choices). Pin the current build+result as a snapshot, then tweak the

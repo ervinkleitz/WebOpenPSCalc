@@ -707,3 +707,25 @@ test("Z3 share keys are append-only — the live ones keep their positions", () 
   assert.ok(keys.indexOf("known_skill_levels") > ANCHORS.pct, "the newest keys append last");
   assert.equal(new Set(keys).size, keys.length, "a duplicate key would shadow the first one's code");
 });
+
+// Zeny Pincher is a MERCHANT skill, so the whole Merchant line can toggle it
+// (audit, 2026-10-18 — scripts/audit-ps-custom-jobs.mjs). wiki.payonstories.com
+// /Zeny_Pincher files it under Category:Merchant and in the "Merchant Skills"
+// navbox, and Mammonite itself is a Merchant skill, so anyone who can cast
+// Mammonite can have this on. The UI offered it to Blacksmith and Whitesmith only
+// while the engine priced it for any job, so an Alchemist running Zeny Pincher was
+// shown FULL Mammonite damage with no way to say otherwise. Crazy Uproar directly
+// below it in the same list already carries this exact correction.
+test("Zeny Pincher is offered to the Merchant line, not just Blacksmiths", () => {
+  const editor = read("src", "pages", "BuildEditor.tsx");
+  const row = editor.slice(editor.indexOf('key: "SC_PS_ZENYPINCHER"'));
+  const jobs = JSON.parse(row.slice(row.indexOf("jobs: [") + 6, row.indexOf("]") + 1));
+  // Merchant, Blacksmith, Alchemist and the two transcendent forms.
+  assert.deepEqual(jobs, [5, 10, 18, 4011, 4019]);
+
+  // And the constants file agrees, since that is what the audit script reads.
+  const consts = JSON.parse(readBackend("src", "engine", "data", "ps", "ps_custom_constants.json"));
+  const zp = Object.values(consts).find((e) => e.constant === "PS_BS_ZENYPINCHER");
+  assert.deepEqual(zp.job, [5, 10, 18, 4011, 4019],
+    "ps_custom_constants is the file the wiki audit diffs against — keep it in step");
+});
