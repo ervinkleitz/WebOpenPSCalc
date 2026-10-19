@@ -57,8 +57,18 @@
   --text: #1e1a10;
   --text-dim: #56493a;
   --text-faint: #655741;
-  --accent: #754d11;
-  --accent-dim: #6e4510;
+  /* Dark enough that accent TEXT reads as strongly here as it does in the dark
+     theme. At #754d11 it measured 5.75:1 on a panel where the dark theme's
+     #d8a657 measures 7.77 - above AA either way, which is why the contrast audit
+     passed it, but visibly weaker, and reported as such: equipment names, the
+     damage figure and the item pills were all ~2 points down. #5c3b0c is 7.80:1
+     against --bg-panel, matching dark.
+
+     Darkening is safe for the other half of the token's job: where --accent is a
+     FILL the text on it is --on-accent (white here), so a darker fill only raises
+     that contrast too. --accent-dim follows it down to keep their relationship. */
+  --accent: #5c3b0c;
+  --accent-dim: #56360b;
   --accent-soft: rgba(150, 100, 25, 0.12);
   --crit: #b83028;
   --good: #16472c;
