@@ -742,12 +742,24 @@ label {
 
 .equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
 
+/* Left at 160px. Raising it to 170 to buy the labels room cost a whole COLUMN once
+   the 0.7rem gaps are counted ((512 - 22) / 3 = 163), which made the long buff lists
+   half again as tall. Narrowing the level picker above bought the same room for
+   nothing. */
 .passive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.7rem; }
 .passive-grid .field input[type="number"] { width: 100%; }
 .passive-grid .field span { display: block; margin-top: 0.1rem; }
 
 .field-checkbox { display: flex; align-items: center; margin-top: 0.3rem; min-width: 0; }
-.field-checkbox label { display: flex; align-items: center; gap: 0.45rem; cursor: pointer; font-size: 0.85rem; min-width: 0; }
+/* These are NAMES in a list of options, not field labels. The generic `label` rule
+   uppercases and letter-spaces, which is right for "BASE LEVEL" and wrong here: it
+   made "Double Strafing" ~15% wider than the 69px its grid cell can give it, so it
+   broke mid-word as STRAFI/NG. Read as names, they fit. */
+.field-checkbox label {
+  display: flex; align-items: center; gap: 0.4rem; cursor: pointer;
+  font-size: 0.85rem; min-width: 0;
+  text-transform: none; letter-spacing: normal;
+}
 .field-checkbox input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
 /* Without min-width: 0, a flex item's default min-width is its content's
    max-content size, so a long label like "Impositio Manus" won't wrap and
@@ -764,17 +776,37 @@ label {
    left and wraps at spaces like any other. */
 .field-checkbox--leveled { align-items: center; gap: 0.4rem; }
 .field-checkbox--leveled label { flex: 1 1 auto; min-width: 0; }
+/* Sized to its longest option ("Lv 10", "5 stacks" wraps wider but is in its own
+   roomier panel), not padded for show: at 4.1rem it took 66px of a 163px grid cell
+   and left the label 61px, which is less than the word STRAFING needs — so
+   "DOUBLE STRAFING" came out broken mid-word as STRAFI/NG. */
 .field-checkbox--leveled select {
-  flex: 0 0 auto; width: auto; min-width: 4.1rem;
-  padding: 0.12rem 0.3rem; font-size: 0.75rem;
+  flex: 0 0 auto; width: auto; min-width: 3.3rem;
+  padding: 0.12rem 0.2rem; font-size: 0.75rem;
 }
 /* Two of the leveled target debuffs carry an explanatory line under them — the
    Quagmire "your hit chance is already capped" note and Burning's per-stack
    arithmetic. .field-checkbox is a flex ROW, so a hint dropped into it becomes a
-   third item next to the label and the level picker and squeezes both. Let the row
-   wrap and give the hint the full width, so it sits under them as a paragraph. */
-.field-checkbox { flex-wrap: wrap; }
+   third item next to the label and the level picker and squeezes both. The row
+   wraps and the hint takes the full width, so it sits under them as a paragraph.
+
+   ONLY the rows that HAVE a hint, which is the whole point of the modifier class.
+   Putting flex-wrap on every .field-checkbox broke the alignment of every leveled
+   buff and passive: a wrapping flex line is filled at each item's PREFERRED width
+   and only shrinks after it has wrapped, so any label too long for its grid column
+   pushed its "Lv 10" onto a second line — "DOUBLE STRAFING" and "VULTURE'S EYE" did,
+   "OWL'S EYE" did not, and the Passive skills panel came out ragged. */
+.field-checkbox--hinted { flex-wrap: wrap; }
 .field-checkbox > .hint-text { flex: 1 0 100%; margin-top: 0.2rem; }
+
+/* With no wrapping, the label shrinks instead and its text wraps inside the label,
+   which is what should have happened all along. Pin the parts so the result is a
+   tidy column: the level picker keeps its size on the right, the label takes what
+   is left, and both sit at the TOP of the cell so a two-line label next to a
+   one-line one still lines its control up with its neighbours' . */
+.passive-grid > .field-checkbox { align-items: flex-start; }
+.passive-grid > .field-checkbox > label { align-items: flex-start; }
+.passive-grid > .field-checkbox--leveled > select { margin-left: auto; }
 
 /* Carries the small-caps section typography itself rather than relying on the
    element being a <label>. Two of the three section headings are <label>s and

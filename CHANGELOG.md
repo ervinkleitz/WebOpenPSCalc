@@ -5,6 +5,18 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-19
+
+### Fixed
+
+- **The buff and passive lists line up again.** Where a skill's name was too long for
+  its column, its **Lv** picker dropped onto a second line while its neighbours' did
+  not, leaving the Passive skills and Buffs panels ragged. The names also broke
+  mid-word — *STRAFI/NG*. The picker is narrower now, and skill names are set as
+  names rather than in spaced capitals, so both fit side by side. This covers every
+  list that works this way: passives, party buffs, songs, self buffs and target
+  debuffs.
+
 ## 2026-10-18
 
 ### Added

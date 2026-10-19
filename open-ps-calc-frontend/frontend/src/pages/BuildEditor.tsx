@@ -2103,7 +2103,11 @@ export default function BuildEditor() {
     const unit = d.unit ?? ((n: number) => `Lv ${n}`);
     const set = (lv: number) => setTargetMods((m) => ({ ...m, [d.key]: lv }));
     return (
-      <div className={`field field-checkbox${leveled ? " field-checkbox--leveled" : ""}`} key={d.key}>
+      <div
+        className={`field field-checkbox${leveled ? " field-checkbox--leveled" : ""}`
+          + (on && d.hint ? " field-checkbox--hinted" : "")}
+        key={d.key}
+      >
         <label title={d.title}>
           <input
             type="checkbox"
