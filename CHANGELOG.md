@@ -18,6 +18,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **A closed section now tells you what is in it, and stays closed next time.** Every
+  section header carries a short summary while it is shut — *Assassin · Lv 99/50*,
+  *+7 Gladius · +2 more · 3 cards*, *Poring · Quagmire 5 · Provoke 10* — so you can
+  fold away the parts of the build you are not working on and still see them at a
+  glance. Which sections you left open is remembered, so you do not have to close
+  them again on every visit.
+
 - **Target debuffs are a tick and an amount now, like the buffs.** Quagmire,
   Decrease AGI, Provoke, Fling and Burning were a dropdown whose first option was
   **Off**, sitting among debuffs that were checkboxes — so whether you ticked

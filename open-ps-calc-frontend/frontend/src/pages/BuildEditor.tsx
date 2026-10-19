@@ -2535,6 +2535,69 @@ export default function BuildEditor() {
 
   const currentEditorState: UrlEditorState = { build: data, skill, targetMode, customTarget, targetMods };
 
+  // What each panel says about itself while it is shut. A collapsed panel is only
+  // worth having if you can still tell whether you set anything in it, so these name
+  // what is there rather than counting it where naming fits, and fall back to a count
+  // where it does not. "\u2014" means nothing is set, and reads as deliberately empty
+  // rather than as a panel that failed to load.
+  const EMPTY = "\u2014";
+  const summarise = (names: string[], cap = 2) => names.length === 0 ? EMPTY
+    : names.slice(0, cap).join(" \u00b7 ") + (names.length > cap ? ` \u00b7 +${names.length - cap} more` : "");
+
+  // "crossbow_clan" -> "Crossbow Clan". Deliberately not a regex: the first
+  // attempt used a word-boundary class written from a non-raw Python string,
+  // where the escape for it is a BACKSPACE character, and what shipped was a
+  // regex matching a control code that can never appear in a clan key.
+  const clanLabel = (k: string) => k.split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+  const equipSummary = (() => {
+    const worn = EQUIP_SLOTS.filter((sl) => data.equipped[sl.key] != null);
+    if (worn.length === 0) return EMPTY;
+    const cards = Object.entries(data.equipped)
+      .filter(([k, v]) => /_card\d$/.test(k) && v != null
+        && data.equipped[k.replace(/_card\d$/, "")] != null).length;
+    const first = itemCache[data.equipped[worn[0].key] as number];
+    const lead = first
+      ? `${(data.refine?.[worn[0].key] ?? 0) > 0 ? `+${data.refine[worn[0].key]} ` : ""}`
+        + displayItemName(first, [], first.name)
+      : `${worn.length} items`;
+    return `${lead}${worn.length > 1 ? ` \u00b7 +${worn.length - 1} more` : ""}`
+      + (cards ? ` \u00b7 ${cards} card${cards === 1 ? "" : "s"}` : "");
+  })();
+
+  const buffsSummary = (() => {
+    const on: string[] = [];
+    for (const [bucket, lv] of [
+      ...Object.entries((data.support_buffs || {}) as Record<string, unknown>),
+      ...Object.entries((data.active_buffs || {}) as Record<string, unknown>),
+      ...Object.entries((data.song_state || {}) as Record<string, unknown>),
+    ]) {
+      if (typeof lv === "number" ? lv > 0 : !!lv) on.push(bucket);
+    }
+    return on.length === 0 ? EMPTY : `${on.length} on`;
+  })();
+
+  const debuffSummary = (() => {
+    const names: string[] = [];
+    if (targetMods.lex_aeterna) names.push("Lex Aeterna");
+    if (targetMods.mailbreaker) names.push("Mailbreaker");
+    if (quagmireLv > 0) names.push(`Quagmire ${quagmireLv}`);
+    if (provokeLv > 0) names.push(`Provoke ${provokeLv}`);
+    if (decreaseAgiLv > 0) names.push(`Decrease AGI ${decreaseAgiLv}`);
+    if (burningStacks > 0) names.push(`Burning ${burningStacks}`);
+    const who = targetMode === "monster" ? (mobInfo?.name ?? null) : "Custom target";
+    const debuffs = names.length ? ` \u00b7 ${summarise(names, 2)}` : "";
+    return who ? `${who}${debuffs}` : EMPTY;
+  })();
+
+  const passiveSummary = (() => {
+    if (passiveSkills.length === 0) return EMPTY;
+    const taken = passiveSkills.filter((ps) => ((data.mastery_levels || {})[ps.mastery_key] ?? 0) > 0);
+    return taken.length === 0 ? EMPTY : `${taken.length} of ${passiveSkills.length}`;
+  })();
+
   return (
     // `has-damage-bar` reserves the strip's height at the foot of the page while it
     // is up, so the bar never covers the footer or the last panel's final row.
@@ -2875,7 +2938,7 @@ export default function BuildEditor() {
             </p>
           </Panel>
 
-          <Panel eyebrow="01" title="Character">
+          <Panel eyebrow="01" title="Character" summary={`${jobs.find((j) => j.id === data.job_id)?.name?.replace(/_/g, " ") ?? data.job_name ?? ""} · Lv ${data.base_level}/${data.job_level}`}>
             {/* Wrapper so compact mode can pull all four of these onto one line. The
                 two rows below stay two rows at comfortable density; in compact the
                 wrapper becomes the flex container and the rows go display:contents,
@@ -3129,7 +3192,7 @@ export default function BuildEditor() {
             />
           </Panel>
 
-          <Panel eyebrow="02" title="Equipment">
+          <Panel eyebrow="02" title="Equipment" summary={equipSummary}>
             <div className="equip-grid">
               {EQUIP_SLOTS.map((slot) => {
                 const equippedId = data.equipped[slot.key] as number | null | undefined;
@@ -3552,7 +3615,7 @@ export default function BuildEditor() {
           </Panel>
 
           {data.server === "payon_stories" && (
-            <Panel eyebrow="03" title="Pet">
+            <Panel eyebrow="03" title="Pet" summary={data.selected_pet ? String(data.selected_pet).replace(/_/g, " ") : EMPTY}>
               <div className="field">
                 <label>
                   Active pet
@@ -3583,7 +3646,7 @@ export default function BuildEditor() {
             </Panel>
           )}
 
-          <Panel eyebrow="04" title="Clan">
+          <Panel eyebrow="04" title="Clan" summary={data.clan ? clanLabel(data.clan) : EMPTY}>
             <div className="passive-grid">
               <div className="field">
                 <label>Clan membership</label>
@@ -3603,7 +3666,7 @@ export default function BuildEditor() {
             </div>
           </Panel>
 
-          <Panel eyebrow="05" title="Passive skills">
+          <Panel eyebrow="05" title="Passive skills" summary={passiveSummary}>
             {passiveSkills.length === 0 ? (
               <p style={{ color: "var(--text-faint)", fontSize: "0.875rem" }}>
                 {data.job_id ? "No passive skills for this job." : "Select a job to see passive skills."}
@@ -3799,7 +3862,7 @@ export default function BuildEditor() {
             ))}
           </Panel>
 
-          <Panel eyebrow="07" title="Buffs">
+          <Panel eyebrow="07" title="Buffs" summary={buffsSummary}>
             {(() => {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id)
                 && !((b as { psRemoved?: boolean }).psRemoved && data.server === "payon_stories"));
@@ -4166,7 +4229,7 @@ export default function BuildEditor() {
             })()}
           </Panel>
 
-          <Panel eyebrow="08" title="Skill">
+          <Panel eyebrow="08" title="Skill" summary={skill.id ? `${skill.label} Lv ${skill.level}` : "Normal Attack"}>
             {/* One row for one decision. This was a pill showing the chosen skill, a
                 number box for its rank, a "Use normal attack" button and a separately
                 labelled search field — four controls deciding one thing. It now
@@ -4281,7 +4344,7 @@ export default function BuildEditor() {
             )}
           </Panel>
 
-          <Panel eyebrow="09" title="Target">
+          <Panel eyebrow="09" title="Target" summary={debuffSummary}>
             <div className="tabs">
               <button className={targetMode === "monster" ? "active" : ""} onClick={() => setTargetMode("monster")}>Monster</button>
               <button className={targetMode === "custom" ? "active" : ""} onClick={() => setTargetMode("custom")}>Custom stats</button>

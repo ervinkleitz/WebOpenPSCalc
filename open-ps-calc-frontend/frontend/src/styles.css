@@ -2369,3 +2369,33 @@ button:not(.pill-remove) { min-width: 28px; }
   .damage-bar-stat--wide { display: none; }
   .damage-bar-range { font-size: 1rem; }
 }
+
+/* A collapsed panel still has to say whether you set anything in it — otherwise
+   closing one hides the fact that you have a weapon on, and the player has to open
+   each in turn to find out. The summary sits between the title and the chevron and
+   takes whatever width is left, truncating rather than wrapping: it is a reminder,
+   and the panel itself is one click away. */
+.panel-summary {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  padding-left: 0.75rem;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Set, rather than empty: the em-dash placeholder stays recessive so a page of
+   collapsed panels reads as "these three have something in them". */
+.panel-header:hover .panel-summary { color: var(--text-dim); }
+
+@media (max-width: 600px) {
+  /* The title alone can fill a phone header; a summary beside it would shove the
+     chevron off or crush both to two characters. */
+  .panel-summary { display: none; }
+}
