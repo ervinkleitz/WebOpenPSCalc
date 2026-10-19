@@ -18,6 +18,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **The changelog has moved to the footer.** It sits with Build guides, How it's
+  calculated and Discord, rather than in the top menu — that menu is for things you
+  do to the build: import, save, share, start over.
+
 - **Equipment is one line per slot.** Each slot now reads like the in-game equip
   window — *RIGHT HAND (WEAPON) · +7 Double Boned Bloody Gladius* — and opens for
   editing when you click it. A two-handed weapon's off-hand says so on the line
