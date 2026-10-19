@@ -9,7 +9,17 @@ await page.evaluate(() => { try { localStorage.setItem("manualStatsOpen", "1"); 
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(2000);
 
+// The Features banner starts collapsed (2026-10-18), so the detail toggle measured
+// below does not exist until it is opened.
+const openBanner = async () => {
+  const t = page.locator(".reworks-banner-toggle").first();
+  if (await t.count() && (await t.getAttribute("aria-expanded")) === "false") {
+    await t.click();
+    await page.waitForTimeout(400);
+  }
+};
 const measure = async (label) => {
+  await openBanner();
   const m = await page.evaluate(() => {
     const doc = document.documentElement;
     const page_ = document.querySelector(".page");

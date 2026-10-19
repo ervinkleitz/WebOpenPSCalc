@@ -41,11 +41,11 @@ await page.waitForTimeout(2500);
 
 // 1. It is in the Passive skills panel, capped at level 1.
 const passivePanel = page.locator(".panel", { has: page.locator("h2", { hasText: /Passive skills/i }) }).first();
-const hsField = passivePanel.locator(".field", { has: page.locator("label", { hasText: /^Holy Strike$/i }) }).first();
+// Passives are checkbox rows since 2026-10-18, so "capped at level 1" now shows as
+// the absence of a rank selector rather than a "/ 1" printed beside a number input.
+const hsField = passivePanel.locator(".field-checkbox", { hasText: /Holy Strike/i }).first();
 check(await hsField.count() === 1, "Holy Strike is not in the Priest's Passive skills panel");
-const hsInput = hsField.locator("input").first();
-const fieldText = (await hsField.innerText()).replace(/\s+/g, " ");
-check(/\/\s*1\b/.test(fieldText), `Holy Strike should be capped at level 1, field reads: ${fieldText}`);
+const hsInput = hsField.locator('input[type="checkbox"]').first();
 
 // 2. Setting it to 1 turns on the proc on auto-attacks.
 const panelHead = async () => {
@@ -55,8 +55,13 @@ const panelHead = async () => {
     .map((h) => h.innerText.replace(/\s+/g, " ")).find((t) => /Holy Strike/.test(t)) || null);
 };
 check(await panelHead() === null, "no Holy Strike proc should show before the passive is learned");
-await hsInput.fill("1");
+// Ticking it IS learning it now - a one-rank passive has no number to type into.
+await hsInput.check();
 await page.waitForTimeout(800);
+// And having learned it, it still offers no rank selector: one rank is not a choice.
+// That is what "capped at level 1" looks like since the passives became buff rows.
+check(await hsField.locator("select").count() === 0,
+  "Holy Strike has one rank, so it must not offer a rank selector");
 const head = await panelHead();
 console.log("Holy Strike panel after learning it:", head);
 check(head && /2\d% per melee attack/.test(head), `learning Holy Strike should show its 20% + LUK/10 proc, got: ${head}`);

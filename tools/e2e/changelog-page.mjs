@@ -57,8 +57,13 @@ const check = (c, m, saw) => {
   await page.goto(URL_BASE + "/", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(8000);
 
+  // It lives in the FOOTER now, with the other reference links (Build guides, How
+  // it's calculated, Discord) rather than in the topbar menu, which is for things
+  // you do TO the build. Still an anchor, so middle-click and crawlers work.
   const link = page.getByRole("link", { name: /^Changelog$/ }).first();
-  check(await link.count() > 0, "the menu item is a link, not a button");
+  check(await link.count() > 0, "the changelog is reachable as a real link");
+  check(await link.evaluate((e) => !!e.closest(".credits-footer")),
+    "and it is in the footer, not the topbar menu");
   const href = await link.getAttribute("href");
   check(href === "/changelog.html", "pointing at the static page", href);
 

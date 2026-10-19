@@ -58,7 +58,16 @@ async function damage() {
   const n = [...t.matchAll(/([\d,]+)\s*(?:min|max)/gi)].map((m) => Number(m[1].replace(/,/g, "")));
   return n.length === 2 ? (n[0] + n[1]) / 2 : null;
 }
-const slotField = (label) => page.locator(".field", { has: page.locator("label", { hasText: label }) }).first();
+// A slot is a collapsed row now (UX 5, 2026-10-18): its label is in
+// .equip-slot-label and the pill, refine and card rows live in a hidden
+// .equip-slot-body until the row is opened, so this expands them first - which
+// is exactly what a player does - and looks slots up by .equip-slot.
+const expandSlots = async () => {
+  const btn = page.locator('.equip-slot-actions button', { hasText: 'Expand all' }).first();
+  if (await btn.count()) { await btn.click(); await page.waitForTimeout(400); }
+};
+const slotField = (label) => page.locator(".equip-slot",
+  { has: page.locator(".equip-slot-label", { hasText: label }) }).first();
 
 // ------------------------------------------------- 1. two-handed fills both hands
 const HYDRA_OFFHAND = {

@@ -1067,6 +1067,35 @@ export default function BuildEditor() {
 
   const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
   const [passiveSkills, setPassiveSkills] = useState<PassiveSkill[]>([]);
+
+  // Which equipment slots are expanded. Eleven slots, each of which can carry a
+  // refine, up to four cards and a forge, is the tallest thing in the editor by a
+  // wide margin — about forty controls for a geared build. Collapsed, a slot is one
+  // line that reads like the equip window: "RIGHT HAND  +7 Double Boned Bloody
+  // Gladius". Opening one costs a click, which is the trade.
+  //
+  // Remembered per browser like the panels, and for the same reason: a player who
+  // works on their weapon and nothing else should not re-open it every visit.
+  const EQUIP_OPEN_KEY = "opscalc.equipSlots";
+  const [openSlots, setOpenSlots] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem(EQUIP_OPEN_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+  const toggleSlot = useCallback((key: string) => {
+    setOpenSlots((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem(EQUIP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+  const setAllSlots = useCallback((open: boolean) => {
+    const next: Record<string, boolean> = {};
+    for (const sl of EQUIP_SLOTS) next[sl.key] = open;
+    try { localStorage.setItem(EQUIP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    setOpenSlots(next);
+  }, []);
   const [plagiarism, setPlagiarism] = useState<{ jobs: number[]; skills: { name: string; display_name: string; max_level: number }[] }>({ jobs: [], skills: [] });
   // Which weapons the selected skill can be cast with, already translated into item
   // weapon_types by the backend, plus its ready-made wording. Null = no restriction.
@@ -2535,6 +2564,69 @@ export default function BuildEditor() {
 
   const currentEditorState: UrlEditorState = { build: data, skill, targetMode, customTarget, targetMods };
 
+  // What each panel says about itself while it is shut. A collapsed panel is only
+  // worth having if you can still tell whether you set anything in it, so these name
+  // what is there rather than counting it where naming fits, and fall back to a count
+  // where it does not. "\u2014" means nothing is set, and reads as deliberately empty
+  // rather than as a panel that failed to load.
+  const EMPTY = "\u2014";
+  const summarise = (names: string[], cap = 2) => names.length === 0 ? EMPTY
+    : names.slice(0, cap).join(" \u00b7 ") + (names.length > cap ? ` \u00b7 +${names.length - cap} more` : "");
+
+  // "crossbow_clan" -> "Crossbow Clan". Deliberately not a regex: the first
+  // attempt used a word-boundary class written from a non-raw Python string,
+  // where the escape for it is a BACKSPACE character, and what shipped was a
+  // regex matching a control code that can never appear in a clan key.
+  const clanLabel = (k: string) => k.split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+  const equipSummary = (() => {
+    const worn = EQUIP_SLOTS.filter((sl) => data.equipped[sl.key] != null);
+    if (worn.length === 0) return EMPTY;
+    const cards = Object.entries(data.equipped)
+      .filter(([k, v]) => /_card\d$/.test(k) && v != null
+        && data.equipped[k.replace(/_card\d$/, "")] != null).length;
+    const first = itemCache[data.equipped[worn[0].key] as number];
+    const lead = first
+      ? `${(data.refine?.[worn[0].key] ?? 0) > 0 ? `+${data.refine[worn[0].key]} ` : ""}`
+        + displayItemName(first, [], first.name)
+      : `${worn.length} items`;
+    return `${lead}${worn.length > 1 ? ` \u00b7 +${worn.length - 1} more` : ""}`
+      + (cards ? ` \u00b7 ${cards} card${cards === 1 ? "" : "s"}` : "");
+  })();
+
+  const buffsSummary = (() => {
+    const on: string[] = [];
+    for (const [bucket, lv] of [
+      ...Object.entries((data.support_buffs || {}) as Record<string, unknown>),
+      ...Object.entries((data.active_buffs || {}) as Record<string, unknown>),
+      ...Object.entries((data.song_state || {}) as Record<string, unknown>),
+    ]) {
+      if (typeof lv === "number" ? lv > 0 : !!lv) on.push(bucket);
+    }
+    return on.length === 0 ? EMPTY : `${on.length} on`;
+  })();
+
+  const debuffSummary = (() => {
+    const names: string[] = [];
+    if (targetMods.lex_aeterna) names.push("Lex Aeterna");
+    if (targetMods.mailbreaker) names.push("Mailbreaker");
+    if (quagmireLv > 0) names.push(`Quagmire ${quagmireLv}`);
+    if (provokeLv > 0) names.push(`Provoke ${provokeLv}`);
+    if (decreaseAgiLv > 0) names.push(`Decrease AGI ${decreaseAgiLv}`);
+    if (burningStacks > 0) names.push(`Burning ${burningStacks}`);
+    const who = targetMode === "monster" ? (mobInfo?.name ?? null) : "Custom target";
+    const debuffs = names.length ? ` \u00b7 ${summarise(names, 2)}` : "";
+    return who ? `${who}${debuffs}` : EMPTY;
+  })();
+
+  const passiveSummary = (() => {
+    if (passiveSkills.length === 0) return EMPTY;
+    const taken = passiveSkills.filter((ps) => ((data.mastery_levels || {})[ps.mastery_key] ?? 0) > 0);
+    return taken.length === 0 ? EMPTY : `${taken.length} of ${passiveSkills.length}`;
+  })();
+
   return (
     // `has-damage-bar` reserves the strip's height at the foot of the page while it
     // is up, so the bar never covers the footer or the last panel's final row.
@@ -2678,15 +2770,6 @@ export default function BuildEditor() {
               Import
             </button>
             <button onClick={() => { onNewBuild(); setMenuOpen(false); }}>Start over</button>
-            {/* A real link, not a navigate(): the changelog is a static HTML page now
-                (generated by scripts/gen-guides.mjs, like the guides) so that a
-                crawler gets the text without running the app. An anchor also means
-                middle-click and "open in new tab" behave. */}
-            <a
-              className="topbar-link"
-              href="/changelog.html"
-              onClick={() => { statsApi.trackFeature("changelog_open"); setMenuOpen(false); }}
-            >Changelog</a>
             <button onClick={() => { onCopyLink(); setMenuOpen(false); }}>{copied ? "Copied!" : "Copy share link"}</button>
             <button type="button" className="topbar-kofi-btn" onClick={() => { statsApi.trackDonateClick("topbar"); setMenuOpen(false); setTipOpen(true); }}>🍵 Support the calc</button>
           </div>
@@ -2875,7 +2958,7 @@ export default function BuildEditor() {
             </p>
           </Panel>
 
-          <Panel eyebrow="01" title="Character">
+          <Panel eyebrow="01" title="Character" summary={`${jobs.find((j) => j.id === data.job_id)?.name?.replace(/_/g, " ") ?? data.job_name ?? ""} · Lv ${data.base_level}/${data.job_level}`}>
             {/* Wrapper so compact mode can pull all four of these onto one line. The
                 two rows below stay two rows at comfortable density; in compact the
                 wrapper becomes the flex container and the rows go display:contents,
@@ -3129,7 +3212,13 @@ export default function BuildEditor() {
             />
           </Panel>
 
-          <Panel eyebrow="02" title="Equipment">
+          <Panel eyebrow="02" title="Equipment" summary={equipSummary}>
+            {/* One way back to the old all-open view, for anyone who would rather
+                see everything at once than click through slots. */}
+            <div className="equip-slot-actions">
+              <button onClick={() => setAllSlots(true)}>Expand all</button>
+              <button onClick={() => setAllSlots(false)}>Collapse all</button>
+            </div>
             <div className="equip-grid">
               {EQUIP_SLOTS.map((slot) => {
                 const equippedId = data.equipped[slot.key] as number | null | undefined;
@@ -3181,9 +3270,58 @@ export default function BuildEditor() {
                 const cardLoc = slot.key === "left_hand" && item?.type === "IT_WEAPON"
                   ? "EQP_WEAPON"
                   : SLOT_CARD_LOC[slot.key];
+                // What the closed row reads: the assembled game name, refine and
+                // all, exactly as the pill inside would show it. An empty slot says
+                // so plainly rather than being blank, which would read as broken.
+                // An INVALID slot opens itself. It is excluded from the
+                // calculation and the reason lives in the body, so leaving it shut
+                // would hide the explanation for a number the player can see is
+                // wrong. `??` not `||`: once they have closed it deliberately,
+                // that sticks.
+                const slotOpen = openSlots[slot.key] ?? isInvalid;
+                // A two-hander fills both hands, so the off-hand is not empty, it is
+                // BLOCKED - and the explanation for that lives in the body. Saying so
+                // on the row means the player does not have to open a slot they
+                // cannot use to find out why they cannot use it.
+                const offHandBlocked = slot.key === "left_hand" && mainHandFillsBothHands;
+                const slotSummary = offHandBlocked
+                  ? "No off-hand \u2014 two-handed weapon"
+                  : equippedId == null || !item
+                  ? null
+                  : `${(data.refine?.[slot.key] ?? 0) > 0 ? `+${data.refine[slot.key]} ` : ""}`
+                    + displayItemName(
+                      item,
+                      wildcardMode[slot.key] ? [] : [1, 2, 3, 4].map((i) => {
+                        const cid = data.equipped[`${slot.key}_card${i}`] as number | null | undefined;
+                        return cid != null ? itemCache[cid] : null;
+                      }),
+                      `Item #${equippedId}`,
+                    );
                 return (
-                  <div key={slot.key} className="field">
-                    <label>{slot.label}</label>
+                  <div key={slot.key} className={`equip-slot${slotOpen ? " equip-slot--open" : ""}${isInvalid ? " equip-slot--invalid" : ""}`}>
+                    {/* The whole row is the control, so the target is the line and
+                        not a chevron. An invalid slot is flagged here too: it is
+                        excluded from the calculation, and a player must be able to
+                        see that without opening all eleven. */}
+                    <button
+                      type="button"
+                      className="equip-slot-head"
+                      aria-expanded={slotOpen}
+                      onClick={() => toggleSlot(slot.key)}
+                      title={isInvalid ? invalidSlots.get(slot.key) : undefined}
+                    >
+                      <span className="equip-slot-label">{slot.label}</span>
+                      {/* Only while closed, for the same reason Panel hides its
+                          own summary when open: the pill below says it already,
+                          and the row would be printing the item name twice. */}
+                      {!slotOpen && (
+                        <span className={`equip-slot-value${slotSummary && !offHandBlocked ? "" : " is-empty"}`}>
+                          {slotSummary ?? "Empty"}
+                        </span>
+                      )}
+                      <span className={`equip-slot-chevron${slotOpen ? " open" : ""}`}>▾</span>
+                    </button>
+                    <div className="equip-slot-body" hidden={!slotOpen}>
                     {equippedId != null ? (
                       <>
                       {/* The refine lives INSIDE the item's own field, as a segment on
@@ -3545,6 +3683,7 @@ export default function BuildEditor() {
                         )}
                       </>
                     )}
+                    </div>
                   </div>
                 );
               })}
@@ -3552,7 +3691,7 @@ export default function BuildEditor() {
           </Panel>
 
           {data.server === "payon_stories" && (
-            <Panel eyebrow="03" title="Pet">
+            <Panel eyebrow="03" title="Pet" summary={data.selected_pet ? String(data.selected_pet).replace(/_/g, " ") : EMPTY}>
               <div className="field">
                 <label>
                   Active pet
@@ -3583,7 +3722,7 @@ export default function BuildEditor() {
             </Panel>
           )}
 
-          <Panel eyebrow="04" title="Clan">
+          <Panel eyebrow="04" title="Clan" summary={data.clan ? clanLabel(data.clan) : EMPTY}>
             <div className="passive-grid">
               <div className="field">
                 <label>Clan membership</label>
@@ -3603,7 +3742,7 @@ export default function BuildEditor() {
             </div>
           </Panel>
 
-          <Panel eyebrow="05" title="Passive skills">
+          <Panel eyebrow="05" title="Passive skills" summary={passiveSummary}>
             {passiveSkills.length === 0 ? (
               <p style={{ color: "var(--text-faint)", fontSize: "0.875rem" }}>
                 {data.job_id ? "No passive skills for this job." : "Select a job to see passive skills."}
@@ -3799,7 +3938,7 @@ export default function BuildEditor() {
             ))}
           </Panel>
 
-          <Panel eyebrow="07" title="Buffs">
+          <Panel eyebrow="07" title="Buffs" summary={buffsSummary}>
             {(() => {
               const selfBuffs = SELF_BUFFS.filter((b) => (b.jobs as readonly number[]).includes(data.job_id)
                 && !((b as { psRemoved?: boolean }).psRemoved && data.server === "payon_stories"));
@@ -4166,7 +4305,7 @@ export default function BuildEditor() {
             })()}
           </Panel>
 
-          <Panel eyebrow="08" title="Skill">
+          <Panel eyebrow="08" title="Skill" summary={skill.id ? `${skill.label} Lv ${skill.level}` : "Normal Attack"}>
             {/* One row for one decision. This was a pill showing the chosen skill, a
                 number box for its rank, a "Use normal attack" button and a separately
                 labelled search field — four controls deciding one thing. It now
@@ -4281,7 +4420,7 @@ export default function BuildEditor() {
             )}
           </Panel>
 
-          <Panel eyebrow="09" title="Target">
+          <Panel eyebrow="09" title="Target" summary={debuffSummary}>
             <div className="tabs">
               <button className={targetMode === "monster" ? "active" : ""} onClick={() => setTargetMode("monster")}>Monster</button>
               <button className={targetMode === "custom" ? "active" : ""} onClick={() => setTargetMode("custom")}>Custom stats</button>
@@ -4854,6 +4993,17 @@ export default function BuildEditor() {
           <a className="credits-link" href="/guides.html">Build guides</a>
           <span className="credits-sep">·</span>
           <a className="credits-link" href="/mechanics.html">How it's calculated</a>
+          <span className="credits-sep">·</span>
+          {/* A real link, not a navigate(): the changelog is a static HTML page
+              (generated by scripts/gen-guides.mjs, like the guides) so a crawler gets
+              the text without running the app, and middle-click works. It sits with
+              the other reference links rather than in the topbar menu, which is for
+              things you DO to the build - import, save, share, start over. */}
+          <a
+            className="credits-link"
+            href="/changelog.html"
+            onClick={() => statsApi.trackFeature("changelog_open")}
+          >Changelog</a>
           <span className="credits-sep">·</span>
           <a className="credits-link" href="https://discord.gg/payonstories" target="_blank" rel="noreferrer">Discord</a>
           <span className="credits-sep">·</span>

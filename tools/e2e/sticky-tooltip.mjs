@@ -31,6 +31,15 @@ await page.evaluate((s) => sessionStorage.setItem("opscalc.draft", JSON.stringif
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(2000);
 
+// Equipment slots collapse by default (UX 5, 2026-10-18), so the pill, refine
+// and card rows below are hidden until a row is opened. Expanding them first is
+// what a player does to edit a slot.
+const expandSlots = async () => {
+  const btn = page.locator('.equip-slot-actions button', { hasText: 'Expand all' }).first();
+  if (await btn.count()) { await btn.click(); await page.waitForTimeout(400); }
+};
+await expandSlots();
+
 const anyTooltip = () => page.locator(".search-tooltip").count();
 
 // Positive control: hover and STAY on the Rod pill — the bubble must appear,
