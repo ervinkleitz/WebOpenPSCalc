@@ -31,6 +31,11 @@
   --text-dim: #9a9fb0;
   --text-faint: #9196a6;
   --accent: #d8a657;
+  /* The accent as TEXT, separate from the accent as a fill.
+     In this theme they are the same colour: gold on near-black is a different hue
+     family from the body text, so it reads as emphasis at 7.77:1 even though the
+     body text is 13.74. The light theme cannot do that — see its override. */
+  --accent-text: var(--accent);
   --accent-dim: #b4884a;
   --accent-soft: rgba(216, 166, 87, 0.12);
   --crit: #e2685c;
@@ -69,6 +74,20 @@
      that contrast too. --accent-dim follows it down to keep their relationship. */
   --accent: #5c3b0c;
   --accent-dim: #56360b;
+  /* Accent TEXT has to be far closer to body-text strength here, and matching the
+     dark theme's RATIO is not enough — that was the first attempt and it was still
+     reported as washed out.
+
+     Why: in the dark theme the accent is gold on near-black, a different hue family
+     from the body text, so 7.77:1 against 13.74 body text reads as emphasis. Here
+     both the accent and the body text are warm and darker than the background, so
+     an accent at 7.80 against 13.43 body text is not "emphasis" — it is the body
+     colour, faded. The eye reads it as less important, not more.
+
+     #3d2706 is 10.9:1, close enough to the body text to carry weight while staying
+     visibly brown rather than black. Kept apart from --accent so the FILLS (the
+     Calculate button, the card-mode toggle) are not dragged nearly black with it. */
+  --accent-text: #3d2706;
   --accent-soft: rgba(150, 100, 25, 0.12);
   --crit: #b83028;
   --good: #16472c;
@@ -196,7 +215,7 @@ label {
 .credits-sep { opacity: 0.4; }
 .credits-names { color: var(--text-dim); }
 .credits-link { color: var(--text-faint); text-decoration: none; border-bottom: 1px solid transparent; transition: color 0.15s, border-color 0.15s; }
-.credits-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.credits-link:hover { color: var(--accent-text); border-bottom-color: var(--accent); }
 .kofi-btn {
   display: inline-flex;
   align-items: center;
@@ -221,7 +240,7 @@ label {
   font-family: var(--sans);
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--bg-panel-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -253,7 +272,7 @@ label {
   flex-shrink: 0;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   background: transparent;
   border: 1px solid var(--accent-dim);
   text-decoration: none;
@@ -306,7 +325,7 @@ label {
 .kofi-modal-msg { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
 .kofi-modal-title { font-size: 0.95rem; font-weight: 600; color: var(--text); }
 .kofi-modal-sub { font-size: 0.78rem; color: var(--text-dim); line-height: 1.4; }
-.kofi-modal-sub strong { color: var(--accent); }
+.kofi-modal-sub strong { color: var(--accent-text); }
 .kofi-modal-close {
   border: none;
   background: transparent;
@@ -365,7 +384,7 @@ label {
 .topbar-server-select { width: auto; font-size: 0.85rem; padding: 0.5rem 0.6rem; }
 
 /* Unsaved-changes indicator dot (Save/Load button + mobile hamburger). */
-.unsaved-dot { color: var(--accent); font-size: 0.55rem; margin-left: 0.35rem; vertical-align: middle; }
+.unsaved-dot { color: var(--accent-text); font-size: 0.55rem; margin-left: 0.35rem; vertical-align: middle; }
 .topbar-hamburger { position: relative; }
 .topbar-hamburger .unsaved-dot { position: absolute; top: 3px; right: 4px; margin: 0; font-size: 0.5rem; }
 
@@ -438,7 +457,7 @@ label {
   .topbar-backdrop { position: fixed; inset: 0; z-index: 8; }
 }
 .theme-toggle { padding: 0.4rem 0.6rem; font-size: 1rem; color: var(--text-faint); border-color: transparent; }
-.theme-toggle:hover { color: var(--accent); border-color: transparent; }
+.theme-toggle:hover { color: var(--accent-text); border-color: transparent; }
 .theme-hint {
   position: absolute; top: calc(100% + 8px); right: 0;
   background: var(--accent); color: var(--bg);
@@ -498,7 +517,7 @@ label {
   height: 100%;
   border-radius: 50%;
   border: 1px solid var(--accent-dim);
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--serif);
   font-style: italic;
   font-size: 0.78rem;
@@ -563,7 +582,7 @@ label {
 }
 .info-tooltip-bubble strong {
   display: block;
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--serif);
   font-size: 0.95rem;
   margin-bottom: 0.4rem;
@@ -633,7 +652,7 @@ label {
 .build-card .meta { color: var(--text-faint); font-size: 0.75rem; font-family: var(--mono); }
 .build-card .actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 .build-card .actions button { flex: 1; font-size: 0.8rem; padding: 0.4rem 0.6rem; }
-.badge { display: inline-block; font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-family: var(--mono); }
+.badge { display: inline-block; font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-family: var(--mono); }
 .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-faint); }
 .empty-state .big { font-size: 2.2rem; margin-bottom: 0.5rem; }
 
@@ -700,7 +719,7 @@ label {
 .panel h2 { font-size: 1rem; margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
 .panel h2 .eyebrow { font-family: var(--mono); font-size: 0.68rem; color: var(--accent-dim); letter-spacing: 0.08em; }
 .panel h2.panel-header { cursor: pointer; user-select: none; margin-bottom: 0; }
-.panel h2.panel-header:hover .panel-title { color: var(--accent); }
+.panel h2.panel-header:hover .panel-title { color: var(--accent-text); }
 .panel-title { flex: 1; transition: color 0.15s; }
 .panel-chevron { font-size: 0.8rem; color: var(--text-faint); transition: transform 0.15s; }
 .panel-chevron.open { transform: rotate(0deg); }
@@ -715,7 +734,7 @@ label {
   top: 1rem;
 }
 .panel-highlight h2 { font-size: 1.15rem; }
-.panel-highlight h2 .eyebrow { color: var(--accent); }
+.panel-highlight h2 .eyebrow { color: var(--accent-text); }
 
 /* Mimics the classic RO status window: a big total per stat, with the
    editable base value and job-level bonus as smaller supporting detail. */
@@ -732,12 +751,12 @@ label {
   min-width: 0; /* allow the grid item to shrink instead of overflowing */
 }
 .ro-stat-name { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
-.ro-stat-total { font-family: var(--mono); font-size: 1.5rem; color: var(--accent); line-height: 1.2; margin: 0.1rem 0 0.4rem; }
+.ro-stat-total { font-family: var(--mono); font-size: 1.5rem; color: var(--accent-text); line-height: 1.2; margin: 0.1rem 0 0.4rem; }
 .ro-stat-detail { display: flex; align-items: center; justify-content: center; gap: 0.3rem 0.4rem; flex-wrap: wrap; }
 .ro-stat-detail input { width: 3.4rem; min-width: 0; text-align: center; padding: 0.35rem 0.3rem; }
 .ro-stat-bonus { font-size: 0.75rem; color: var(--good); font-family: var(--mono); white-space: nowrap; }
 .ro-stat-bonus--equip { color: var(--link); }
-.ro-stat-bonus--buff  { color: var(--accent); }
+.ro-stat-bonus--buff  { color: var(--accent-text); }
 .ro-stat-bonus--manual { color: var(--text-dim); }
 .ro-stat-cost { font-family: var(--mono); font-size: 0.65rem; color: var(--text-faint); margin-top: 0.2rem; }
 
@@ -784,7 +803,7 @@ label {
   color: var(--crit);
 }
 .stat-pts-counter { margin-left: auto; font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 0.45rem; }
-.stat-pts-counter--low  { color: var(--accent); }
+.stat-pts-counter--low  { color: var(--accent-text); }
 .stat-pts-counter--over { color: var(--crit); }
 .stat-pts-bar { width: 60px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
 .stat-pts-bar__fill { display: block; height: 100%; border-radius: 2px; background: var(--good); transition: width 0.2s ease; }
@@ -909,7 +928,7 @@ label {
   white-space: nowrap;
 }
 .stat-collapse-toggle:hover { color: var(--text); border-color: var(--border); }
-.stat-collapse-toggle[aria-pressed="true"] { color: var(--accent); border-color: var(--accent-dim); }
+.stat-collapse-toggle[aria-pressed="true"] { color: var(--accent-text); border-color: var(--accent-dim); }
 
 .buff-section-header {
   display: flex; align-items: center; gap: 0.4rem;
@@ -1044,7 +1063,7 @@ label {
 /* On the highlighted row the muted grey loses contrast against --accent-soft, so
    lift it to the accent there — same treatment the row's own text gets. */
 .search-result-item:hover .search-result-badge,
-.search-result-item.active .search-result-badge { color: var(--accent); border-color: var(--accent-dim); }
+.search-result-item.active .search-result-badge { color: var(--accent-text); border-color: var(--accent-dim); }
 
 .search-tooltip {
   position: fixed;
@@ -1089,7 +1108,7 @@ label {
   border: 0; border-right: 1px solid var(--border); border-radius: 0;
   /* Opaque, matching the pill it sits in. NOT transparent: a select with no background
      of its own leaves the open list to the engine, which draws it light. */
-  background: var(--bg); color: var(--accent);
+  background: var(--bg); color: var(--accent-text);
   font-size: 0.85rem; line-height: 1.1;
   padding: 0.18rem 0.95rem 0.18rem 0.1rem;
 }
@@ -1122,7 +1141,7 @@ label {
    it. Same gold the headline metrics use — this is the "something is here" colour
    throughout. Kept weaker than --invalid below, which must still win on a slot that
    is worn but not legal for the class. */
-.selected-pill__name { color: var(--accent); }
+.selected-pill__name { color: var(--accent-text); }
 .selected-pill--invalid { border-color: var(--crit); background: rgba(226,104,92,0.08); }
 .selected-pill--invalid > span:first-child { color: var(--crit); }
 
@@ -1132,7 +1151,7 @@ label {
 .skill-row > :first-child { flex: 1; min-width: 0; }
 .skill-level { flex: 0 0 auto; width: 5.4rem; }
 /* Idle, the box is showing a choice rather than a search, so it reads as content. */
-.search-input--chosen { color: var(--accent); }
+.search-input--chosen { color: var(--accent-text); }
 
 /* ---------------- Changelog page ---------------- */
 /* One line per change. The write-ups live in CHANGELOG.md and git; this page is for
@@ -1149,7 +1168,7 @@ label {
    is a quiet qualifier, not a heading competing with it. */
 .cl-date {
   margin: 1.6rem 0 0.1rem; font-size: 0.95rem; font-family: var(--mono);
-  color: var(--accent); border-top: 1px solid var(--border-soft); padding-top: 0.9rem;
+  color: var(--accent-text); border-top: 1px solid var(--border-soft); padding-top: 0.9rem;
 }
 .changelog-rows > .cl-date:first-child { margin-top: 0; border-top: 0; padding-top: 0; }
 .cl-section {
@@ -1170,7 +1189,7 @@ label {
 .summary-headline { display: flex; gap: 1.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .metric { min-width: 100px; }
 .metric .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); }
-.metric .value { font-family: var(--mono); font-size: 1.7rem; color: var(--accent); line-height: 1.2; }
+.metric .value { font-family: var(--mono); font-size: 1.7rem; color: var(--accent-text); line-height: 1.2; }
 .metric .value.crit { color: var(--crit); }
 .metric .value.good { color: var(--good); }
 .metric .unit { font-size: 0.85rem; color: var(--text-dim); margin-left: 0.2rem; }
@@ -1186,7 +1205,7 @@ label {
 
 .branch-toggle { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; flex-wrap: wrap; align-items: center; }
 .branch-toggle button { font-size: 0.8rem; padding: 0.35rem 0.8rem; }
-.branch-toggle button.active { border-color: var(--accent); color: var(--accent); }
+.branch-toggle button.active { border-color: var(--accent); color: var(--accent-text); }
 .branch-skill-pill { background: var(--accent-soft); border-color: var(--accent) !important; font-weight: 600; }
 .branch-skill-pill.active { background: var(--accent-soft); }
 .branch-falcon-pill { border-color: var(--good) !important; color: var(--good); }
@@ -1203,7 +1222,7 @@ label {
   background: var(--bg);
 }
 .step-row .step-name { font-size: 0.82rem; color: var(--text); }
-.step-row .step-value { font-family: var(--mono); font-size: 0.95rem; text-align: right; color: var(--accent); }
+.step-row .step-value { font-family: var(--mono); font-size: 0.95rem; text-align: right; color: var(--accent-text); }
 .step-row .step-note { grid-column: 1 / -1; font-size: 0.74rem; color: var(--text-faint); }
 .step-row .step-formula { grid-column: 1 / -1; font-size: 0.72rem; color: var(--text-dim); font-family: var(--mono); }
 .step-row--info .step-name { color: var(--text-dim); font-style: italic; }
@@ -1255,8 +1274,8 @@ label {
 .pl-row--final {
   border-top: 1px solid var(--border-soft); margin-top: 0.2rem; padding-top: 0.4rem;
 }
-.pl-row--final .pl-name { color: var(--accent); font-weight: 600; }
-.pl-row--final .pl-val { color: var(--accent); font-weight: 600; font-size: 0.98rem; }
+.pl-row--final .pl-name { color: var(--accent-text); font-weight: 600; }
+.pl-row--final .pl-val { color: var(--accent-text); font-weight: 600; font-size: 0.98rem; }
 .pl-row--final .pl-dots { display: none; }
 .pl-note {
   max-height: 0; overflow: hidden; opacity: 0;
@@ -1277,14 +1296,14 @@ label {
   padding: 0.7rem 0.85rem;
 }
 .breakdown-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
-.breakdown-title { font-size: 0.9rem; font-weight: 600; color: var(--accent); }
+.breakdown-title { font-size: 0.9rem; font-weight: 600; color: var(--accent-text); }
 .breakdown-sub { font-size: 0.74rem; color: var(--text-faint); }
 .breakdown-total {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.6rem;
   margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-soft);
 }
 .breakdown-total-label { font-size: 0.82rem; font-weight: 600; color: var(--text); flex: 1; }
-.breakdown-total-val { font-family: var(--mono); font-size: 1.05rem; font-weight: 600; color: var(--accent); }
+.breakdown-total-val { font-family: var(--mono); font-size: 1.05rem; font-weight: 600; color: var(--accent-text); }
 .breakdown-total-avg { font-size: 0.78rem; color: var(--text-faint); font-weight: 400; font-family: var(--mono); }
 
 .falcon-section { margin-top: 1.2rem; }
@@ -1297,12 +1316,12 @@ label {
   background: var(--bg);
 }
 .falcon-row .falcon-label { font-size: 0.82rem; color: var(--text); }
-.falcon-row .falcon-value { font-family: var(--mono); font-size: 0.95rem; color: var(--accent); }
+.falcon-row .falcon-value { font-family: var(--mono); font-size: 0.95rem; color: var(--accent-text); }
 .falcon-note { font-size: 0.74rem; color: var(--text-faint); padding: 0.15rem 0.2rem; }
 .dw-section-label { font-size: 0.74rem; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0; margin-bottom: 0.25rem; }
 .dw-ps-bonus-row { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.75rem; padding: 0.35rem 0.5rem; background: var(--bg-panel-raised); border-radius: 6px; }
 .dw-ps-bonus-label { font-size: 0.8rem; color: var(--text); flex: 1; }
-.dw-ps-bonus-val { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); font-weight: 600; }
+.dw-ps-bonus-val { font-family: var(--mono); font-size: 0.9rem; color: var(--accent-text); font-weight: 600; }
 .dw-ps-bonus-note { font-size: 0.72rem; color: var(--text-faint); }
 
 /* Grand Cross self-damage (blowback) — a caution-toned readout, distinct from the
@@ -1371,7 +1390,7 @@ label {
 .surv-dodge-detail { font-size: 0.72rem; color: var(--text-faint); margin-top: 0.2rem; }
 .surv-tag { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); border: 1px solid var(--border-soft); border-radius: 3px; padding: 0.02rem 0.28rem; margin-left: 0.4rem; vertical-align: middle; }
 .surv-tag--skill { color: var(--link); border-color: color-mix(in srgb, var(--link) 40%, transparent); }
-.surv-tag--test { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.surv-tag--test { color: var(--accent-text); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .surv-tag--unmodeled { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 50%, transparent); border-style: dashed; }
 .surv-tag--status { color: var(--text-faint); border-style: dashed; }
 .surv-kit { margin-top: 0.55rem; padding-top: 0.5rem; border-top: 1px solid var(--border-soft); }
@@ -1431,7 +1450,7 @@ label {
   cursor: pointer;
   flex-shrink: 0;
 }
-.reworks-banner-dismiss:hover { color: var(--accent); background: var(--accent-soft); }
+.reworks-banner-dismiss:hover { color: var(--accent-text); background: var(--accent-soft); }
 .reworks-banner-toggle {
   display: flex;
   align-items: center;
@@ -1446,7 +1465,7 @@ label {
 }
 .reworks-banner-toggle:hover { background: var(--accent-soft); }
 .reworks-banner-toggle strong {
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.95rem;
   letter-spacing: 0.02em;
 }
@@ -1494,7 +1513,7 @@ label {
 
 .tabs { display: flex; gap: 0.3rem; border-bottom: 1px solid var(--border-soft); margin-bottom: 1.2rem; }
 .tabs button { border: none; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; padding: 0.6rem 0.2rem; margin-right: 1.2rem; color: var(--text-dim); font-size: 0.88rem; }
-.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tabs button.active { color: var(--accent-text); border-bottom-color: var(--accent); }
 
 /* ---------------- Modal ---------------- */
 .modal-overlay {
@@ -1529,7 +1548,7 @@ label {
   border-bottom: 1px solid var(--border-soft);
   flex-shrink: 0;
 }
-.modal-header h2 { font-size: 1.15rem; color: var(--accent); }
+.modal-header h2 { font-size: 1.15rem; color: var(--accent-text); }
 .modal-header button {
   border: none;
   background: transparent;
@@ -1565,7 +1584,7 @@ label {
   padding: 0.65rem 1.4rem;
   border-bottom: 1px solid var(--border-soft);
 }
-.results-panel-header h2 { font-size: 1.05rem; color: var(--accent); margin: 0; }
+.results-panel-header h2 { font-size: 1.05rem; color: var(--accent-text); margin: 0; }
 .results-panel-header button {
   border: none;
   background: transparent;
@@ -1642,9 +1661,9 @@ label {
 .cl-entry-body code {
   background: var(--bg-panel-raised); border: 1px solid var(--border-soft);
   border-radius: 3px; padding: 0.05rem 0.3rem;
-  font-size: 0.77rem; color: var(--accent);
+  font-size: 0.77rem; color: var(--accent-text);
 }
-.cl-entry-body a { color: var(--accent); }
+.cl-entry-body a { color: var(--accent-text); }
 .cl-entry-body p { margin: 0 0 0.55rem; }
 .cl-entry-body p:last-child { margin-bottom: 0; }
 .cl-entry-body em { font-style: italic; color: var(--text); }
@@ -1689,7 +1708,7 @@ label {
 .sec-stat-value {
   font-family: var(--mono);
   font-size: 0.88rem;
-  color: var(--accent);
+  color: var(--accent-text);
   text-align: right;
 }
 
@@ -1716,7 +1735,7 @@ label {
 
 .stats-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
 .stats-metric { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; text-align: center; }
-.stats-metric-val { font-family: var(--mono); font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1.1; }
+.stats-metric-val { font-family: var(--mono); font-size: 2rem; font-weight: 700; color: var(--accent-text); line-height: 1.1; }
 .stats-metric-label { font-size: 0.78rem; color: var(--text-faint); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
 .stats-section { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1rem; }
@@ -1760,7 +1779,7 @@ label {
 .stats-table tr + tr td { border-top: 1px solid var(--border-soft); }
 .stats-table td { padding: 0.3rem 0.25rem; color: var(--text); }
 .stats-table-name { color: var(--text); }
-.stats-table-count { text-align: right; font-family: var(--mono); color: var(--accent); width: 3rem; white-space: nowrap; }
+.stats-table-count { text-align: right; font-family: var(--mono); color: var(--accent-text); width: 3rem; white-space: nowrap; }
 .stats-table-pct { color: var(--text-faint); font-size: 0.85em; }
 
 .stats-loading { color: var(--text-faint); font-size: 0.9rem; }
@@ -1781,7 +1800,7 @@ label {
   border: 1px solid var(--border-soft); border-radius: 3px; padding: 0.02rem 0.28rem; cursor: help;
 }
 .stats-row--drill { cursor: pointer; }
-.stats-row--drill:hover .stats-table-name { color: var(--accent); }
+.stats-row--drill:hover .stats-table-name { color: var(--accent-text); }
 .stats-drill-caret { color: var(--text-faint); font-size: 0.68rem; display: inline-block; width: 0.9rem; }
 .stats-row--region td { color: var(--text-dim); }
 .stats-region-name { padding-left: 1.3rem !important; font-size: 0.78rem; }
@@ -1858,7 +1877,7 @@ label {
 .compare-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border-soft); }
 .compare-head h3 { margin: 0; font-size: 1rem; color: var(--text); display: flex; align-items: center; gap: 0.4rem; }
 .compare-count {
-  font-size: 0.68rem; color: var(--accent);
+  font-size: 0.68rem; color: var(--accent-text);
   background: var(--accent-soft); border: 1px solid var(--accent-dim);
   padding: 0.1rem 0.5rem; border-radius: 999px;
 }
@@ -1880,7 +1899,7 @@ label {
 .cmp-clear-btn:hover { color: var(--crit); border-color: var(--crit); }
 
 .compare-empty { margin: 0.2rem 0 0.1rem; color: var(--text-dim); font-size: 0.82rem; line-height: 1.5; }
-.compare-empty strong { color: var(--accent); }
+.compare-empty strong { color: var(--accent-text); }
 
 .compare-table-wrap { overflow-x: auto; }
 .compare-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.82rem; }
@@ -1902,11 +1921,11 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 
 .cmp-col-head { display: flex; flex-direction: column; gap: 0.12rem; align-items: flex-end; min-width: 7rem; }
 .cmp-col-name { font-weight: 600; color: var(--text); max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cmp-col--live .cmp-col-name { color: var(--accent); }
+.cmp-col--live .cmp-col-name { color: var(--accent-text); }
 .cmp-col-sub { font-size: 0.67rem; color: var(--text-faint); }
 .cmp-winner-tag {
   font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
-  color: var(--accent); background: var(--accent-soft);
+  color: var(--accent-text); background: var(--accent-soft);
   padding: 0.08rem 0.42rem; border-radius: 999px; margin-bottom: 0.1rem;
 }
 .cmp-col-actions { display: flex; gap: 0.3rem; margin-top: 0.35rem; }
@@ -1957,7 +1976,7 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
   cursor: help;
 }
 .manual-enemy-count {
-  font-size: 0.66rem; color: var(--accent); background: var(--accent-soft);
+  font-size: 0.66rem; color: var(--accent-text); background: var(--accent-soft);
   padding: 0.05rem 0.42rem; border-radius: 999px;
 }
 .manual-enemy-sub { font-size: 0.68rem; color: var(--text-dim); margin-bottom: 0.5rem; }
@@ -2016,7 +2035,7 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 }
 .manual-enemy-col { min-width: 0; }
 
-.cmp-btn-pin { color: var(--accent); border-color: var(--accent-dim); }
+.cmp-btn-pin { color: var(--accent-text); border-color: var(--accent-dim); }
 .cmp-btn-x { color: var(--crit); }
 .cmp-btn-x:hover { border-color: var(--crit); }
 
@@ -2044,7 +2063,7 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 .results-section-head { display: flex; align-items: center; gap: 0.7rem; margin: 1.4rem 0 0.95rem; }
 .results-section-head::after { content: ""; flex: 1; height: 1px; background: var(--border-soft); }
 .results-section-title {
-  font-family: var(--serif); font-size: 1rem; font-weight: 600; color: var(--accent); white-space: nowrap;
+  font-family: var(--serif); font-size: 1rem; font-weight: 600; color: var(--accent-text); white-space: nowrap;
 }
 
 /* jaludev import — unmapped items list */
@@ -2061,7 +2080,7 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
   display: grid; gap: 0.15rem; padding: 0.5rem 0.6rem;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-panel-raised);
 }
-.import-src-name { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
+.import-src-name { font-size: 0.8rem; font-weight: 700; color: var(--accent-text); }
 .import-sources code { font-size: 0.72rem; color: var(--text-dim); font-family: var(--mono); }
 .import-src-what { font-size: 0.76rem; color: var(--text-dim); line-height: 1.5; }
 .import-src-what em { font-style: normal; font-weight: 700; color: var(--text); }
@@ -2084,7 +2103,7 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 .bp-row { display: flex; gap: 0.5rem; align-items: baseline; font-size: 0.85rem; line-height: 1.35; }
 .bp-k { flex: 0 0 2.6rem; font-size: 0.72rem; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; padding-top: 0.05rem; }
 .bp-v { color: var(--text); }
-.bp-v b { font-family: var(--mono); color: var(--accent); font-weight: 600; }
+.bp-v b { font-family: var(--mono); color: var(--accent-text); font-weight: 600; }
 .bp-vs { color: var(--text); font-weight: 600; }
 .build-template-hint {
   margin: 0.15rem 0 0.6rem;
@@ -2139,7 +2158,7 @@ th.cmp-col--live { border-bottom-color: var(--accent-dim); }
 .crash-message {
   margin: 0 0 1rem; padding: 0.6rem 0.75rem; overflow-x: auto;
   background: var(--bg-panel-raised); border: 1px solid var(--border-soft);
-  border-radius: 3px; font-size: 0.78rem; color: var(--accent); white-space: pre-wrap;
+  border-radius: 3px; font-size: 0.78rem; color: var(--accent-text); white-space: pre-wrap;
 }
 .crash-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
@@ -2430,7 +2449,7 @@ button:not(.pill-remove) { min-width: 28px; }
 .damage-bar-range {
   font-family: var(--mono);
   font-size: 1.1rem;
-  color: var(--accent);
+  color: var(--accent-text);
   white-space: nowrap;
 }
 /* The delta is the actual answer to "is this card better" — it earns the colour
@@ -2560,7 +2579,7 @@ button:not(.pill-remove) { min-width: 28px; }
   min-width: 0;
   text-align: right;
   font-size: 0.84rem;
-  color: var(--accent);
+  color: var(--accent-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
