@@ -9,10 +9,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
-- **Light mode reads as clearly as dark.** Item names, the damage figure and the
-  other highlighted text were noticeably fainter in light mode — readable, but
-  washed out next to ordinary text instead of standing out from it. They are
-  properly dark now.
+- **Highlighted text stands out properly in light mode.** Item names, the damage
+  figure and the rest of the highlighted text blended into the ordinary text around
+  them instead of standing out. They are a clear rust now, the light-mode
+  counterpart to the gold used in dark mode.
 
 - **Equipment is back to two columns.** It had gone to one so the item names would
   fit; now that a name sits on its own line under its label it has the room either

@@ -84,10 +84,23 @@
      an accent at 7.80 against 13.43 body text is not "emphasis" — it is the body
      colour, faded. The eye reads it as less important, not more.
 
-     #3d2706 is 10.9:1, close enough to the body text to carry weight while staying
-     visibly brown rather than black. Kept apart from --accent so the FILLS (the
-     Calculate button, the card-mode toggle) are not dragged nearly black with it. */
-  --accent-text: #3d2706;
+     But darkness is NOT the lever - chasing contrast took this to #3d2706 at 10.9:1,
+     and it read as black, not as a highlight. The measurements say why. What makes
+     the dark theme work is CHROMA, not ratio:
+
+                      L*     chroma   contrast
+       dark accent    71.3   48.3     7.77
+       light body      9.4    6.8    13.43
+       #3d2706        17.7   24.1    10.90   <- half the colour of the dark accent
+
+     At 18% lightness a colour has almost no colourfulness left, whatever its HSV
+     saturation claims. #8a3a00 is chroma 55.7 - MORE colourful than the dark
+     theme accent, which it needs to be since it sits darker than its background
+     rather than lighter - at 6.05:1, comfortably above AA.
+
+     Kept apart from --accent so the FILLS (the Calculate button, the card-mode
+     toggle) are not dragged along with it. */
+  --accent-text: #8a3a00;
   --accent-soft: rgba(150, 100, 25, 0.12);
   --crit: #b83028;
   --good: #16472c;
