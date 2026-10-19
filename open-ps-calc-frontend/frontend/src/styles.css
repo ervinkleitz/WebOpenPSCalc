@@ -788,13 +788,12 @@ label {
    editor column is about 440px, so each half came to ~215px, which clipped
    "LEFT HAND (SHIELD / WEAPON)" and truncated the word "Empty" to "E.".
    auto-fit gives one column at a normal panel width and two on a wide screen. */
-/* 320px: another column only once each is wide enough for the longest name the card
-   namer can build - "+7 Double Boned Double Untouchable Gladius" wants ~290px, and
-   the cell needs a little over that. Checked by walking the widths: 240 split a
-   566px panel into two 277px columns and clipped it, and 280 still clipped at a
-   980px viewport, where the editor drops to one column and hands this panel 916px
-   to split three ways. */
-.equip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0 0.7rem; }
+/* TWO columns, by request. The earlier single column was there because a slot's
+   name shared a line with its label and needed ~290px to itself; now the name sits
+   on its own line under the label, so it gets the whole cell and two columns fit.
+   One column on a phone, where half of 368px is not enough for either. */
+.equip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 0.7rem; }
+@media (max-width: 600px) { .equip-grid { grid-template-columns: 1fr; } }
 
 /* Each slot is as tall as ITS OWN content. A grid item stretches to its row by
    default, so opening one slot dragged the neighbouring slot's separator line down
@@ -2527,7 +2526,13 @@ button:not(.pill-remove) { min-width: 28px; }
 .equip-slot-head:hover .equip-slot-value { color: var(--text); }
 
 .equip-slot-label {
-  flex: 0 0 auto;
+  /* Allowed to shrink and WRAP. On an empty slot the label and the word "Empty"
+     share one line, and at 0 0 auto the label took its full max-content width and
+     squeezed "Empty" out of a narrow cell - visible at 1800px+, where the editor
+     goes four-wide and leaves this panel its narrowest. Wrapping "LEFT HAND
+     (SHIELD / WEAPON)" over two lines is the better loss. */
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -2537,7 +2542,11 @@ button:not(.pill-remove) { min-width: 28px; }
    runs long and wrapping it would undo the one-line-per-slot shape; the pill
    inside shows it in full. */
 .equip-slot-value {
-  flex: 1 1 auto;
+  /* Does not shrink: on an empty slot this is one short word and cutting it is
+     never the right trade against wrapping the label. The FILLED case overrides
+     this below, where the name is on its own line and takes the full width. */
+  flex: 0 0 auto;
+  margin-left: auto;
   min-width: 0;
   text-align: right;
   font-size: 0.84rem;
@@ -2575,8 +2584,19 @@ button:not(.pill-remove) { min-width: 28px; }
 .equip-slot--filled .equip-slot-chevron { grid-area: chevron; }
 .equip-slot--filled .equip-slot-value {
   grid-area: value;
+  margin-left: 0;
   text-align: left;   /* reads as a continuation of the label above it */
   padding-bottom: 0.1rem;
+  /* WRAPS instead of truncating. On its own line in a two-column grid a long name
+     still outruns the cell - "+7 Double Boned Double Untouchable Gladius" wants
+     ~290px and a half-width cell gives ~220 - and an ellipsis hides exactly the
+     cards that make the name long. Letting it take a second line costs height only
+     on the slots that need it. The ellipsis stays for the single-line case (an
+     EMPTY slot, or a label too long for its row). */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.25;
 }
 
 .equip-slot-body { padding: 0.1rem 0 0.7rem; }

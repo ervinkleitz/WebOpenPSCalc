@@ -9,6 +9,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Equipment is back to two columns.** It had gone to one so the item names would
+  fit; now that a name sits on its own line under its label it has the room either
+  way, and a name too long for its column wraps rather than being cut off. One
+  column still on a phone.
+
 - **Sections stop jumping between columns.** Collapsing a section, or opening an
   equipment slot, could shuffle the whole editor — a section would hop from one
   column to the next and drag everything below it along. Each section now keeps its
