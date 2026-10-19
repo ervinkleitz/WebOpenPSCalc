@@ -18,7 +18,17 @@ await page.evaluate((s) => sessionStorage.setItem("opscalc.draft", JSON.stringif
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(2200);
 
-const armorField = () => page.locator(".field", { has: page.locator("label", { hasText: /^Armor$/ }) }).first();
+// A slot is a collapsed row now (UX 5, 2026-10-18): its label is in
+// .equip-slot-label and the pill, refine and card rows live in a hidden
+// .equip-slot-body until the row is opened, so this expands them first - which
+// is exactly what a player does - and looks slots up by .equip-slot.
+const expandSlots = async () => {
+  const btn = page.locator('.equip-slot-actions button', { hasText: 'Expand all' }).first();
+  if (await btn.count()) { await btn.click(); await page.waitForTimeout(400); }
+};
+await expandSlots();
+const armorField = () => page.locator(".equip-slot",
+  { has: page.locator(".equip-slot-label", { hasText: /^Armor$/ }) }).first();
 const hpText = async () => {
   // The character-stats readout renders a "Max HP" label with its value next to it.
   const body = await page.locator("body").innerText();

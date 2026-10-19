@@ -2399,3 +2399,78 @@ button:not(.pill-remove) { min-width: 28px; }
      chevron off or crush both to two characters. */
   .panel-summary { display: none; }
 }
+
+/* ===========================================================================
+   EQUIPMENT SLOT ROWS
+
+   Eleven slots, each able to carry a refine, up to four cards and a forge, made
+   this the tallest thing in the editor by a wide margin — about forty controls
+   on a geared build, most of them for slots the player is not touching.
+
+   Collapsed, a slot is one line that reads like the in-game equip window:
+   "RIGHT HAND (WEAPON)        +7 Double Boned Bloody Gladius". Opening one costs
+   a click, which is the trade, and the state is remembered.
+   =========================================================================== */
+.equip-slot-actions { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+.equip-slot-actions button { padding: 0.25rem 0.6rem; font-size: 0.76rem; }
+
+.equip-slot { border-bottom: 1px solid var(--border-soft); }
+.equip-slot:last-child { border-bottom: none; }
+
+/* The whole line is the button, so the target is the row rather than a chevron.
+   Reset the button chrome: this is a row, not a control to be pressed. */
+.equip-slot-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.1rem;
+  background: none;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.equip-slot-head:hover { background: var(--bg-panel-raised); border: none; }
+.equip-slot-head:hover .equip-slot-value { color: var(--text); }
+
+.equip-slot-label {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+/* The name takes the rest and truncates. A fully carded weapon's assembled name
+   runs long and wrapping it would undo the one-line-per-slot shape; the pill
+   inside shows it in full. */
+.equip-slot-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  font-size: 0.84rem;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.equip-slot-value.is-empty { color: var(--text-faint); font-style: italic; }
+.equip-slot-chevron {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  transition: transform 0.15s;
+  transform: rotate(-90deg);
+}
+.equip-slot-chevron.open { transform: rotate(0deg); }
+
+.equip-slot-body { padding: 0.1rem 0 0.7rem; }
+/* `hidden` is overridden by the display on .equip-slot-body, so restore it —
+   without this the body renders open regardless of the attribute. */
+.equip-slot-body[hidden] { display: none; }
+
+/* A slot the engine is excluding has to be visible as such while closed, or the
+   player has to open all eleven to find out why a number looks wrong. */
+.equip-slot--invalid .equip-slot-value { color: var(--crit); }
+/* With the value hidden on an open row, nothing is left to push the chevron over. */
+.equip-slot--open .equip-slot-label { flex: 1 1 auto; min-width: 0; }

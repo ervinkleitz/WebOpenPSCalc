@@ -26,9 +26,19 @@ const load = async (s) => {
   await page.evaluate((st) => sessionStorage.setItem("opscalc.draft", JSON.stringify({ state: st, sourceParam: null })), s);
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForTimeout(1600);
+  await expandSlots();
 };
 
-const slotBox = (label) => page.locator(".field", { has: page.locator("label", { hasText: label }) }).first();
+// A slot is a collapsed row now (UX 5, 2026-10-18): the label lives in
+// .equip-slot-label and the pill, refine and card rows are inside a hidden
+// .equip-slot-body until the row is opened. So this expands them first, which is
+// what a player does, and looks the slot up by .equip-slot rather than by .field.
+const slotBox = (label) => page.locator(".equip-slot",
+  { has: page.locator(".equip-slot-label", { hasText: label }) }).first();
+const expandSlots = async () => {
+  const btn = page.locator('.equip-slot-actions button', { hasText: 'Expand all' }).first();
+  if (await btn.count()) { await btn.click(); await page.waitForTimeout(400); }
+};
 const equipInto = async (label, query) => {
   const box = slotBox(label);
   await box.locator("input[placeholder^='Search ']").fill(query);

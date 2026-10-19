@@ -16,8 +16,16 @@ const check = (cond, msg) => { if (!cond) { console.error("FAIL: " + msg); ok = 
 
 await page.goto(URL_BASE, { waitUntil: "networkidle" });
 await page.waitForTimeout(2500);
+// Equipment slots collapse by default (UX 5, 2026-10-18), so the pill, refine
+// and card rows below are hidden until a row is opened. Expanding them first is
+// what a player does to edit a slot.
+const expandSlots = async () => {
+  const btn = page.locator('.equip-slot-actions button', { hasText: 'Expand all' }).first();
+  if (await btn.count()) { await btn.click(); await page.waitForTimeout(400); }
+};
+await expandSlots();
 
-const slot = (label) => page.locator(".field", { has: page.locator("label", { hasText: label }) }).first();
+const slot = (label) => page.locator(".equip-slot", { has: page.locator(".equip-slot-label", { hasText: label }) }).first();
 
 async function search(label, query) {
   const box = slot(label).locator("input").first();

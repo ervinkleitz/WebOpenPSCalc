@@ -18,6 +18,13 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **Equipment is one line per slot.** Each slot now reads like the in-game equip
+  window — *RIGHT HAND (WEAPON) · +7 Double Boned Bloody Gladius* — and opens for
+  editing when you click it. A two-handed weapon's off-hand says so on the line
+  rather than just reading *Empty*, and a slot that is being left out of the
+  calculation opens itself so you can see why. **Expand all** is there for anyone
+  who would rather see everything at once.
+
 - **A closed section now tells you what is in it, and stays closed next time.** Every
   section header carries a short summary while it is shut — *Assassin · Lv 99/50*,
   *+7 Gladius · +2 more · 3 cards*, *Poring · Quagmire 5 · Provoke 10* — so you can

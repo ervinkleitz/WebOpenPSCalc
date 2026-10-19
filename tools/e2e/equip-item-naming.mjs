@@ -66,12 +66,23 @@ page.on("pageerror", (e) => errors.push(e.message));
 // the name string: it lives in the select immediately to its left, so the row still
 // reads "+7 <item>" but the number is one click from editable. Asserting them together
 // is what stops the refine quietly vanishing from the row altogether.
+// A slot is a collapsed row now (UX 5, 2026-10-18): the label lives in
+// .equip-slot-label and the pill, refine and card rows are inside a hidden
+// .equip-slot-body until the row is opened. So this expands them first, which is
+// what a player does, and looks the slot up by .equip-slot rather than by .field.
+// Open every slot, the way the panel's own "Expand all" does, so the pill and
+// refine below are reachable.
+const expandSlots = async () => {
+  const btn = page.locator('.equip-slot-actions button', { hasText: 'Expand all' }).first();
+  if (await btn.count()) { await btn.click(); await page.waitForTimeout(400); }
+};
 const readSlot = async (equipped, refine, label) => {
   await page.goto(link(equipped, refine), { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(7000);
+  await expandSlots();
   return page.evaluate((lbl) => {
-    const field = [...document.querySelectorAll(".field")]
-      .find((f) => f.querySelector("label")?.textContent?.trim() === lbl);
+    const field = [...document.querySelectorAll(".equip-slot")]
+      .find((f) => f.querySelector(".equip-slot-label")?.textContent?.trim() === lbl);
     const pill = field?.querySelector(".selected-pill .selected-pill__name");
     const sel = field?.querySelector(".refine-select");
     return {
@@ -128,11 +139,12 @@ check(slotRead.name === "Cotton Shirt of Champion",
 await page.goto(link(carded, { right_hand: 7 }), { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(7000);
 
-const rightHand = page.locator(".equip-grid > .field")
-  .filter({ has: page.locator('label:text-is("Right hand (weapon)")') });
+await expandSlots();
+const rightHand = page.locator(".equip-slot")
+  .filter({ has: page.locator('.equip-slot-label:text-is("Right hand (weapon)")') });
 const shownName = () => page.evaluate(() => {
-  const f = [...document.querySelectorAll(".equip-grid > .field")]
-    .find((x) => x.querySelector("label")?.textContent?.trim() === "Right hand (weapon)");
+  const f = [...document.querySelectorAll(".equip-slot")]
+    .find((x) => x.querySelector(".equip-slot-label")?.textContent?.trim() === "Right hand (weapon)");
   return f?.querySelector(".selected-pill__name")?.textContent.replace(/\s+/g, " ").trim() ?? null;
 });
 
@@ -164,9 +176,10 @@ check(name === "Double Boned Bloody Gladius",
 await page.goto(link({ armor: 2289, armor_card1: 4002 }, {}), { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(7000);
 
+await expandSlots();
 const armorSlot = () => page.evaluate(() => {
-  const f = [...document.querySelectorAll(".equip-grid > .field")]
-    .find((x) => x.querySelector("label")?.textContent?.trim() === "Armor");
+  const f = [...document.querySelectorAll(".equip-slot")]
+    .find((x) => x.querySelector(".equip-slot-label")?.textContent?.trim() === "Armor");
   return {
     name: f?.querySelector(".selected-pill__name")?.textContent.replace(/\s+/g, " ").trim() ?? null,
     rows: f ? f.querySelectorAll(".card-slot").length : 0,
@@ -181,8 +194,8 @@ check(slot.rows === 1, "and the card gets a row even though the host has no slot
 check(slot.removers === 1, "with an x, so the live bonus can actually be removed", slot.removers);
 check(slot.note, "and a note saying why the row is there", slot.note);
 
-await page.locator(".equip-grid > .field")
-  .filter({ has: page.locator('label:text-is("Armor")') })
+await page.locator(".equip-slot")
+  .filter({ has: page.locator('.equip-slot-label:text-is("Armor")') })
   .locator(".card-slot button", { hasText: "×" }).first().click();
 await page.waitForTimeout(2500);
 slot = await armorSlot();

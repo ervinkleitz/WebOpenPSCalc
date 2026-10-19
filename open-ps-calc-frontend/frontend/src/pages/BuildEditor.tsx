@@ -1067,6 +1067,35 @@ export default function BuildEditor() {
 
   const [jobs, setJobs] = useState<{ id: number; name: string }[]>([]);
   const [passiveSkills, setPassiveSkills] = useState<PassiveSkill[]>([]);
+
+  // Which equipment slots are expanded. Eleven slots, each of which can carry a
+  // refine, up to four cards and a forge, is the tallest thing in the editor by a
+  // wide margin — about forty controls for a geared build. Collapsed, a slot is one
+  // line that reads like the equip window: "RIGHT HAND  +7 Double Boned Bloody
+  // Gladius". Opening one costs a click, which is the trade.
+  //
+  // Remembered per browser like the panels, and for the same reason: a player who
+  // works on their weapon and nothing else should not re-open it every visit.
+  const EQUIP_OPEN_KEY = "opscalc.equipSlots";
+  const [openSlots, setOpenSlots] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem(EQUIP_OPEN_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+  const toggleSlot = useCallback((key: string) => {
+    setOpenSlots((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem(EQUIP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+  const setAllSlots = useCallback((open: boolean) => {
+    const next: Record<string, boolean> = {};
+    for (const sl of EQUIP_SLOTS) next[sl.key] = open;
+    try { localStorage.setItem(EQUIP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    setOpenSlots(next);
+  }, []);
   const [plagiarism, setPlagiarism] = useState<{ jobs: number[]; skills: { name: string; display_name: string; max_level: number }[] }>({ jobs: [], skills: [] });
   // Which weapons the selected skill can be cast with, already translated into item
   // weapon_types by the backend, plus its ready-made wording. Null = no restriction.
@@ -3193,6 +3222,12 @@ export default function BuildEditor() {
           </Panel>
 
           <Panel eyebrow="02" title="Equipment" summary={equipSummary}>
+            {/* One way back to the old all-open view, for anyone who would rather
+                see everything at once than click through slots. */}
+            <div className="equip-slot-actions">
+              <button onClick={() => setAllSlots(true)}>Expand all</button>
+              <button onClick={() => setAllSlots(false)}>Collapse all</button>
+            </div>
             <div className="equip-grid">
               {EQUIP_SLOTS.map((slot) => {
                 const equippedId = data.equipped[slot.key] as number | null | undefined;
@@ -3244,9 +3279,58 @@ export default function BuildEditor() {
                 const cardLoc = slot.key === "left_hand" && item?.type === "IT_WEAPON"
                   ? "EQP_WEAPON"
                   : SLOT_CARD_LOC[slot.key];
+                // What the closed row reads: the assembled game name, refine and
+                // all, exactly as the pill inside would show it. An empty slot says
+                // so plainly rather than being blank, which would read as broken.
+                // An INVALID slot opens itself. It is excluded from the
+                // calculation and the reason lives in the body, so leaving it shut
+                // would hide the explanation for a number the player can see is
+                // wrong. `??` not `||`: once they have closed it deliberately,
+                // that sticks.
+                const slotOpen = openSlots[slot.key] ?? isInvalid;
+                // A two-hander fills both hands, so the off-hand is not empty, it is
+                // BLOCKED - and the explanation for that lives in the body. Saying so
+                // on the row means the player does not have to open a slot they
+                // cannot use to find out why they cannot use it.
+                const offHandBlocked = slot.key === "left_hand" && mainHandFillsBothHands;
+                const slotSummary = offHandBlocked
+                  ? "No off-hand \u2014 two-handed weapon"
+                  : equippedId == null || !item
+                  ? null
+                  : `${(data.refine?.[slot.key] ?? 0) > 0 ? `+${data.refine[slot.key]} ` : ""}`
+                    + displayItemName(
+                      item,
+                      wildcardMode[slot.key] ? [] : [1, 2, 3, 4].map((i) => {
+                        const cid = data.equipped[`${slot.key}_card${i}`] as number | null | undefined;
+                        return cid != null ? itemCache[cid] : null;
+                      }),
+                      `Item #${equippedId}`,
+                    );
                 return (
-                  <div key={slot.key} className="field">
-                    <label>{slot.label}</label>
+                  <div key={slot.key} className={`equip-slot${slotOpen ? " equip-slot--open" : ""}${isInvalid ? " equip-slot--invalid" : ""}`}>
+                    {/* The whole row is the control, so the target is the line and
+                        not a chevron. An invalid slot is flagged here too: it is
+                        excluded from the calculation, and a player must be able to
+                        see that without opening all eleven. */}
+                    <button
+                      type="button"
+                      className="equip-slot-head"
+                      aria-expanded={slotOpen}
+                      onClick={() => toggleSlot(slot.key)}
+                      title={isInvalid ? invalidSlots.get(slot.key) : undefined}
+                    >
+                      <span className="equip-slot-label">{slot.label}</span>
+                      {/* Only while closed, for the same reason Panel hides its
+                          own summary when open: the pill below says it already,
+                          and the row would be printing the item name twice. */}
+                      {!slotOpen && (
+                        <span className={`equip-slot-value${slotSummary && !offHandBlocked ? "" : " is-empty"}`}>
+                          {slotSummary ?? "Empty"}
+                        </span>
+                      )}
+                      <span className={`equip-slot-chevron${slotOpen ? " open" : ""}`}>▾</span>
+                    </button>
+                    <div className="equip-slot-body" hidden={!slotOpen}>
                     {equippedId != null ? (
                       <>
                       {/* The refine lives INSIDE the item's own field, as a segment on
@@ -3608,6 +3692,7 @@ export default function BuildEditor() {
                         )}
                       </>
                     )}
+                    </div>
                   </div>
                 );
               })}
