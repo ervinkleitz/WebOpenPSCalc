@@ -8,7 +8,11 @@ export interface BaseStats {
 }
 
 export interface WildcardSlot {
-  type: "race" | "size" | "ele" | "family"; // "family" = monster-family/Type card (Orc/Goblin/Kobold/Golem-Bane, bAddRace2)
+  // Offensive (weapon host): "family" = monster-family/Type card (Orc/Goblin/
+  // Kobold/Golem-Bane, bAddRace2).
+  // Defensive (shield host): the sub_* three, which resist the attacker rather
+  // than punish the target — PS's shield card line is almost entirely resists.
+  type: "race" | "size" | "ele" | "family" | "sub_race" | "sub_ele" | "sub_size";
   bonus: number;
 }
 

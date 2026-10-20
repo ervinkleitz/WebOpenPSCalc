@@ -7,6 +7,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-19
 
+### Added
+
+- **Wildcard mix now works on a shield.** The mix let you ask "what would the right
+  card be worth here?" without hunting for the card — but only on a weapon, so it
+  only ever answered the damage question. A slotted shield now offers it too, with
+  **Race resist**, **Element resist** and **Size resist** in place of the damage
+  categories, and the cut shows up on the survivability panel. The defaults are what
+  Payon Stories' shield cards actually are: 30% for a race (Thara Frog and nine
+  others all agree), 20% for an element (the Tatacho line), 25% for a size
+  (Mysteltainn, Ogretooth, Executioner).
+
 ### Fixed
 
 - **An equipment slot opens where it sits.** Expanding a slot dropped it onto a row

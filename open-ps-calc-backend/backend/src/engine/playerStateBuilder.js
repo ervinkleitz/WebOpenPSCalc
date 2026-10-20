@@ -60,6 +60,12 @@ function resolvePlayerState(build, config, profile = null) {
     const WC_SIZES = ["Size_Small", "Size_Medium", "Size_Large"];
     const WC_ELES  = ["Ele_Neutral","Ele_Water","Ele_Earth","Ele_Fire","Ele_Wind",
                       "Ele_Poison","Ele_Holy","Ele_Dark","Ele_Ghost","Ele_Undead"];
+    // Defensive (shield) wildcards fan out over the DEFENDING dicts. Boss is left
+    // out on purpose: no shield card resists a race AND bosses, and sub_race.RC_Boss
+    // is added on top of the race term by cardFix, so including it would charge the
+    // resist twice against a boss.
+    const WC_SUB_RACES = ["RC_Formless","RC_Undead","RC_Brute","RC_Plant","RC_Insect",
+                          "RC_Fish","RC_Demon","RC_DemiHuman","RC_Angel","RC_Dragon"];
     for (const [key, val] of Object.entries(build.wildcard_bonuses || {})) {
       const n = Number(val);
       if      (key === "_batk")    gb.batk += n;
@@ -71,6 +77,15 @@ function resolvePlayerState(build, config, profile = null) {
       // wildcard assumes the slotted card matches the target's family, so it
       // applies unconditionally like the other _All wildcard bonuses.
       else if (key === "Type_All") gb.add_type += n;
+      // ---- defensive, from the SHIELD wildcard mix -----------------------------
+      // The offensive keys above ask "what if the card matched the target?"; these
+      // ask the same of the attacker, so they apply unconditionally too. Element
+      // goes in as sub_ele.Ele_All because cardFix already adds that key to the
+      // attacker's own element on all three incoming paths; race and size have no
+      // such catch-all key, so they are fanned out.
+      else if (key === "Sub_RC_All")   { for (const r of WC_SUB_RACES) gb.sub_race[r] = (gb.sub_race[r] || 0) + n; }
+      else if (key === "Sub_Ele_All")  gb.sub_ele.Ele_All = (gb.sub_ele.Ele_All || 0) + n;
+      else if (key === "Sub_Size_All") { for (const s of WC_SIZES) gb.sub_size[s] = (gb.sub_size[s] || 0) + n; }
       else if (key.startsWith("RC_"))   gb.add_race[key] = (gb.add_race[key] || 0) + n;
       else if (key.startsWith("Size_")) gb.add_size[key] = (gb.add_size[key] || 0) + n;
       else if (key.startsWith("Ele_"))  gb.add_ele[key]  = (gb.add_ele[key]  || 0) + n;

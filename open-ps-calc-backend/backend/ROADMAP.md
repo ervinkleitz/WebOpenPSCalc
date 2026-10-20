@@ -328,7 +328,38 @@ single-edits, call the existing `/calculate` endpoint for each, diff the DPS, so
 so it doesn't flood the backend (or add a batch endpoint). Natural follow-ons: a card recommender
 and a stat optimiser (given N free points, maximise DPS/TTK).
 
-### 3. Shield wildcard mix (defensive card slots)  (open — maintainer request, 2026-09-06)
+### 3. Shield wildcard mix (defensive card slots)  (DONE 2026-10-19)
+
+**Done 2026-10-19.** The off-hand offers the mix whenever it holds a slotted shield,
+with three resist categories instead of the weapon's four damage ones. The defaults
+are PS's own shield card line rather than a guess, and the line is strikingly uniform:
+**race 30** (Thara Frog 4058, Soldier Andre 4059, Orc Warrior 4066, Bigfoot 4074,
+Rafflesia 4083, Sky Petite 4120, Khalitzburg 4136, Anubis 4138, Penomena 4314,
+Teddy Bear 4340), **element 20** (Tatacho 4442, Aqua Elemental 4443, Draco 4444,
+Luciola Vespa 4445, Centipede 4447, Cornus 4448, Dark Shadow 4449, Ghost Shroom 8092)
+and **size 25** (Mysteltainn 4207, Ogretooth 4254, Executioner 4250). Size resist was
+added alongside the two sketched below because it is attested exactly as firmly.
+Alice 4253's 40% off bosses is deliberately NOT a category — it costs 40% MORE off
+everything else, which is a trade a player makes, not a default.
+
+`Sub_RC_All` / `Sub_Ele_All` / `Sub_Size_All` route in `playerStateBuilder.js`.
+Element goes in as `sub_ele.Ele_All`, which cardFix already adds to the attacker's own
+element on all three incoming paths; race and size have no catch-all key so they fan
+out. Race deliberately skips `RC_Boss`/`RC_NonBoss`: cardFix adds the boss term ON TOP
+of the race term, so including it would charge the resist twice against a boss.
+
+The warning below was worth heeding — the assertion went in first and failed, so the
+routing was written against a measured number rather than a populated dict. Covered by
+`engine-units`'s "shield wildcard mix: a defensive wildcard reaches INCOMING damage"
+(each category cut within 1 of its stated percentage, and the three stacking
+multiplicatively) and `tools/e2e/shield-wildcard-mix.mjs`, which drives it through the
+page and reads the cut off the survivability panel (756 -> 529 for race, 756 -> 604 for
+element). Armor/garment hosts (Marc, Raydric) could follow the same shape if asked.
+
+---
+
+Original sketch:
+
 
 The existing "Wildcard mix" is weapon-slots-only (`BuildEditor.tsx` gates the toggle on
 `isWeaponSlot`: `right_hand`, or `left_hand` holding a weapon) and its categories —

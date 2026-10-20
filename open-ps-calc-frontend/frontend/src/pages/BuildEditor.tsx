@@ -49,7 +49,46 @@ const GS_EXCLUSIVE_BUFFS: Record<string, string> = {
 
 const WILDCARD_DEFAULT_BONUS: Record<WildcardSlot["type"], number> = {
   race: 20, size: 15, ele: 20, family: 30,
+  // The defensive defaults are not round numbers somebody liked — they are what
+  // PS's shield cards actually are, and the line is remarkably consistent:
+  //   race 30     Thara Frog 4058 Demihuman, Soldier Andre 4059 Plant,
+  //               Orc Warrior 4066 Brute, Bigfoot 4074 Insect, Rafflesia 4083 Fish,
+  //               Sky Petite 4120 Dragon, Khalitzburg 4136 Demon, Anubis 4138 Angel,
+  //               Penomena 4314 Formless, Teddy Bear 4340 Undead
+  //   element 20  Tatacho 4442 Neutral, Aqua Elemental 4443 Water, Draco 4444 Earth,
+  //               Luciola Vespa 4445 Wind, Centipede 4447 Poison, Cornus 4448 Holy,
+  //               Dark Shadow 4449 Shadow, Ghost Shroom 8092 Ghost
+  //   size 25     Mysteltainn 4207 Small, Ogretooth 4254 Medium, Executioner 4250 Large
+  sub_race: 30, sub_ele: 20, sub_size: 25,
 };
+
+// Resists take their own option list. The weapon list's 4% has no defensive
+// counterpart, and 5 and 25 have no offensive one; every value here is a shield
+// card that exists — 5 Munak/Parasite, 15 Medusa/Hodremlin/Puck, 20 the Tatacho
+// line, 25 the size line, 30 the race line. Alice's 40% off bosses is absent on
+// purpose: it costs 40% MORE off everything else, so it is a trade, not a default.
+const WILDCARD_RESIST_OPTIONS = [5, 10, 15, 20, 25, 30];
+const WILDCARD_RESIST_TYPES: WildcardSlot["type"][] = ["sub_race", "sub_ele", "sub_size"];
+// ONE definition of which categories a host offers, shared by the rows that draw
+// them and the request that prices them. They were allowed to disagree once before
+// — see effectiveBuild's comment — and the symptom was a panel showing one thing
+// while the damage underneath was computed from another. The case here is a left
+// hand that swaps a weapon for a shield while in wildcard mode: the stored rows are
+// still offensive, and without this the rows would redraw as resists while the
+// engine went on being handed add_race.
+const wildcardTypesFor = (
+  slotKey: string,
+  item: EquippedItemInfo | null | undefined,
+): WildcardSlot["type"][] =>
+  slotKey === "left_hand" && item != null && item.type !== "IT_WEAPON"
+    ? ["sub_race", "sub_ele", "sub_size"]
+    : ["race", "size", "ele", "family"];
+
+const WILDCARD_TYPE_LABEL: Record<WildcardSlot["type"], string> = {
+  race: "Race", size: "Size", ele: "Element", family: "Type",
+  sub_race: "Race resist", sub_ele: "Element resist", sub_size: "Size resist",
+};
+const isResistWildcard = (t: WildcardSlot["type"]) => WILDCARD_RESIST_TYPES.includes(t);
 
 const STATS = ["str", "agi", "vit", "int", "dex", "luk"] as const;
 // statusCalculator.js / dataLoader.js's getJobBonusStats reads from the
@@ -1182,7 +1221,6 @@ export default function BuildEditor() {
   // One definition, used by every reader, so the panel and the calculation cannot
   // disagree again.
   const effectiveBuild = useMemo(() => {
-    const WILDCARD_DEFAULT: WildcardSlot = { type: "race", bonus: 20 };
     const wildcard_bonuses: Record<string, number> = {};
     const equipped = { ...sanitizedBuild.equipped };
     let touched = false;
@@ -1199,10 +1237,21 @@ export default function BuildEditor() {
       // previous weapon's wildcards.
       const cached = itemCache[equippedId as number];
       const slotCount = cached ? (cached.slots ?? 0) : stored.length;
+      const allowed = wildcardTypesFor(slotKey, cached);
+      const fallback: WildcardSlot = { type: allowed[0], bonus: WILDCARD_DEFAULT_BONUS[allowed[0]] };
       for (let i = 0; i < slotCount; i++) {
-        const ws = stored[i] ?? WILDCARD_DEFAULT;
-        const key = ws.type === "race" ? "RC_All" : ws.type === "size" ? "Size_All" : ws.type === "family" ? "Type_All" : "Ele_All";
+        const row = stored[i];
+        const ws = row && allowed.includes(row.type) ? row : fallback;
+        const key = ws.type === "race" ? "RC_All"
+          : ws.type === "size" ? "Size_All"
+          : ws.type === "family" ? "Type_All"
+          : ws.type === "sub_race" ? "Sub_RC_All"
+          : ws.type === "sub_ele" ? "Sub_Ele_All"
+          : ws.type === "sub_size" ? "Sub_Size_All"
+          : "Ele_All";
         wildcard_bonuses[key] = (wildcard_bonuses[key] || 0) + ws.bonus;
+        // The +5 ATK rides on the OFFENSIVE size card (Minorous and friends carry
+        // it); the size RESIST cards do not, so "sub_size" must not pick it up.
         if (ws.type === "size") wildcard_bonuses["_batk"] = (wildcard_bonuses["_batk"] || 0) + 5;
       }
     }
@@ -3253,6 +3302,17 @@ export default function BuildEditor() {
                   : Math.max(cardSlotCount, ...occupiedCards, 0);
                 const hasOverflowCards = cardRowCount > cardSlotCount;
                 const isWeaponSlot = slot.key === "right_hand" || (slot.key === "left_hand" && item?.type === "IT_WEAPON");
+                // The off-hand is the only shield host, and a shield's slotted card
+                // is where the defensive decisions live (ROADMAP #3, requested
+                // 2026-09-06). Same "what if I slotted the right card" question as
+                // the weapon mix, asked of the attacker instead of the target.
+                const isShieldSlot = slot.key === "left_hand" && item != null && item.type !== "IT_WEAPON";
+                const isWildcardHost = isWeaponSlot || isShieldSlot;
+                // Which three categories the mix offers, and what a fresh row is.
+                const wildcardTypes = wildcardTypesFor(slot.key, item);
+                const freshWildcard = (): WildcardSlot => ({
+                  type: wildcardTypes[0], bonus: WILDCARD_DEFAULT_BONUS[wildcardTypes[0]],
+                });
                 const isRefineable = item?.refineable ?? false;
                 // A weapon can be Star-Crumb forged only if it's on the blacksmith
                 // forge list (FORGEABLE_WEAPON_IDS) — named/elemental weapons like
@@ -3556,7 +3616,7 @@ export default function BuildEditor() {
                       <>
                         {/* Wildcard mix is offered only on a host that really has slots —
                             a mix on a slotless host would have nothing to mix into. */}
-                        {isWeaponSlot && cardSlotCount > 0 && (
+                        {isWildcardHost && cardSlotCount > 0 && (
                           <div className="card-mode-toggle">
                             <button
                               className={!wildcardMode[slot.key] ? "active" : ""}
@@ -3589,10 +3649,7 @@ export default function BuildEditor() {
                                   if (!prev.wildcard_slots?.[slot.key]?.length) {
                                     next.wildcard_slots = {
                                       ...(prev.wildcard_slots || {}),
-                                      [slot.key]: Array.from({ length: cardSlotCount }, () => ({
-                                        type: "race" as const,
-                                        bonus: 20,
-                                      })),
+                                      [slot.key]: Array.from({ length: cardSlotCount }, freshWildcard),
                                     };
                                   }
                                   return next;
@@ -3603,13 +3660,18 @@ export default function BuildEditor() {
                             </button>
                           </div>
                         )}
-                        {isWeaponSlot && wildcardMode[slot.key] ? (
+                        {isWildcardHost && wildcardMode[slot.key] ? (
                           <div className="wildcard-slots">
                             {Array.from({ length: cardSlotCount }, (_, i) => {
-                              const ws = data.wildcard_slots?.[slot.key]?.[i] ?? {
-                                type: "race" as const,
-                                bonus: 20,
-                              };
+                              // A mix stored against a weapon keeps its offensive
+                              // categories if that hand later holds a shield, which
+                              // would feed sub_* keys an add_* category. Fall back to
+                              // the host's own default rather than render a category
+                              // the host cannot offer.
+                              const stored = data.wildcard_slots?.[slot.key]?.[i];
+                              const ws = stored && wildcardTypes.includes(stored.type)
+                                ? stored
+                                : freshWildcard();
                               return (
                                 <div key={i} className="wildcard-slot-row">
                                   <select
@@ -3620,10 +3682,11 @@ export default function BuildEditor() {
                                       })
                                     }
                                   >
-                                    <option value="race">Race</option>
-                                    <option value="size">Size</option>
-                                    <option value="ele">Element</option>
-                                    <option value="family">Type</option>
+                                    {wildcardTypes.map((t) => (
+                                      <option key={t} value={t}>
+                                        {WILDCARD_TYPE_LABEL[t]}
+                                      </option>
+                                    ))}
                                   </select>
                                   {ws.type !== "size" ? (
                                     <select
@@ -3632,9 +3695,12 @@ export default function BuildEditor() {
                                         updateWildcardSlot(slot.key, i, { bonus: Number(e.target.value) })
                                       }
                                     >
-                                      {WILDCARD_BONUS_OPTIONS.map((v) => (
+                                      {(isResistWildcard(ws.type)
+                                        ? WILDCARD_RESIST_OPTIONS
+                                        : WILDCARD_BONUS_OPTIONS
+                                      ).map((v) => (
                                         <option key={v} value={v}>
-                                          {v}%
+                                          {isResistWildcard(ws.type) ? `-${v}%` : `${v}%`}
                                         </option>
                                       ))}
                                     </select>

@@ -7605,3 +7605,65 @@ test("the when-hit autocasts PS confirms are still intact", () => {
   assert.ok(ms, "Dark Lord Card's Meteor Storm is confirmed by PS and must survive");
   assert.equal(ms.skill_level, 5, "at the level PS names");
 });
+
+// Shield wildcard mix (ROADMAP #3, maintainer request 2026-09-06). The weapon
+// wildcard answers "what if I slotted a card that matched?" for OUTGOING damage;
+// a shield's card decisions are the defensive mirror of it, and PS's own shield
+// cards agree on what the numbers are:
+//
+//   race    30%  Thara Frog 4058 (Demihuman), Soldier Andre 4059 (Plant),
+//                Orc Warrior 4066 (Brute), Bigfoot 4074 (Insect),
+//                Rafflesia 4083 (Fish), Sky Petite 4120 (Dragon),
+//                Khalitzburg 4136 (Demon), Anubis 4138 (Angel),
+//                Teddy Bear 4340 (Undead), Penomena 4314 (Formless)
+//   element 20%  Tatacho 4442 (Neutral), Aqua Elemental 4443 (Water),
+//                Draco 4444 (Earth), Luciola Vespa 4445 (Wind),
+//                Centipede 4447 (Poison), Cornus 4448 (Holy),
+//                Dark Shadow 4449 (Shadow), Ghost Shroom 8092 (Ghost)
+//   size    25%  Mysteltainn 4207 (Small), Ogretooth 4254 (Medium),
+//                Executioner 4250 (Large)
+//
+// Ten race cards at exactly 30, eight element cards at exactly 20 and three size
+// cards at exactly 25 — the defaults are not a guess, they are what the shield
+// card line is. Boss resist is deliberately NOT a category: Alice 4253 trades 40%
+// off bosses for 40% MORE off everything else, which is a decision, not a default.
+//
+// This assertion goes in FIRST and is expected to fail until the routing exists.
+// The roadmap's warning is specific: bSubSize was silently never aggregated at all
+// until 2026-08-17, so "the dict is already consumed" is not evidence the number
+// arrives. Measure the damage, not the dict.
+test("shield wildcard mix: a defensive wildcard reaches INCOMING damage", () => {
+  const { calculateIncomingPhysicalDamage } = require("../src/engine/calculators/incomingPipeline");
+  // 1310 (Brute race, Fire element, Large size, level 66) — one attacker exercises
+  // all three categories at once, and each resist must bite on its own axis. It also
+  // actually hurts this build: a Poring's hit rounds to 0 against VIT 60 at level 90,
+  // and 0 * anything is 0, which would have passed every cut below without routing
+  // a single bonus.
+  const taken = (wildcard) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 10, base_level: 90, job_level: 50,
+      base_stats: { str: 60, agi: 40, vit: 60, int: 20, dex: 40, luk: 10 },
+      equipped: { right_hand: 1129, armor: 2314, left_hand: 2104 },
+      wildcard_bonuses: wildcard || {},
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, createBattleConfig(), PS);
+    return calculateIncomingPhysicalDamage(1310, eff, st, gb, w, createBattleConfig(), {}).avg_damage;
+  };
+  const base = taken({});
+  assert.ok(base > 0, "the baseline hit has to land, or nothing below measures anything");
+
+  for (const [key, pct, what] of [["Sub_RC_All", 30, "race"], ["Sub_Ele_All", 20, "element"],
+                                  ["Sub_Size_All", 25, "size"]]) {
+    const cut = taken({ [key]: pct });
+    assert.ok(cut < base, `${what} resist must cut the hit (${base} -> ${cut})`);
+    // Within a point of the stated cut: these multiply into cardFix alongside
+    // nothing else here, so the arithmetic is exact bar rounding.
+    assert.ok(Math.abs(cut - base * (1 - pct / 100)) <= 1,
+      `${what} resist must cut it by ${pct}%, not some other amount (${base} -> ${cut})`);
+  }
+
+  // And the three stack multiplicatively, the way three separate cards would.
+  const all = taken({ Sub_RC_All: 30, Sub_Ele_All: 20, Sub_Size_All: 25 });
+  assert.ok(Math.abs(all - base * 0.70 * 0.80 * 0.75) <= 2,
+    `all three together (${base} -> ${all})`);
+});
