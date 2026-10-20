@@ -5,15 +5,19 @@
 // 5,620–9,140 to 6,180–10,050. What they were reading was the CHANGE badge beside
 // the enchant row, which said "−368".
 //
-// The ground-enchant row is an annotation: it records that Volcano / Deluge /
-// Violent Gale was counted, while the bonus itself lands on the element multiplier
-// on the row below (×2.00 becomes ×2.20). So the row has no running total of its
-// own and prints "—" — and the badge treated that missing total as zero, making the
-// entire running total look like it had been lost.
+// The breakdown used to carry a separate ground-enchant row. It was an annotation —
+// it recorded that Volcano / Deluge / Violent Gale had been counted, while the bonus
+// itself lands on the element multiplier (×2.00 becomes ×2.20) — so it had no running
+// total of its own and printed "—". The change column read that missing total as zero
+// and announced the loss of the entire running damage.
 //
-// Two things are checked here, because fixing the badge would be worthless if the
-// damage were genuinely wrong, and correct damage is no good if the breakdown says
-// otherwise: the number has to go UP, and the row has to stop claiming a loss.
+// The row is gone now: a row that moves no number should not be in a column of
+// numbers. What it existed to tell you moved into the element row's own note, beside
+// the multiplier it actually explains.
+//
+// Both halves are checked, because fixing the display would be worthless if the
+// damage were genuinely wrong, and correct damage is no good if the breakdown
+// contradicts it.
 import { chromium } from "playwright-core";
 import { createRequire } from "module";
 import { readFileSync } from "fs";
@@ -102,13 +106,21 @@ check(eleOn?.badge === "×2.20" && eleOff?.badge === "×2",
   "the +20% shows up on the element row, where it is actually applied",
   { off: eleOff?.badge, on: eleOn?.badge });
 
-// ---- 3. ...and the enchant row claims NOTHING -------------------------------
-// This is the report. The row has no running total, so it cannot have changed one;
-// a badge there can only mislead, and the one it had said the hit got 368 smaller.
+// ---- 3. ...and there is no phantom row to misread ---------------------------
+// This is the report: that row showed "−368" beside a dash.
 const ench = on.find((r) => /enchant/i.test(r.name));
-check(!!ench, "the enchant row is still shown — it is how you know the gale counted", ench);
-check(ench?.val === "—", "it carries no running total of its own", ench?.val);
-check(ench?.badge === "", "and therefore claims no change at all", ench?.badge);
+check(!ench, "no separate enchant row in the running-total column", ench);
+check(on.every((r) => r.val && r.val !== "—"),
+  "every row in the breakdown carries a running total",
+  on.filter((r) => !r.val || r.val === "—").map((r) => r.name));
+
+// ---- 3b. the provenance survived, on the row it belongs to ------------------
+// Losing the row must not lose the explanation: without it the element row reads
+// 220% where the element table says 200%, and nothing accounts for the difference.
+const note = await page.locator(".pl-step", { has: page.locator(".pl-name", { hasText: "Element vs target" }) })
+  .locator(".pl-note").first().innerText().catch(() => "");
+check(/violent gale/i.test(note) && /200%/.test(note) && /220%/.test(note),
+  "the element row's note shows where the extra 20% came from", note.trim());
 
 // ---- 4. nothing else in the breakdown reports a phantom loss ----------------
 // Every remaining "−" badge must sit on a row that really did lower the total.

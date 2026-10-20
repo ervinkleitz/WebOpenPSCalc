@@ -362,7 +362,7 @@ test("profiles: PS profile is layered on STANDARD without mutating it", () => {
 // ---------------------------------------------------------------------------
 // PS Auto Spell / "Hindsight" (SA_AUTOSPELL) autocast — wiki.payonstories.com/Auto_Spell
 // ---------------------------------------------------------------------------
-const { runScenario, runScenarioRaw } = require("./engineRunner");
+const { runScenario, runScenarioRaw, skillIdByName } = require("./engineRunner");
 const { skillUsesAmmo } = require("../src/engine/calculators/modifiers/baseDamage");
 
 const SAGE_HINDSIGHT = (lv, server = "payon_stories", jobId = 16) => ({
@@ -7666,4 +7666,61 @@ test("shield wildcard mix: a defensive wildcard reaches INCOMING damage", () => 
   const all = taken({ Sub_RC_All: 30, Sub_Ele_All: 20, Sub_Size_All: 25 });
   assert.ok(Math.abs(all - base * 0.70 * 0.80 * 0.75) <= 2,
     `all three together (${base} -> ${all})`);
+});
+
+// Ground fields (SA_VOLCANO / SA_DELUGE / SA_VIOLENTGALE). Reported 2026-10-20 by
+// a Sage who read Violent Gale as REDUCING Lightning Bolt against a Siroma. It
+// doesn't; what misled them was a breakdown row (see the commit). But chasing it
+// turned up the more interesting fact: the ground fields had no backend coverage
+// at all — no golden, no scenario, no server trace — which is how a much worse bug
+// lived here before. attrFix.js once wrote the element indices as 4/5/6, which in
+// this engine's convention is Wind/Poison/Holy, so every one of the three enchanted
+// the WRONG element until it was fixed. Nothing failed when it was broken.
+//
+// Rates are PS's own (wiki.payonstories.com/Violent_Gale): +10/+15/+20% at Lv1/2/3,
+// matching PS_ENCHANT_EFF. Measured against 1063 (Neutral Lv3), where every element
+// hits for a flat 100%, so the enchant IS the ratio.
+test("a ground field enchants its own element, at PS's rate, and leaves the others alone", () => {
+  const dmg = (ground, lv, skill) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 16, base_level: 70, job_level: 50,
+      base_stats: { str: 1, agi: 40, vit: 40, int: 70, dex: 50, luk: 1 },
+      equipped: { right_hand: 1601 },
+      support_buffs: ground ? { ground_effect: ground, ground_effect_lv: lv } : {},
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, createBattleConfig(), PS);
+    const inst = createSkillInstance({ id: skillIdByName(skill), level: 5 });
+    const target = loader.getMonster(1063);
+    return new BattlePipeline(createBattleConfig())
+      .calculate(st, w, inst, target, eff, gb).normal.avg_damage;
+  };
+
+  // ---- Violent Gale: Wind, and only Wind -----------------------------------
+  const windBase = dmg(null, 0, "MG_LIGHTNINGBOLT");
+  for (const [lv, pct] of [[1, 10], [2, 15], [3, 20]]) {
+    const r = dmg("SC_VIOLENTGALE", lv, "MG_LIGHTNINGBOLT") / windBase;
+    assert.ok(Math.abs(r - (1 + pct / 100)) < 0.01,
+      `Violent Gale Lv${lv} must add ${pct}% to a Wind bolt, got ${((r - 1) * 100).toFixed(1)}%`);
+  }
+  assert.equal(dmg("SC_VIOLENTGALE", 3, "MG_FIREBOLT"), dmg(null, 0, "MG_FIREBOLT"),
+    "a Wind field must do nothing whatever for a Fire bolt");
+
+  // ---- Deluge: Water, and only Water ---------------------------------------
+  const waterBase = dmg(null, 0, "MG_COLDBOLT");
+  const waterR = dmg("SC_DELUGE", 3, "MG_COLDBOLT") / waterBase;
+  assert.ok(Math.abs(waterR - 1.20) < 0.01,
+    `Deluge Lv3 must add 20% to a Water bolt, got ${((waterR - 1) * 100).toFixed(1)}%`);
+  assert.equal(dmg("SC_DELUGE", 3, "MG_LIGHTNINGBOLT"), windBase,
+    "and nothing for a Wind bolt");
+
+  // ---- Volcano: Fire, but it is NOT only Fire ------------------------------
+  // Volcano alone carries +ATK (status.c:4570) and, on PS, +MATK%, so it lifts
+  // every element a little. The Fire-only part is the difference between the two,
+  // and it has to be there: a Fire bolt must gain more than a Wind bolt does.
+  const fireBase = dmg(null, 0, "MG_FIREBOLT");
+  const fireR = dmg("SC_VOLCANO", 3, "MG_FIREBOLT") / fireBase;
+  const windUnderVolcano = dmg("SC_VOLCANO", 3, "MG_LIGHTNINGBOLT") / windBase;
+  assert.ok(windUnderVolcano > 1.0, "Volcano's MATK lifts even an off-element bolt");
+  assert.ok(fireR > windUnderVolcano + 0.15,
+    `Volcano's Fire enchant must be worth ~20% ON TOP of its MATK (fire ${fireR.toFixed(3)} vs wind ${windUnderVolcano.toFixed(3)})`);
 });

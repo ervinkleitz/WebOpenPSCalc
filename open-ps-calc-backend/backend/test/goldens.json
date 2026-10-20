@@ -3418,6 +3418,132 @@
    }
   }
  },
+ "sage-lightning-bolt-siroma-no-field": {
+  "status": {
+   "str": 1,
+   "agi": 49,
+   "vit": 4,
+   "int_": 84,
+   "dex": 4,
+   "luk": 2,
+   "batk": 1,
+   "max_hp": 1943,
+   "max_sp": 829,
+   "aspd": 150,
+   "cri": 16,
+   "hit": 67,
+   "flee": 112,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 262,
+   "matk_max": 391
+  },
+  "result": {
+   "dps": 512.486,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 5206,
+   "normal": {
+    "min": 2080,
+    "max": 3260,
+    "avg": 2668,
+    "steps": [
+     "Base MATK",
+     "Skill Ratio (ID 20 Lv 5)",
+     "Magic Defense Fix",
+     "Attr Fix",
+     "Card Fix (Magic)",
+     "× 5 hits",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "sage-lightning-bolt-siroma-violent-gale-lv3": {
+  "status": {
+   "str": 1,
+   "agi": 49,
+   "vit": 4,
+   "int_": 84,
+   "dex": 4,
+   "luk": 2,
+   "batk": 1,
+   "max_hp": 1943,
+   "max_sp": 829,
+   "aspd": 150,
+   "cri": 16,
+   "hit": 67,
+   "flee": 127,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 262,
+   "matk_max": 391
+  },
+  "result": {
+   "dps": 563.388,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 5206,
+   "normal": {
+    "min": 2285,
+    "max": 3585,
+    "avg": 2933,
+    "steps": [
+     "Base MATK",
+     "Skill Ratio (ID 20 Lv 5)",
+     "Magic Defense Fix",
+     "Attr Fix",
+     "Card Fix (Magic)",
+     "× 5 hits",
+     "Final Damage"
+    ]
+   }
+  }
+ },
+ "sage-fire-bolt-drops-volcano-lv3": {
+  "status": {
+   "str": 1,
+   "agi": 49,
+   "vit": 4,
+   "int_": 84,
+   "dex": 4,
+   "luk": 2,
+   "batk": 31,
+   "max_hp": 1943,
+   "max_sp": 829,
+   "aspd": 150,
+   "cri": 16,
+   "hit": 67,
+   "flee": 112,
+   "def_": 0,
+   "mdef": 0,
+   "matk_min": 277,
+   "matk_max": 414
+  },
+  "result": {
+   "dps": 219.17,
+   "dps_valid": true,
+   "hit_chance": 100,
+   "crit_chance": 0,
+   "period_ms": 5206,
+   "normal": {
+    "min": 915,
+    "max": 1370,
+    "avg": 1141,
+    "steps": [
+     "Base MATK",
+     "Skill Ratio (ID 19 Lv 5)",
+     "Magic Defense Fix",
+     "Attr Fix",
+     "Card Fix (Magic)",
+     "× 5 hits",
+     "Final Damage"
+    ]
+   }
+  }
+ },
  "sage-hindsight-soulstrike-lv1": {
   "status": {
    "str": 55,

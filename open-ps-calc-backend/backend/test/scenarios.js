@@ -427,6 +427,37 @@ const scenarios = [
     target: 1036,
   },
 
+  // --- Sage ground fields (SA_VOLCANO / SA_DELUGE / SA_VIOLENTGALE) ----------------------
+  // These had NO golden until 2026-10-20, which is how attrFix once enchanted the
+  // wrong element for months: it wrote Fire/Water/Wind as 4/5/6, and in this engine's
+  // convention those are Wind/Poison/Holy. Nothing failed. The pair below pins the
+  // Wind case from the report that led here (a Sage, Lightning Bolt, a Siroma) on a
+  // plain Rod, and the gap between the two IS the enchant: 2,080-3,260 becomes
+  // 2,285-3,585. Siroma is Water 3, so Wind already hits for 200% and the field takes
+  // that to 220% — a tenth more damage, not a fifth. (The reporter's own staff-and-
+  // Double-Casting build read 5,620-9,140 -> 6,180-10,050; same 220%.)
+  // Rates per wiki.payonstories.com/Violent_Gale — +10/+15/+20% at Lv1/2/3.
+  {
+    name: "sage-lightning-bolt-siroma-no-field",
+    build: { job_id: 16, base_level: 63, job_level: 29, base_stats: { str: 1, agi: 45, vit: 1, int: 80, dex: 1, luk: 1 }, equipped: { right_hand: 1601 } },
+    skill: { name: "MG_LIGHTNINGBOLT", level: 5 },
+    target: 1776,
+  },
+  {
+    name: "sage-lightning-bolt-siroma-violent-gale-lv3",
+    build: { job_id: 16, base_level: 63, job_level: 29, base_stats: { str: 1, agi: 45, vit: 1, int: 80, dex: 1, luk: 1 }, equipped: { right_hand: 1601 }, support_buffs: { ground_effect: "SC_VIOLENTGALE", ground_effect_lv: 3 } },
+    skill: { name: "MG_LIGHTNINGBOLT", level: 5 },
+    target: 1776,
+  },
+  {
+    // Volcano is the one field that is not purely an enchant: +ATK (status.c:4570)
+    // and, on PS, +MATK% ride along, so this golden pins all three at once.
+    name: "sage-fire-bolt-drops-volcano-lv3",
+    build: { job_id: 16, base_level: 63, job_level: 29, base_stats: { str: 1, agi: 45, vit: 1, int: 80, dex: 1, luk: 1 }, equipped: { right_hand: 1601 }, support_buffs: { ground_effect: "SC_VOLCANO", ground_effect_lv: 3 } },
+    skill: { name: "MG_FIREBOLT", level: 5 },
+    target: 1002,
+  },
+
   // --- Sage Auto Spell / Hindsight (SA_AUTOSPELL) autocast ---------------------------------
   // Level-selected autocast on physical attacks (flat 30%). Surfaced as a
   // proc_branches.autospell magic damage result; folded into DPS.

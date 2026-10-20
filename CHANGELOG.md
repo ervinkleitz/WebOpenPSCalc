@@ -13,10 +13,11 @@ instead of release version. Dates are taken from actual git commit history.
   The ground-enchant line in the damage breakdown showed a large negative change —
   a Sage saw **−368** next to Violent Gale and reasonably read it as the gale making
   Lightning Bolt *weaker* against a Siroma. The damage was never wrong: the enchant's
-  bonus lands on the element line underneath, which goes from ×2.00 to ×2.20, and the
-  hit goes from 5,620–9,140 up to 6,180–10,050. The enchant line is only a note that
-  the enchant was counted, so it has no running total of its own and now reports no
-  change at all. Reported in #wiki-and-calculator.
+  bonus lands on the element line, which goes from ×2.00 to ×2.20, taking the hit
+  from 5,620–9,140 up to 6,180–10,050. That separate line never moved a number of
+  its own, so it is gone, and the element line now shows its own working:
+  *Wind vs Water Lv3: 200% +20% Violent Gale Lv3 = 220%*.
+  Reported in #wiki-and-calculator.
 
 ## 2026-10-19
 

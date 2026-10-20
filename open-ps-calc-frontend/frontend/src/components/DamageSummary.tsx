@@ -155,17 +155,21 @@ function stepDisplayVal(step: Step): string {
 // guarantees it), so the delta below is meaningful — except where a step opens a
 // separate sub-track (Grand Cross' magic half starts over at Base MATK), which is
 // flagged with track_start so we don't badge a jump that isn't a change.
-// Not every row carries a running total. The ground-enchant row (Volcano / Deluge /
-// Violent Gale) is an ANNOTATION: it records that the enchant was counted, but the
-// bonus itself is folded into the element multiplier on the row below, so the row
-// has nothing of its own to show and prints "—".
+// A step with no running total cannot have changed the running total.
 //
-// Reported 2026-10-20: a Sage read Violent Gale as *reducing* Lightning Bolt against
-// a Siroma. It does the opposite — 5,620–9,140 becomes 6,180–10,050 — but the badge
-// beside the enchant row said "−368", because a missing total was read as zero and
-// the whole running total looked like it had been lost. The row underneath was
-// already showing ×2.20 where it would otherwise have been ×2.00: that 20% IS the
-// gale. A row with no total cannot have changed the total.
+// This guard is here because the badge used to do the arithmetic anyway. The engine
+// emitted a ground-enchant row (Volcano / Deluge / Violent Gale) that carried no
+// value of its own — the bonus lands on the element multiplier, not on a line of its
+// own — so the row printed "—", the delta read that missing total as zero, and the
+// badge announced the loss of the whole running damage. A Sage reported Violent Gale
+// as *reducing* Lightning Bolt against a Siroma on the strength of a "−368" that
+// nothing had subtracted (2026-10-20); the gale had in fact taken the hit from
+// 5,620–9,140 up to 6,180–10,050.
+//
+// That row is gone — its explanation moved into the element row's note, next to the
+// multiplier it accounts for — so nothing in the engine is shaped this way today.
+// The guard stays regardless: the next valueless step should read as nothing
+// happening, not as a catastrophe.
 const hasRunningTotal = (s: Step) =>
   s.value != null || (s.min_value != null && s.max_value != null);
 
