@@ -155,12 +155,28 @@ function stepDisplayVal(step: Step): string {
 // guarantees it), so the delta below is meaningful — except where a step opens a
 // separate sub-track (Grand Cross' magic half starts over at Base MATK), which is
 // flagged with track_start so we don't badge a jump that isn't a change.
-function connectorInfo(step: Step, prev: Step): { badge: string; cls: string } {
+// Not every row carries a running total. The ground-enchant row (Volcano / Deluge /
+// Violent Gale) is an ANNOTATION: it records that the enchant was counted, but the
+// bonus itself is folded into the element multiplier on the row below, so the row
+// has nothing of its own to show and prints "—".
+//
+// Reported 2026-10-20: a Sage read Violent Gale as *reducing* Lightning Bolt against
+// a Siroma. It does the opposite — 5,620–9,140 becomes 6,180–10,050 — but the badge
+// beside the enchant row said "−368", because a missing total was read as zero and
+// the whole running total looked like it had been lost. The row underneath was
+// already showing ×2.20 where it would otherwise have been ×2.00: that 20% IS the
+// gale. A row with no total cannot have changed the total.
+const hasRunningTotal = (s: Step) =>
+  s.value != null || (s.min_value != null && s.max_value != null);
+
+function connectorInfo(step: Step, prev: Step | undefined): { badge: string; cls: string } {
   if (step.track_start) return { badge: "", cls: "conn-pass" };
   const m = step.multiplier ?? 1.0;
   if (Math.abs(m - 1.0) > 0.001) {
     return { badge: `×${m % 1 === 0 ? m.toFixed(0) : m.toFixed(2)}`, cls: m >= 1 ? "conn-boost" : "conn-reduce" };
   }
+  // No total of its own, or nothing before it that had one, means no delta to state.
+  if (!hasRunningTotal(step) || !prev) return { badge: "", cls: "conn-pass" };
   const delta = Math.round((step.value ?? 0) - (prev.value ?? 0));
   if (delta > 0) return { badge: `+${delta.toLocaleString()}`, cls: "conn-add" };
   if (delta < 0) return { badge: `−${(-delta).toLocaleString()}`, cls: "conn-sub" };
@@ -257,8 +273,10 @@ function PipelineView({ steps, hideFinal = false, legend = true }: { steps: Step
           </div>
         )}
         {nodes.map((step, i) => {
-          const prev = nodes[i - 1];
-          const conn = prev ? connectorInfo(step, prev) : null;
+          // Measure from the last row that actually HAD a total, so an annotation
+          // row in between does not make the next row's delta read from zero either.
+          const prev = nodes.slice(0, i).filter(hasRunningTotal).pop();
+          const conn = i > 0 ? connectorInfo(step, prev) : null;
           const isFinal = step.name === "Final Damage";
           const hasNote = !!step.note && !isFinal;
           const isOpen = open.has(i);
