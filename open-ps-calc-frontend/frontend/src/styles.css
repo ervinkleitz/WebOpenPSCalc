@@ -837,23 +837,15 @@ label {
 .equip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 0.7rem; }
 @media (max-width: 600px) { .equip-grid { grid-template-columns: 1fr; } }
 
-/* Closed slots STRETCH to their grid row, so the two columns' separator lines meet
-   even when one holds a name that wraps and the other does not. Line counts cannot
-   be equalised by styling alone - a long enough item name simply takes three lines
-   where its neighbour takes two - so the row has to do it.
-
-   The reason this was align-self: start before is that an OPEN slot then dragged
-   its closed neighbour down with it, leaving that neighbour's rule floating ~46px
-   under its own text. An open slot now takes a row to itself instead (below), so
-   there is no neighbour to stretch - and its cards, refine and forge controls get
-   the full width of the panel, which they wanted anyway. */
-.equip-slot { align-self: stretch; }
-.equip-slot--open { grid-column: 1 / -1; }
-/* Stretching the slot is only half of it: the rule lives on the slot box, so the
-   HEAD has to fill that box for the rule to sit at the row's bottom edge.
-   CLOSED slots only - on an open one the slot box also contains the body, and a
-   full-height head covers it, painting the pill and the card rows underneath. */
-.equip-slot:not(.equip-slot--open) .equip-slot-head { height: 100%; align-content: start; }
+/* Each slot is its own height. Making the two columns' separator lines meet is the
+   job of the TOP border further down, not of stretching the cells: a grid row's
+   cells share their top edge whatever they contain, so the rules line up without
+   anything being equalised. Two earlier attempts went the other way and both cost
+   something - align-self: stretch dragged a closed slot's rule ~46px below its own
+   text when the slot beside it was opened, and giving the open slot a row to itself
+   (grid-column: 1 / -1) stopped that but shuffled the panel under the cursor, which
+   is what was reported. Neither is needed now. */
+.equip-slot { align-self: start; }
 
 /* Left at 160px. Raising it to 170 to buy the labels room cost a whole COLUMN once
    the 0.7rem gaps are counted ((512 - 22) / 3 = 163), which made the long buff lists
@@ -2559,8 +2551,15 @@ button:not(.pill-remove) { min-width: 28px; }
 .equip-slot-actions { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
 .equip-slot-actions button { padding: 0.25rem 0.6rem; font-size: 0.76rem; }
 
-.equip-slot { border-bottom: 1px solid var(--border-soft); }
-.equip-slot:last-child { border-bottom: none; }
+/* The rule sits on the TOP of each slot, not the bottom.
+   Cells in a grid row share their top edge whatever their heights, so a row whose
+   two slots hold different numbers of lines still shows one unbroken separator.
+   A bottom border cannot do that: it tracks each cell's own height, so it only
+   lines up if the row is stretched to equalise them - and stretching is what
+   dragged a closed slot's rule halfway down the panel when the slot beside it was
+   opened. Top borders need neither stretching nor an open slot moved out of its
+   column, so an expanded slot stays exactly where it was. */
+.equip-slot { border-top: 1px solid var(--border-soft); }
 
 /* The whole line is the button, so the target is the row rather than a chevron.
    Reset the button chrome: this is a row, not a control to be pressed. */

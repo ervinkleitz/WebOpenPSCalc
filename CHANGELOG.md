@@ -9,10 +9,14 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **An equipment slot opens where it sits.** Expanding a slot dropped it onto a row
+  of its own and left the slot beside it stranded, so the whole panel reshuffled
+  under your cursor. It now grows downwards in its own column and everything else
+  stays put.
+
 - **The two equipment columns line up.** Rows holding an item were taller than empty
   ones, so the dividing lines across the two columns never matched. Every slot is
-  the same height now, in both normal and compact mode. Opening a slot also gives it
-  the full width of the panel, so its cards and refine have room.
+  the same height now, in both normal and compact mode.
 
 - **Highlighted text stands out properly in light mode.** Item names, the damage
   figure and the rest of the highlighted text blended into the ordinary text around

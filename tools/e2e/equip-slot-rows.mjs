@@ -139,37 +139,71 @@ await page.waitForTimeout(600);
 check(/^\+9 /.test((await rows())[0].value ?? ""),
   "editing inside the slot updates the line that summarises it", (await rows())[0].value);
 
-// ---- 4b. the two columns line up ------------------------------------------------
+// ---- 4b. the two columns line up, and stay lined up when a slot opens ----------
 // Reported 2026-10-19: "alignment doesn't work in compact and non-compact". Empty
 // slots used to sit on ONE line while filled ones took two, so any row pairing them
 // put its two separators 18px apart in comfortable and 10px in compact. Every slot
 // stacks now, so a closed row is exactly two lines whatever it holds.
 //
+// The separator is the slot's TOP border, so what has to agree is the two cells'
+// TOP edges. That is also what lets an open slot stay in its column: a bottom
+// border would only line up if the row were stretched to equalise its cells, and
+// the stretch was what shoved the neighbouring slot about - see 4c.
+//
 // Checked at two widths AND both densities, because the failure modes differ: a
 // narrow cell can wrap the LABEL on one side and the NAME on the other, which is
 // three lines either way but only equal in height because both are given a line
 // height expressed as a LENGTH rather than a multiplier.
+const tops = () => page.evaluate(() => {
+  const all = [...document.querySelectorAll(".equip-slot")]
+    .map((e) => ({ label: e.querySelector(".equip-slot-label").textContent,
+                   x: Math.round(e.getBoundingClientRect().left),
+                   top: Math.round(e.getBoundingClientRect().top) }));
+  const bad = [];
+  for (let i = 0; i + 1 < all.length; i += 2) {
+    const d = Math.abs(all[i].top - all[i + 1].top);
+    if (d > 2) bad.push(`${all[i].label} / ${all[i + 1].label}: ${d}px`);
+  }
+  return { all, bad };
+});
+
 for (const w of [1100, 1900]) {
   await page.setViewportSize({ width: w, height: 1200 });
   for (const density of ["comfortable", "compact"]) {
     await page.evaluate((d) => document.documentElement.setAttribute("data-density", d), density);
     await page.waitForTimeout(400);
-    const off = await page.evaluate(() => {
-      const all = [...document.querySelectorAll(".equip-slot")]
-        .map((e) => ({ label: e.querySelector(".equip-slot-label").textContent,
-                       bottom: Math.round(e.getBoundingClientRect().bottom) }));
-      const bad = [];
-      for (let i = 0; i + 1 < all.length; i += 2) {
-        const d = Math.abs(all[i].bottom - all[i + 1].bottom);
-        if (d > 2) bad.push(`${all[i].label} / ${all[i + 1].label}: ${d}px`);
-      }
-      return bad;
-    });
-    check(off.length === 0,
-      `${w}px / ${density}: the two columns' rows line up`, off);
+    const { bad } = await tops();
+    check(bad.length === 0, `${w}px / ${density}: the two columns' rows line up`, bad);
   }
 }
 await page.evaluate(() => document.documentElement.setAttribute("data-density", "comfortable"));
+
+// ---- 4c. an open slot stays in its own column ----------------------------------
+// Reported 2026-10-19: "when i expand the equipment selection, it should stay in
+// the same spot not go down another row". It had been given `grid-column: 1 / -1`
+// so that a full-width body had room; that pulled it out of the two-column flow and
+// left its neighbour stranded on a row of its own. Nothing is pulled out now, so
+// every slot - the opened one included - keeps the column it started in.
+const colsBefore = (await tops()).all;
+const headMid = page.locator(".equip-slot").filter({ hasText: "Headgear (mid)" });
+await headMid.locator(".equip-slot-head").click();
+await page.waitForTimeout(500);
+const colsAfter = (await tops()).all;
+check(colsBefore.every((r, i) => r.x === colsAfter[i].x),
+  "opening a slot leaves every slot in the column it was in",
+  colsBefore.filter((r, i) => r.x !== colsAfter[i].x).map((r, i) => r.label));
+
+// and the body must sit BELOW the head rather than under it: a full-height head was
+// once used to push the old bottom border down, and it painted over the card rows.
+const clear = await headMid.evaluate((el) => {
+  const head = el.querySelector(".equip-slot-head").getBoundingClientRect();
+  const body = el.querySelector(".equip-slot-body").getBoundingClientRect();
+  return Math.round(body.top - head.bottom);
+});
+check(clear >= 0, "an open slot's body starts below its head, not behind it", clear);
+await headMid.locator(".equip-slot-head").click();
+await page.waitForTimeout(400);
+
 await page.setViewportSize({ width: 900, height: 1200 });
 await page.waitForTimeout(400);
 
