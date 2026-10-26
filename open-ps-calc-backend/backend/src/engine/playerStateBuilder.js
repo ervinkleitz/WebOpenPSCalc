@@ -12,6 +12,43 @@ const { StatusCalculator } = require("./calculators/statusCalculator");
 const gearBonusAggregator = require("./gearBonusAggregator");
 const { getProfile, plagiarisedRankCap } = require("./serverProfiles");
 const { loader } = require("./dataLoader");
+const { allowedWeaponTypes } = require("./weaponRequirements");
+
+// Self-buffs that stop the moment the weapon they ride on comes off.
+//
+// wiki.payonstories.com/Gatling_Fever is explicit — "Unequipping a Gatling Gun
+// cancels Gatling Fever" — and the skill DB has carried the restriction all along
+// as requirements.weapon_types: ["GatlingGuns"]. Nothing read it for a buff that
+// was ALREADY running, so a Gunslinger could tick Gatling Fever, hold a revolver,
+// a rifle or a dagger, and still collect its +40% damage and +20% ASPD. Reported
+// by a player 2026-10-25.
+//
+// The map is explicit rather than "every SC whose skill names a weapon", because
+// a cast-time requirement and a stays-active requirement are different claims:
+// plenty of skills can only be CAST with one weapon while their effect persists
+// through a weapon swap. Only buffs PS documents as cancelling belong here.
+const WEAPON_GATED_STATUSES = { SC_GS_GATLINGFEVER: "GS_GATLINGFEVER" };
+
+// Drop the ones the held weapon does not satisfy, ONCE, before anything reads
+// them. Gatling Fever alone is read by three modules — the ATK% in
+// activeStatusBonus, the ASPD and the FLEE penalty in statusCalculator — and
+// gating each site separately is three chances for them to disagree.
+function dropWeaponGatedStatuses(activeStatusLevels, weapon) {
+  const held = weapon && weapon.weapon_type;
+  let dropped = null;
+  for (const sc of Object.keys(activeStatusLevels || {})) {
+    const skillName = WEAPON_GATED_STATUSES[sc];
+    if (!skillName) continue;
+    const allowed = allowedWeaponTypes(loader.getSkillByName(skillName));
+    // No opinion (missing record, or a requirement this port cannot translate)
+    // leaves the buff alone — a buff silently switched off is worse than one
+    // that is slightly too generous.
+    if (!allowed || allowed.includes(held)) continue;
+    if (dropped == null) dropped = { ...activeStatusLevels };
+    delete dropped[sc];
+  }
+  return dropped || activeStatusLevels;
+}
 
 function resolvePlayerState(build, config, profile = null) {
   if (profile == null) profile = getProfile(build.server);
@@ -107,6 +144,7 @@ function resolvePlayerState(build, config, profile = null) {
           ? gb.from_ammo.script_atk_ele_rh : null,
       }
     );
+    eff.active_status_levels = dropWeaponGatedStatuses(eff.active_status_levels, weapon);
     const st = new StatusCalculator(config).calculate(eff, weapon, gb);
     return [gb, eff, weapon, st];
   }

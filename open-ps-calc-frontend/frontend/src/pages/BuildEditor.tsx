@@ -430,7 +430,8 @@ const SELF_BUFFS = [
   // an ASPD boost that scales with level; PS suppresses the vanilla flee penalty
   // (statusCalculator.js + PS_RATE_BONUSES/PS_ASPD_BUFFS). Level is kept because
   // the ASPD (and thus DPS) rises with it, even though the ATK% is flat.
-  { key: "SC_GS_GATLINGFEVER", label: "Gatling Fever",        max: 10, jobs: [24] },
+  { key: "SC_GS_GATLINGFEVER", label: "Gatling Fever",        max: 10, jobs: [24],
+    hint: "Gatling guns only — unequipping one cancels it. No effect with a revolver, rifle, shotgun or grenade launcher." },
   // Ninja Aura (NJ_NEN) — PS: +2 STR / +2 INT per level, max Lv5 (+10 each).
   // wiki.payonstories.com/Ninja_Aura. (Engine reads passive_overrides.SC_NJ_NEN.)
   { key: "SC_NJ_NEN",          label: "Ninja Aura",            max: 5,  jobs: [25] },
