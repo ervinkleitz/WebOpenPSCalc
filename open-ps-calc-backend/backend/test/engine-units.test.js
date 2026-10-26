@@ -7724,3 +7724,96 @@ test("a ground field enchants its own element, at PS's rate, and leaves the othe
   assert.ok(fireR > windUnderVolcano + 0.15,
     `Volcano's Fire enchant must be worth ~20% ON TOP of its MATK (fire ${fireR.toFixed(3)} vs wind ${windUnderVolcano.toFixed(3)})`);
 });
+
+// Reported by a player 2026-10-25: "gatling fever works on non gatling weapons.
+// It should be gatling exclusive."
+//
+// wiki.payonstories.com/Gatling_Fever is explicit — "Unequipping a Gatling Gun
+// cancels Gatling Fever" — and the skill DB had the restriction all along as
+// requirements.weapon_types: ["GatlingGuns"]. Nothing consulted it for a buff that
+// was already running, so a Gunslinger could tick the buff, swap to a revolver and
+// keep the +40% damage and +20% ASPD.
+//
+// Both halves are checked, and on two wrong weapons, because the ATK% and the ASPD
+// come from different modules (activeStatusBonus vs statusCalculator) reading the
+// same status map — the exact split that let this hide.
+test("Gatling Fever needs a Gatling gun — the ATK% and the ASPD both stop without one", () => {
+  const GUNS = { Gatling: 13157 /* Drifter */, Revolver: 13100 /* Six Shooter */, Rifle: 13171 /* Soldier Rifle */ };
+  const gunner = (weaponId, gfLv) => ({
+    server: "payon_stories", job_id: 24, base_level: 90, job_level: 50,
+    base_stats: { str: 70, agi: 80, vit: 40, int: 20, dex: 90, luk: 20 },
+    equipped: { right_hand: weaponId },
+    active_buffs: gfLv ? { SC_GS_GATLINGFEVER: gfLv } : {},
+  });
+  const aspd = (weaponId, gfLv) => {
+    const b = buildFromSaveSchema(gunner(weaponId, gfLv));
+    return resolvePlayerState(b, createBattleConfig(), PS)[3].aspd;
+  };
+  const dmg = (weaponId, gfLv) =>
+    runScenarioRaw({ build: gunner(weaponId, gfLv), target: 1036 }).raw.normal.avg_damage;
+
+  // With the right weapon it works, or the test below proves nothing.
+  const gOff = dmg(GUNS.Gatling, 0), gOn = dmg(GUNS.Gatling, 10);
+  assert.ok(Math.abs(gOn / gOff - 1.40) < 0.02,
+    `a Gatling gun must get the +40% (got ${((gOn / gOff - 1) * 100).toFixed(1)}%)`);
+  assert.ok(aspd(GUNS.Gatling, 10) > aspd(GUNS.Gatling, 0),
+    "and the ASPD");
+
+  for (const wrong of ["Revolver", "Rifle"]) {
+    assert.equal(dmg(GUNS[wrong], 10), dmg(GUNS[wrong], 0),
+      `Gatling Fever must do nothing for damage on a ${wrong}`);
+    assert.equal(aspd(GUNS[wrong], 10), aspd(GUNS[wrong], 0),
+      `...and nothing for ASPD on a ${wrong}`);
+  }
+});
+
+// Reported by a player 2026-10-25: "Calc needs to [be] updated to consider double
+// cast bolt reduction when manually casting spells."
+//
+// Sage rework PDF p5 note 5: "Double Cast has a reduced effect when a player has
+// hindsight turned on. The double cast will only do half of the bolts it usually
+// does, rounded up", with the table "Reduced Double Cast While Hindsight is on"
+// (1→1, 2→1, 3→2, 4→2, 5→3, 6→3, 7→4, 8→4, 9→5, 10→5). The condition is Hindsight
+// being ON — the table's column is "# of Bolts from Player Spell" and the p6 GM
+// note says "when a player has Hindsight turned on" — so it covers manual casts.
+// The reduction was only applied to the Hindsight PROC branch, so a hand-cast bolt
+// still collected the whole second volley.
+//
+// This is also the answer to the 2026-10-20 Soul Strike report ("a single Soul
+// Strike with Double Casting should be enough to kill [an Evil Druid]"): that Sage
+// had Hindsight on, so the cast was never worth ×2.
+test("Double Cast is reduced by Hindsight on MANUAL casts, not just Hindsight procs", () => {
+  const sage = (hindsight, doubleCast) => ({
+    server: "payon_stories", job_id: 16, base_level: 87, job_level: 50,
+    base_stats: { str: 1, agi: 73, vit: 1, int: 99, dex: 9, luk: 1 },
+    equipped: { right_hand: 1601 },
+    active_buffs: doubleCast ? { SC_DOUBLECASTING: 1 } : {},
+    support_buffs: hindsight ? { auto_spell_lv: 1 } : {},
+  });
+  const cast = (hindsight, doubleCast, skillName, level) =>
+    runScenarioRaw({ build: sage(hindsight, doubleCast), target: 1117, skill: { name: skillName, level } })
+      .raw.normal;
+
+  // Soul Strike Lv10 is 5 bolts, so the table says the double cast adds 3, not 5.
+  const base = cast(false, false, "MG_SOULSTRIKE", 10).avg_damage;
+  const full = cast(false, true, "MG_SOULSTRIKE", 10).avg_damage;
+  const cut = cast(true, true, "MG_SOULSTRIKE", 10).avg_damage;
+  assert.ok(Math.abs(full / base - 2.0) < 0.01, `no Hindsight: the full second volley (${full / base})`);
+  assert.ok(Math.abs(cut / base - 1.6) < 0.01, `Hindsight on: 5 + ceil(5/2) = 8 of 5 bolts = x1.6 (${cut / base})`);
+
+  // The step has to SAY so, or the next player reads a silently smaller number.
+  const step = cast(true, true, "MG_SOULSTRIKE", 10).steps.find((s) => /Double Bolt/.test(s.name));
+  assert.match(step.name, /Hindsight/, "the breakdown names Hindsight as the reason");
+
+  // Hindsight alone changes nothing about a manual cast — only Double Cast's half.
+  assert.equal(cast(true, false, "MG_SOULSTRIKE", 10).avg_damage, base,
+    "Hindsight with no Double Cast must not touch a manual cast");
+
+  // Walk the table's odd/even split on a 10-bolt spell: Fire Bolt Lv10 is 10 bolts,
+  // so the double cast gives 5 and the total is 15, x1.5 — a different ratio from
+  // Soul Strike's, which is the point of the table rather than a flat multiplier.
+  const fbBase = cast(false, false, "MG_FIREBOLT", 10).avg_damage;
+  const fbCut = cast(true, true, "MG_FIREBOLT", 10).avg_damage;
+  assert.ok(Math.abs(fbCut / fbBase - 1.5) < 0.01,
+    `Fire Bolt Lv10: 10 + ceil(10/2) = 15 of 10 bolts = x1.5 (${fbCut / fbBase})`);
+});

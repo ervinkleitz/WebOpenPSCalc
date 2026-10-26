@@ -5,6 +5,24 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-25
+
+### Fixed
+
+- **Gatling Fever only works with a Gatling gun now.** Ticking it gave a Gunslinger
+  its +40% damage and +20% ASPD whatever they were holding — a revolver, a rifle,
+  even a dagger. Payon Stories cancels the buff the moment the Gatling gun comes
+  off, so the calculator does too, and the checkbox now says as much when you hover
+  it. Reported by a player.
+
+- **Double Cast is weaker while Hindsight is on, including on your own casts.**
+  Hindsight halves the bolts the second cast fires (rounded up), and the calculator
+  only applied that to the bolts Hindsight itself threw — a spell you cast by hand
+  still got the whole second volley. A Lv10 Soul Strike with Hindsight up is 8 bolts
+  a cast, not 10; a Lv10 Fire Bolt is 15, not 20. This is also the answer to the
+  Soul Strike report from the 20th: the calculator was promising a one-cast kill on
+  an Evil Druid that the extra bolts were never going to deliver.
+
 ## 2026-10-20
 
 ### Fixed

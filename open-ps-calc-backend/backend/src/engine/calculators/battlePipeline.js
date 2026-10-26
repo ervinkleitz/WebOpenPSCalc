@@ -107,6 +107,24 @@ const DOUBLECASTING_SKILLS = new Set([
   "MG_FIREBOLT", "MG_COLDBOLT", "MG_LIGHTNINGBOLT", "WZ_EARTHSPIKE", "MG_SOULSTRIKE",
 ]);
 
+// How many bolts the SECOND (double) cast delivers: the same volley again, or
+// half of it rounded up while Hindsight is on.
+//
+// Sage rework PDF p5 note 5 — "Double Cast has a reduced effect when a player has
+// hindsight turned on. The double cast will only do half of the bolts it usually
+// does, rounded up" — and its table "Reduced Double Cast While Hindsight is on"
+// (1→1, 2→1, 3→2, 4→2, 5→3, 6→3, 7→4, 8→4, 9→5, 10→5), which is ceil(N/2).
+//
+// The condition is HINDSIGHT BEING ON, not the cast having come from Hindsight.
+// The table's own column reads "# of Bolts from Player Spell", and the GM note on
+// p6 says "Double Cast will be less effective when a player has Hindsight turned
+// on". The reduction was only ever applied to the Hindsight proc branch, so a
+// MANUAL cast kept the full second volley — reported by a player 2026-10-25.
+function doubleCastBolts(bolts, hindsightOn) {
+  return hindsightOn ? Math.ceil(bolts / 2) : bolts;
+}
+const hindsightIsOn = (build) => Number((build.support_buffs || {}).auto_spell_lv || 0) > 0;
+
 // PS Hunter rework (Hunter_Rework_PayonStories.pdf).
 // Formula: SkillLevel * factorA * factorB / divisor — INT/DEX scaling, bypasses DEF.
 // Elements from skills.json: LandMine=Earth(2), BlastMine=Wind(4), FreezingTrap=Water(1), Claymore=Fire(3).
@@ -327,6 +345,10 @@ class BattlePipeline {
     const splitHits = (profile.magic_single_roll_split_hits || {})[skillName] || 0;
     // Negative = cosmetic (visual multi-hit, damage applied once)
     const hitCount = splitHits ? 1 : (hitCountRaw > 0 ? hitCountRaw : 1);
+    // Double Bolt needs the volley's REAL bolt count, which is this one — a PS
+    // magic_hit_counts override included. Reading skills.json separately (as the
+    // proc branch used to) can disagree with what was actually multiplied in.
+    result.hit_count = hitCount;
 
     pmf = scaleFloor(pmf, ratio, 100);
     // number_of_hits is applied at the END of this branch (after MDEF/element/
@@ -581,9 +603,8 @@ class BattlePipeline {
       // consulted SC_DOUBLECASTING at all, so a Sage's proc branch was ×1.0.
       const dcLv = Number((build.active_status_levels || {}).SC_DOUBLECASTING || 0);
       if (dcLv > 0 && DOUBLECASTING_SKILLS.has(c.name)) {
-        const hitsArr = (sd && sd.number_of_hits) || [];
-        const bolts = Math.max(1, Number(hitsArr[c.level - 1]) || 1);
-        const withExtra = bolts + Math.ceil(bolts / 2);
+        const bolts = Math.max(1, Number(castResult.hit_count) || 1);
+        const withExtra = bolts + doubleCastBolts(bolts, true);
         castResult.pmf = scaleFloor(castResult.pmf, withExtra, bolts);
         const [dmn, dmx, dav] = pmfStats(castResult.pmf);
         castResult.min_damage = dmn; castResult.max_damage = dmx; castResult.avg_damage = dav;
@@ -2273,20 +2294,28 @@ class BattlePipeline {
 
       const doubleCastingLv = Number((build.active_status_levels || {}).SC_DOUBLECASTING || 0);
       if (doubleCastingLv > 0 && DOUBLECASTING_SKILLS.has(skillName)) {
-        // Double Bolt fires the whole bolt volley a SECOND time per cast (instantly),
-        // so one cast deals two volleys' worth of damage — it kills in half the casts.
-        // Model it as ×2 damage per cast, NOT a halved period: halving the period would
-        // (a) leave per-cast damage / hits-to-kill unchanged and (b) imply 6 casts/sec,
-        // breaking the 3/sec spam cap. DPS still doubles (2× damage over the same period).
-        magicResult.pmf = scaleFloor(magicResult.pmf, 2, 1);
+        // Double Bolt fires the bolt volley a SECOND time per cast (instantly), so one
+        // cast deals two volleys' worth of damage — it kills in fewer casts. Model it as
+        // extra damage per cast, NOT a halved period: halving the period would (a) leave
+        // per-cast damage / hits-to-kill unchanged and (b) imply 6 casts/sec, breaking
+        // the 3/sec spam cap. DPS rises by the same factor over the same period.
+        const hindsight = hindsightIsOn(build);
+        const bolts = Math.max(1, Number(magicResult.hit_count) || 1);
+        const extra = doubleCastBolts(bolts, hindsight);
+        const total = bolts + extra;
+        magicResult.pmf = scaleFloor(magicResult.pmf, total, bolts);
         const [mn, mx, av] = pmfStats(magicResult.pmf);
         magicResult.min_damage = mn;
         magicResult.max_damage = mx;
         magicResult.avg_damage = av;
         magicResult.add_step({
-          name: "Double Bolt", value: av, min_value: mn, max_value: mx, multiplier: 2.0,
-          note: "SC_DOUBLECASTING (PF_DOUBLECASTING): 100% chance to fire the bolt a second time instantly — one cast deals two volleys (×2 damage per cast), killing in half the casts. Cast rate is unchanged (and capped), so DPS still doubles.",
-          formula: "damage × 2 per cast", hercules_ref: "skill.c pc_use_skill PF_DOUBLECASTING",
+          name: hindsight ? "Double Bolt (reduced by Hindsight)" : "Double Bolt",
+          value: av, min_value: mn, max_value: mx, multiplier: total / bolts,
+          note: hindsight
+            ? `SC_DOUBLECASTING with Hindsight on: the second cast fires half the bolts, rounded up — ${bolts} + ceil(${bolts}/2) = ${total} bolts per cast, not ${bolts * 2}.`
+            : "SC_DOUBLECASTING (PF_DOUBLECASTING): 100% chance to fire the bolt a second time instantly — one cast deals two volleys (×2 damage per cast), killing in half the casts. Cast rate is unchanged (and capped), so DPS still doubles.",
+          formula: `damage × ${total}/${bolts} per cast`,
+          hercules_ref: hindsight ? "Sage rework PDF p5-6" : "skill.c pc_use_skill PF_DOUBLECASTING",
         });
       }
 
