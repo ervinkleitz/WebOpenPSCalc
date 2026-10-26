@@ -457,7 +457,8 @@ const SELF_BUFFS = [
   // Energy Coat (MG_ENERGYCOAT) -- a Mage-line quest skill: soaks part of every PHYSICAL
   // hit, by how much SP you have left (30/24/18/12/6% down the brackets), and burns SP
   // per hit absorbed. The bracket is picked below; the engine holds the table.
-  { key: "SC_ENERGYCOAT", label: "Energy Coat", max: 1, jobs: [2, 9, 16, 4010, 4017] },
+  { key: "SC_ENERGYCOAT", label: "Energy Coat", max: 1, jobs: [2, 9, 16, 4010, 4017],
+    hint: "MG_ENERGYCOAT: reduces the damage of every physical hit you take by how much SP you have left \u2014 30% at 81-100% SP, then 24/18/12/6% down the brackets \u2014 and spends 3% to 1% of your SP per hit absorbed. Magic is not covered (pre-renewal). Lasts 5 minutes or until your SP runs out." },
 ] as const;
 
 // Received from a party member rather than self-cast -- battle.c treats
@@ -4096,8 +4097,8 @@ export default function BuildEditor() {
                           const active = (data.active_buffs?.[b.key] ?? 0) > 0;
                           return (
                             <div className="field field-checkbox" key={b.key}>
-                              <label title={b.key === "SC_ENERGYCOAT"
-                                ? "MG_ENERGYCOAT: reduces the damage of every physical hit you take by how much SP you have left \u2014 30% at 81-100% SP, then 24/18/12/6% down the brackets \u2014 and spends 3% to 1% of your SP per hit absorbed. Magic is not covered (pre-renewal). Lasts 5 minutes or until your SP runs out."
+                              <label title={(b as { hint?: string }).hint
+                                ? `${b.key} — ${(b as { hint?: string }).hint}`
                                 : b.key}>
                                 <input
                                   type="checkbox"
