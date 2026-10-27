@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **The Critical stat now says where your bullet's crit went.** Armor Piercing
+  Bullets give +10 crit, and +20 more on a rifle — all of it counted in your damage,
+  none of it in the **Critical** box, which left a Gunslinger reading 19.3% there
+  against 54.3% in the breakdown. The box is right: the game's own status window
+  leaves ammo out too, because that crit is added at the moment of the shot rather
+  than carried on your character. So rather than change the number and stop matching
+  your client, the box now explains the gap and names the real figure. Asked about
+  by a player.
+
 - **The refine box no longer prints its arrow over the number.** At +10 the second
   digit sat underneath the little down-arrow, in compact mode only. Reported with a
   screenshot.

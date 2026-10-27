@@ -3244,7 +3244,33 @@ export default function BuildEditor() {
                 // rather than folded into it. It was computed but never surfaced,
                 // which made gear granting it look broken.
                 { label: "Perfect Dodge", value: charStatus ? `${(charStatus.flee2 / 10).toFixed(1)}%` : undefined },
-                { label: "Critical", value: charStatus ? `${(charStatus.cri / 10).toFixed(1)}%` : undefined },
+                // The ammo's own crit is NOT in `cri`, and that is correct: battle.c
+                // adds arrow_cri at the moment of an ammo attack, which is why the
+                // client's status window leaves it out too. But the damage breakdown
+                // DOES count it, so a Gunslinger with Armor Piercing Bullets loaded
+                // saw 19.3% here against 54.3% there and reasonably called it a bug
+                // (reported 2026-10-27). Folding it in would have made this card stop
+                // matching the window they can see in game; saying where it went costs
+                // nothing and answers the question.
+                { label: "Critical", value: charStatus ? `${(charStatus.cri / 10).toFixed(1)}%` : undefined,
+                  note: charStatus ? (
+                    <>
+                      Your character's critical rate, counting gear and buffs — the same figure
+                      the in-game status window shows.
+                      {charStatus.ammo_cri > 0 && (
+                        <> Your loaded ammo adds <b>{charStatus.ammo_cri.toFixed(1)}%</b> on top of
+                        this, for <b>{((charStatus.cri / 10) + charStatus.ammo_cri).toFixed(1)}%</b> on
+                        an attack that fires it. That part lands at the moment of the shot rather
+                        than on your character, so neither this card nor the game's own window
+                        counts it — <b>Crit chance</b> in the damage breakdown is the one that does.</>
+                      )}
+                      {!(charStatus.ammo_cri > 0) && (
+                        <> Arrows and bullets with a crit bonus of their own (Sharp Arrow, Armor
+                        Piercing Bullet) add theirs at the moment of the shot instead, so they
+                        show up in <b>Crit chance</b> on the damage breakdown rather than here.</>
+                      )}
+                    </>
+                  ) : undefined },
               ] as { label: string; value?: string; note?: ReactNode }[]).map(({ label, value, note }) => {
                 const card = (
                   <>

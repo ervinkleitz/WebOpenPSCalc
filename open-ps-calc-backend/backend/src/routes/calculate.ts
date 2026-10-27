@@ -855,6 +855,16 @@ router.post("/status", (req: Request, res: Response) => {
       // Smokie/Hunter Fly pets) appeared to do nothing — reported as a missing bonus.
       flee2:     status.flee2,
       hit:       status.hit,
+      // The equipped ammo's own crit (Sharp Arrow +20; Armor Piercing Bullet +10,
+      // or +30 of it on a Rifle). Deliberately NOT inside `cri` above: battle.c:5172
+      // adds arrow_cri at attack time, inside `if (flag.arrow)`, which is also why
+      // the client's own status window leaves it out. So the Critical card agreeing
+      // with the game is right, and what was missing was any way to tell that from
+      // the page — a player asked why the stat read 19.3% while the breakdown said
+      // 54.3% (2026-10-27). Returned separately so the card can say so rather than
+      // quietly fold it in and stop matching the window they can see in game.
+      ammo_cri: gearBonusAggregator.weaponFiresAmmo(effBuild.equipped) && gearBonuses.from_ammo
+        ? (gearBonuses.from_ammo.cri || 0) : 0,
     });
   } catch (err: any) {
     console.error(err);
