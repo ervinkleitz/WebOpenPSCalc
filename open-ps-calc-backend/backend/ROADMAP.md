@@ -1974,7 +1974,7 @@ what the calc showed, while Lv1–2 were over-reported. The ×2 Break-Neck ailme
 unmodeled — it needs the target to already carry that status.
 
 ### Open gaps (verified, prioritised) — punch-list
-- **TODO: a maintenance script that audits every PS-custom skill's job list against the wiki.**
+- ~~**TODO: a maintenance script that audits every PS-custom skill's job list against the wiki.**~~ — **DONE: `scripts/audit-ps-custom-jobs.mjs`.** Reads each custom skill's wiki `Category:` links and diffs them against our `job` array in both directions, as specified below. Report is gitignored; re-run after a patch.
   `ps_custom_constants.json` carries a hand-written `job` array per PS-custom skill, and it is the
   ONLY source of truth for who can take that skill — those skills are absent from the vanilla
   `skill_tree.conf` we scrape, so nothing in the repo can contradict a wrong list. Two have been
@@ -2003,7 +2003,7 @@ unmodeled — it needs the target to already carry that status.
   caster spamming bolts at a known ASPD. Full evidence: `PS_SOURCES.md` section 5.
 
 
-- **A test assertion that cannot fail: the PS-only guard on Throw Shuriken's Flee override.**
+- ~~**A test assertion that cannot fail: the PS-only guard on Throw Shuriken's Flee override.**~~ — **DONE.** engine-units now asserts `psSkill.nk_ignore_flee === false` on the instance after `calculate()`, instead of leaning on the canned `hit_chance: 100`, and the sabotage that used to pass is written up beside it. The entry's own follow-up — whether other tests lean on the same canned result — has NOT been swept and is the part still open.
   From reviewing PR #2 (Mihtsuki), which is correct and worth merging — this is a follow-up on
   its test, not a reason to hold it. The test ends with:
   `assert.equal(rStd.hit_chance, 100, "STANDARD (vanilla) profile must still auto-hit")`,
@@ -2110,13 +2110,13 @@ unmodeled — it needs the target to already carry that status.
   PDF), enforced inside `updateBuffField` so it holds however the buff is set.
   Still unmodelled: `GS_BULLSEYE`'s bleed chance, which the PS description says differs "with
   coins".
-- **Wildcard card mix for SHIELDS (racial resist)** [low, player-requested 2026-08-18] — the
+- ~~**Wildcard card mix for SHIELDS (racial resist)** [low, player-requested 2026-08-18]~~ — **DONE 2026-10-19 (227efb9).** Race / Element / Size resist on a slotted off-hand shield; see "3. Shield wildcard mix" above for the defaults and their PS sources. This entry was missed when that one was closed — the item was tracked in two places. Original text: the
   wildcard system covers the OFFENSIVE dicts (`add_race`/`add_size`/`add_ele`/`add_race2`, merged in
   `playerStateBuilder`). A shield wildcard wants the DEFENSIVE side (`sub_race`), a different dict on
   a different path. **Verify rather than assume it lands**: `bSubSize` turned out never to be
   aggregated at all (fixed 2026-08-17), so the defensive path has a track record of silently
   dropping bonuses — write the assertion first.
-- **Incoming cardfix: two defender terms still unmodelled** [low] — `calculateCardFixMagic` now
+- **Incoming cardfix: one defender term still unmodelled** [low] — **`subrace2` has since landed** (cardFix.js:150 and :187 fold the attacker's RC2 families into both the incoming magic and incoming physical paths); **`add_mdef` has not**, and neither has the PvP path note below. `calculateCardFixMagic` now
   applies the full Hercules BF_MAGIC defender set (battle.c:1132-1156) when a caster is passed:
   `subele`, `subsize`, `subrace[race]`, `subrace[Boss/NonBoss]`, the LONG ranged rate (magic sets
   `ad.flag = BF_MAGIC|BF_SKILL` with neither BF_SHORT nor BF_LONG, so the `else` branch always
@@ -2229,7 +2229,7 @@ unmodeled — it needs the target to already carry that status.
   the trigger's period is the period. Implemented 2026-08-11 for both the physical and magic
   paths: Elemental Sword's bolt chain, Dagger of Hunter's Bash, Nepenthes Bow, Croce Staff,
   Horn of Hillslion, Holy Marcher Hat.)
-- **`bHolyStrikeChance` (Ancient Mummy + Mummy card combo) is parsed and dropped** [low] — the
+- ~~**`bHolyStrikeChance` (Ancient Mummy + Mummy card combo) is parsed and dropped** [low]~~ — **DONE (2026-09-09 audit).** `gear_bonuses.holy_strike_bonus_chance` drives a real proc branch in battlePipeline (the combo adds the proc as well as raising it), covered by three e2e scripts. Original text: the
   field `holy_strike_bonus_chance` exists on the gear bonuses and nothing reads it, because
   PS_PR_HOLYSTRIKE itself is unsurfaced (see the Rogue/Stalker audit note above: its job array
   is [7, 4008]). Fix the passive first, then the combo's +5% has somewhere to go.
