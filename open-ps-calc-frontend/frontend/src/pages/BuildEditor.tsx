@@ -3252,7 +3252,10 @@ export default function BuildEditor() {
                 // (reported 2026-10-27). Folding it in would have made this card stop
                 // matching the window they can see in game; saying where it went costs
                 // nothing and answers the question.
-                { label: "Critical", value: charStatus ? `${(charStatus.cri / 10).toFixed(1)}%` : undefined,
+                // First column, so the bubble opens to the RIGHT. The default anchor
+                // suits the last column (ASPD) and would put this one off-screen.
+                { label: "Critical", noteAlign: "left",
+                  value: charStatus ? `${(charStatus.cri / 10).toFixed(1)}%` : undefined,
                   note: charStatus ? (
                     <>
                       Your character's critical rate, counting gear and buffs — the same figure
@@ -3271,7 +3274,8 @@ export default function BuildEditor() {
                       )}
                     </>
                   ) : undefined },
-              ] as { label: string; value?: string; note?: ReactNode }[]).map(({ label, value, note }) => {
+              ] as { label: string; value?: string; note?: ReactNode; noteAlign?: "left" }[])
+                .map(({ label, value, note, noteAlign }) => {
                 const card = (
                   <>
                     <div className="sec-stat-label">{label}</div>
@@ -3279,7 +3283,10 @@ export default function BuildEditor() {
                   </>
                 );
                 return note ? (
-                  <HoverNote key={label} className="sec-stat-card sec-stat-card--note" note={note}>{card}</HoverNote>
+                  <HoverNote key={label} note={note}
+                    className={`sec-stat-card sec-stat-card--note${noteAlign === "left" ? " sec-stat-card--note-left" : ""}`}>
+                    {card}
+                  </HoverNote>
                 ) : (
                   <div key={label} className="sec-stat-card">{card}</div>
                 );

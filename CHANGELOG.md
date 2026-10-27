@@ -9,6 +9,9 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **That Critical explanation now opens on screen.** When it first went up it hung off
+  the left edge of the window and the first few words of every line were cut off.
+
 - **The Critical stat now says where your bullet's crit went.** Armor Piercing
   Bullets give +10 crit, and +20 more on a rifle — all of it counted in your damage,
   none of it in the **Critical** box, which left a Gunslinger reading 19.3% there

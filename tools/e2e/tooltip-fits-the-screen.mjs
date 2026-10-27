@@ -131,6 +131,37 @@ for (const density of ["comfortable", "compact"]) {
     [...document.querySelectorAll(".info-tooltip-bubble")].filter((e) => e.getClientRects().length > 0).length);
   check(closed === 0, "it closes again when the pointer leaves", closed);
 
+  // ---- the stat cards that ARE their own tooltip ------------------------------
+  // HoverNote attaches the same bubble to a card instead of to an "i" icon, and this
+  // test was only ever exercising `.info-tooltip` triggers — so it passed while the
+  // Critical card's bubble sat 132px off the LEFT of the screen (2026-10-27).
+  //
+  // These anchor to the card's right edge by default, which the last column needs
+  // and the first column cannot survive. Which side a given card wants is a judgement
+  // its own definition makes; what must hold for all of them is this.
+  for (const label of ["ASPD", "Critical"]) {
+    const card = page.locator(".sec-stat-card", {
+      has: page.locator(".sec-stat-label", { hasText: new RegExp(`^${label}$`) }),
+    }).first();
+    if (await card.count() === 0) continue;
+    await card.scrollIntoViewIfNeeded();
+    await card.hover();
+    await page.waitForTimeout(350);
+    const off = await page.evaluate(() => {
+      const host = [...document.querySelectorAll(".hover-note")].filter((h) => h.matches(":hover"))[0];
+      if (!host) return null;
+      const pop = [...host.children].find((c) => getComputedStyle(c).position !== "static");
+      if (!pop) return null;
+      const b = pop.getBoundingClientRect();
+      return { left: Math.round(Math.max(0, -b.left)), right: Math.round(Math.max(0, b.right - innerWidth)) };
+    });
+    check(off != null, `${label}: its hover note opens`, off);
+    check(off != null && off.left === 0 && off.right === 0,
+      `${label}: and opens entirely on screen`, off);
+  }
+  await page.mouse.move(5, 5);
+  await page.waitForTimeout(400);
+
   check(errors.length === 0, "no page errors", errors);
   await ctx.close();
 }

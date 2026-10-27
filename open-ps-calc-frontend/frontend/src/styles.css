@@ -1721,8 +1721,16 @@ label {
 .sec-stat-card--note:hover { border-color: var(--accent-dim); }
 /* ASPD sits in the grid's RIGHTMOST column, so anchor its bubble (and arrow) to the
    right edge — left-anchored it would hang 200px outside the panel. */
+/* These bubbles hang off the RIGHT edge of their card by default, which is what the
+   last column needs: anchored left, a 320px bubble from the ASPD card runs 55px past
+   the viewport at 760px. A card in the FIRST column needs the opposite — anchored
+   right, its bubble starts 132px to the LEFT of the screen. Neither anchor suits both,
+   and CSS cannot pick the side that has room, so the card says which it wants.
+   Measured both ways at 1920/1500/1200/760 before choosing. */
 .sec-stat-card--note > .info-tooltip-bubble { left: auto; right: 0; }
 .sec-stat-card--note > .info-tooltip-bubble::before { left: auto; right: 0.55rem; }
+.sec-stat-card--note-left > .info-tooltip-bubble { left: 0; right: auto; }
+.sec-stat-card--note-left > .info-tooltip-bubble::before { left: 0.55rem; right: auto; }
 .sec-stat-label {
   font-size: 0.72rem;
   color: var(--text-dim);
