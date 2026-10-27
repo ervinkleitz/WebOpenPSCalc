@@ -851,7 +851,57 @@ label {
    the 0.7rem gaps are counted ((512 - 22) / 3 = 163), which made the long buff lists
    half again as tall. Narrowing the level picker above bought the same room for
    nothing. */
-.passive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.7rem; }
+/* The equipment panel's rhythm, applied to the skill and buff lists.
+   Measured before: equipment's eleven slots were all exactly 53px, while the buff
+   rows ran 27 / 38 / 51 / 54 and the passives 27 / 28 / 38 — so the lists read as
+   drifting rather than as a table. Two causes, both fixed here rather than by
+   equalising after the fact:
+     - a row grew when you TICKED it, because the Lv select only exists on a ticked
+       row. The space is now reserved on every row, so ticking changes the tick and
+       nothing else, and the row below does not move under the cursor.
+     - the long labels wrapped. The provenance that was doing it has moved to the
+       hover hint (BuildEditor's buff lists), which is also where that panel's own
+       comment asks for caveats to live.
+   The rule sits on the row's TOP edge for the same reason it does on an equipment
+   slot: cells in a grid row share their top edge whatever their heights, so the
+   separators line up without anything being stretched. */
+.passive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0 0.7rem; }
+/* Scoped to the two panels this is for. `.passive-grid` is shared — the manual stat
+   bonuses carry it as well (`.passive-grid manual-stat-grid`), and the first version
+   of this made their six stat fields full-width each, turning one row into six.
+   density-compact.mjs caught it. Naming the panels is clearer than excluding the one
+   instance that happened to break. */
+[data-panel="passives"] .passive-grid > .field-checkbox,
+[data-panel="buffs"] .passive-grid > .field-checkbox {
+  margin-top: 0;
+  /* Just tall enough to hold the Lv select, which is the only thing that used to
+     change a row's height. Bigger than that and the panel pays for air on every
+     row: at 2.35rem the buff list grew 178px in COMPACT, which is the one mode
+     whose entire point is fitting more on screen. */
+  min-height: 1.85rem;
+  padding: 0.1rem 0;
+  border-top: 1px solid var(--border-soft);
+  align-items: center;
+}
+html[data-density="compact"] [data-panel="passives"] .passive-grid > .field-checkbox,
+html[data-density="compact"] [data-panel="buffs"] .passive-grid > .field-checkbox {
+  min-height: 1.5rem; padding: 0;
+}
+/* A labelled control (Weapon endow, Spirit spheres, Ground effect) is twice the
+   height of a checkbox, and sharing a grid row with two of them stretched that row
+   to match — which is where the buff panel's 56px and 65px rows came from, and the
+   dead space under the checkboxes beside them. They get their own row instead, so a
+   row of checkboxes stays a row of checkboxes. */
+[data-panel="buffs"] .passive-grid > .field:not(.field-checkbox) {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--border-soft);
+  padding: 0.35rem 0 0.15rem;
+}
+html[data-density="compact"] [data-panel="buffs"] .passive-grid > .field:not(.field-checkbox) {
+  padding: 0.3rem 0 0.1rem;
+}
+[data-panel="buffs"] .passive-grid > .field:not(.field-checkbox) > select,
+[data-panel="buffs"] .passive-grid > .field:not(.field-checkbox) > input { max-width: 22rem; }
 .passive-grid .field input[type="number"] { width: 100%; }
 .passive-grid .field span { display: block; margin-top: 0.1rem; }
 

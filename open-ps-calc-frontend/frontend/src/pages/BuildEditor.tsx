@@ -357,16 +357,19 @@ const SELF_BUFFS = [
   // Explosion Spirits at level 13: PS formula 175+25×13 = +50% crit
   // (wiki.payonstories.com/Super_Novice "critical rate +50"). Distinct from
   // the Monk's 5-level Fury below.
-  { key: "SC_EXPLOSIONSPIRITS", label: "Critical Explosion (chant, +50% crit)", max: 13, jobs: [23] },
+  { key: "SC_EXPLOSIONSPIRITS", label: "Critical Explosion", max: 13, jobs: [23],
+    hint: "The Super Novice chant, typed at exact 10% EXP increments. Grants Explosion Spirits at level 13: +50% crit." },
   // Swordman line — Auto Berserk (SM_AUTOBERSERK): while HP < 25% you gain a
   // self Provoke Lv10 (+32% base ATK, −55% self-DEF). Presence-only. Jobs
   // derived from skill_tree.json: Swordman / Knight / Crusader / LK / Paladin.
-  { key: "SC_AUTOBERSERK",     label: "Auto Berserk (self Provoke 10)", max: 1, jobs: [1, 7, 14, 4008, 4015] },
+  { key: "SC_AUTOBERSERK",     label: "Auto Berserk", max: 1, jobs: [1, 7, 14, 4008, 4015],
+    hint: "SM_AUTOBERSERK. Below 25% HP you gain a self Provoke Lv10: +32% base ATK, −55% self-DEF." },
   // Magnum Break's lingering fire enchantment (10 s after casting it): adds 20% of a
   // normal attack as FIRE damage on top of the hit, bypassing DEF. Wootan Fighter Card
   // raises it to 30%. On PS it rides auto-attacks and Magnum Break only. Super Novice
   // (23) is included — its tree carries every 1st-class skill, Magnum Break included.
-  { key: "SC_SUB_WEAPONPROPERTY", label: "Magnum Break (lingering fire)", max: 1, jobs: [1, 7, 14, 23, 4008, 4015] },
+  { key: "SC_SUB_WEAPONPROPERTY", label: "Magnum Break", max: 1, jobs: [1, 7, 14, 23, 4008, 4015],
+    hint: "The lingering fire enchantment for 10s after casting it: adds 20% of a normal attack as Fire damage, bypassing DEF. Wootan Fighter Card raises it to 30%." },
   // Knight / Lord Knight
   { key: "SC_TWOHANDQUICKEN",  label: "Sword Quickening",      max: 10, jobs: [7, 4008] },
   // One rank in both the vanilla and PS skill DBs, and the ASPD it grants doesn't
@@ -440,7 +443,8 @@ const SELF_BUFFS = [
   // so 1 image is +10% and 5 is +30% (wiki.payonstories.com/Mirror_Image). The
   // skill grants ceil(lv/2) images, so five needs Mirror Image Lv9-10. Killing
   // Stroke consumes them all. Its evasion side isn't modeled; only the bonus is.
-  { key: "SC_NJ_BUNSINJYUTSU", label: "Mirror Image (images left)", max: 5, jobs: [25] },
+  { key: "SC_NJ_BUNSINJYUTSU", label: "Mirror Image", max: 5, jobs: [25],
+    hint: "The level picked is how many images are still up." },
   // PS wiki calls this "Double Bolt" (constant PF_DOUBLECASTING / status
   // SC_DOUBLECASTING). On Payon Stories it's a SAGE skill (wiki: class = Sage),
   // so both Sage and Professor get it — not just Professor as in vanilla. 100%
@@ -479,18 +483,22 @@ const PARTY_BUFFS = [
   // rank as well, so builds shared while it read 10 are corrected on load.
   // Over Thrust has no SELF_BUFFS counterpart, so this entry is also what a
   // self-casting Blacksmith ticks — labelled accordingly, and never hidden.
-  { key: "SC_OVERTHRUST", label: "Over Thrust (self or party)", max: 5, source: "Blacksmith" },
+  { key: "SC_OVERTHRUST", label: "Over Thrust", max: 5, source: "Blacksmith",
+    hint: "Self-cast or from a party Blacksmith — this is the only Over Thrust entry, so tick it either way. +5% ATK per rank, +25% at 5." },
   // Adrenaline Rush received from a party Blacksmith: PS rework gives +20% ASPD with
   // a Mace/Axe and +10% with any other melee weapon (bows and guns excluded). Level
   // only sets duration; the self-cast version lives in SELF_BUFFS.
-  { key: "SC_ADRENALINE", label: "Adrenaline Rush (from a party Blacksmith)", max: 1, source: "Blacksmith" },
+  { key: "SC_ADRENALINE", label: "Adrenaline Rush", max: 1, source: "Blacksmith",
+    hint: "From a party Blacksmith. +20% ASPD with a Mace or Axe, +10% with any other melee weapon; bows and guns excluded. Level only sets duration." },
   // Weapon Perfection from a party Blacksmith — the PS wiki is explicit that
   // "Party members also receive this skill's effects", and the effect is the same
   // as the self-cast one (no size penalty), so the engine treats both identically.
-  { key: "SC_WEAPONPERFECT", label: "Weapon Perfection (from a party Blacksmith)", max: 1, source: "Blacksmith" },
+  { key: "SC_WEAPONPERFECT", label: "Weapon Perfection", max: 1, source: "Blacksmith",
+    hint: "From a party Blacksmith. Removes the size penalty, the same as the self-cast version." },
   // Crazy Uproar from a party Merchant: soft DEF only (2 × level) — the +STR/+VIT
   // half is caster-only, which is why the self-cast entry lives in SELF_BUFFS.
-  { key: "SC_SHOUT", label: "Crazy Uproar (from a party Merchant — soft DEF only)", max: 4, source: "Merchant" },
+  { key: "SC_SHOUT", label: "Crazy Uproar", max: 4, source: "Merchant",
+    hint: "From a party Merchant: soft DEF only (2 × level). The +STR/+VIT half is caster-only, so a Merchant self-casting ticks the entry under Self buffs instead." },
 ] as const;
 
 // A party buff is hidden once your own job can cast the same thing on itself.
@@ -2183,7 +2191,7 @@ export default function BuildEditor() {
     );
   };
 
-  const partyBuffField = (b: { key: string; label: string; max: number }) =>
+  const partyBuffField = (b: { key: string; label: string; max: number; hint?: string }) =>
     buffCheckboxField(b, "support_buffs");
   const songBuffField = (b: { key: string; label: string; max: number; hint?: string }) =>
     buffCheckboxField(b, "song_state");
@@ -4178,7 +4186,9 @@ export default function BuildEditor() {
                           <div className="field field-checkbox" key="__breaking_cloak">
                             <label title="Breaking Cloak (Assassin, requires Cloak Lv3+): breaking Cloak with an auto-attack makes that opening hit deal ×2 damage; breaking it with Sonic Blow adds +10%. Applies to the shown per-hit damage only (a one-time opener), not sustained DPS.">
                               <input type="checkbox" checked={!!targetMods.breaking_cloak} onChange={(e) => setTargetMods((m) => ({ ...m, breaking_cloak: e.target.checked }))} />
-                              <span>Breaking Cloak (opener: auto ×2 / Sonic Blow +10%)</span>
+                              {/* The effect is already spelled out in the title above; carrying it in
+                                  the label too made this the tallest row in the panel at three lines. */}
+                              <span>Breaking Cloak</span>
                             </label>
                           </div>
                         )}
