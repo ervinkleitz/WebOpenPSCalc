@@ -9,6 +9,10 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **The refine box no longer prints its arrow over the number.** At +10 the second
+  digit sat underneath the little down-arrow, in compact mode only. Reported with a
+  screenshot.
+
 - **Volcano, Deluge and Violent Gale no longer wipe out your damage after a server
   switch.** Payon Stories caps the three ground fields at level 3 where standard
   pre-renewal goes to 5, and a build that picked one up on the standard server kept

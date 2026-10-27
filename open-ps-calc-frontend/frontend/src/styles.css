@@ -1127,8 +1127,16 @@ label {
      of its own leaves the open list to the engine, which draws it light. */
   background: var(--bg); color: var(--accent-text);
   font-size: 0.85rem; line-height: 1.1;
-  padding: 0.18rem 0.95rem 0.18rem 0.1rem;
 }
+/* The padding is the caret's clearance, so it is scoped to the wrapper to survive
+   the density pass. `html[data-density="compact"] select` is (0,1,1) and beat a bare
+   `.refine-select` at (0,1,0), replacing the asymmetric padding with a symmetric
+   0.45rem — which is less than the caret needs, so at +10 the second digit ran
+   underneath it. Reported with a screenshot 2026-10-27.
+   `.refine-wrap .refine-select` is (0,2,0) and wins at both densities from ONE
+   declaration, rather than restating the value in a compact override that could
+   drift from this one. The select only ever lives in that wrapper. */
+.refine-wrap .refine-select { padding: 0.18rem 0.95rem 0.18rem 0.1rem; }
 .refine-select:hover { color: var(--text); }
 .refine-wrap:hover::after { border-top-color: var(--accent); }
 /* THE OPEN LIST. Verified by opening it in a real browser and screen-grabbing it — a
