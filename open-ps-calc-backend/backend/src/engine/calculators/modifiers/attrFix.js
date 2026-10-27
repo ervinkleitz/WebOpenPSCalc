@@ -42,8 +42,20 @@ function calculateAttrFix(weapon, target, pmf, result, build = null, atkElement 
       const geLv = Number(build.support_buffs.ground_effect_lv || 1);
       const profile = getProfile(build.server);
       const effTable = profile.mechanic_flags.has("GROUND_EFFECT_PS_VALUES") ? PS_ENCHANT_EFF : ENCHANT_EFF;
-      enchantBonus = effTable[geLv - 1];
-      enchantName = `${GROUND_NAME[ge]} Lv${geLv}`;
+      // Clamp, the way statusCalculator already clamps PS_VOL_ATK, PS_VOL_MATK_PCT
+      // and PS_VG_FLEE. This table was the only one of the four that indexed raw,
+      // and PS's is three entries where vanilla's is five — so a build carrying
+      // Lv4 or Lv5 read past the end, `multiplier += undefined` turned the element
+      // rate into NaN, and the hit silently collapsed to the 1-damage floor.
+      // Reachable without editing anything: set the field on Standard pre-renewal,
+      // where the editor offers Lv5, then switch the server to Payon Stories — the
+      // level stays at 5. Found QA-ing the ground-effect work, 2026-10-27.
+      const geIdx = Math.min(Math.max(1, geLv), effTable.length) - 1;
+      enchantBonus = effTable[geIdx];
+      // The note names the level that was APPLIED, not the one the build asked
+      // for: "Violent Gale Lv5 = 220%" on a server whose table stops at 3 reads
+      // like an error in the arithmetic rather than a clamp.
+      enchantName = `${GROUND_NAME[ge]} Lv${geIdx + 1}`;
       multiplier += enchantBonus;
     }
   }

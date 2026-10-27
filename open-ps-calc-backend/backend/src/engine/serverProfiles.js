@@ -259,7 +259,7 @@ const PS_PASSIVE_OVERRIDES = {
   // Without the skill (lv 0) the vanilla base penalty (50%/30%) applies.
   AS_RIGHT: { rh_factors: [0.80, 0.90, 1.00, 1.10, 1.20] },  // lv 1–5: 80/90/100/110/120%
   AS_LEFT:  { lh_factors: [0.60, 0.70, 0.80, 0.90, 1.00] },  // lv 1–5: 60/70/80/90/100%
-  SC_SPEARQUICKEN:   { hit_per_lv: 1, flee_per_lv: 1 },                                        // PS rework: no CRI, +1 HIT/lv, +1 FLEE/lv
+  SC_SPEARQUICKEN:   { hit_per_lv: 1, flee_per_lv: 1, weapon_types: ["1HSpear", "2HSpear"] },                                        // PS rework: no CRI, +1 HIT/lv, +1 FLEE/lv
   // PS "Sword Quickening" (the Knight rework's KN_TWOHANDQUICKEN). The planner's
   // per-level table reads "+N FLEE, +N% CRIT" at every level, and its description
   // adds "This skill only works with Sword class weapons and the effect cancels when

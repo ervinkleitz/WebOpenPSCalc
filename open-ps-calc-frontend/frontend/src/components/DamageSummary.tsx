@@ -148,13 +148,6 @@ function stepDisplayVal(step: Step): string {
 }
 
 
-// Compact inline badge showing what this step did to the running total: a ×multiplier
-// (boost/reduce) or a +/− flat delta. Empty for pure passthroughs.
-//
-// The right-hand column is ALWAYS the running total after the step (the engine
-// guarantees it), so the delta below is meaningful — except where a step opens a
-// separate sub-track (Grand Cross' magic half starts over at Base MATK), which is
-// flagged with track_start so we don't badge a jump that isn't a change.
 // A step with no running total cannot have changed the running total.
 //
 // This guard is here because the badge used to do the arithmetic anyway. The engine
@@ -173,6 +166,13 @@ function stepDisplayVal(step: Step): string {
 const hasRunningTotal = (s: Step) =>
   s.value != null || (s.min_value != null && s.max_value != null);
 
+// Compact inline badge showing what this step did to the running total: a ×multiplier
+// (boost/reduce) or a +/− flat delta. Empty for pure passthroughs.
+//
+// The right-hand column is ALWAYS the running total after the step (the engine
+// guarantees it), so the delta below is meaningful — except where a step opens a
+// separate sub-track (Grand Cross' magic half starts over at Base MATK), which is
+// flagged with track_start so we don't badge a jump that isn't a change.
 function connectorInfo(step: Step, prev: Step | undefined): { badge: string; cls: string } {
   if (step.track_start) return { badge: "", cls: "conn-pass" };
   const m = step.multiplier ?? 1.0;

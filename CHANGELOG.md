@@ -5,6 +5,23 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-27
+
+### Fixed
+
+- **Volcano, Deluge and Violent Gale no longer wipe out your damage after a server
+  switch.** Payon Stories caps the three ground fields at level 3 where standard
+  pre-renewal goes to 5, and a build that picked one up on the standard server kept
+  its level 5 when you switched back — which the damage step had no entry for, so
+  the elemental multiplier came out as nothing at all and the hit dropped to 1. The
+  level is now capped at whatever the server actually has, and the breakdown names
+  the level it used.
+
+- **Spear Quicken only gives its HIT and FLEE with a spear.** The attack speed
+  already knew to stop when you swapped off a spear; the +10 HIT and +10 FLEE at
+  level 10 did not, and stayed on with a sword or anything else in hand. Found while
+  checking the Gatling Fever fix — same mistake, one skill over.
+
 ## 2026-10-26
 
 ### Added

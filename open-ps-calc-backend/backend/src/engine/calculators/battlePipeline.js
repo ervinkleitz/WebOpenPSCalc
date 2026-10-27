@@ -595,12 +595,13 @@ class BattlePipeline {
         nk_ignore_cards: dt.includes("IgnoreCards"),
       };
       const castResult = this._runMagicBranch(status, weapon, spellSkill, target, build, opts);
-      // Double Bolt (SC_DOUBLECASTING) fires a bolt volley twice on a MANUAL cast,
-      // but only half of it through Hindsight: "The double cast will only do half of
-      // the bolts it usually does, rounded up" (Sage PDF), and wiki Auto_Spell says
-      // the same. So an N-bolt volley becomes N + ceil(N/2), not 2N — e.g. Lv3 Fire
-      // Bolt is 3 + 2 = 5 volleys' worth, ×1.667 rather than ×2. This path never
-      // consulted SC_DOUBLECASTING at all, so a Sage's proc branch was ×1.0.
+      // A Hindsight proc happens, by definition, while Hindsight is on, so the
+      // reduced table always applies on this path — hence the hardcoded `true`
+      // below, where the manual cast has to ask the build (hindsightIsOn).
+      // doubleCastBolts carries the rule and the reason it is NOT "only through
+      // Hindsight": the reduction is conditioned on the BUFF being up, manual casts
+      // included. This path did not consult SC_DOUBLECASTING at all until
+      // 2026-10-18, so a Sage's proc branch was ×1.0.
       const dcLv = Number((build.active_status_levels || {}).SC_DOUBLECASTING || 0);
       if (dcLv > 0 && DOUBLECASTING_SKILLS.has(c.name)) {
         const bolts = Math.max(1, Number(castResult.hit_count) || 1);

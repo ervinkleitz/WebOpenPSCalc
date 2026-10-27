@@ -352,8 +352,15 @@ class StatusCalculator {
       status.flee += (tqSpec.flee_per_lv || 0) * lv;
       status.cri += (tqSpec.cri_per_lv || 0) * lv;
     }
+    // The same split the comment above describes, left unfixed one skill over:
+    // Spear Quicken's ASPD obeys the quicken table (1HSpear/2HSpear only) while its
+    // HIT and FLEE applied to whatever you were holding, so a Crusader with a SWORD
+    // ticked the box and kept +10/+10 at Lv10. wiki.payonstories.com/Spear_Quicken
+    // gives the boost "when equipped with a spear". Found QA-ing the Gatling Fever
+    // fix, 2026-10-27 - the same bug class the player reported.
     const sqStatSpec = (profile.passive_overrides || {}).SC_SPEARQUICKEN || {};
-    if ("SC_SPEARQUICKEN" in activeSc) {
+    if ("SC_SPEARQUICKEN" in activeSc
+      && (!sqStatSpec.weapon_types || sqStatSpec.weapon_types.includes(weapon.weapon_type))) {
       const lv = activeSc.SC_SPEARQUICKEN;
       status.cri += (sqStatSpec.cri_per_lv || 0) * lv;
       status.hit += (sqStatSpec.hit_per_lv || 0) * lv;

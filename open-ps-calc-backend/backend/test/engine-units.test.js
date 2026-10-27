@@ -7817,3 +7817,65 @@ test("Double Cast is reduced by Hindsight on MANUAL casts, not just Hindsight pr
   assert.ok(Math.abs(fbCut / fbBase - 1.5) < 0.01,
     `Fire Bolt Lv10: 10 + ceil(10/2) = 15 of 10 bolts = x1.5 (${fbCut / fbBase})`);
 });
+
+// Found QA-ing the ground-effect work, 2026-10-27. PS's enchant table has three
+// entries where vanilla's has five, and attrFix indexed it raw — so a build
+// carrying Lv4 or Lv5 read past the end, `multiplier += undefined` made the
+// element rate NaN, and the hit collapsed to the 1-damage floor. Silently: no
+// throw, no warning, just a wrong number.
+//
+// Reachable without editing anything. Set the field on Standard pre-renewal, where
+// the editor offers Lv5 (groundEffectMax), then switch the server to Payon Stories:
+// the level stays at 5. A share link can carry any level at all.
+//
+// statusCalculator already clamped the three sibling tables (PS_VOL_ATK,
+// PS_VOL_MATK_PCT, PS_VG_FLEE); this was the only one of the four that did not.
+test("a ground-effect level past the end of PS's table clamps instead of going NaN", () => {
+  const dmg = (lv) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: 16, base_level: 70, job_level: 50,
+      base_stats: { str: 1, agi: 40, vit: 40, int: 70, dex: 50, luk: 1 },
+      equipped: { right_hand: 1601 },
+      support_buffs: { ground_effect: "SC_VIOLENTGALE", ground_effect_lv: lv },
+    });
+    const [gb, eff, w, st] = resolvePlayerState(b, createBattleConfig(), PS);
+    const inst = createSkillInstance({ id: skillIdByName("MG_LIGHTNINGBOLT"), level: 5 });
+    return new BattlePipeline(createBattleConfig())
+      .calculate(st, w, inst, loader.getMonster(1063), eff, gb).normal.avg_damage;
+  };
+  const atMax = dmg(3);
+  assert.ok(Number.isFinite(atMax) && atMax > 0, "the Lv3 baseline has to be a real number");
+  for (const lv of [4, 5, 99]) {
+    assert.ok(Number.isFinite(dmg(lv)), `Lv${lv} must not produce NaN`);
+    assert.equal(dmg(lv), atMax, `Lv${lv} clamps to the top of the table, not past it`);
+  }
+  // And below the bottom. 0 is falsy and already defaulted to 1; a negative did not.
+  assert.equal(dmg(-1), dmg(1), "a negative level clamps up to Lv1 rather than reading backwards");
+});
+
+// Found by the same sweep: the bug class the Gatling Fever report was about, one
+// skill over. SC_TWOHANDQUICKEN's own comment describes the split — "The ASPD half
+// already checks this ... the stat half did not" — and Spear Quicken was left with
+// exactly that split. Its ASPD obeys the quicken table (1HSpear/2HSpear only) while
+// its HIT and FLEE applied to whatever you held.
+// wiki.payonstories.com/Spear_Quicken gives the boost "when equipped with a spear",
+// +1 HIT and +1 FLEE per level, no crit.
+test("Spear Quicken's HIT and FLEE need a spear, like its ASPD already did", () => {
+  const st = (weaponId) => {
+    const mk = (buffs) => buildFromSaveSchema({
+      server: "payon_stories", job_id: 14, base_level: 90, job_level: 50,
+      base_stats: { str: 80, agi: 60, vit: 60, int: 1, dex: 60, luk: 20 },
+      equipped: { right_hand: weaponId }, active_buffs: buffs,
+    });
+    const off = resolvePlayerState(mk({}), createBattleConfig(), PS)[3];
+    const on = resolvePlayerState(mk({ SC_SPEARQUICKEN: 10 }), createBattleConfig(), PS)[3];
+    return { dHit: on.hit - off.hit, dFlee: on.flee - off.flee, dAspd: on.aspd - off.aspd };
+  };
+  const spear = st(1419), sword = st(1101);
+  assert.equal(spear.dHit, 10, "a spear gets +1 HIT per level");
+  assert.equal(spear.dFlee, 10, "and +1 FLEE per level");
+  assert.ok(spear.dAspd > 0, "and the ASPD it always had");
+  assert.equal(sword.dHit, 0, "a sword gets no HIT from Spear Quicken");
+  assert.equal(sword.dFlee, 0, "and no FLEE");
+  assert.equal(sword.dAspd, 0, "as its ASPD half already knew");
+});
