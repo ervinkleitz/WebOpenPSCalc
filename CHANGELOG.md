@@ -5,6 +5,16 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-26
+
+### Added
+
+- **Hits to kill is on the bottom bar.** It sat in the results panel, several
+  screens up, while the bar at the foot of the page carried the damage range and
+  DPS — so the one number most people are actually after cost a scroll every time.
+  It now sits first among the bar's stats, and it is the one stat a phone keeps.
+  Requested by a player.
+
 ## 2026-10-25
 
 ### Fixed

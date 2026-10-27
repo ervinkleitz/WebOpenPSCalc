@@ -88,6 +88,36 @@ check(await bar().count() === 1, "Calculate puts the bar up");
 check(/\d/.test(first) && range(first) !== "", `with a damage range in it (${range(first)})`, first);
 check(/DPS/.test(first), "and DPS");
 
+// ---- 2b. and hits to kill, which is the stat people come for -------------------
+// Asked for by the maintainer 2026-10-26: "that's the stat I care about the most".
+// It is first in the side group and, unlike time-to-kill and the target name, it is
+// NOT --wide, so a phone keeps it (checked at the foot of this file).
+check(/hits? to kill|casts? to kill/i.test(first), "and hits to kill", first);
+
+// One hit is "1 hit to kill", not "1 hits", so the noun is optional-plural here.
+// It has to agree with the results panel, to the digit. Both come from
+// summaryMetrics now, but they are rendered in two different components and the
+// panel prints "1min - 2max" where the bar prints "1-2", so the shapes are compared
+// rather than the strings.
+const panelHits = async () => page.evaluate(() => {
+  const m = [...document.querySelectorAll(".metric")]
+    .find((x) => /Hits to kill|Casts to kill/.test(x.querySelector(".label")?.textContent || ""));
+  if (!m) return null;
+  const nums = (m.querySelector(".value").textContent.match(/\d[\d,]*/g) || []).map((n) => n.replace(/,/g, ""));
+  return nums.join("-");
+});
+const barHits = async () => {
+  const t = await barText();
+  const m = t.match(/([\d,]+(?:[–-][\d,]+)?)\s+(?:hits?|casts?) to kill/i);
+  return m ? m[1].replace(/,/g, "").replace("–", "-") : null;
+};
+const pHits = await panelHits(), bHits = await barHits();
+// A range that collapses (best and worst agree) is printed once in the bar and
+// twice in the panel - "2" against "2min - 2max" - and that is deliberate.
+const sameHits = pHits === bHits || (pHits && bHits && pHits === `${bHits}-${bHits}`);
+check(!!pHits && !!bHits && sameHits,
+  "the bar and the results panel quote the same kill count", { panel: pHits, bar: bHits });
+
 const box = await page.evaluate(() => {
   const el = document.querySelector(".damage-bar");
   const b = el.getBoundingClientRect();
@@ -201,6 +231,31 @@ if (await closer.count()) {
     "a live refresh does not reopen the results panel the player closed");
   check(await bar().count() === 1, "but the bar keeps working while it is closed");
 }
+
+// ---- 8. a phone keeps the stat that was asked for ------------------------------
+// The bar sheds its label, the time-to-kill and the target name under 700px (they
+// are --wide). Hits to kill must not be among them, and the whole bar still has to
+// fit: the side group is nowrap, so anything too wide pushes the page sideways
+// rather than wrapping.
+await page.setViewportSize({ width: 390, height: 840 });
+await page.waitForTimeout(600);
+const phone = await page.evaluate(() => {
+  const el = document.querySelector(".damage-bar");
+  const shown = [...el.querySelectorAll(".damage-bar-stat")]
+    .filter((e) => getComputedStyle(e).display !== "none")
+    .map((e) => e.textContent.replace(/\s+/g, " ").trim());
+  return {
+    shown,
+    overflow: el.scrollWidth - el.clientWidth,
+    pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  };
+});
+check(phone.shown.some((t) => /hits? to kill|casts? to kill/i.test(t)),
+  "a phone keeps hits to kill", phone.shown);
+check(phone.overflow <= 0 && phone.pageOverflow <= 0,
+  "and the bar still fits across a 390px screen", phone);
+await page.setViewportSize({ width: 1500, height: 900 });
+await page.waitForTimeout(400);
 
 check(errors.length === 0, "no page errors", errors);
 await browser.close();

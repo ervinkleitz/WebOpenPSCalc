@@ -14,6 +14,15 @@ export interface CompareMetrics {
   min: number;
   max: number;
   hitsToKill: number | null; // avg hits/casts to kill, monster mode only
+  // The same best/worst pair the results panel prints, so the bar and the panel
+  // cannot quote different kill counts for one build. isInstaKill and noRateHit
+  // come along because they decide the WORDING: an instant-kill skill has no
+  // range (one expected cast count), and a skill with no repeat rate kills in
+  // casts rather than hits.
+  hitsBest: number | null;
+  hitsWorst: number | null;
+  isInstaKill: boolean;
+  noRateHit: boolean;
   ttk: number | null;   // time to kill (seconds), monster mode only
   critChance: number;   // %
   aspd: number;
@@ -67,6 +76,10 @@ export function summaryMetrics(cr: any): CompareMetrics | null {
     min: swing?.min ?? 0,
     max: swing?.max ?? 0,
     hitsToKill: kill.hitsAvg,
+    hitsBest: kill.hitsBest,
+    hitsWorst: kill.hitsWorst,
+    isInstaKill: kill.isInstaKill,
+    noRateHit: kill.noRateHit,
     ttk: kill.timeToKill,
     critChance: res.crit_chance ?? 0,
     aspd: branch.status?.aspd ?? 0,

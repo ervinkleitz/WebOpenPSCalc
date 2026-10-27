@@ -50,6 +50,22 @@ export default function DamageBar({ metrics, targetName, refreshing, onOpenDetai
     ? (delta / (metrics.avg - delta)) * 100
     : null;
 
+  // Monster mode only — a custom target has no HP to divide by, and then every
+  // one of these is null and the stat simply isn't shown.
+  const hasRange = !metrics.isInstaKill && metrics.hitsBest != null && metrics.hitsWorst != null;
+  const killValue = hasRange
+    ? (metrics.hitsBest === metrics.hitsWorst
+        // One number when the damage roll cannot change the answer. "2–2 hits to
+        // kill" is noise, and on a phone it is noise in the space the number needs.
+        ? `${metrics.hitsBest}`
+        : `${metrics.hitsBest}–${metrics.hitsWorst}`)
+    : metrics.hitsToKill != null ? `${metrics.hitsToKill}` : null;
+  // "1 hits to kill" is the kind of thing that makes a tool look unfinished, and a
+  // Poring dies in one, so this is the common case rather than an edge one.
+  const unit = metrics.noRateHit || metrics.isInstaKill ? "cast" : "hit";
+  const killLabel = killValue == null ? null
+    : `${unit}${killValue === "1" ? "" : "s"} to kill`;
+
   return (
     <div className={`damage-bar${refreshing ? " damage-bar--refreshing" : ""}`} role="status" aria-live="polite">
       <div className="damage-bar-main">
@@ -67,6 +83,17 @@ export default function DamageBar({ metrics, targetName, refreshing, onOpenDetai
         )}
       </div>
       <div className="damage-bar-side">
+        {/* First in the row, and NOT --wide, so it survives on a phone: asked for by
+            the maintainer 2026-10-26 as "the stat I care about the most". The numbers
+            are the results panel's own (summaryMetrics), not a second calculation, so
+            the two cannot disagree — and the wording follows the panel: a range of
+            hits normally, a single count of CASTS for a skill with no repeat rate or
+            an instant-kill roll. */}
+        {killLabel && (
+          <span className="damage-bar-stat">
+            <b>{killValue}</b> {killLabel}
+          </span>
+        )}
         {metrics.dps != null && (
           <span className="damage-bar-stat"><b>{fmt(metrics.dps)}</b> DPS</span>
         )}
