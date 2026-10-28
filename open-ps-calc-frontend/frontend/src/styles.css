@@ -852,6 +852,13 @@ label {
    half again as tall. Narrowing the level picker above bought the same room for
    nothing. */
 .passive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.7rem; }
+/* A buff list inside an open group is a LIST, not a grid: the group is already half
+   the panel wide, so auto-fill gives it one column anyway, and the 0.7rem meant for
+   gaps between columns became 0.7rem of air between every checkbox. Rows close up
+   and the level select sits on the row rather than below it. */
+.equip-slot-body > .passive-grid { grid-template-columns: 1fr; gap: 0; }
+.equip-slot-body > .passive-grid > .field-checkbox { margin-top: 0; min-height: 1.75rem; align-items: center; }
+.equip-slot-body > .passive-grid > .field:not(.field-checkbox) { margin-top: 0.45rem; }
 .passive-grid .field input[type="number"] { width: 100%; }
 .passive-grid .field span { display: block; margin-top: 0.1rem; }
 
@@ -955,6 +962,11 @@ label {
   padding-bottom: 0.3rem; margin-top: 1rem; margin-bottom: 0.5rem;
 }
 .buff-section-header:first-child { margin-top: 0; }
+/* A header that introduces equipment-style slot rows drops its own rule: the first
+   slot draws a line across its own top edge, so the two sat a few pixels apart and
+   read as a mistake rather than as a heading. The slot's line is the one that has
+   to stay — it is what makes the rows read as a table. */
+.buff-section-header--flush { border-bottom: none; padding-bottom: 0; margin-bottom: 0.35rem; }
 
 /* "beta" marker for a section whose numbers aren't fully confirmed in game yet.
    Deliberately muted rather than --accent: gold reads as a damage figure here, and

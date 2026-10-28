@@ -36,6 +36,12 @@ const open = async (state) => {
   const page = await (await browser.newContext({ viewport: { width: 1500, height: 1400 } })).newPage();
   await page.goto(shareLink(state), { waitUntil: "networkidle" });
   await page.waitForTimeout(2500);
+  // Buff groups collapse like equipment slots now, so a buff this test wants to
+  // tick (Energy Coat, Hypothermia) starts hidden inside its group. A player opens
+  // the group once and the browser remembers; a fresh context never has. Expanding
+  // is part of reaching the control, not something under test here.
+  const expand = page.locator('[data-panel="buffs"]').getByRole("button", { name: /expand all/i }).first();
+  if (await expand.count()) { await expand.click(); await page.waitForTimeout(500); }
   return page;
 };
 const calculate = async (page) => {

@@ -68,6 +68,19 @@ const WILDCARD_DEFAULT_BONUS: Record<WildcardSlot["type"], number> = {
 // line, 25 the size line, 30 the race line. Alice's 40% off bosses is absent on
 // purpose: it costs 40% MORE off everything else, so it is a trade, not a default.
 const WILDCARD_RESIST_OPTIONS = [5, 10, 15, 20, 25, 30];
+
+// Short names for the two selects that live inside a buff group, so a closed group
+// can name what is set in it. The <option> text is written for the open list and is
+// too long for a slot line ("Volcano (Fire, +ATK/+MATK)").
+const ENDOW_LABELS: Record<string, string> = {
+  SC_ASPERSIO: "Aspersio", SC_PROPERTYFIRE: "Endow Fire", SC_PROPERTYWATER: "Endow Water",
+  SC_PROPERTYWIND: "Endow Wind", SC_PROPERTYGROUND: "Endow Ground",
+  SC_ENCHANTPOISON: "Enchant Poison", SC_ENCHANTARMS: "Cursed Water",
+};
+const BUFF_GROUP_KEYS = ["self", "priest", "blacksmith", "merchant", "sage", "songs"];
+const GROUND_LABELS: Record<string, string> = {
+  SC_VOLCANO: "Volcano", SC_DELUGE: "Deluge", SC_VIOLENTGALE: "Violent Gale",
+};
 const WILDCARD_RESIST_TYPES: WildcardSlot["type"][] = ["sub_race", "sub_ele", "sub_size"];
 // ONE definition of which categories a host offers, shared by the rows that draw
 // them and the request that prices them. They were allowed to disagree once before
@@ -357,16 +370,19 @@ const SELF_BUFFS = [
   // Explosion Spirits at level 13: PS formula 175+25×13 = +50% crit
   // (wiki.payonstories.com/Super_Novice "critical rate +50"). Distinct from
   // the Monk's 5-level Fury below.
-  { key: "SC_EXPLOSIONSPIRITS", label: "Critical Explosion (chant, +50% crit)", max: 13, jobs: [23] },
+  { key: "SC_EXPLOSIONSPIRITS", label: "Critical Explosion", max: 13, jobs: [23],
+    hint: "The Super Novice chant, typed at exact 10% EXP increments. Grants Explosion Spirits at level 13: +50% crit." },
   // Swordman line — Auto Berserk (SM_AUTOBERSERK): while HP < 25% you gain a
   // self Provoke Lv10 (+32% base ATK, −55% self-DEF). Presence-only. Jobs
   // derived from skill_tree.json: Swordman / Knight / Crusader / LK / Paladin.
-  { key: "SC_AUTOBERSERK",     label: "Auto Berserk (self Provoke 10)", max: 1, jobs: [1, 7, 14, 4008, 4015] },
+  { key: "SC_AUTOBERSERK",     label: "Auto Berserk", max: 1, jobs: [1, 7, 14, 4008, 4015],
+    hint: "SM_AUTOBERSERK. Below 25% HP you gain a self Provoke Lv10: +32% base ATK, −55% self-DEF." },
   // Magnum Break's lingering fire enchantment (10 s after casting it): adds 20% of a
   // normal attack as FIRE damage on top of the hit, bypassing DEF. Wootan Fighter Card
   // raises it to 30%. On PS it rides auto-attacks and Magnum Break only. Super Novice
   // (23) is included — its tree carries every 1st-class skill, Magnum Break included.
-  { key: "SC_SUB_WEAPONPROPERTY", label: "Magnum Break (lingering fire)", max: 1, jobs: [1, 7, 14, 23, 4008, 4015] },
+  { key: "SC_SUB_WEAPONPROPERTY", label: "Magnum Break", max: 1, jobs: [1, 7, 14, 23, 4008, 4015],
+    hint: "The lingering fire enchantment for 10s after casting it: adds 20% of a normal attack as Fire damage, bypassing DEF. Wootan Fighter Card raises it to 30%." },
   // Knight / Lord Knight
   { key: "SC_TWOHANDQUICKEN",  label: "Sword Quickening",      max: 10, jobs: [7, 4008] },
   // One rank in both the vanilla and PS skill DBs, and the ASPD it grants doesn't
@@ -440,7 +456,8 @@ const SELF_BUFFS = [
   // so 1 image is +10% and 5 is +30% (wiki.payonstories.com/Mirror_Image). The
   // skill grants ceil(lv/2) images, so five needs Mirror Image Lv9-10. Killing
   // Stroke consumes them all. Its evasion side isn't modeled; only the bonus is.
-  { key: "SC_NJ_BUNSINJYUTSU", label: "Mirror Image (images left)", max: 5, jobs: [25] },
+  { key: "SC_NJ_BUNSINJYUTSU", label: "Mirror Image", max: 5, jobs: [25],
+    hint: "The level picked is how many images are still up." },
   // PS wiki calls this "Double Bolt" (constant PF_DOUBLECASTING / status
   // SC_DOUBLECASTING). On Payon Stories it's a SAGE skill (wiki: class = Sage),
   // so both Sage and Professor get it — not just Professor as in vanilla. 100%
@@ -479,18 +496,22 @@ const PARTY_BUFFS = [
   // rank as well, so builds shared while it read 10 are corrected on load.
   // Over Thrust has no SELF_BUFFS counterpart, so this entry is also what a
   // self-casting Blacksmith ticks — labelled accordingly, and never hidden.
-  { key: "SC_OVERTHRUST", label: "Over Thrust (self or party)", max: 5, source: "Blacksmith" },
+  { key: "SC_OVERTHRUST", label: "Over Thrust", max: 5, source: "Blacksmith",
+    hint: "Self-cast or from a party Blacksmith — this is the only Over Thrust entry, so tick it either way. +5% ATK per rank, +25% at 5." },
   // Adrenaline Rush received from a party Blacksmith: PS rework gives +20% ASPD with
   // a Mace/Axe and +10% with any other melee weapon (bows and guns excluded). Level
   // only sets duration; the self-cast version lives in SELF_BUFFS.
-  { key: "SC_ADRENALINE", label: "Adrenaline Rush (from a party Blacksmith)", max: 1, source: "Blacksmith" },
+  { key: "SC_ADRENALINE", label: "Adrenaline Rush", max: 1, source: "Blacksmith",
+    hint: "From a party Blacksmith. +20% ASPD with a Mace or Axe, +10% with any other melee weapon; bows and guns excluded. Level only sets duration." },
   // Weapon Perfection from a party Blacksmith — the PS wiki is explicit that
   // "Party members also receive this skill's effects", and the effect is the same
   // as the self-cast one (no size penalty), so the engine treats both identically.
-  { key: "SC_WEAPONPERFECT", label: "Weapon Perfection (from a party Blacksmith)", max: 1, source: "Blacksmith" },
+  { key: "SC_WEAPONPERFECT", label: "Weapon Perfection", max: 1, source: "Blacksmith",
+    hint: "From a party Blacksmith. Removes the size penalty, the same as the self-cast version." },
   // Crazy Uproar from a party Merchant: soft DEF only (2 × level) — the +STR/+VIT
   // half is caster-only, which is why the self-cast entry lives in SELF_BUFFS.
-  { key: "SC_SHOUT", label: "Crazy Uproar (from a party Merchant — soft DEF only)", max: 4, source: "Merchant" },
+  { key: "SC_SHOUT", label: "Crazy Uproar", max: 4, source: "Merchant",
+    hint: "From a party Merchant: soft DEF only (2 × level). The +STR/+VIT half is caster-only, so a Merchant self-casting ticks the entry under Self buffs instead." },
 ] as const;
 
 // A party buff is hidden once your own job can cast the same thing on itself.
@@ -1137,6 +1158,34 @@ export default function BuildEditor() {
     try { localStorage.setItem(EQUIP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
     setOpenSlots(next);
   }, []);
+  // Buff groups are equipment slots. A class's buffs are a slot's contents: closed,
+  // the row says which of them you have up the way a closed equipment slot says what
+  // is worn; open, it is the checkbox list it always was. Same markup, same classes,
+  // same remembered-per-browser behaviour — if the two panels only RESEMBLED each
+  // other they would drift the first time one of them was touched.
+  const BUFF_OPEN_KEY = "opscalc.buffGroups";
+  const [openBuffGroups, setOpenBuffGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem(BUFF_OPEN_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+  const toggleBuffGroup = useCallback((key: string) => {
+    setOpenBuffGroups((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem(BUFF_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+  const setAllBuffGroups = useCallback((open: boolean, keys: string[]) => {
+    setOpenBuffGroups(() => {
+      const next: Record<string, boolean> = {};
+      for (const k of keys) next[k] = open;
+      try { localStorage.setItem(BUFF_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
   const [plagiarism, setPlagiarism] = useState<{ jobs: number[]; skills: { name: string; display_name: string; max_level: number }[] }>({ jobs: [], skills: [] });
   // Which weapons the selected skill can be cast with, already translated into item
   // weapon_types by the backend, plus its ready-made wording. Null = no restriction.
@@ -2183,7 +2232,46 @@ export default function BuildEditor() {
     );
   };
 
-  const partyBuffField = (b: { key: string; label: string; max: number }) =>
+  // The names a group has ticked, for its closed line. A level is shown only when it
+  // means something: for a buff whose level only sets duration the engine ignores it,
+  // and "Blessing Lv10" would be noise where "Blessing" is the fact.
+  const chosenFrom = (
+    entries: readonly { key: string; label: string; max: number }[],
+    bucket: Record<string, unknown> | undefined,
+  ) => entries
+    .filter((b) => Number((bucket || {})[b.key] ?? 0) > 0)
+    .map((b) => {
+      const lv = Number((bucket || {})[b.key] ?? 0);
+      // The songs carry a "(Cast)" / "(ASPD)" tag so you can tell what a cryptic
+      // name does while CHOOSING. On the closed line you have already chosen, and
+      // "A Poem of Bragi (Cast) 10" is three words of noise around the two that
+      // matter.
+      const name = b.label.replace(/\s*\([^)]*\)\s*$/, "");
+      return b.max > 1 && lv > 0 ? `${name} ${lv}` : name;
+    });
+
+  // One equipment slot, holding a group of buffs. Deliberately the equipment panel's
+  // own classes rather than a lookalike: the two are the same control and should go
+  // on being the same control after the next change to either.
+  const buffSlot = (key: string, label: string, chosen: string[], body: ReactNode, note?: string) => {
+    const open = openBuffGroups[key] ?? false;
+    const summary = chosen.length ? chosen.join(", ") : null;
+    return (
+      <div key={key} className={`equip-slot${open ? " equip-slot--open" : ""}${summary ? " equip-slot--filled" : ""}`}>
+        <button type="button" className="equip-slot-head" aria-expanded={open}
+          onClick={() => toggleBuffGroup(key)} title={note}>
+          <span className="equip-slot-label">{label}</span>
+          {!open && (
+            <span className={`equip-slot-value${summary ? "" : " is-empty"}`}>{summary ?? "None"}</span>
+          )}
+          <span className={`equip-slot-chevron${open ? " open" : ""}`}>▾</span>
+        </button>
+        <div className="equip-slot-body" hidden={!open}>{body}</div>
+      </div>
+    );
+  };
+
+  const partyBuffField = (b: { key: string; label: string; max: number; hint?: string }) =>
     buffCheckboxField(b, "support_buffs");
   const songBuffField = (b: { key: string; label: string; max: number; hint?: string }) =>
     buffCheckboxField(b, "song_state");
@@ -4118,13 +4206,31 @@ export default function BuildEditor() {
               const hasDancerSong = DANCER_SONG_KEYS.some((k) => Number(songState[k] || 0) > 0);
               return (
                 <>
+                  {/* OUTSIDE the self-buffs branch. These controls govern every group
+                      in the panel, and the party groups render whether or not this job
+                      has self buffs — put inside, a player with no job chosen saw five
+                      collapsed groups and nothing to open them with. */}
+                  <div className="equip-slot-actions">
+                    <button onClick={() => setAllBuffGroups(true, BUFF_GROUP_KEYS)}>Expand all</button>
+                    <button onClick={() => setAllBuffGroups(false, BUFF_GROUP_KEYS)}>Collapse all</button>
+                  </div>
                   {!hasSelfSection ? (
                     <p style={{ color: "var(--text-faint)", fontSize: "0.875rem" }}>
                       {data.job_id ? "No self-cast buffs modeled for this job yet." : "Select a job to see its self buffs."}
                     </p>
                   ) : (
                     <>
-                      <div className="buff-section-header">Self buffs</div>
+                      <div className="equip-grid">
+                      {buffSlot("self", "Self buffs", [
+                        ...chosenFrom(selfBuffs, data.active_buffs as Record<string, unknown>),
+                        ...(targetMods.performing ? ["Performing"] : []),
+                        ...(targetMods.breaking_cloak ? ["Breaking Cloak"] : []),
+                        ...(data.flags?.sn_never_died ? ["Never died"] : []),
+                        ...(data.flags?.sn_fury ? ["Fury"] : []),
+                        ...(data.flags?.is_riding_peco ? ["Riding a Peco"] : []),
+                        ...(Number(data.flags?.spirit_spheres ?? 0) > 0 ? [`${data.flags!.spirit_spheres} spheres`] : []),
+                        ...(Number(data.flags?.gs_coins ?? 0) > 0 ? [`${data.flags!.gs_coins} coins`] : []),
+                      ],
                       <div className="passive-grid">
                         {selfBuffs.map((b) => {
                           const active = (data.active_buffs?.[b.key] ?? 0) > 0;
@@ -4178,7 +4284,9 @@ export default function BuildEditor() {
                           <div className="field field-checkbox" key="__breaking_cloak">
                             <label title="Breaking Cloak (Assassin, requires Cloak Lv3+): breaking Cloak with an auto-attack makes that opening hit deal ×2 damage; breaking it with Sonic Blow adds +10%. Applies to the shown per-hit damage only (a one-time opener), not sustained DPS.">
                               <input type="checkbox" checked={!!targetMods.breaking_cloak} onChange={(e) => setTargetMods((m) => ({ ...m, breaking_cloak: e.target.checked }))} />
-                              <span>Breaking Cloak (opener: auto ×2 / Sonic Blow +10%)</span>
+                              {/* The effect is already spelled out in the title above; carrying it in
+                                  the label too made this the tallest row in the panel at three lines. */}
+                              <span>Breaking Cloak</span>
                             </label>
                           </div>
                         )}
@@ -4269,11 +4377,12 @@ export default function BuildEditor() {
                             )}
                           </div>
                         )}
+                      </div>)}
                       </div>
                     </>
                   )}
 
-                  <div className="buff-section-header">
+                  <div className="buff-section-header buff-section-header--flush">
                     Party buffs
                     <InfoTooltip>
                       Received from a party member, not self-cast — these are never
@@ -4285,8 +4394,10 @@ export default function BuildEditor() {
                     </InfoTooltip>
                   </div>
 
-                  <div className="buff-group">
-                    <span className="buff-group-label">Priest</span>
+                  <div className="equip-grid">
+                  {buffSlot("priest", "Priest",
+                    [...chosenFrom(partyBuffsFrom("Priest", data.job_id), data.support_buffs as Record<string, unknown>),
+                     ...(endowValue && !gsNoEndow ? [ENDOW_LABELS[endowValue] ?? "Endow"] : [])],
                     <div className="passive-grid">
                       {partyBuffsFrom("Priest", data.job_id).map(partyBuffField)}
                       {/* PS Gunslinger release notes: "Gunslingers are no longer able to be
@@ -4308,28 +4419,26 @@ export default function BuildEditor() {
                           <option value="SC_ENCHANTARMS">Cursed Water (Shadow)</option>
                         </select>
                       </div>
-                    </div>
-                  </div>
+                    </div>)}
 
-                  <div className="buff-group">
-                    <span className="buff-group-label">Blacksmith</span>
+                  {buffSlot("blacksmith", "Blacksmith",
+                    chosenFrom(partyBuffsFrom("Blacksmith", data.job_id), data.support_buffs as Record<string, unknown>),
                     <div className="passive-grid">
                       {partyBuffsFrom("Blacksmith", data.job_id).map(partyBuffField)}
-                    </div>
-                  </div>
+                    </div>)}
 
                   {/* Crazy Uproar is the whole Merchant group, and it's hidden from the
                       Merchant line itself (they self-cast it), so the group can empty
                       out entirely — don't leave a bare header behind. */}
-                  <div className="buff-group" hidden={partyBuffsFrom("Merchant", data.job_id).length === 0}>
-                    <span className="buff-group-label">Merchant</span>
+                  {partyBuffsFrom("Merchant", data.job_id).length > 0 && buffSlot("merchant", "Merchant",
+                    chosenFrom(partyBuffsFrom("Merchant", data.job_id), data.support_buffs as Record<string, unknown>),
                     <div className="passive-grid">
                       {partyBuffsFrom("Merchant", data.job_id).map(partyBuffField)}
-                    </div>
-                  </div>
+                    </div>)}
 
-                  <div className="buff-group">
-                    <span className="buff-group-label">Sage</span>
+                  {buffSlot("sage", "Sage",
+                    [...(groundEffectType ? [GROUND_LABELS[groundEffectType] ?? "Ground effect"] : []),
+                     ...(isSageLine && autoSpellLv ? [`Hindsight ${autoSpellLv}`] : [])],
                     <div className="passive-grid">
                       <div className="field">
                         <label title="SA_VOLCANO / SA_DELUGE / SA_VIOLENTGALE — applies max level when selected">Ground effect</label>
@@ -4357,12 +4466,14 @@ export default function BuildEditor() {
                           </select>
                         </div>
                       )}
-                    </div>
-                  </div>
+                    </div>)}
 
-                  <div className="buff-section-header" title="From a party member, never filtered by your own job">Bard / Dancer songs</div>
-                  <div className="passive-grid">
-                    {SONG_BUFFS.map(songBuffField)}
+                  {buffSlot("songs", "Bard / Dancer songs",
+                    chosenFrom(SONG_BUFFS, data.song_state as Record<string, unknown>),
+                    <div className="passive-grid">
+                      {SONG_BUFFS.map(songBuffField)}
+                    </div>,
+                    "From a party member, never filtered by your own job")}
                   </div>
 
                   {(hasBardSong || hasDancerSong) && (
