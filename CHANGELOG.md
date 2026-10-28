@@ -19,6 +19,12 @@ instead of release version. Dates are taken from actual git commit history.
   and Abomring gives All Stats +1, and a Novice or Super Novice also gets +500 HP and
   +50 SP. None of it was applied before.
 
+- **Jelring Cards no longer fire on the MVP Poring.** The Poring family was counting
+  every monster that shares one of those names, which swept in the level-98 MVP Poring
+  along with a handful of event and dummy copies that never spawn. The card says
+  non-boss and non-miniboss, so it now applies only to Porings you can actually meet:
+  Poring, Poporing, Drops, Marin, Metaling, Onigiring and the ring cards' own six.
+
 ## 2026-10-27
 
 ### Changed

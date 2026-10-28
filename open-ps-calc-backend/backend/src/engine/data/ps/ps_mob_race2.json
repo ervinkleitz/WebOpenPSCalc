@@ -4,23 +4,16 @@
  "_excluded": "The wiki names exclusions explicitly and they are NOT members: Corruptor (3993), Santa Poring (1062), Stapo (1784), and every miniboss/MVP — King Poring (3994), Angeling, Deviling, Ghostring, Arcangeling. This matters more than it looks: Corruptor 3993 and King Poring 3994 sit INSIDE the 3987-3998 custom block with the real members, so any rule based on an ID range would wrongly include both.",
  "_members_by_name": {
   "Poring": [
-   1002,
-   1725,
-   1847,
-   1973,
-   3997
+   1002
   ],
   "Poporing": [
-   1031,
-   3998
+   1031
   ],
   "Drops": [
-   1113,
-   1572
+   1113
   ],
   "Marin": [
    1242,
-   1595,
    1857
   ],
   "Metaling": [
@@ -33,56 +26,37 @@
    3988
   ],
   "Abomring": [
-   2511,
    3989
   ],
   "Jelring": [
-   2510,
    3990
   ],
   "Conductring": [
-   2512,
-   3991,
-   3995
+   3991
   ],
   "Spectring": [
-   3992,
-   3996
+   3992
   ],
   "Onigiring": [
-   3048,
-   25522
+   3048
   ]
  },
- "_duplicates": "Several names resolve to more than one id (Poring to five, Conductring to three). Every copy of a named Poring-type is included: they are the same monster to a player, and a bonus that applied to one Marin but not another would be a harder bug to see than one that is slightly too generous. The lv-1 trio 2510/2511/2512 is included on the same grounds.",
+ "_duplicates": "Several names resolve to more than one id, so only ids a player can actually meet and kill are members. Two independent filters, and they agree. (1) is_boss is out, because the card text itself says \"non-boss and non-miniboss\": that removes Poring 1847, which is an MVP at level 98 with 10,000,000 HP, Angel race and Ghost element -- a Poring in name only -- plus the boss-flagged level-1 stubs 1973/2510/2511/2512/3997/3998. (2) zero EXP is out as an event or dummy copy: Poring 1725 and Drops 1572 (both 50-55 HP), Marin 1595, the duplicate Conductring 3995 and Spectring 3996, and Onigiring 25522, which has 1 HP and 1 ATK. Every surviving id grants EXP and carries no boss flag. Marin keeps BOTH 1242 and 1857: each is non-boss and each grants EXP (123 and 99), so both are real spawns.",
  "groups": {
   "RC2_Poring": [
    1002,
    1031,
    1113,
    1242,
-   1572,
-   1595,
    1613,
-   1725,
-   1847,
    1857,
-   1973,
-   2510,
-   2511,
-   2512,
    3048,
    3987,
    3988,
    3989,
    3990,
    3991,
-   3992,
-   3995,
-   3996,
-   3997,
-   3998,
-   25522
+   3992
   ]
  }
 }

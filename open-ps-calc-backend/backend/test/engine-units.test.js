@@ -7931,6 +7931,40 @@ test("Jelring Card: +30% against Poring-type monsters, and nothing against the r
   }
   // And a monster of another race entirely.
   assert.equal(dmg(card(3), 1036), dmg(WEAPON, 1036), "a Ghoul is not a Poring");
+
+  // Several of these names resolve to more than one id, and only the spawns a player
+  // can actually meet are members. Two filters, agreeing: the boss flag (the card says
+  // "non-boss and non-miniboss") and zero EXP (an event or dummy copy).
+  for (const [mob, name] of [
+    [1973, "Poring 1973, a boss-flagged level-1 stub"],
+    [2510, "Jelring 2510, a boss-flagged level-1 stub beside the real 3990"],
+    [1725, "Poring 1725, a 50 HP copy granting no EXP"],
+    [1595, "Marin 1595, the copy granting no EXP"],
+    [3995, "Conductring 3995, the duplicate granting no EXP"],
+    [25522, "Onigiring 25522, which has 1 HP and 1 ATK"],
+  ]) {
+    const bare = dmg(WEAPON, mob);
+    // Without this, a target whose DEF floors the hit at 1 would pass the equality
+    // below while proving nothing — 130% of 1 is still 1. Poring 1847 fails exactly
+    // that way, which is why it is checked against the family map instead.
+    assert.ok(bare > 1, `${name}: bare damage ${bare} is too low to detect a +90%`);
+    assert.equal(dmg(card(3), mob), bare, `${name} is not a member`);
+  }
+  // Poring 1847 is an MVP at level 98 with 10,000,000 HP, Angel race and Ghost
+  // element — a Poring in name only, and excluded by the card's own "non-boss and
+  // non-miniboss". Its DEF floors this build's hit at 1, so damage cannot show the
+  // difference; read the membership straight off the map that cardFix consults.
+  const fams = (id) => loader._mobRace2Map()[id] || loader._mobRace2Map()[String(id)] || [];
+  assert.ok(loader.getMonster(1847).is_boss, "1847 is the boss-flagged MVP Poring");
+  assert.ok(!fams(1847).includes("RC2_Poring"), "the MVP Poring 1847 is not a member");
+  assert.ok(fams(3990).includes("RC2_Poring"), "...and the map does place the real Jelring");
+  // Marin is the case that keeps BOTH ids: 1242 and 1857 are each non-boss and each
+  // grant EXP, so a card has to fire on the second one too.
+  for (const mob of [1242, 1857]) {
+    const bare = dmg(WEAPON, mob);
+    assert.ok(Math.abs(dmg(card(1), mob) / bare - 1.30) < 0.02,
+      `Marin ${mob} is a real spawn and takes the +30% (got ${dmg(card(1), mob) / bare})`);
+  }
 });
 
 // The [Bouncy Set] was missing outright — no combo referenced any of the four cards.
