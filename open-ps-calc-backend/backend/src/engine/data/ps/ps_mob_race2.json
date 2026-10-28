@@ -1,0 +1,88 @@
+{
+ "_source": "wiki.payonstories.com/What_is_a_Poring%3F — the only place PS publishes the membership. It is prose on a dedicated page, NOT a mob-page field or a wiki Category, which is why a sweep of either finds nothing. The item API carries no script and there is no mob endpoint, so this cannot be rebuilt from tools.payonstories.com.",
+ "_note": "PS-CUSTOM monster families, merged over the vanilla pre-re groups by dataLoader._mobRace2Map. The six vanilla RC2 groups (Orc, Goblin, Kobold, Golem, Guardian, Ninja) stay where they are; this file is for families PS invented.",
+ "_excluded": "The wiki names exclusions explicitly and they are NOT members: Corruptor (3993), Santa Poring (1062), Stapo (1784), and every miniboss/MVP — King Poring (3994), Angeling, Deviling, Ghostring, Arcangeling. This matters more than it looks: Corruptor 3993 and King Poring 3994 sit INSIDE the 3987-3998 custom block with the real members, so any rule based on an ID range would wrongly include both.",
+ "_members_by_name": {
+  "Poring": [
+   1002,
+   1725,
+   1847,
+   1973,
+   3997
+  ],
+  "Poporing": [
+   1031,
+   3998
+  ],
+  "Drops": [
+   1113,
+   1572
+  ],
+  "Marin": [
+   1242,
+   1595,
+   1857
+  ],
+  "Metaling": [
+   1613
+  ],
+  "Doughring": [
+   3987
+  ],
+  "Protoring": [
+   3988
+  ],
+  "Abomring": [
+   2511,
+   3989
+  ],
+  "Jelring": [
+   2510,
+   3990
+  ],
+  "Conductring": [
+   2512,
+   3991,
+   3995
+  ],
+  "Spectring": [
+   3992,
+   3996
+  ],
+  "Onigiring": [
+   3048,
+   25522
+  ]
+ },
+ "_duplicates": "Several names resolve to more than one id (Poring to five, Conductring to three). Every copy of a named Poring-type is included: they are the same monster to a player, and a bonus that applied to one Marin but not another would be a harder bug to see than one that is slightly too generous. The lv-1 trio 2510/2511/2512 is included on the same grounds.",
+ "groups": {
+  "RC2_Poring": [
+   1002,
+   1031,
+   1113,
+   1242,
+   1572,
+   1595,
+   1613,
+   1725,
+   1847,
+   1857,
+   1973,
+   2510,
+   2511,
+   2512,
+   3048,
+   3987,
+   3988,
+   3989,
+   3990,
+   3991,
+   3992,
+   3995,
+   3996,
+   3997,
+   3998,
+   25522
+  ]
+ }
+}

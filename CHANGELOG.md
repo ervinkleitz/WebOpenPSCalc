@@ -5,6 +5,20 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-28
+
+### Fixed
+
+- **Jelring Cards do something now.** A weapon with three of them priced exactly the
+  same as a bare one — the card's +30% against Poring-type monsters was never applied
+  at all. Three cards against a Jelring now read 174–205 where they read 92–108.
+  Santa Poring, Corruptor, King Poring and the other bosses are excluded, as Payon
+  Stories excludes them. Reported by a player.
+
+- **The Bouncy Set is counted.** Wearing all four of Doughring, Jelring, Protoring
+  and Abomring gives All Stats +1, and a Novice or Super Novice also gets +500 HP and
+  +50 SP. None of it was applied before.
+
 ## 2026-10-27
 
 ### Changed

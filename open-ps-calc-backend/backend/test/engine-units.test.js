@@ -7890,3 +7890,76 @@ test("Spear Quicken's HIT and FLEE need a spear, like its ASPD already did", () 
   assert.equal(sword.dFlee, 0, "and no FLEE");
   assert.equal(sword.dAspd, 0, "as its ASPD half already knew");
 });
+
+// Reported 2026-10-28: a build with three Jelring Cards did the same damage as one
+// with none. It did — the card's script was an empty string, so the +30% it
+// promises was worth nothing, and even a scripted one would have matched nothing
+// because no Poring family existed to match against.
+//
+// Membership comes from wiki.payonstories.com/What_is_a_Poring%3F, which is the
+// ONLY place PS publishes it: not a wiki Category, not a field on a mob page, and
+// not the item API (which carries no scripts and has no mob endpoint at all).
+//
+// The exclusions are the half worth testing. The wiki names them — Corruptor,
+// Santa Poring, Stapo, every miniboss/MVP — and Corruptor 3993 and King Poring 3994
+// sit INSIDE the 3987-3998 custom block beside the real members, so any rule built
+// on an ID range would have swept both in.
+test("Jelring Card: +30% against Poring-type monsters, and nothing against the rest", () => {
+  const B = {
+    job_id: 4, base_level: 40, job_level: 30,
+    base_stats: { str: 29, agi: 1, vit: 1, int: 1, dex: 54, luk: 1 },
+  };
+  const dmg = (equipped, target) =>
+    runScenarioRaw({ build: { ...B, equipped }, target }).raw.normal.avg_damage;
+  const WEAPON = { right_hand: 1520 };                       // Chain [3]
+  const card = (n) => ({ ...WEAPON, ...Object.fromEntries(
+    Array.from({ length: n }, (_, i) => [`right_hand_card${i + 1}`, 8213])) });
+
+  // 3990 Jelring, the reported case, and 1002 Poring / 1113 Drops from the same list.
+  for (const [mob, name] of [[3990, "Jelring"], [1002, "Poring"], [1113, "Drops"]]) {
+    const bare = dmg(WEAPON, mob), one = dmg(card(1), mob), three = dmg(card(3), mob);
+    assert.ok(Math.abs(one / bare - 1.30) < 0.02, `${name}: one card is +30% (got ${one / bare})`);
+    // Same-name cards stack additively, so three is +90%, not 1.3^3.
+    assert.ok(Math.abs(three / bare - 1.90) < 0.02, `${name}: three cards are +90% (got ${three / bare})`);
+  }
+  // Named by the wiki as NOT Poring-type, though it is a Poring by name...
+  assert.equal(dmg(card(3), 1062), dmg(WEAPON, 1062), "Santa Poring is excluded by name");
+  // ...and these two live inside the custom ID block with the real members.
+  for (const [mob, name] of [[3993, "Corruptor"], [3994, "King Poring"]]) {
+    const b = dmg(WEAPON, mob);
+    assert.equal(dmg(card(3), mob), b, `${name} sits in the 399x block but is excluded`);
+  }
+  // And a monster of another race entirely.
+  assert.equal(dmg(card(3), 1036), dmg(WEAPON, 1036), "a Ghoul is not a Poring");
+});
+
+// The [Bouncy Set] was missing outright — no combo referenced any of the four cards.
+// All Stats +1 for anyone; +500 HP and +50 SP only for a Novice or Super Novice.
+test("Bouncy Set: all four cards for All Stats +1, and its Novice-only HP/SP", () => {
+  const SET = { right_hand: 1520, right_hand_card1: 8212, right_hand_card2: 8213,
+                right_hand_card3: 8211, accessory_left: 2607, accessory_left_card1: 8214 };
+  const THREE = { right_hand: 1520, right_hand_card1: 8212, right_hand_card2: 8213, right_hand_card3: 8211 };
+  const st = (job, equipped) => {
+    const b = buildFromSaveSchema({
+      server: "payon_stories", job_id: job, base_level: 40, job_level: 30,
+      base_stats: { str: 29, agi: 1, vit: 1, int: 1, dex: 54, luk: 1 }, equipped,
+    });
+    return resolvePlayerState(b, createBattleConfig(), PS)[3];
+  };
+  for (const [job, name, novice] of [[23, "Super Novice", true], [0, "Novice", true], [4, "Acolyte", false]]) {
+    const bare = st(job, { right_hand: 1520 }), full = st(job, SET), three = st(job, THREE);
+    assert.equal(full.dex, bare.dex + 1, `${name}: All Stats +1 reaches DEX`);
+    // +500 HP lands on top of the +1 VIT's own contribution, so compare against the
+    // partial set rather than asserting an exact total.
+    if (novice) {
+      assert.ok(full.max_hp - bare.max_hp >= 500, `${name}: +500 HP (got ${full.max_hp - bare.max_hp})`);
+      assert.ok(full.max_sp - bare.max_sp >= 50, `${name}: +50 SP (got ${full.max_sp - bare.max_sp})`);
+    } else {
+      assert.ok(full.max_hp - bare.max_hp < 500,
+        `${name} is not a Novice and must NOT get the 500 (got ${full.max_hp - bare.max_hp})`);
+    }
+    // Three of the four is not the set.
+    assert.equal(three.dex, bare.dex, `${name}: three cards do not complete the set`);
+    assert.equal(three.max_hp, bare.max_hp, `${name}: nor grant its HP`);
+  }
+});

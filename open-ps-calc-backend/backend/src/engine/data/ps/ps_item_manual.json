@@ -718,7 +718,8 @@
   ],
   "slots": 0,
   "aegis_name": "Jelring_Card",
-  "script": ""
+  "script": "bonus2 bAddRace2,RC2_Poring,30;",
+  "_note": "PS item API: \"Increases damage against most non-boss and non-miniboss Poring type monsters by 30%.\" The API publishes no scripts, so this is written by hand from that text. \"Most\" is the exclusion list the wiki gives (Corruptor, Santa Poring, every miniboss/MVP) - membership and its source live in ps_mob_race2.json. This was an EMPTY script until 2026-10-28: three of these cards on a weapon moved the damage not at all, reported against a Jelring. Its Bouncy Set siblings were scripted; the only one carrying a DAMAGE effect was the blank one."
  },
  "8214": {
   "type": "IT_CARD",

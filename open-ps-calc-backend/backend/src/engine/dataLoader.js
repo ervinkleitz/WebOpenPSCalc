@@ -366,9 +366,15 @@ class DataLoader {
       const map = {};
       try {
         const groups = (this._loadJson("db/mob_race2_db.json").groups) || {};
-        for (const [rc2, ids] of Object.entries(groups)) {
+        // PS invents families of its own (RC2_Poring, for the Bouncy cards). They
+        // merge over the vanilla six rather than being edited into them: that file
+        // is vanilla pre-re data, and a PS family in it would be a lie about where
+        // the fact came from. Merged unconditionally — a vanilla build has no card
+        // that names a PS family, so nothing can pick one up by accident.
+        const psGroups = (readJsonSafe(path.join(PS_DIR, "ps_mob_race2.json"), {}).groups) || {};
+        for (const [rc2, ids] of [...Object.entries(groups), ...Object.entries(psGroups)]) {
           for (const id of ids) {
-            (map[id] = map[id] || []).push(rc2);
+            if (!(map[id] || []).includes(rc2)) (map[id] = map[id] || []).push(rc2);
           }
         }
       } catch {
