@@ -20,6 +20,11 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Fixed
 
+- **Auto Blitz Beat procs a little less often than we were showing.** The rate is
+  0.3% per point of LUK, not the 1-per-3-LUK the wiki describes — at 114 LUK that is
+  34.2%, not 38%. Only the falcon's share of your DPS changes; its damage per hit is
+  the same. Reported by a player.
+
 - **That Critical explanation now opens on screen.** When it first went up it hung off
   the left edge of the window and the first few words of every line were cut off.
 

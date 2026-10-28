@@ -2202,7 +2202,7 @@ unmodeled — it needs the target to already carry that status.
   but it is the correct hook if one appears), and `NK_SPLASHSPLIT`, which an **autocast** Blitz Beat
   sets when it hits more than one target (damage divided among them) — so auto-blitz is overstated
   against a pack, though single-target is right.
-- **Auto Blitz Beat proc chance — sources disagree** [low, ~180 DPS]. Ours and the PS wiki say
+- ~~**Auto Blitz Beat proc chance — sources disagree** [low, ~180 DPS]~~ — **RESOLVED 2026-10-27: it is 0.3% per LUK.** The maintainer relayed a server-side answer in Discord. That is the reading Hercules and jaludev already agreed on, so the WIKI is the outlier here, not PS: its "1% for every 3 points of LUK" overstates the rate by a tenth. At LUK 114 the proc goes 38% -> 34.2%, and two golden DPS figures fell with it (1104.97 -> 1021.31, 1128.28 -> 1071.30); no per-hit damage moved, which is right — the chance only ever fed DPS. The hit-count half of this entry was already correct and is unchanged. Original text: Ours and the PS wiki say
   `⌊LUK/3⌋` ("for every 3 points of LUK there is an additional 1% chance") = 38% at LUK 114;
   Hercules `skill.c:1638` is `rnd()%1000 <= luk*3`, i.e. `(3×LUK+1)/1000` = 34.3%; the jaludev calc
   uses `1 + 0.3×LUK` = 35.2%. Left on the wiki reading per the source hierarchy (wiki beats battle.c

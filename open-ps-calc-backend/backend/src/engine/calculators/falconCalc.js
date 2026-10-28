@@ -46,12 +46,27 @@ function computeFalconDamage(status, build, gearBonuses, target, loader) {
   const elemRatio = loader.getAttrFixMultiplier(0, target.element, target.element_level) / 100;
   const perHit = Math.floor(base * elemRatio);
 
-  // Auto Blitz Beat (triggers on a BOW auto-attack): chance = ⌊LUK/3⌋%, hits =
+  // Auto Blitz Beat (triggers on a BOW auto-attack): chance = 0.3% per LUK, hits =
   // min(Blitz Beat level, ⌊job level/10⌋+1) capped at 5 — requires Blitz Beat
-  // learned. wiki.payonstories.com/Blitz_Beat.
+  // learned.
+  //
+  // The rate is 0.3%/LUK, NOT the wiki's "1% for every 3 points of LUK" (0.333%).
+  // Reported by the maintainer 2026-10-27 citing a server-side answer in Discord,
+  // and it resolves the three-way disagreement the roadmap had recorded: the wiki
+  // said 0.333%/LUK, Hercules skill.c:1638 (`rnd()%1000 <= luk*3`) says 0.3%/LUK,
+  // and jaludev said 1 + 0.3×LUK. Two of the three agree on 0.3 and the wiki is the
+  // outlier, so this is the wiki being wrong about a PS-reworked skill rather than
+  // PS differing from the emulator.
+  //
+  // Hercules' own line is a shade higher than a flat 0.3%/LUK — `<=` on rnd()%1000
+  // makes it (3×LUK + 1)/1000, so 0.1% more — but the figure quoted is 0.3%/LUK and
+  // that 0.1% is an artefact of the comparison rather than a stated rule.
+  // At LUK 114: 34.2% here, against the 38% the wiki reading gave.
   const jobLevel = build.job_level || 1;
   const autoBlitzHits = blitzBeatLv >= 1 ? Math.min(blitzBeatLv, Math.floor(jobLevel / 10) + 1, 5) : 0;
-  const autoBlitzChance = Math.min(100, Math.floor(status.luk / 3));
+  // luk*3/10 rather than luk*0.3: the former is exact in binary floating point at
+  // one decimal place, the latter gives 29.700000000000003 at LUK 99.
+  const autoBlitzChance = Math.min(100, (status.luk * 3) / 10);
 
   return {
     per_hit:           perHit,

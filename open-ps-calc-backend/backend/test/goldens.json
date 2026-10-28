@@ -4070,7 +4070,7 @@
    "matk_max": 208
   },
   "result": {
-   "dps": 1104.97,
+   "dps": 1021.311,
    "dps_valid": true,
    "hit_chance": 100,
    "crit_chance": 29,
@@ -5711,7 +5711,7 @@
    "matk_max": 6
   },
   "result": {
-   "dps": 1128.279,
+   "dps": 1071.295,
    "dps_valid": true,
    "hit_chance": 98,
    "crit_chance": 46.3,

@@ -473,7 +473,16 @@ test("Auto Blitz Beat: bow normal attack surfaces a proc branch at ⌊LUK/3⌋% 
     status, weapon, createSkillInstance({ id: 0, level: 1 }),
     createTarget({ def_: 0, size: 1, race: 0, element: 0 }), eff, gb);
   assert.ok(r.proc_branches?.auto_blitz, "expected proc_branches.auto_blitz for a Falcon bow Hunter");
-  assert.strictEqual(r.proc_chances.auto_blitz, Math.floor(status.luk / 3), "chance must be ⌊LUK/3⌋");
+  // 0.3% per LUK, not the wiki's "1% per 3 LUK" (0.333%) — maintainer, 2026-10-27,
+  // from a server-side answer. It settles a disagreement the roadmap had recorded
+  // three ways: Hercules skill.c:1638 also gives 0.3%/LUK, jaludev gives 0.3%/LUK
+  // plus a point, and only the wiki said 0.333%. Asserted as a RATE rather than a
+  // repeat of the expression, or the test would pass against any formula the code
+  // happened to hold.
+  assert.strictEqual(r.proc_chances.auto_blitz, (status.luk * 3) / 10,
+    `chance must be 0.3% per LUK (LUK ${status.luk} -> ${(status.luk * 3) / 10}%)`);
+  assert.ok(r.proc_chances.auto_blitz < status.luk / 3,
+    "and must be BELOW the old wiki reading, or the fix did not land");
 });
 
 test("Auto Blitz Beat: raises DPS over the same build without Blitz Beat learned", () => {
@@ -2506,7 +2515,9 @@ test("the falcon ignores the attacker's race/boss cards, but the bow attack does
 
   // Hit count and proc chance still follow job level and LUK.
   assert.equal(bare.auto_blitz_hits, 5, "job level 50 + Blitz Lv5 = 5 hits");
-  assert.equal(bare.auto_blitz_chance, Math.floor(st.luk / 3));
+  // 0.3% per LUK — see the proc-chance test above for why this is not the wiki's
+  // 1-per-3 reading.
+  assert.equal(bare.auto_blitz_chance, (st.luk * 3) / 10);
 });
 
 // ---------------------------------------------------------------------------
