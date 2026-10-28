@@ -962,6 +962,11 @@ label {
   padding-bottom: 0.3rem; margin-top: 1rem; margin-bottom: 0.5rem;
 }
 .buff-section-header:first-child { margin-top: 0; }
+/* A header that introduces equipment-style slot rows drops its own rule: the first
+   slot draws a line across its own top edge, so the two sat a few pixels apart and
+   read as a mistake rather than as a heading. The slot's line is the one that has
+   to stay — it is what makes the rows read as a table. */
+.buff-section-header--flush { border-bottom: none; padding-bottom: 0; margin-bottom: 0.35rem; }
 
 /* "beta" marker for a section whose numbers aren't fully confirmed in game yet.
    Deliberately muted rather than --accent: gold reads as a damage figure here, and

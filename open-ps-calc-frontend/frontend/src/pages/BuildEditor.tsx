@@ -4382,7 +4382,7 @@ export default function BuildEditor() {
                     </>
                   )}
 
-                  <div className="buff-section-header">
+                  <div className="buff-section-header buff-section-header--flush">
                     Party buffs
                     <InfoTooltip>
                       Received from a party member, not self-cast — these are never
