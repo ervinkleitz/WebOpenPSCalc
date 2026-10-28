@@ -68,6 +68,19 @@ const WILDCARD_DEFAULT_BONUS: Record<WildcardSlot["type"], number> = {
 // line, 25 the size line, 30 the race line. Alice's 40% off bosses is absent on
 // purpose: it costs 40% MORE off everything else, so it is a trade, not a default.
 const WILDCARD_RESIST_OPTIONS = [5, 10, 15, 20, 25, 30];
+
+// Short names for the two selects that live inside a buff group, so a closed group
+// can name what is set in it. The <option> text is written for the open list and is
+// too long for a slot line ("Volcano (Fire, +ATK/+MATK)").
+const ENDOW_LABELS: Record<string, string> = {
+  SC_ASPERSIO: "Aspersio", SC_PROPERTYFIRE: "Endow Fire", SC_PROPERTYWATER: "Endow Water",
+  SC_PROPERTYWIND: "Endow Wind", SC_PROPERTYGROUND: "Endow Ground",
+  SC_ENCHANTPOISON: "Enchant Poison", SC_ENCHANTARMS: "Cursed Water",
+};
+const BUFF_GROUP_KEYS = ["priest", "blacksmith", "merchant", "sage", "songs"];
+const GROUND_LABELS: Record<string, string> = {
+  SC_VOLCANO: "Volcano", SC_DELUGE: "Deluge", SC_VIOLENTGALE: "Violent Gale",
+};
 const WILDCARD_RESIST_TYPES: WildcardSlot["type"][] = ["sub_race", "sub_ele", "sub_size"];
 // ONE definition of which categories a host offers, shared by the rows that draw
 // them and the request that prices them. They were allowed to disagree once before
@@ -1145,6 +1158,34 @@ export default function BuildEditor() {
     try { localStorage.setItem(EQUIP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
     setOpenSlots(next);
   }, []);
+  // Buff groups are equipment slots. A class's buffs are a slot's contents: closed,
+  // the row says which of them you have up the way a closed equipment slot says what
+  // is worn; open, it is the checkbox list it always was. Same markup, same classes,
+  // same remembered-per-browser behaviour — if the two panels only RESEMBLED each
+  // other they would drift the first time one of them was touched.
+  const BUFF_OPEN_KEY = "opscalc.buffGroups";
+  const [openBuffGroups, setOpenBuffGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem(BUFF_OPEN_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+  const toggleBuffGroup = useCallback((key: string) => {
+    setOpenBuffGroups((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem(BUFF_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+  const setAllBuffGroups = useCallback((open: boolean, keys: string[]) => {
+    setOpenBuffGroups(() => {
+      const next: Record<string, boolean> = {};
+      for (const k of keys) next[k] = open;
+      try { localStorage.setItem(BUFF_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
   const [plagiarism, setPlagiarism] = useState<{ jobs: number[]; skills: { name: string; display_name: string; max_level: number }[] }>({ jobs: [], skills: [] });
   // Which weapons the selected skill can be cast with, already translated into item
   // weapon_types by the backend, plus its ready-made wording. Null = no restriction.
@@ -2187,6 +2228,45 @@ export default function BuildEditor() {
           </select>
         )}
         {on && d.hint}
+      </div>
+    );
+  };
+
+  // The names a group has ticked, for its closed line. A level is shown only when it
+  // means something: for a buff whose level only sets duration the engine ignores it,
+  // and "Blessing Lv10" would be noise where "Blessing" is the fact.
+  const chosenFrom = (
+    entries: readonly { key: string; label: string; max: number }[],
+    bucket: Record<string, unknown> | undefined,
+  ) => entries
+    .filter((b) => Number((bucket || {})[b.key] ?? 0) > 0)
+    .map((b) => {
+      const lv = Number((bucket || {})[b.key] ?? 0);
+      // The songs carry a "(Cast)" / "(ASPD)" tag so you can tell what a cryptic
+      // name does while CHOOSING. On the closed line you have already chosen, and
+      // "A Poem of Bragi (Cast) 10" is three words of noise around the two that
+      // matter.
+      const name = b.label.replace(/\s*\([^)]*\)\s*$/, "");
+      return b.max > 1 && lv > 0 ? `${name} ${lv}` : name;
+    });
+
+  // One equipment slot, holding a group of buffs. Deliberately the equipment panel's
+  // own classes rather than a lookalike: the two are the same control and should go
+  // on being the same control after the next change to either.
+  const buffSlot = (key: string, label: string, chosen: string[], body: ReactNode, note?: string) => {
+    const open = openBuffGroups[key] ?? false;
+    const summary = chosen.length ? chosen.join(", ") : null;
+    return (
+      <div key={key} className={`equip-slot${open ? " equip-slot--open" : ""}${summary ? " equip-slot--filled" : ""}`}>
+        <button type="button" className="equip-slot-head" aria-expanded={open}
+          onClick={() => toggleBuffGroup(key)} title={note}>
+          <span className="equip-slot-label">{label}</span>
+          {!open && (
+            <span className={`equip-slot-value${summary ? "" : " is-empty"}`}>{summary ?? "None"}</span>
+          )}
+          <span className={`equip-slot-chevron${open ? " open" : ""}`}>▾</span>
+        </button>
+        <div className="equip-slot-body" hidden={!open}>{body}</div>
       </div>
     );
   };
@@ -4295,8 +4375,16 @@ export default function BuildEditor() {
                     </InfoTooltip>
                   </div>
 
-                  <div className="buff-group">
-                    <span className="buff-group-label">Priest</span>
+                  {/* The same escape hatch the equipment panel offers, for anyone who
+                      would rather see every buff at once than click through classes. */}
+                  <div className="equip-slot-actions">
+                    <button onClick={() => setAllBuffGroups(true, BUFF_GROUP_KEYS)}>Expand all</button>
+                    <button onClick={() => setAllBuffGroups(false, BUFF_GROUP_KEYS)}>Collapse all</button>
+                  </div>
+                  <div className="equip-grid">
+                  {buffSlot("priest", "Priest",
+                    [...chosenFrom(partyBuffsFrom("Priest", data.job_id), data.support_buffs as Record<string, unknown>),
+                     ...(endowValue && !gsNoEndow ? [ENDOW_LABELS[endowValue] ?? "Endow"] : [])],
                     <div className="passive-grid">
                       {partyBuffsFrom("Priest", data.job_id).map(partyBuffField)}
                       {/* PS Gunslinger release notes: "Gunslingers are no longer able to be
@@ -4318,28 +4406,26 @@ export default function BuildEditor() {
                           <option value="SC_ENCHANTARMS">Cursed Water (Shadow)</option>
                         </select>
                       </div>
-                    </div>
-                  </div>
+                    </div>)}
 
-                  <div className="buff-group">
-                    <span className="buff-group-label">Blacksmith</span>
+                  {buffSlot("blacksmith", "Blacksmith",
+                    chosenFrom(partyBuffsFrom("Blacksmith", data.job_id), data.support_buffs as Record<string, unknown>),
                     <div className="passive-grid">
                       {partyBuffsFrom("Blacksmith", data.job_id).map(partyBuffField)}
-                    </div>
-                  </div>
+                    </div>)}
 
                   {/* Crazy Uproar is the whole Merchant group, and it's hidden from the
                       Merchant line itself (they self-cast it), so the group can empty
                       out entirely — don't leave a bare header behind. */}
-                  <div className="buff-group" hidden={partyBuffsFrom("Merchant", data.job_id).length === 0}>
-                    <span className="buff-group-label">Merchant</span>
+                  {partyBuffsFrom("Merchant", data.job_id).length > 0 && buffSlot("merchant", "Merchant",
+                    chosenFrom(partyBuffsFrom("Merchant", data.job_id), data.support_buffs as Record<string, unknown>),
                     <div className="passive-grid">
                       {partyBuffsFrom("Merchant", data.job_id).map(partyBuffField)}
-                    </div>
-                  </div>
+                    </div>)}
 
-                  <div className="buff-group">
-                    <span className="buff-group-label">Sage</span>
+                  {buffSlot("sage", "Sage",
+                    [...(groundEffectType ? [GROUND_LABELS[groundEffectType] ?? "Ground effect"] : []),
+                     ...(isSageLine && autoSpellLv ? [`Hindsight ${autoSpellLv}`] : [])],
                     <div className="passive-grid">
                       <div className="field">
                         <label title="SA_VOLCANO / SA_DELUGE / SA_VIOLENTGALE — applies max level when selected">Ground effect</label>
@@ -4367,12 +4453,14 @@ export default function BuildEditor() {
                           </select>
                         </div>
                       )}
-                    </div>
-                  </div>
+                    </div>)}
 
-                  <div className="buff-section-header" title="From a party member, never filtered by your own job">Bard / Dancer songs</div>
-                  <div className="passive-grid">
-                    {SONG_BUFFS.map(songBuffField)}
+                  {buffSlot("songs", "Bard / Dancer songs",
+                    chosenFrom(SONG_BUFFS, data.song_state as Record<string, unknown>),
+                    <div className="passive-grid">
+                      {SONG_BUFFS.map(songBuffField)}
+                    </div>,
+                    "From a party member, never filtered by your own job")}
                   </div>
 
                   {(hasBardSong || hasDancerSong) && (
