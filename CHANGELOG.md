@@ -7,6 +7,17 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-27
 
+### Changed
+
+- **Buffs are grouped the way equipment is.** Each class — Priest, Blacksmith,
+  Merchant, Sage, Bard / Dancer, and your own self buffs — is now a row you open,
+  and while it is closed the row lists what you have up: *Blessing 10, Increase
+  Agility 10, Endow Fire*. The panel used to be every checkbox in the game at once,
+  about two screens of them; it opens at roughly a third of that, and **Expand all**
+  is there if you preferred the old view. Which groups you leave open is remembered.
+  A buff's caveat — who casts it, what it costs — moved to the tooltip, since the
+  class heading above it already said where it comes from.
+
 ### Fixed
 
 - **That Critical explanation now opens on screen.** When it first went up it hung off
