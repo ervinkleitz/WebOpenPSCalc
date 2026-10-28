@@ -77,7 +77,7 @@ const ENDOW_LABELS: Record<string, string> = {
   SC_PROPERTYWIND: "Endow Wind", SC_PROPERTYGROUND: "Endow Ground",
   SC_ENCHANTPOISON: "Enchant Poison", SC_ENCHANTARMS: "Cursed Water",
 };
-const BUFF_GROUP_KEYS = ["priest", "blacksmith", "merchant", "sage", "songs"];
+const BUFF_GROUP_KEYS = ["self", "priest", "blacksmith", "merchant", "sage", "songs"];
 const GROUND_LABELS: Record<string, string> = {
   SC_VOLCANO: "Volcano", SC_DELUGE: "Deluge", SC_VIOLENTGALE: "Violent Gale",
 };
@@ -4206,13 +4206,31 @@ export default function BuildEditor() {
               const hasDancerSong = DANCER_SONG_KEYS.some((k) => Number(songState[k] || 0) > 0);
               return (
                 <>
+                  {/* OUTSIDE the self-buffs branch. These controls govern every group
+                      in the panel, and the party groups render whether or not this job
+                      has self buffs — put inside, a player with no job chosen saw five
+                      collapsed groups and nothing to open them with. */}
+                  <div className="equip-slot-actions">
+                    <button onClick={() => setAllBuffGroups(true, BUFF_GROUP_KEYS)}>Expand all</button>
+                    <button onClick={() => setAllBuffGroups(false, BUFF_GROUP_KEYS)}>Collapse all</button>
+                  </div>
                   {!hasSelfSection ? (
                     <p style={{ color: "var(--text-faint)", fontSize: "0.875rem" }}>
                       {data.job_id ? "No self-cast buffs modeled for this job yet." : "Select a job to see its self buffs."}
                     </p>
                   ) : (
                     <>
-                      <div className="buff-section-header">Self buffs</div>
+                      <div className="equip-grid">
+                      {buffSlot("self", "Self buffs", [
+                        ...chosenFrom(selfBuffs, data.active_buffs as Record<string, unknown>),
+                        ...(targetMods.performing ? ["Performing"] : []),
+                        ...(targetMods.breaking_cloak ? ["Breaking Cloak"] : []),
+                        ...(data.flags?.sn_never_died ? ["Never died"] : []),
+                        ...(data.flags?.sn_fury ? ["Fury"] : []),
+                        ...(data.flags?.is_riding_peco ? ["Riding a Peco"] : []),
+                        ...(Number(data.flags?.spirit_spheres ?? 0) > 0 ? [`${data.flags!.spirit_spheres} spheres`] : []),
+                        ...(Number(data.flags?.gs_coins ?? 0) > 0 ? [`${data.flags!.gs_coins} coins`] : []),
+                      ],
                       <div className="passive-grid">
                         {selfBuffs.map((b) => {
                           const active = (data.active_buffs?.[b.key] ?? 0) > 0;
@@ -4359,6 +4377,7 @@ export default function BuildEditor() {
                             )}
                           </div>
                         )}
+                      </div>)}
                       </div>
                     </>
                   )}
@@ -4375,12 +4394,6 @@ export default function BuildEditor() {
                     </InfoTooltip>
                   </div>
 
-                  {/* The same escape hatch the equipment panel offers, for anyone who
-                      would rather see every buff at once than click through classes. */}
-                  <div className="equip-slot-actions">
-                    <button onClick={() => setAllBuffGroups(true, BUFF_GROUP_KEYS)}>Expand all</button>
-                    <button onClick={() => setAllBuffGroups(false, BUFF_GROUP_KEYS)}>Collapse all</button>
-                  </div>
                   <div className="equip-grid">
                   {buffSlot("priest", "Priest",
                     [...chosenFrom(partyBuffsFrom("Priest", data.job_id), data.support_buffs as Record<string, unknown>),

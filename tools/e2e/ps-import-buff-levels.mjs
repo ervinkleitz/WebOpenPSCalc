@@ -13,6 +13,15 @@ const plannerLink = (job, levels) =>
     zlib.deflateSync(Buffer.from(JSON.stringify({ job, levels }), "utf8")).toString("base64"));
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
+
+// Buff groups collapse like equipment slots now, so a buff row starts hidden inside
+// its group. A player opens a group once and the browser remembers; a fresh context
+// never has. Reaching the control is not what these tests are about.
+const expandBuffGroups = async (pg) => {
+  const btn = pg.locator('[data-panel="buffs"]').getByRole("button", { name: /expand all/i }).first();
+  if (await btn.count()) { await btn.click(); await pg.waitForTimeout(400); }
+};
+
 const ctx = await browser.newContext({ viewport: { width: 1500, height: 1400 } });
 const page = await ctx.newPage();
 let ok = true;
@@ -20,6 +29,7 @@ const check = (c, m) => { if (!c) { console.error("FAIL: " + m); ok = false; } }
 
 async function loadImported(levels) {
   await page.goto(URL_BASE, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(2500);
   await page.waitForTimeout(4000);
   await page.getByRole("button", { name: /^Import$/i }).first().click();
   await page.waitForTimeout(1200);
@@ -31,6 +41,9 @@ async function loadImported(levels) {
   const done = page.locator(".modal-card").getByRole("button", { name: /^done$/i });
   if (await done.count()) await done.first().click();
   await page.waitForTimeout(1200);
+  // AFTER the import: the buffs panel only renders its groups once a job is known,
+  // so expanding before this found no button at all.
+  await expandBuffGroups(page);
 }
 
 /** The level the app currently has for a status change, straight from its state. */

@@ -41,12 +41,23 @@ const ren = (v) => Array.isArray(v) ? v.map(ren) : (v && typeof v === "object")
 const shareLink = (payload) => `${URL_BASE}?b=z3_` + LZ.compressToEncodedURIComponent(JSON.stringify(ren(payload)));
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
+
+// Buff groups collapse like equipment slots now, so a buff row starts hidden inside
+// its group. A player opens a group once and the browser remembers; a fresh context
+// never has. Reaching the control is not what these tests are about.
+const expandBuffGroups = async (pg) => {
+  const btn = pg.locator('[data-panel="buffs"]').getByRole("button", { name: /expand all/i }).first();
+  if (await btn.count()) { await btn.click(); await pg.waitForTimeout(400); }
+};
+
 const page = await (await browser.newContext({ viewport: { width: 1500, height: 1800 } })).newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 
 await page.goto(URL_BASE, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(2500);
 await page.waitForTimeout(7000);
+await expandBuffGroups(page);
 
 // The six stat cards. Each shows the TOTAL — base points plus job, gear and buff
 // bonuses — above its input, and that total is where a party buff has to show up.
@@ -104,6 +115,8 @@ if (await copy.count()) {
   if (shared && shared !== url) {
     const p2 = await (await browser.newContext({ viewport: { width: 1500, height: 1800 } })).newPage();
     await p2.goto(shared, { waitUntil: "domcontentloaded" });
+  await p2.waitForTimeout(2500);
+  await expandBuffGroups(p2);
     await p2.waitForTimeout(7000);
     const lv = await p2.locator(".field-checkbox", { hasText: "Blessing" }).first().locator("select").inputValue().catch(() => null);
     console.log(`    after reopening the share link, Blessing reads Lv${lv}`);
@@ -127,6 +140,8 @@ if (await copy.count()) {
   });
   const p3 = await (await browser.newContext({ viewport: { width: 1500, height: 1800 } })).newPage();
   await p3.goto(stale, { waitUntil: "domcontentloaded" });
+  await p3.waitForTimeout(2500);
+  await expandBuffGroups(p3);
   await p3.waitForTimeout(7000);
   const ot = p3.locator(".field-checkbox", { hasText: "Over Thrust" }).first();
   const lv = await ot.locator("select").inputValue().catch(() => null);
@@ -172,6 +187,7 @@ if (await copy.count()) {
   // same guarantee: if ATK is null the test fails loudly instead of comparing two
   // nulls and calling it a pass, which is how the first version of this slipped by.
   await sp.waitForTimeout(12000);
+  await expandBuffGroups(sp);
 
   const song = sp.locator(".field-checkbox", { hasText: "Battle Theme" }).first();
   // DEF, not ATK. Battle Theme's ATK is applied inside the damage pipeline, but the
