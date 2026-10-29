@@ -42,6 +42,15 @@ instead of release version. Dates are taken from actual git commit history.
   and debuff rows, compact was adding spacing that comfortable did not have, so
   those lists barely shrank while the rest of the page did.
 
+- **The stat readout could show the wrong totals after loading a build or changing
+  class.** Two faults with one symptom, both of them about your masteries. Until the
+  new class's passive list arrived the panel kept counting the OLD class's — an
+  Acolyte went on collecting a Sage's Dragonology +5 INT for the length of that
+  request. And when the list did arrive, the readout did not recompute, so a build
+  loaded from a share link could sit 5 INT low until you happened to change
+  something else. Both are invisible on a fast connection and plainly wrong on a
+  slow one; the damage figures were always right, it was the stat box that drifted.
+
 - **Jelring Cards do something now.** A weapon with three of them priced exactly the
   same as a bare one — the card's +30% against Poring-type monsters was never applied
   at all. Three cards against a Jelring now read 174–205 where they read 92–108.

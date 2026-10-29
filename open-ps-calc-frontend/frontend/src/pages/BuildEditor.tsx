@@ -1857,7 +1857,26 @@ export default function BuildEditor() {
     // appear here, so pruning to this list would delete legitimate levels. The
     // backend strips them against the job's full skill tree instead
     // (dataLoader.filterMasteryLevelsForJob), which also repairs existing share URLs.
-    api.getJobPassives(data.job_id, data.server).then(setPassiveSkills).catch(() => setPassiveSkills([]));
+    // CLEAR FIRST, and ignore a reply that is no longer for the current job.
+    //
+    // This list is what the stat readout filters mastery_levels against, and it was
+    // left holding the PREVIOUS job's passives until the new request resolved -- so
+    // for the length of that request an Acolyte still collected the Sage's
+    // Dragonology +5 INT. That is the very bug this panel was fixed for in the
+    // settled state, surviving in the window before the answer arrives: invisible on
+    // a fast connection, a second or more of wrong numbers on a slow one, and
+    // reproducible against production. Empty is the safe thing to show meanwhile --
+    // a passive the job cannot have must never be counted, and the panel already
+    // renders an empty list properly.
+    //
+    // `cancelled` covers the other half: on two quick job changes the slower reply
+    // could land last and install the wrong job's list for good.
+    let cancelled = false;
+    setPassiveSkills([]);
+    api.getJobPassives(data.job_id, data.server)
+      .then((list) => { if (!cancelled) setPassiveSkills(list); })
+      .catch(() => { if (!cancelled) setPassiveSkills([]); });
+    return () => { cancelled = true; };
   }, [data.job_id, data.server]);
 
   // Plagiarism (Rogue/Stalker): the copyable-skill list and the jobs that get the
@@ -1946,9 +1965,21 @@ export default function BuildEditor() {
       data.clan ?? "",
       snNeverDied,
     ));
+  // jobMasteryLevels, NOT just data.mastery_levels. The effect reads the FILTERED
+  // map above, which only becomes correct when the job's passive list arrives --
+  // and the list is fetched, so it usually arrives after the first run of this
+  // effect. Without it in the deps nothing re-ran when the answer came back, and a
+  // Sage with Dragonology 10 sat at 69 INT instead of 74 until something else
+  // happened to change another dependency. Clicking the job select did it, which is
+  // why this looked like a job-switch problem rather than a load one.
+  //
+  // It is a useMemo, so its identity only changes when passiveSkills or
+  // mastery_levels do; adding it costs no extra renders. The exhaustive-deps
+  // disable below is what let it go missing in the first place.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(data.support_buffs), JSON.stringify(data.active_buffs),
-      JSON.stringify(data.mastery_levels), data.clan, data.consumable_buffs?.box_gloom,
+      JSON.stringify(data.mastery_levels), jobMasteryLevels, data.clan,
+      data.consumable_buffs?.box_gloom,
       data.base_stats.agi, data.base_stats.dex, jobBonusStats, equipBonusStats,
       data.job_id, data.job_level, data.flags?.sn_never_died]);
 

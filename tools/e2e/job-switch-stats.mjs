@@ -67,7 +67,30 @@ await page.goto(`${URL_BASE}?b=z3_${LZ.compressToEncodedURIComponent(JSON.string
   build: BUILD, skill: { id: 0, level: 1, label: "Normal Attack" }, targetMode: "monster",
 })))}`, { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(5000);
+// WAIT FOR THE PASSIVE LIST, do not sleep and hope.
+//
+// The stat readout filters mastery_levels against the job's fetched passive list,
+// so until that request lands a Sage's Dragonology is ignored and INT reads 5 low
+// (69 rather than 74). Locally the fetch is instant and a flat sleep never noticed;
+// against production it is not, and the full sweep read the pre-fetch number here
+// and the post-fetch one after the round trip, reporting "switching back should
+// restore INT (69 -> 74)" for what is a load race in the test, not a regression.
+//
+// The passives row is the signal, and it is the SAME state the readout depends on:
+// it names the masteries the job can actually have, so it says "Dragonology 10"
+// exactly when the list has arrived and the stat has stopped under-reporting.
+const passivesRow = async () => (await page.locator('[data-panel="passives"] .equip-slot-value')
+  .first().textContent().catch(() => "") || "").trim();
+const waitForDragonology = async (present) => {
+  for (let i = 0; i < 60; i++) {
+    const t = await passivesRow();
+    if (t && /dragonology/i.test(t) === present) return t;
+    await page.waitForTimeout(500);
+  }
+  return `(timed out waiting for Dragonology ${present ? "to appear" : "to go"})`;
+};
 
+console.log("passives row as a Sage:", await waitForDragonology(true));
 const sageInt = await shown("INT");
 console.log("as a Sage — INT shown:", sageInt);
 
@@ -75,6 +98,7 @@ console.log("as a Sage — INT shown:", sageInt);
 await page.locator(".panel", { has: page.locator(".panel-title", { hasText: /^Character$/ }) })
   .locator("select").first().selectOption({ label: "Acolyte" });
 await page.waitForTimeout(4500);
+await waitForDragonology(false);
 
 const acoInt = await shown("INT");
 const acoStr = await shown("STR");
@@ -103,6 +127,7 @@ console.log("passive panel offers Dragonology:", /dragonology/i.test(passive));
 await page.locator(".panel", { has: page.locator(".panel-title", { hasText: /^Character$/ }) })
   .locator("select").first().selectOption({ label: "Sage" });
 await page.waitForTimeout(4500);
+await waitForDragonology(true);
 const backInt = await shown("INT");
 console.log("back to Sage — INT shown:", backInt);
 check(backInt === sageInt, `switching back should restore INT (${sageInt} -> ${backInt})`);
