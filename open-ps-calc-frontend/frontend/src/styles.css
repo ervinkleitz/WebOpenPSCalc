@@ -836,6 +836,10 @@ label {
    One column on a phone, where half of 368px is not enough for either. */
 .equip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 0.7rem; }
 @media (max-width: 600px) { .equip-grid { grid-template-columns: 1fr; } }
+/* A grid holding ONE slot. Passive skills is a single row -- the list is fetched
+   per job and has no grouping to split by -- and in the two-column grid that left
+   it at half width with dead space beside it. */
+.equip-grid--single { grid-template-columns: 1fr; }
 
 /* Each slot is its own height. Making the two columns' separator lines meet is the
    job of the TOP border further down, not of stretching the cells: a grid row's
@@ -859,6 +863,14 @@ label {
 .equip-slot-body > .passive-grid { grid-template-columns: 1fr; gap: 0; }
 .equip-slot-body > .passive-grid > .field-checkbox { margin-top: 0; min-height: 1.75rem; align-items: center; }
 .equip-slot-body > .passive-grid > .field:not(.field-checkbox) { margin-top: 0.45rem; }
+/* ...except where the slot is full width. A half-width slot body has room for one
+   column and the rule above is right; the passives slot spans the panel, and one
+   column there turns eight short checkboxes into eight tall rows with the labels
+   wrapping. Explicit modifier rather than :has(), which this sheet does not use. */
+.equip-slot-body > .passive-grid--cols {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.35rem 0.7rem;
+}
 .passive-grid .field input[type="number"] { width: 100%; }
 .passive-grid .field span { display: block; margin-top: 0.1rem; }
 
@@ -2329,6 +2341,7 @@ html[data-density="compact"] .passive-grid { gap: 0.3rem 0.6rem; }
    and target-debuff slots tightened by 12% where everything else tightened by a
    third. Compact must never be looser than comfortable. */
 html[data-density="compact"] .equip-slot-body > .passive-grid { gap: 0; }
+html[data-density="compact"] .equip-slot-body > .passive-grid--cols { gap: 0.2rem 0.5rem; }
 html[data-density="compact"] .field-checkbox { margin-top: 0.1rem; }
 html[data-density="compact"] .field-checkbox label { font-size: 0.72rem; gap: 0.32rem; line-height: 1.25; }
 html[data-density="compact"] .field-checkbox input[type="checkbox"] { width: 13px; height: 13px; }

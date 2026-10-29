@@ -89,6 +89,21 @@ await panel().scrollIntoViewIfNeeded();
 
 // ---- 1. the panel is rows of checkboxes, with nothing left of the number boxes ----
 const rows = await panel().locator(".field-checkbox").count();
+// Passive skills is a collapsible row now (one slot holding the whole list), so
+// every checkbox below starts hidden -- and `hidden` takes an element out of the
+// accessibility tree as well as off the screen, so reaching one is a 30s timeout
+// rather than a missing element. A player opens the row once and the browser
+// remembers; a fresh context never has.
+const openPassives = async (pg) => {
+  const head = pg.locator('[data-panel="passives"] .equip-slot-head').first();
+  if (await head.count() && (await head.getAttribute("aria-expanded")) === "false") {
+    await head.click();
+    await pg.waitForTimeout(400);
+  }
+};
+
+await openPassives(page);
+
 const numbers = await panel().locator('input[type="number"]').count();
 check(rows >= 4, `a Knight's passives render as checkbox rows (${rows})`, rows);
 check(numbers === 0, "and no number box survives in the panel", numbers);

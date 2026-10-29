@@ -47,6 +47,21 @@ const hsField = passivePanel.locator(".field-checkbox", { hasText: /Holy Strike/
 check(await hsField.count() === 1, "Holy Strike is not in the Priest's Passive skills panel");
 const hsInput = hsField.locator('input[type="checkbox"]').first();
 
+// Passive skills is a collapsible row now (one slot holding the whole list), so
+// every checkbox below starts hidden -- and `hidden` takes an element out of the
+// accessibility tree as well as off the screen, so reaching one is a 30s timeout
+// rather than a missing element. A player opens the row once and the browser
+// remembers; a fresh context never has.
+const openPassives = async (pg) => {
+  const head = pg.locator('[data-panel="passives"] .equip-slot-head').first();
+  if (await head.count() && (await head.getAttribute("aria-expanded")) === "false") {
+    await head.click();
+    await pg.waitForTimeout(400);
+  }
+};
+
+await openPassives(page);
+
 // 2. Setting it to 1 turns on the proc on auto-attacks.
 const panelHead = async () => {
   const calc = page.getByRole("button", { name: /calculate damage/i }).first();

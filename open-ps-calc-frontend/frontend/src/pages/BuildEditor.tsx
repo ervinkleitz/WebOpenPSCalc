@@ -2873,10 +2873,28 @@ export default function BuildEditor() {
     return summarise(names);
   })();
 
+  // The passives you have taken, by name and rank. One list, used by the slot's
+  // closed row and by the panel summary.
+  //
+  // Not grouped, unlike the buffs, consumables and debuffs: this list is fetched per
+  // job and runs 2-8 entries for almost every one of them (11 and 13 at the two
+  // extremes), so there is nothing to split and splitting it would only add a click
+  // in front of four checkboxes. What it does take from them is the part that
+  // matters -- closed, it NAMES what is on rather than counting it.
+  // The job as the editor names it elsewhere (the Character panel header uses the
+  // same lookup), for the passives row label.
+  const jobDisplayName = jobs.find((j) => j.id === data.job_id)?.name?.replace(/_/g, " ")
+    ?? data.job_name ?? "";
+  const passiveChosen = chosenFrom(
+    passiveSkills.map((ps) => ({ key: ps.mastery_key, label: ps.description, max: ps.max_level })),
+    data.mastery_levels as Record<string, unknown>,
+  );
+
   const passiveSummary = (() => {
     if (passiveSkills.length === 0) return EMPTY;
-    const taken = passiveSkills.filter((ps) => ((data.mastery_levels || {})[ps.mastery_key] ?? 0) > 0);
-    return taken.length === 0 ? EMPTY : `${taken.length} of ${passiveSkills.length}`;
+    // Was `${taken} of ${available}`, which answered a question nobody asks. Which
+    // masteries are up changes the damage; how many of them there are does not.
+    return passiveChosen.length === 0 ? EMPTY : summarise(passiveChosen);
   })();
 
   return (
@@ -4064,34 +4082,50 @@ export default function BuildEditor() {
                 {data.job_id ? "No passive skills for this job." : "Select a job to see passive skills."}
               </p>
             ) : (
-              <>
-              <div className="field-row" style={{ marginBottom: "0.6rem" }}>
-                <button
-                  onClick={() => setData((prev) => {
-                    const next = { ...(prev.mastery_levels || {}) };
-                    for (const ps of passiveSkills) next[ps.mastery_key] = ps.max_level;
-                    return { ...prev, mastery_levels: next };
-                  })}
-                >
-                  Max all
-                </button>
-                <button
-                  onClick={() => setData((prev) => {
-                    // Deleted, not set to 0, so an untaken passive leaves nothing
-                    // behind in the build or its share link. Every reader treats a
-                    // missing key as 0.
-                    const next = { ...(prev.mastery_levels || {}) };
-                    for (const ps of passiveSkills) delete next[ps.mastery_key];
-                    return { ...prev, mastery_levels: next };
-                  })}
-                >
-                  Reset
-                </button>
+              /* One slot, holding the lot. The equipment panel's own control, for the
+                 same reason the buffs, consumables and debuffs use it: closed, a row
+                 should say what is in it. It is ONE slot rather than several because
+                 this list is fetched per job and runs 2-8 entries for almost every
+                 one -- there is no grouping in it to split by, and splitting it would
+                 put a click in front of four checkboxes. There is no Expand all
+                 either: with a single row, the row IS the control. */
+              <div className="equip-grid equip-grid--single">
+                {/* Labelled with the JOB, not "Passive skills": the panel above already
+                    says that, and a row should not print its own panel's title back at
+                    you. It is also the buffs panel's rule -- there a group is named for
+                    where the buffs come from (Priest, Sage), and these come from your
+                    job. */}
+                {groupSlot("passives.all", jobDisplayName || "Passive skills", passiveChosen, (
+                  <>
+                    <div className="field-row" style={{ marginBottom: "0.6rem" }}>
+                      <button
+                        onClick={() => setData((prev) => {
+                          const next = { ...(prev.mastery_levels || {}) };
+                          for (const ps of passiveSkills) next[ps.mastery_key] = ps.max_level;
+                          return { ...prev, mastery_levels: next };
+                        })}
+                      >
+                        Max all
+                      </button>
+                      <button
+                        onClick={() => setData((prev) => {
+                          // Deleted, not set to 0, so an untaken passive leaves nothing
+                          // behind in the build or its share link. Every reader treats a
+                          // missing key as 0.
+                          const next = { ...(prev.mastery_levels || {}) };
+                          for (const ps of passiveSkills) delete next[ps.mastery_key];
+                          return { ...prev, mastery_levels: next };
+                        })}
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    <div className="passive-grid passive-grid--cols">
+                      {passiveSkills.map(passiveSkillField)}
+                    </div>
+                  </>
+                ), "Every damage-relevant passive your job can learn")}
               </div>
-              <div className="passive-grid">
-                {passiveSkills.map(passiveSkillField)}
-              </div>
-              </>
             )}
 
             {/* Plagiarism (Rogue/Stalker): the ONE skill you have copied. It is

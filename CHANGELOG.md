@@ -26,6 +26,12 @@ instead of release version. Dates are taken from actual git commit history.
   The Target summary also counts every debuff now; it used to miss the Strips
   entirely, so a stripped target could summarise as though nothing were on it.
 
+- **Passive skills says which ones you have taken.** The panel is one row you open,
+  labelled with your job, and closed it lists your masteries with their ranks —
+  *Katar Mastery 10, Left-Hand Mastery 5, Double Attack 10* — where the header used
+  to say "3 of 8". One row rather than several: most jobs have only two to eight
+  passives, so there is nothing to group and nothing gained by burying them deeper.
+
 ### Fixed
 
 - **Opening one panel's groups no longer closes another's.** With the consumables

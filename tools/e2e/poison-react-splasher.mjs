@@ -7,6 +7,20 @@
 // swing that procs it, was always in the DPS but shown nowhere. The Double Attack panel now
 // states the proc swing's own hit chance.
 import { chromium } from "playwright-core";
+
+// Passive skills is a collapsible row now (one slot holding the whole list), so
+// every checkbox below starts hidden -- and `hidden` takes an element out of the
+// accessibility tree as well as off the screen, so reaching one is a 30s timeout
+// rather than a missing element. A player opens the row once and the browser
+// remembers; a fresh context never has.
+const openPassives = async (pg) => {
+  const head = pg.locator('[data-panel="passives"] .equip-slot-head').first();
+  if (await head.count() && (await head.getAttribute("aria-expanded")) === "false") {
+    await head.click();
+    await pg.waitForTimeout(400);
+  }
+};
+
 import { createRequire } from "module";
 import { readFileSync } from "fs";
 import { tmpdir } from "os";
@@ -64,6 +78,7 @@ const calculate = async (page) => {
   // BASELINE FIRST, with the passive unlearned. Ticking the box IS learning it at
   // the skill's max, so doing that before this measurement would compare Lv10 with
   // Lv10 and report no gain at all.
+  await openPassives(page);
   await calculate(page);
   const before = lastFor(141);
   const avg0 = before?.result?.normal?.avg_damage;
