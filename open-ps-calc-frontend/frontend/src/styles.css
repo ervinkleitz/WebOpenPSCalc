@@ -2323,6 +2323,12 @@ html[data-density="compact"] button { padding: 0.3rem 0.65rem; }
    This block must precede .manual-stat-grid below: both resolve to the same
    specificity on that element, so source order decides its gap. */
 html[data-density="compact"] .passive-grid { gap: 0.3rem 0.6rem; }
+/* ...but not inside a slot body, which sets gap: 0 and loses to the line above on
+   specificity -- (0,2,0) against (0,2,1). Compact was therefore ADDING a row gap
+   that comfortable does not have, so the checkbox rows in the buffs, consumables
+   and target-debuff slots tightened by 12% where everything else tightened by a
+   third. Compact must never be looser than comfortable. */
+html[data-density="compact"] .equip-slot-body > .passive-grid { gap: 0; }
 html[data-density="compact"] .field-checkbox { margin-top: 0.1rem; }
 html[data-density="compact"] .field-checkbox label { font-size: 0.72rem; gap: 0.32rem; line-height: 1.25; }
 html[data-density="compact"] .field-checkbox input[type="checkbox"] { width: 13px; height: 13px; }

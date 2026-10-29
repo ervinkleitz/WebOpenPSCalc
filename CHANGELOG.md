@@ -16,7 +16,25 @@ instead of release version. Dates are taken from actual git commit history.
   Drowsiness*. The same rows the buffs panel got, for the same reason. Whatever you
   had open before is still open.
 
+- **Target debuffs are grouped too.** The longest list of checkboxes in the editor
+  — nineteen of them — is now five rows you open, grouped by what each one does to
+  the target: **Element & ailment**, **Damage amplifiers**, **DEF & MDEF**, **Flee &
+  accuracy**, and **Its attacks**. Closed, a row lists what is on the target, levels
+  included: *Provoke 7, Strip Shield, Burning 3*. Strip Weapon, Strip Helm and
+  Hypothermia have their own row because they change what the monster does to *you*,
+  not what you do to it — sitting beside Strip Shield, they looked like damage.
+  The Target summary also counts every debuff now; it used to miss the Strips
+  entirely, so a stripped target could summarise as though nothing were on it.
+
 ### Fixed
+
+- **Opening one panel's groups no longer closes another's.** With the consumables
+  grouped as well as the buffs, **Expand all** in either one quietly collapsed every
+  group in the other. Each panel now minds only its own rows.
+
+- **Compact density tightens the grouped rows again.** Inside the buff, consumable
+  and debuff rows, compact was adding spacing that comfortable did not have, so
+  those lists barely shrank while the rest of the page did.
 
 - **Jelring Cards do something now.** A weapon with three of them priced exactly the
   same as a bare one — the card's +30% against Poring-type monsters was never applied

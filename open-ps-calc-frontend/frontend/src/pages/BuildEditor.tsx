@@ -81,6 +81,19 @@ const BUFF_GROUP_KEYS = ["self", "priest", "blacksmith", "merchant", "sage", "so
 // Consumable groups, prefixed so they share one open-state map with the buff
 // groups above without either panel being able to collide with the other.
 const CONSUMABLE_GROUP_KEYS = ["cons.aspd", "cons.stat", "cons.boxes", "cons.proof"];
+// Target debuffs, grouped by WHAT THEY CHANGE rather than by which class casts
+// them, because that is the question being asked: a player opens this panel
+// having decided "it is too tanky" or "I keep missing", not "what does a Rogue
+// have". It is also the split the code already draws -- Strip Weapon and Strip
+// Helm are noted throughout as showing up in the survivability numbers, not in
+// your damage, and they sit in their own group for exactly that reason.
+const DEBUFF_GROUP_KEYS = ["dbf.element", "dbf.amplify", "dbf.def", "dbf.flee", "dbf.incoming"];
+// The ailment names as a closed row should read them: the select says "Poisoned
+// (-50% soft DEF)", which is the right label while CHOOSING and three words too
+// many once chosen.
+const ELEMENT_STATUS_SHORT: Record<string, string> = {
+  Poison: "Poisoned", Frozen: "Frozen", Stone: "Stone Curse",
+};
 // The four elemental proof potions. Survivability only (the Target panel's
 // incoming damage): +20% resist to the element and -15% against its counter on
 // the endow cycle, and all four stack. The short name is what a closed slot
@@ -1209,9 +1222,14 @@ export default function BuildEditor() {
       return next;
     });
   }, []);
+  // MERGE, do not replace. One map holds every panel's groups, and each panel's
+  // Expand all passes only its OWN keys -- so building a fresh object here threw
+  // away the other panels' state, and opening the consumables collapsed your buffs.
+  // Harmless while buffs were the only panel with groups, which is exactly how long
+  // it went unnoticed.
   const setAllGroups = useCallback((open: boolean, keys: string[]) => {
-    setOpenGroups(() => {
-      const next: Record<string, boolean> = {};
+    setOpenGroups((prev) => {
+      const next = { ...prev };
       for (const k of keys) next[k] = open;
       try { localStorage.setItem(GROUP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
@@ -1404,6 +1422,7 @@ export default function BuildEditor() {
   const provokeLv = (targetMods.provoke as unknown) === true ? 10 : (Number(targetMods.provoke) || 0);
   // Burning stacks (0–5). Absent in shared URLs made before Burning existed.
   const burningStacks = Math.max(0, Math.min(5, Number(targetMods.burning) || 0));
+  const flingCoins = Math.max(0, Math.min(5, Number(targetMods.fling) || 0));
 
   // Cards whose PS clause lets THIS build inflict one of the target statuses below
   // with Hammerfall. The engine prices a single attack, so it can't sequence "cast
@@ -2783,17 +2802,59 @@ export default function BuildEditor() {
     return on.length === 0 ? EMPTY : `${on.length} on`;
   })();
 
+  // What each debuff group has on the target, for its closed row AND for the
+  // panel's one-line summary -- computed once so the two cannot disagree.
+  //
+  // A debuff the target cannot actually take is left out of both. Offensive
+  // Blessing does nothing except to an Undead or Demon, and Signum Crucis
+  // likewise; their checkboxes are disabled in that case, but a stale share link
+  // can still carry them ticked, and a closed row claiming "Signum Crucis"
+  // against a Poring would be the panel lying about your damage.
+  const debuffChosen: Record<string, string[]> = {
+    element: [
+      ...(targetMods.element_status
+        ? [ELEMENT_STATUS_SHORT[targetMods.element_status] ?? String(targetMods.element_status)] : []),
+      ...(targetMods.element_change ? [`Change → ${targetMods.element_change}`] : []),
+    ],
+    amplify: [
+      ...(targetMods.lex_aeterna ? ["Lex Aeterna"] : []),
+      ...(targetMods.mailbreaker ? ["Mailbreaker"] : []),
+      ...(targetMods.offensive_blessing && offensiveBlessingApplies ? ["Offensive Blessing"] : []),
+    ],
+    def: [
+      ...(provokeLv > 0 ? [`Provoke ${provokeLv}`] : []),
+      ...(targetMods.signum_crucis && signumApplicable ? ["Signum Crucis"] : []),
+      ...(targetMods.strip_shield ? ["Strip Shield"] : []),
+      ...(targetMods.strip_armor ? ["Strip Armor"] : []),
+      ...(flingCoins > 0 ? [`Fling ${flingCoins}`] : []),
+      ...(burningStacks > 0 ? [`Burning ${burningStacks}`] : []),
+    ],
+    flee: [
+      ...(quagmireLv > 0 ? [`Quagmire ${quagmireLv}`] : []),
+      ...(decreaseAgiLv > 0 ? [`Decrease AGI ${decreaseAgiLv}`] : []),
+      ...(targetMods.blind ? ["Blinded"] : []),
+      ...(targetMods.sleep ? ["Asleep"] : []),
+      ...(targetMods.stun ? ["Stunned"] : []),
+    ],
+    incoming: [
+      ...(targetMods.strip_weapon ? ["Strip Weapon"] : []),
+      ...(targetMods.strip_helm ? ["Strip Helm"] : []),
+      ...(targetMods.hypothermia ? ["Hypothermia"] : []),
+    ],
+  };
+
   const debuffSummary = (() => {
-    const names: string[] = [];
-    if (targetMods.lex_aeterna) names.push("Lex Aeterna");
-    if (targetMods.mailbreaker) names.push("Mailbreaker");
-    if (quagmireLv > 0) names.push(`Quagmire ${quagmireLv}`);
-    if (provokeLv > 0) names.push(`Provoke ${provokeLv}`);
-    if (decreaseAgiLv > 0) names.push(`Decrease AGI ${decreaseAgiLv}`);
-    if (burningStacks > 0) names.push(`Burning ${burningStacks}`);
+    // Every group, not the six this used to know about: it listed Lex Aeterna
+    // and Provoke but not a single Strip, so a target stripped of its shield and
+    // armour summarised as though nothing had been done to it.
+    const names = DEBUFF_GROUP_KEYS.map((k) => debuffChosen[k.slice(4)] ?? []).flat();
     const who = targetMode === "monster" ? (mobInfo?.name ?? null) : "Custom target";
     const debuffs = names.length ? ` \u00b7 ${summarise(names, 2)}` : "";
-    return who ? `${who}${debuffs}` : EMPTY;
+    // With no target picked yet there is no name to lead with, but the debuffs
+    // are still on and still change the numbers. Before the groups collapsed you
+    // could see them ticked; now a closed panel would have said nothing at all.
+    if (!who) return names.length ? summarise(names, 2) : EMPTY;
+    return `${who}${debuffs}`;
   })();
 
   // Consumables, for the closed slot lines and the panel's own summary.
@@ -4933,8 +4994,19 @@ export default function BuildEditor() {
               </>
             )}
 
-            {/* Target debuffs */}
-            <div className="buff-section-header" style={{ marginTop: "1rem" }}>
+            {/* Target debuffs, as equipment slots — the same control the equipment,
+                buffs and consumables panels use. Nineteen toggles in one flat run was
+                the longest stretch of checkbox in the editor, and the grouping is by
+                WHAT EACH ONE CHANGES rather than by who casts it: you arrive here
+                having decided "it is too tanky" or "I keep missing", not "what does a
+                Rogue have". Strip Weapon and Strip Helm get their own group because
+                they do not touch your damage at all — the code has said so in four
+                places for months, and putting them beside Strip Shield implied
+                otherwise.
+                --flush on the header: the grid draws its own rows, and two borders
+                stacked on each other is the thing that was confusing about the party
+                buffs header. */}
+            <div className="buff-section-header buff-section-header--flush" style={{ marginTop: "1rem" }}>
               Target debuffs
               <InfoTooltip>
                 Debuffs applied to the target before the damage calculation.
@@ -4948,162 +5020,201 @@ export default function BuildEditor() {
               </InfoTooltip>
             </div>
 
-            <div className="field">
-              <label title="Poison: −50% soft (VIT) DEF ailment (no element change). Frozen/Stone Curse: override element to Water/Earth, halve hard DEF, and grant auto-hit.">
-                Element status
-              </label>
-              <select value={targetMods.element_status} onChange={(e) => setTargetMods((m) => ({ ...m, element_status: e.target.value }))}>
-                <option value="">None</option>
-                <option value="Poison">Poisoned (−50% soft DEF)</option>
-                <option value="Frozen">Frozen (→ Water, −50% hard DEF, auto-hit)</option>
-                <option value="Stone">Stone Curse (→ Earth, −50% hard DEF, auto-hit)</option>
-              </select>
-              {targetMods.element_status === "Frozen" && freezingTrapCantFreeze && (
-                <span className="field-warn">
-                  Rust-Worn Apparatus at 70+ base INT makes your Freezing Trap apply Slow, not
-                  Freeze — this target won't be frozen by it.
-                </span>
-              )}
+            <div className="equip-slot-actions">
+              <button onClick={() => setAllGroups(true, DEBUFF_GROUP_KEYS)}>Expand all</button>
+              <button onClick={() => setAllGroups(false, DEBUFF_GROUP_KEYS)}>Collapse all</button>
             </div>
 
-            <div className="field">
-              <label title="Elemental Change (Sage): overrides the target's defensive element to Water/Earth/Fire/Wind at level 1 (e.g. Water 1). Does not work on MVP/boss monsters.">
-                Elemental Change (Sage)
-              </label>
-              <select value={targetMods.element_change} onChange={(e) => setTargetMods((m) => ({ ...m, element_change: e.target.value }))}>
-                <option value="">None</option>
-                <option value="Water">Water</option>
-                <option value="Earth">Earth</option>
-                <option value="Fire">Fire</option>
-                <option value="Wind">Wind</option>
-              </select>
-            </div>
+            <div className="equip-grid">
+              {groupSlot("dbf.element", "Element & ailment", debuffChosen.element, (
+                <>
+                  <div className="field">
+                    <label title="Poison: −50% soft (VIT) DEF ailment (no element change). Frozen/Stone Curse: override element to Water/Earth, halve hard DEF, and grant auto-hit.">
+                      Element status
+                    </label>
+                    <select value={targetMods.element_status} onChange={(e) => setTargetMods((m) => ({ ...m, element_status: e.target.value }))}>
+                      <option value="">None</option>
+                      <option value="Poison">Poisoned (−50% soft DEF)</option>
+                      <option value="Frozen">Frozen (→ Water, −50% hard DEF, auto-hit)</option>
+                      <option value="Stone">Stone Curse (→ Earth, −50% hard DEF, auto-hit)</option>
+                    </select>
+                    {targetMods.element_status === "Frozen" && freezingTrapCantFreeze && (
+                      <span className="field-warn">
+                        Rust-Worn Apparatus at 70+ base INT makes your Freezing Trap apply Slow, not
+                        Freeze — this target won&apos;t be frozen by it.
+                      </span>
+                    )}
+                  </div>
+                  <div className="field">
+                    <label title="Elemental Change (Sage): overrides the target's defensive element to Water/Earth/Fire/Wind at level 1 (e.g. Water 1). Does not work on MVP/boss monsters.">
+                      Elemental Change (Sage)
+                    </label>
+                    <select value={targetMods.element_change} onChange={(e) => setTargetMods((m) => ({ ...m, element_change: e.target.value }))}>
+                      <option value="">None</option>
+                      <option value="Water">Water</option>
+                      <option value="Earth">Earth</option>
+                      <option value="Fire">Fire</option>
+                      <option value="Wind">Wind</option>
+                    </select>
+                  </div>
+                </>
+              ), "An ailment, or an outright override of the target's element")}
 
-            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
-              <label title="SC_LEXAETERNA: next hit deals ×2 damage. Applied to all damage branches.">
-                <input type="checkbox" checked={targetMods.lex_aeterna} onChange={(e) => setTargetMods((m) => ({ ...m, lex_aeterna: e.target.checked }))} />
-                <span>Lex Aeterna (×2 damage)</span>
-              </label>
-            </div>
-
-            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
-              <label title="Mailbreaker (PS): the target takes +10% physical AND magical damage. Applied by the Assassin's Venom Dust (while standing on the cloud, 5s) or by Hammer Fall, which also stuns. Works on MVP/boss monsters.">
-                <input type="checkbox" checked={targetMods.mailbreaker} onChange={(e) => setTargetMods((m) => ({ ...m, mailbreaker: e.target.checked }))} />
-                <span>Mailbreaker (+10% damage taken)</span>
-              </label>
-            </div>
-
-            <div className="field field-checkbox">
-              <label title="Blessing cast on an Undead-element or Demon-race monster is a debuff, not a buff: it halves the target's STR, INT and DEX regardless of skill level. Halving INT cuts its soft MDEF (INT + VIT/2), so this is a straight magic-damage gain — the reason a Priest blesses a Ghoul before opening. Ignored on any other target. MVP/boss immunity isn't modelled.">
-                <input
-                  type="checkbox"
-                  checked={targetMods.offensive_blessing}
-                  onChange={(e) => setTargetMods((m) => ({ ...m, offensive_blessing: e.target.checked }))}
-                  disabled={!offensiveBlessingApplies}
-                />
-                <span>Offensive Blessing (halves Undead/Demon STR·INT·DEX)</span>
-              </label>
-            </div>
-
-            <span className="buff-group-label" style={{ display: "block", marginTop: "0.75rem" }}>Debuff skills &amp; statuses</span>
-            {debuffLevelField({
-              key: "quagmire", max: 5, value: quagmireLv,
-              label: "Quagmire (−AGI/DEX → lower flee & its HIT)",
-              title: "WZ_QUAGMIRE: cuts the target's AGI/DEX by 10% per level (max 50% at Lv5). Its AGI is its flee, so you hit it more often; its DEX is its HIT, so it lands on you less often (see Survivability). Does NOT guarantee a hit; no effect on bosses; halved vs players.",
-              hint: quagmireRedundant ? (
-                <div className="hint-text">
-                  Your hit chance is already at the 100% cap — Quagmire only helps when you're missing
-                  (it lowers flee, not damage). It still lowers the monster's HIT, so you dodge more.
+              {groupSlot("dbf.amplify", "Damage amplifiers", debuffChosen.amplify, (
+                <div className="passive-grid">
+                  <div className="field field-checkbox">
+                    <label title="SC_LEXAETERNA: next hit deals ×2 damage. Applied to all damage branches.">
+                      <input type="checkbox" checked={targetMods.lex_aeterna} onChange={(e) => setTargetMods((m) => ({ ...m, lex_aeterna: e.target.checked }))} />
+                      <span>Lex Aeterna (×2 damage)</span>
+                    </label>
+                  </div>
+                  <div className="field field-checkbox">
+                    <label title="Mailbreaker (PS): the target takes +10% physical AND magical damage. Applied by the Assassin's Venom Dust (while standing on the cloud, 5s) or by Hammer Fall, which also stuns. Works on MVP/boss monsters.">
+                      <input type="checkbox" checked={targetMods.mailbreaker} onChange={(e) => setTargetMods((m) => ({ ...m, mailbreaker: e.target.checked }))} />
+                      <span>Mailbreaker (+10% damage taken)</span>
+                    </label>
+                  </div>
+                  <div className="field field-checkbox">
+                    <label title="Blessing cast on an Undead-element or Demon-race monster is a debuff, not a buff: it halves the target's STR, INT and DEX regardless of skill level. Halving INT cuts its soft MDEF (INT + VIT/2), so this is a straight magic-damage gain — the reason a Priest blesses a Ghoul before opening. Ignored on any other target. MVP/boss immunity isn't modelled.">
+                      <input
+                        type="checkbox"
+                        checked={targetMods.offensive_blessing}
+                        onChange={(e) => setTargetMods((m) => ({ ...m, offensive_blessing: e.target.checked }))}
+                        disabled={!offensiveBlessingApplies}
+                      />
+                      <span>Offensive Blessing (halves Undead/Demon STR·INT·DEX)</span>
+                    </label>
+                  </div>
                 </div>
-              ) : undefined,
-            })}
-            <div className="field field-checkbox">
-              <label title="Hypothermia (PS status, e.g. Frost Nova Lv5): −10 DEX, −20% ASPD and −20% movement speed on the target for 10 seconds, and it cannot be resisted. Only the DEX cut is modelled here — it lowers the monster's HIT, so you dodge more; this panel reports damage per hit and dodge chance, never the monster's attack rate. No effect on bosses.">
-                <input
-                  type="checkbox"
-                  checked={!!targetMods.hypothermia}
-                  onChange={(e) => setTargetMods((m) => ({ ...m, hypothermia: e.target.checked }))}
-                />
-                <span>Hypothermia (−10 DEX → its HIT)</span>
-              </label>
-            </div>
-            {/* Rogue Strips. Flat percentages per skill (ranks change only duration
-                and success rate), so these are toggles. Shield/Armor make YOUR hits
-                land harder; Weapon/Helm cut what the monster brings, so they show up
-                in the survivability numbers. None work on MvPs. */}
-            {([
-              ["strip_shield", "Strip Shield (−30% target hard DEF)", "RG_STRIPSHIELD: decreases the target's hard DEF by 30%. Raises your physical damage. Cannot be used on MvPs."],
-              ["strip_armor", "Strip Armor (−30% target hard MDEF)", "RG_STRIPARMOR: decreases the target's hard MDEF by 30%. Raises your magic damage. Cannot be used on MvPs."],
-              ["strip_weapon", "Strip Weapon (−40% monster ATK)", "RG_STRIPWEAPON: cuts the monster's ATK by 40% — shows in the damage-taken numbers. Cannot be used on MvPs."],
-              ["strip_helm", "Strip Helm (−40% monster INT)", "RG_STRIPHELM: cuts the monster's INT by 40%, lowering its MATK — shows in the damage-taken numbers. Cannot be used on MvPs."],
-            ] as const).map(([key, label, tip]) => (
-              <div className="field field-checkbox" key={key}>
-                <label title={tip}>
-                  <input
-                    type="checkbox"
-                    checked={!!targetMods[key]}
-                    onChange={(e) => setTargetMods((m) => ({ ...m, [key]: e.target.checked }))}
-                  />
-                  <span>{label}</span>
-                </label>
-              </div>
-            ))}
-            {/* Decrease AGI: a FLAT −3 AGI per level (PS condensed it to 5 ranks),
-                where Quagmire is a percentage. Same effect on flee, so it helps only
-                when you are actually missing. */}
-            {debuffLevelField({
-              key: "decrease_agi", max: 5, value: decreaseAgiLv,
-              label: "Decrease AGI (−AGI → lower flee)",
-              title: "AL_DECAGI: cuts the target's AGI by a flat 3 per level (−15 at Lv5), lowering its flee. Does NOT guarantee a hit; no effect on bosses.",
-            })}
-            <div className="field field-checkbox">
-              <label title={signumApplicable ? "AL_CRUCIS Lv10 (PS): hard DEF −50% (10 + 4×lv). Undead-element or Demon-race only." : "Signum Crucis only affects Undead-element or Demon-race targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>
-                <input type="checkbox" checked={targetMods.signum_crucis} disabled={!signumApplicable} onChange={(e) => setTargetMods((m) => ({ ...m, signum_crucis: e.target.checked }))} />
-                <span>Signum Crucis Lv10 (−50% hard DEF)</span>
-              </label>
-            </div>
-            {debuffLevelField({
-              key: "provoke", max: 10, value: provokeLv,
-              label: "Provoke (−DEF)",
-              title: "SC_PROVOKE: target DEF −(5 + 5×lv)% (−55% at Lv10). No effect on Boss monsters. Independent of the player's own Auto Berserk self-buff.",
-            })}
-            {debuffLevelField({
-              key: "fling", max: 5, value: Number(targetMods.fling) || 0,
-              label: "Fling (−3% DEF per coin)",
-              title: "GS_FLING: a Gunslinger throws coins at the target — each one cut its DEF by 3% for 20s (15% at the full 5 coins). Against a monster this reduces hard and soft DEF; against a player, soft DEF only. Whether Boss monsters resist it is not documented, so it is applied to them too.",
-              unit: (c) => `${c} coin${c === 1 ? "" : "s"} (−${3 * c}%)`,
-            })}
-            {debuffLevelField({
-              key: "burning", max: 5, value: burningStacks,
-              label: "Burning (−2 MDEF per stack)",
-              title: "Burning (PS): a 5-second stacking debuff — the Alchemist's Remote Detonator applies all 5 stacks at once when a Marine Sphere Bottle is carried. Each stack cuts the target's hard MDEF by 2 (which is what raises your magic damage here) and ticks 60 Fire magic damage per second.",
-              unit: (n) => `${n} stack${n > 1 ? "s" : ""}`,
-              hint: (
-                <div className="hint-text">
-                  −{2 * burningStacks} hard MDEF for 5s. The Burning itself also ticks{" "}
-                  {60 * burningStacks} Fire magic damage/s — that figure is before the target's
-                  Fire resistance and MDEF, and it is the debuff's own damage, not part of your hit.
+              ), "Straight multipliers on everything the target takes")}
+
+              {groupSlot("dbf.def", "DEF & MDEF", debuffChosen.def, (
+                <div className="passive-grid">
+                  {debuffLevelField({
+                    key: "provoke", max: 10, value: provokeLv,
+                    label: "Provoke (−DEF)",
+                    title: "SC_PROVOKE: target DEF −(5 + 5×lv)% (−55% at Lv10). No effect on Boss monsters. Independent of the player's own Auto Berserk self-buff.",
+                  })}
+                  <div className="field field-checkbox">
+                    <label title={signumApplicable ? "AL_CRUCIS Lv10 (PS): hard DEF −50% (10 + 4×lv). Undead-element or Demon-race only." : "Signum Crucis only affects Undead-element or Demon-race targets"} style={!signumApplicable ? { opacity: 0.4, cursor: "not-allowed" } : undefined}>
+                      <input type="checkbox" checked={targetMods.signum_crucis} disabled={!signumApplicable} onChange={(e) => setTargetMods((m) => ({ ...m, signum_crucis: e.target.checked }))} />
+                      <span>Signum Crucis Lv10 (−50% hard DEF)</span>
+                    </label>
+                  </div>
+                  {/* Rogue Strips. Flat percentages per skill (ranks change only duration
+                      and success rate), so these are toggles. These two make YOUR hits
+                      land harder; Weapon and Helm cut what the monster brings and live
+                      under "Its attacks". None work on MvPs. */}
+                  {([
+                    ["strip_shield", "Strip Shield (−30% target hard DEF)", "RG_STRIPSHIELD: decreases the target's hard DEF by 30%. Raises your physical damage. Cannot be used on MvPs."],
+                    ["strip_armor", "Strip Armor (−30% target hard MDEF)", "RG_STRIPARMOR: decreases the target's hard MDEF by 30%. Raises your magic damage. Cannot be used on MvPs."],
+                  ] as const).map(([key, label, tip]) => (
+                    <div className="field field-checkbox" key={key}>
+                      <label title={tip}>
+                        <input
+                          type="checkbox"
+                          checked={!!targetMods[key]}
+                          onChange={(e) => setTargetMods((m) => ({ ...m, [key]: e.target.checked }))}
+                        />
+                        <span>{label}</span>
+                      </label>
+                    </div>
+                  ))}
+                  {debuffLevelField({
+                    key: "fling", max: 5, value: flingCoins,
+                    label: "Fling (−3% DEF per coin)",
+                    title: "GS_FLING: a Gunslinger throws coins at the target — each one cut its DEF by 3% for 20s (15% at the full 5 coins). Against a monster this reduces hard and soft DEF; against a player, soft DEF only. Whether Boss monsters resist it is not documented, so it is applied to them too.",
+                    unit: (c) => `${c} coin${c === 1 ? "" : "s"} (−${3 * c}%)`,
+                  })}
+                  {debuffLevelField({
+                    key: "burning", max: 5, value: burningStacks,
+                    label: "Burning (−2 MDEF per stack)",
+                    title: "Burning (PS): a 5-second stacking debuff — the Alchemist's Remote Detonator applies all 5 stacks at once when a Marine Sphere Bottle is carried. Each stack cuts the target's hard MDEF by 2 (which is what raises your magic damage here) and ticks 60 Fire magic damage per second.",
+                    unit: (n) => `${n} stack${n > 1 ? "s" : ""}`,
+                    hint: (
+                      <div className="hint-text">
+                        −{2 * burningStacks} hard MDEF for 5s. The Burning itself also ticks{" "}
+                        {60 * burningStacks} Fire magic damage/s — that figure is before the target&apos;s
+                        Fire resistance and MDEF, and it is the debuff&apos;s own damage, not part of your hit.
+                      </div>
+                    ),
+                  })}
                 </div>
-              ),
-            })}
-            <div className="field field-checkbox">
-              <label title="SC_SLEEP: target cannot evade (auto-hit) and crit rate is doubled">
-                <input type="checkbox" checked={targetMods.sleep} onChange={(e) => setTargetMods((m) => ({ ...m, sleep: e.target.checked }))} />
-                <span>Asleep (auto-hit, ×2 crit rate)</span>
-              </label>
+              ), "Everything that thins its armour, so your hits land harder")}
+
+              {groupSlot("dbf.flee", "Flee & accuracy", debuffChosen.flee, (
+                <div className="passive-grid">
+                  {debuffLevelField({
+                    key: "quagmire", max: 5, value: quagmireLv,
+                    label: "Quagmire (−AGI/DEX → lower flee & its HIT)",
+                    title: "WZ_QUAGMIRE: cuts the target's AGI/DEX by 10% per level (max 50% at Lv5). Its AGI is its flee, so you hit it more often; its DEX is its HIT, so it lands on you less often (see Survivability). Does NOT guarantee a hit; no effect on bosses; halved vs players.",
+                    hint: quagmireRedundant ? (
+                      <div className="hint-text">
+                        Your hit chance is already at the 100% cap — Quagmire only helps when you&apos;re missing
+                        (it lowers flee, not damage). It still lowers the monster&apos;s HIT, so you dodge more.
+                      </div>
+                    ) : undefined,
+                  })}
+                  {/* Decrease AGI: a FLAT −3 AGI per level (PS condensed it to 5 ranks),
+                      where Quagmire is a percentage. Same effect on flee, so it helps
+                      only when you are actually missing. */}
+                  {debuffLevelField({
+                    key: "decrease_agi", max: 5, value: decreaseAgiLv,
+                    label: "Decrease AGI (−AGI → lower flee)",
+                    title: "AL_DECAGI: cuts the target's AGI by a flat 3 per level (−15 at Lv5), lowering its flee. Does NOT guarantee a hit; no effect on bosses.",
+                  })}
+                  <div className="field field-checkbox">
+                    <label title="SC_BLIND: the target's flee drops 25%, raising your hit rate. Not an auto-hit — a blinded monster still evades, just worse.">
+                      <input type="checkbox" checked={targetMods.blind} onChange={(e) => setTargetMods((m) => ({ ...m, blind: e.target.checked }))} />
+                      <span>Blinded (−25% target flee)</span>
+                    </label>
+                  </div>
+                  <div className="field field-checkbox">
+                    <label title="SC_SLEEP: target cannot evade (auto-hit) and crit rate is doubled">
+                      <input type="checkbox" checked={targetMods.sleep} onChange={(e) => setTargetMods((m) => ({ ...m, sleep: e.target.checked }))} />
+                      <span>Asleep (auto-hit, ×2 crit rate)</span>
+                    </label>
+                  </div>
+                  <div className="field field-checkbox">
+                    <label title="SC_STUN: target cannot evade (auto-hit)">
+                      <input type="checkbox" checked={targetMods.stun} onChange={(e) => setTargetMods((m) => ({ ...m, stun: e.target.checked }))} />
+                      <span>Stunned (auto-hit)</span>
+                    </label>
+                  </div>
+                </div>
+              ), "These lower its evasion, not its armour — they help only when you are missing")}
+
+              {groupSlot("dbf.incoming", "Its attacks", debuffChosen.incoming, (
+                <div className="passive-grid">
+                  {([
+                    ["strip_weapon", "Strip Weapon (−40% monster ATK)", "RG_STRIPWEAPON: cuts the monster's ATK by 40% — shows in the damage-taken numbers. Cannot be used on MvPs."],
+                    ["strip_helm", "Strip Helm (−40% monster INT)", "RG_STRIPHELM: cuts the monster's INT by 40%, lowering its MATK — shows in the damage-taken numbers. Cannot be used on MvPs."],
+                  ] as const).map(([key, label, tip]) => (
+                    <div className="field field-checkbox" key={key}>
+                      <label title={tip}>
+                        <input
+                          type="checkbox"
+                          checked={!!targetMods[key]}
+                          onChange={(e) => setTargetMods((m) => ({ ...m, [key]: e.target.checked }))}
+                        />
+                        <span>{label}</span>
+                      </label>
+                    </div>
+                  ))}
+                  <div className="field field-checkbox">
+                    <label title="Hypothermia (PS status, e.g. Frost Nova Lv5): −10 DEX, −20% ASPD and −20% movement speed on the target for 10 seconds, and it cannot be resisted. Only the DEX cut is modelled here — it lowers the monster's HIT, so you dodge more; this panel reports damage per hit and dodge chance, never the monster's attack rate. No effect on bosses.">
+                      <input
+                        type="checkbox"
+                        checked={!!targetMods.hypothermia}
+                        onChange={(e) => setTargetMods((m) => ({ ...m, hypothermia: e.target.checked }))}
+                      />
+                      <span>Hypothermia (−10 DEX → its HIT)</span>
+                    </label>
+                  </div>
+                </div>
+              ), "These change what the monster does to YOU — read them in Survivability")}
             </div>
-            <div className="field field-checkbox">
-              <label title="SC_STUN: target cannot evade (auto-hit)">
-                <input type="checkbox" checked={targetMods.stun} onChange={(e) => setTargetMods((m) => ({ ...m, stun: e.target.checked }))} />
-                <span>Stunned (auto-hit)</span>
-              </label>
-            </div>
-            <div className="field field-checkbox">
-              <label title="SC_BLIND: the target's flee drops 25%, raising your hit rate. Not an auto-hit — a blinded monster still evades, just worse.">
-                <input type="checkbox" checked={targetMods.blind} onChange={(e) => setTargetMods((m) => ({ ...m, blind: e.target.checked }))} />
-                <span>Blinded (−25% target flee)</span>
-              </label>
-            </div>
+
             {hammerfallStatusCards.length > 0 && (
               <div className="hint-text">
                 {hammerfallStatusCards.map((c) => (
@@ -5114,7 +5225,6 @@ export default function BuildEditor() {
                 ))}
               </div>
             )}
-
           </Panel>
 
           {/* Manual edits live with the custom target — only offered there, only

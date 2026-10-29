@@ -110,8 +110,11 @@ const EXPECT = {
   Equipment: /^\+7 Gladius · \+2 more · 3 cards$/,
   Clan: /^Crossbow Clan$/,
   Skill: /^Sonic Blow Lv 10$/,
-  // Who you are hitting first, then what is on them.
-  Target: /^Poring · Quagmire 5 · Provoke 10$/,
+  // Who you are hitting first, then what is on them -- in the order the debuff
+  // ROWS now appear, so the summary reads the same way the panel does. That puts
+  // Provoke (DEF & MDEF) above Quagmire (Flee & accuracy); it used to be whichever
+  // order the old hand-written list happened to push them in.
+  Target: /^Poring · Provoke 10 · Quagmire 5$/,
 };
 for (const [title, re] of Object.entries(EXPECT)) {
   check(re.test(byTitle[title] ?? ""), `${title}: ${re.source}`, byTitle[title]);

@@ -82,6 +82,13 @@ const waitForBar = async (was) => {
 
 await page.goto(START, { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(9000);
+// The debuffs are grouped into collapsible slots now, so every row below starts
+// hidden. `hidden` takes an element out of the accessibility tree as well as off
+// the screen, so this is a 30s timeout rather than a missing element.
+{
+  const expand = page.locator('[data-panel="target"]').getByRole("button", { name: /expand all/i }).first();
+  if (await expand.count()) { await expand.click(); await page.waitForTimeout(500); }
+}
 await panel().scrollIntoViewIfNeeded();
 
 // ---- 1. one shape for the whole panel -------------------------------------------

@@ -5,7 +5,23 @@ const page = await b.newPage({ viewport: { width: 1440, height: 900 } });
 await page.goto(URL, { waitUntil: "networkidle" });
 // Manual stat bonuses is a collapsed section by default; open it so its grid is
 // actually laid out and can be measured.
-await page.evaluate(() => { try { localStorage.setItem("manualStatsOpen", "1"); } catch (e) {} });
+//
+// The same now goes for the checkbox lists. Buffs, consumables and target debuffs
+// are all collapsible groups, and on a page nobody has touched there is no visible
+// checkbox ANYWHERE -- which left both the row-pitch and the checkbox-size
+// measurements below reading null, and "null did not shrink to null" passes for a
+// failure rather than a finding. The densest list on the page used to be the flat
+// target-debuff column; now it has to be opened, exactly as a player opens it.
+await page.evaluate(() => {
+  try {
+    localStorage.setItem("manualStatsOpen", "1");
+    localStorage.setItem("opscalc.panelGroups", JSON.stringify({
+      self: true, priest: true, blacksmith: true, merchant: true, sage: true, songs: true,
+      "dbf.element": true, "dbf.amplify": true, "dbf.def": true, "dbf.flee": true, "dbf.incoming": true,
+      "cons.aspd": true, "cons.stat": true, "cons.boxes": true, "cons.proof": true,
+    }));
+  } catch (e) { /* ignore */ }
+});
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(2000);
 

@@ -39,6 +39,13 @@ await page.goto(shareLink({
   skill: { id: 0, level: 1, label: "Normal Attack" }, targetMode: "monster",
 }), { waitUntil: "networkidle" });
 await page.waitForTimeout(2500);
+// Target debuffs are collapsible slots now, so Quagmire and Hypothermia start
+// hidden. `hidden` removes an element from the accessibility tree as well as the
+// screen, so reaching them without this is a 30s timeout, not a clean failure.
+{
+  const expand = page.locator('[data-panel="target"]').getByRole("button", { name: /expand all/i }).first();
+  if (await expand.count()) { await expand.click(); await page.waitForTimeout(500); }
+}
 
 const cards = () => page.evaluate(() => {
   const out = {};

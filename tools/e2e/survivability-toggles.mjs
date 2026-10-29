@@ -36,12 +36,19 @@ const open = async (state) => {
   const page = await (await browser.newContext({ viewport: { width: 1500, height: 1400 } })).newPage();
   await page.goto(shareLink(state), { waitUntil: "networkidle" });
   await page.waitForTimeout(2500);
-  // Buff groups collapse like equipment slots now, so a buff this test wants to
-  // tick (Energy Coat, Hypothermia) starts hidden inside its group. A player opens
-  // the group once and the browser remembers; a fresh context never has. Expanding
-  // is part of reaching the control, not something under test here.
-  const expand = page.locator('[data-panel="buffs"]').getByRole("button", { name: /expand all/i }).first();
-  if (await expand.count()) { await expand.click(); await page.waitForTimeout(500); }
+  // Buff groups collapse like equipment slots now, so a control this test wants to
+  // tick starts hidden inside its group. A player opens the group once and the
+  // browser remembers; a fresh context never has. Expanding is part of reaching the
+  // control, not something under test here.
+  //
+  // BOTH panels: Energy Coat is a buff, but Hypothermia is a target debuff, and the
+  // debuffs now collapse the same way. The comment here used to call Hypothermia a
+  // buff and expand only the buffs panel, which worked for exactly as long as the
+  // debuffs stayed flat.
+  for (const p of ['[data-panel="buffs"]', '[data-panel="target"]']) {
+    const expand = page.locator(p).getByRole("button", { name: /expand all/i }).first();
+    if (await expand.count()) { await expand.click(); await page.waitForTimeout(400); }
+  }
   return page;
 };
 const calculate = async (page) => {
