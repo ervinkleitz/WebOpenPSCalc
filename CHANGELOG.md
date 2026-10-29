@@ -7,6 +7,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ## 2026-10-28
 
+### Changed
+
+- **Consumables are grouped the way equipment is.** The panel used to be every
+  potion, box and proof potion at once; it is now four rows you open — **ASPD
+  potion**, **ATK / MATK items**, **Boxes** and **Proof potions** — and while a row
+  is closed it lists what you are carrying: *Berserk Potion*, *ATK +20*, *Gloom,
+  Drowsiness*. The same rows the buffs panel got, for the same reason. Whatever you
+  had open before is still open.
+
 ### Fixed
 
 - **Jelring Cards do something now.** A weapon with three of them priced exactly the

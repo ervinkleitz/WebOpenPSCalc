@@ -72,7 +72,15 @@ const measure = async (label) => {
       })(),
       // The checkbox is a fixed 16px, so it does NOT follow the root font and
       // has to be shrunk by hand or it stays put while its label shrinks.
-      checkboxPx: (() => { const el = document.querySelector('.field-checkbox input[type="checkbox"]');
+      //
+      // The first VISIBLE one, not the first one. Consumables became collapsible
+      // slots and now owns the first checkboxes in the document, so querySelector
+      // returned Box of Gloom inside a closed slot -- which has no box at all, and
+      // measured 0 in both densities. "0 did not shrink to 0" is a true statement
+      // about nothing.
+      checkboxPx: (() => {
+        const el = [...document.querySelectorAll('.field-checkbox input[type="checkbox"]')]
+          .find((e) => e.getBoundingClientRect().height > 0);
         return el ? Math.round(el.getBoundingClientRect().height) : null; })(),
       // Buff names live at 0.85rem while every other small label is 0.72rem.
       // Compact brings them into line — compared, not hardcoded.

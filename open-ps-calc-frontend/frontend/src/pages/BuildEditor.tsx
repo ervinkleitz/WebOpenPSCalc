@@ -78,6 +78,33 @@ const ENDOW_LABELS: Record<string, string> = {
   SC_ENCHANTPOISON: "Enchant Poison", SC_ENCHANTARMS: "Cursed Water",
 };
 const BUFF_GROUP_KEYS = ["self", "priest", "blacksmith", "merchant", "sage", "songs"];
+// Consumable groups, prefixed so they share one open-state map with the buff
+// groups above without either panel being able to collide with the other.
+const CONSUMABLE_GROUP_KEYS = ["cons.aspd", "cons.stat", "cons.boxes", "cons.proof"];
+// The four elemental proof potions. Survivability only (the Target panel's
+// incoming damage): +20% resist to the element and -15% against its counter on
+// the endow cycle, and all four stack. The short name is what a closed slot
+// shows, because four full names do not fit on one line on a phone.
+const PROOF_POTIONS = [
+  { key: "proof_fire", short: "Fireproof", label: "Fireproof Potion",
+    tip: "+20% Fire resist, −15% Water resist (20 min)" },
+  { key: "proof_water", short: "Coldproof", label: "Coldproof Potion",
+    tip: "+20% Water resist, −15% Wind resist (20 min)" },
+  { key: "proof_earth", short: "Earthproof", label: "Earthproof Potion",
+    tip: "+20% Earth resist, −15% Fire resist (20 min)" },
+  { key: "proof_wind", short: "Thunderproof", label: "Thunderproof Potion",
+    tip: "+20% Wind resist, −15% Earth resist (20 min)" },
+] as const;
+// The three stat boxes. Short name for the closed line, full name plus what it
+// actually does while choosing.
+const STAT_BOXES = [
+  { key: "box_gloom", short: "Gloom", label: "Box of Gloom (+3% AGI/DEX)",
+    tip: "Box of Gloom: casts Improve Concentration Lv1 (+3% AGI/DEX, base stats only)." },
+  { key: "box_resentment", short: "Resentment", label: "Box of Resentment (+20 ATK)",
+    tip: "Box of Resentment: +20 ATK for 60s (sc_start SC_PLUSATTACKPOWER)." },
+  { key: "box_drowsiness", short: "Drowsiness", label: "Box of Drowsiness (+20 MATK)",
+    tip: "Box of Drowsiness: +20 MATK for 60s (sc_start SC_PLUSMAGICPOWER)." },
+] as const;
 const GROUND_LABELS: Record<string, string> = {
   SC_VOLCANO: "Volcano", SC_DELUGE: "Deluge", SC_VIOLENTGALE: "Violent Gale",
 };
@@ -1158,30 +1185,35 @@ export default function BuildEditor() {
     try { localStorage.setItem(EQUIP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
     setOpenSlots(next);
   }, []);
-  // Buff groups are equipment slots. A class's buffs are a slot's contents: closed,
-  // the row says which of them you have up the way a closed equipment slot says what
-  // is worn; open, it is the checkbox list it always was. Same markup, same classes,
-  // same remembered-per-browser behaviour — if the two panels only RESEMBLED each
-  // other they would drift the first time one of them was touched.
-  const BUFF_OPEN_KEY = "opscalc.buffGroups";
-  const [openBuffGroups, setOpenBuffGroups] = useState<Record<string, boolean>>(() => {
+  // Buff groups and consumable groups are equipment slots. A class's buffs, or a
+  // kind of consumable, are a slot's contents: closed, the row says what you have up
+  // the way a closed equipment slot says what is worn; open, it is the checkbox list
+  // it always was. Same markup, same classes, same remembered-per-browser behaviour
+  // — if the panels only RESEMBLED each other they would drift the first time one of
+  // them was touched.
+  //
+  // One map holds every panel's groups, keyed by group, so the two cannot disagree
+  // about what "open" means. The key was buffs-only until consumables joined; the old
+  // one is read once on the way past so a player who had groups open keeps them open.
+  const GROUP_OPEN_KEY = "opscalc.panelGroups";
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     try {
-      const raw = localStorage.getItem(BUFF_OPEN_KEY);
+      const raw = localStorage.getItem(GROUP_OPEN_KEY) ?? localStorage.getItem("opscalc.buffGroups");
       return raw ? JSON.parse(raw) : {};
     } catch { return {}; }
   });
-  const toggleBuffGroup = useCallback((key: string) => {
-    setOpenBuffGroups((prev) => {
+  const toggleGroup = useCallback((key: string) => {
+    setOpenGroups((prev) => {
       const next = { ...prev, [key]: !prev[key] };
-      try { localStorage.setItem(BUFF_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      try { localStorage.setItem(GROUP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
   }, []);
-  const setAllBuffGroups = useCallback((open: boolean, keys: string[]) => {
-    setOpenBuffGroups(() => {
+  const setAllGroups = useCallback((open: boolean, keys: string[]) => {
+    setOpenGroups(() => {
       const next: Record<string, boolean> = {};
       for (const k of keys) next[k] = open;
-      try { localStorage.setItem(BUFF_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      try { localStorage.setItem(GROUP_OPEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
   }, []);
@@ -2253,13 +2285,13 @@ export default function BuildEditor() {
   // One equipment slot, holding a group of buffs. Deliberately the equipment panel's
   // own classes rather than a lookalike: the two are the same control and should go
   // on being the same control after the next change to either.
-  const buffSlot = (key: string, label: string, chosen: string[], body: ReactNode, note?: string) => {
-    const open = openBuffGroups[key] ?? false;
+  const groupSlot = (key: string, label: string, chosen: string[], body: ReactNode, note?: string) => {
+    const open = openGroups[key] ?? false;
     const summary = chosen.length ? chosen.join(", ") : null;
     return (
       <div key={key} className={`equip-slot${open ? " equip-slot--open" : ""}${summary ? " equip-slot--filled" : ""}`}>
         <button type="button" className="equip-slot-head" aria-expanded={open}
-          onClick={() => toggleBuffGroup(key)} title={note}>
+          onClick={() => toggleGroup(key)} title={note}>
           <span className="equip-slot-label">{label}</span>
           {!open && (
             <span className={`equip-slot-value${summary ? "" : " is-empty"}`}>{summary ?? "None"}</span>
@@ -2762,6 +2794,22 @@ export default function BuildEditor() {
     const who = targetMode === "monster" ? (mobInfo?.name ?? null) : "Custom target";
     const debuffs = names.length ? ` \u00b7 ${summarise(names, 2)}` : "";
     return who ? `${who}${debuffs}` : EMPTY;
+  })();
+
+  // Consumables, for the closed slot lines and the panel's own summary.
+  const aspdPotion = Number(data.consumable_buffs?.aspd_potion ?? 0);
+  const atkItem = Number(data.consumable_buffs?.atk_item ?? 0);
+  const matkItem = Number(data.consumable_buffs?.matk_item ?? 0);
+  const consumablesSummary = (() => {
+    const names: string[] = [];
+    // The potion by name rather than "1 on": which one is the whole question, and
+    // the three differ by 10 percentage points of ASPD.
+    if (aspdPotion > 0) names.push(ASPD_POTION_LABELS[aspdPotion].replace(/\s*\([^)]*\)\s*$/, ""));
+    if (atkItem > 0) names.push(`ATK +${atkItem}`);
+    if (matkItem > 0) names.push(`MATK +${matkItem}`);
+    for (const b of STAT_BOXES) if (data.consumable_buffs?.[b.key]) names.push(b.short);
+    for (const b of PROOF_POTIONS) if (data.consumable_buffs?.[b.key]) names.push(b.short);
+    return summarise(names);
   })();
 
   const passiveSummary = (() => {
@@ -4056,93 +4104,96 @@ export default function BuildEditor() {
             )}
           </Panel>
 
-          <Panel eyebrow="06" title="Consumables" id="consumables">
-            <div className="field">
-              <label>ASPD potion</label>
-              <select
-                value={data.consumable_buffs?.aspd_potion ?? 0}
-                onChange={(e) => updateConsumable("aspd_potion", Number(e.target.value) || undefined)}
-              >
-                {ASPD_POTION_LABELS.map((label, i) => (
-                  <option key={i} value={i} disabled={i > aspdPotionCap(data.job_id)}>{label}</option>
-                ))}
-              </select>
+          <Panel eyebrow="06" title="Consumables" id="consumables" summary={consumablesSummary}>
+            {/* The same equipment slots the buffs panel uses, for the same reason:
+                this was five screens of controls with one section header, and almost
+                every build has nothing ticked in most of it. Closed, each row says
+                what you are carrying. */}
+            <div className="equip-slot-actions">
+              <button onClick={() => setAllGroups(true, CONSUMABLE_GROUP_KEYS)}>Expand all</button>
+              <button onClick={() => setAllGroups(false, CONSUMABLE_GROUP_KEYS)}>Collapse all</button>
             </div>
-            <div className="field-row" style={{ marginTop: "0.6rem" }}>
-              <div className="field">
-                <label>ATK item (flat BATK)</label>
-                <input
-                  className="mono"
-                  type="number"
-                  min={0}
-                  value={data.consumable_buffs?.atk_item ?? 0}
-                  onFocus={(e) => e.target.select()}
-                  onChange={(e) => updateConsumable("atk_item", Number(e.target.value) || undefined)}
-                />
-              </div>
-              <div className="field">
-                <label>MATK item (flat MATK)</label>
-                <input
-                  className="mono"
-                  type="number"
-                  min={0}
-                  value={data.consumable_buffs?.matk_item ?? 0}
-                  onFocus={(e) => e.target.select()}
-                  onChange={(e) => updateConsumable("matk_item", Number(e.target.value) || undefined)}
-                />
-              </div>
+            <div className="equip-grid">
+              {groupSlot("cons.aspd", "ASPD potion",
+                aspdPotion > 0 ? [ASPD_POTION_LABELS[aspdPotion].replace(/\s*\([^)]*\)\s*$/, "")] : [],
+                // No label inside: the slot head already says "ASPD potion", and an
+                // equipment slot does not print its item name twice either.
+                <div className="field">
+                  <select
+                    aria-label="ASPD potion"
+                    value={data.consumable_buffs?.aspd_potion ?? 0}
+                    onChange={(e) => updateConsumable("aspd_potion", Number(e.target.value) || undefined)}
+                  >
+                    {ASPD_POTION_LABELS.map((label, i) => (
+                      <option key={i} value={i} disabled={i > aspdPotionCap(data.job_id)}>{label}</option>
+                    ))}
+                  </select>
+                </div>,
+                "Berserk and Awakening Potions are gated by job")}
+
+              {groupSlot("cons.stat", "ATK / MATK items",
+                [...(atkItem > 0 ? [`ATK +${atkItem}`] : []), ...(matkItem > 0 ? [`MATK +${matkItem}`] : [])],
+                <div className="field-row">
+                  <div className="field">
+                    <label>Flat ATK</label>
+                    <input
+                      className="mono"
+                      type="number"
+                      min={0}
+                      value={data.consumable_buffs?.atk_item ?? 0}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => updateConsumable("atk_item", Number(e.target.value) || undefined)}
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Flat MATK</label>
+                    <input
+                      className="mono"
+                      type="number"
+                      min={0}
+                      value={data.consumable_buffs?.matk_item ?? 0}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => updateConsumable("matk_item", Number(e.target.value) || undefined)}
+                    />
+                  </div>
+                </div>,
+                "Anything that adds flat ATK or MATK and is not modeled elsewhere")}
+
+              {groupSlot("cons.boxes", "Boxes",
+                STAT_BOXES.filter((b) => !!data.consumable_buffs?.[b.key]).map((b) => b.short),
+                <div className="passive-grid">
+                  {STAT_BOXES.map((b) => (
+                    <div className="field field-checkbox" key={b.key}>
+                      <label title={b.tip}>
+                        <input
+                          type="checkbox"
+                          checked={!!data.consumable_buffs?.[b.key]}
+                          onChange={(e) => updateConsumable(b.key, e.target.checked || undefined)}
+                        />
+                        <span>{b.label}</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>)}
+
+              {groupSlot("cons.proof", "Proof potions",
+                PROOF_POTIONS.filter((b) => !!data.consumable_buffs?.[b.key]).map((b) => b.short),
+                <div className="passive-grid">
+                  {PROOF_POTIONS.map((b) => (
+                    <div className="field field-checkbox" key={b.key}>
+                      <label title={b.tip}>
+                        <input
+                          type="checkbox"
+                          checked={!!data.consumable_buffs?.[b.key]}
+                          onChange={(e) => updateConsumable(b.key, e.target.checked || undefined)}
+                        />
+                        <span>{b.label}</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>,
+                "Incoming damage only — these change what the Target panel says you take, not what you deal")}
             </div>
-            <div className="field field-checkbox" style={{ marginTop: "0.6rem" }}>
-              <label title="Box of Gloom: casts Improve Concentration Lv1 (+3% AGI/DEX, base stats only).">
-                <input
-                  type="checkbox"
-                  checked={!!data.consumable_buffs?.box_gloom}
-                  onChange={(e) => updateConsumable("box_gloom", e.target.checked || undefined)}
-                />
-                <span>Box of Gloom (+3% AGI/DEX)</span>
-              </label>
-            </div>
-            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
-              <label title="Box of Resentment: +20 ATK for 60s (sc_start SC_PLUSATTACKPOWER).">
-                <input
-                  type="checkbox"
-                  checked={!!data.consumable_buffs?.box_resentment}
-                  onChange={(e) => updateConsumable("box_resentment", e.target.checked || undefined)}
-                />
-                <span>Box of Resentment (+20 ATK)</span>
-              </label>
-            </div>
-            <div className="field field-checkbox" style={{ marginTop: "0.4rem" }}>
-              <label title="Box of Drowsiness: +20 MATK for 60s (sc_start SC_PLUSMAGICPOWER).">
-                <input
-                  type="checkbox"
-                  checked={!!data.consumable_buffs?.box_drowsiness}
-                  onChange={(e) => updateConsumable("box_drowsiness", e.target.checked || undefined)}
-                />
-                <span>Box of Drowsiness (+20 MATK)</span>
-              </label>
-            </div>
-            {/* Elemental proof potions — survivability only (Target-panel incoming
-                damage). +20% resist to the element, −15% against its counter on the
-                endow cycle; all four stack. */}
-            <div className="buff-section-header" style={{ marginTop: "0.8rem" }}>Proof potions (incoming damage)</div>
-            {([
-              ["proof_fire", "Fireproof Potion", "+20% Fire resist, −15% Water resist (20 min)"],
-              ["proof_water", "Coldproof Potion", "+20% Water resist, −15% Wind resist (20 min)"],
-              ["proof_earth", "Earthproof Potion", "+20% Earth resist, −15% Fire resist (20 min)"],
-              ["proof_wind", "Thunderproof Potion", "+20% Wind resist, −15% Earth resist (20 min)"],
-            ] as const).map(([key, name, tip]) => (
-              <div className="field field-checkbox" style={{ marginTop: "0.4rem" }} key={key}>
-                <label title={tip}>
-                  <input
-                    type="checkbox"
-                    checked={!!data.consumable_buffs?.[key]}
-                    onChange={(e) => updateConsumable(key, e.target.checked || undefined)}
-                  />
-                  <span>{name}</span>
-                </label>
-              </div>
-            ))}
           </Panel>
 
           <Panel eyebrow="07" title="Buffs" id="buffs" summary={buffsSummary}>
@@ -4211,8 +4262,8 @@ export default function BuildEditor() {
                       has self buffs — put inside, a player with no job chosen saw five
                       collapsed groups and nothing to open them with. */}
                   <div className="equip-slot-actions">
-                    <button onClick={() => setAllBuffGroups(true, BUFF_GROUP_KEYS)}>Expand all</button>
-                    <button onClick={() => setAllBuffGroups(false, BUFF_GROUP_KEYS)}>Collapse all</button>
+                    <button onClick={() => setAllGroups(true, BUFF_GROUP_KEYS)}>Expand all</button>
+                    <button onClick={() => setAllGroups(false, BUFF_GROUP_KEYS)}>Collapse all</button>
                   </div>
                   {!hasSelfSection ? (
                     <p style={{ color: "var(--text-faint)", fontSize: "0.875rem" }}>
@@ -4221,7 +4272,7 @@ export default function BuildEditor() {
                   ) : (
                     <>
                       <div className="equip-grid">
-                      {buffSlot("self", "Self buffs", [
+                      {groupSlot("self", "Self buffs", [
                         ...chosenFrom(selfBuffs, data.active_buffs as Record<string, unknown>),
                         ...(targetMods.performing ? ["Performing"] : []),
                         ...(targetMods.breaking_cloak ? ["Breaking Cloak"] : []),
@@ -4395,7 +4446,7 @@ export default function BuildEditor() {
                   </div>
 
                   <div className="equip-grid">
-                  {buffSlot("priest", "Priest",
+                  {groupSlot("priest", "Priest",
                     [...chosenFrom(partyBuffsFrom("Priest", data.job_id), data.support_buffs as Record<string, unknown>),
                      ...(endowValue && !gsNoEndow ? [ENDOW_LABELS[endowValue] ?? "Endow"] : [])],
                     <div className="passive-grid">
@@ -4421,7 +4472,7 @@ export default function BuildEditor() {
                       </div>
                     </div>)}
 
-                  {buffSlot("blacksmith", "Blacksmith",
+                  {groupSlot("blacksmith", "Blacksmith",
                     chosenFrom(partyBuffsFrom("Blacksmith", data.job_id), data.support_buffs as Record<string, unknown>),
                     <div className="passive-grid">
                       {partyBuffsFrom("Blacksmith", data.job_id).map(partyBuffField)}
@@ -4430,13 +4481,13 @@ export default function BuildEditor() {
                   {/* Crazy Uproar is the whole Merchant group, and it's hidden from the
                       Merchant line itself (they self-cast it), so the group can empty
                       out entirely — don't leave a bare header behind. */}
-                  {partyBuffsFrom("Merchant", data.job_id).length > 0 && buffSlot("merchant", "Merchant",
+                  {partyBuffsFrom("Merchant", data.job_id).length > 0 && groupSlot("merchant", "Merchant",
                     chosenFrom(partyBuffsFrom("Merchant", data.job_id), data.support_buffs as Record<string, unknown>),
                     <div className="passive-grid">
                       {partyBuffsFrom("Merchant", data.job_id).map(partyBuffField)}
                     </div>)}
 
-                  {buffSlot("sage", "Sage",
+                  {groupSlot("sage", "Sage",
                     [...(groundEffectType ? [GROUND_LABELS[groundEffectType] ?? "Ground effect"] : []),
                      ...(isSageLine && autoSpellLv ? [`Hindsight ${autoSpellLv}`] : [])],
                     <div className="passive-grid">
@@ -4468,7 +4519,7 @@ export default function BuildEditor() {
                       )}
                     </div>)}
 
-                  {buffSlot("songs", "Bard / Dancer songs",
+                  {groupSlot("songs", "Bard / Dancer songs",
                     chosenFrom(SONG_BUFFS, data.song_state as Record<string, unknown>),
                     <div className="passive-grid">
                       {SONG_BUFFS.map(songBuffField)}

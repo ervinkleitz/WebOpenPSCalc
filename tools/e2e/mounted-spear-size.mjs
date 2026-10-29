@@ -73,10 +73,23 @@ const finalTotal = () => page.evaluate(() => {
   return m.length ? m[m.length - 1] : null;      // a range reads "min–max"; take max
 });
 
+// Buff groups collapse like equipment slots, so a control that lives in one starts
+// hidden -- and `hidden` takes it out of the accessibility tree as well as off the
+// screen, so getByRole finds nothing and scrollIntoViewIfNeeded waits for an element
+// that will never be visible. A player opens the group once and the browser
+// remembers; a fresh context never has. Reaching the control is not what this test
+// is about.
+const expandBuffGroups = async (pg) => {
+  const btn = pg.locator('[data-panel="buffs"]').getByRole("button", { name: /expand all/i }).first();
+  if (await btn.count()) { await btn.click(); await pg.waitForTimeout(500); }
+};
+
 const run = async (weapon, riding) => {
   await page.goto(link(weapon, PORING), { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(6000);
   if (riding) {
+    // AFTER the load: the panel renders its groups only once a job is known.
+    await expandBuffGroups(page);
     const box = page.getByRole("checkbox", { name: /Riding Peco Peco/i }).first();
     if (!(await box.count())) return { err: "no Riding Peco Peco checkbox" };
     await box.check();

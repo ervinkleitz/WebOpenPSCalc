@@ -80,6 +80,19 @@ const rows = () => page.$$eval(".pl-track .pl-row", (els) => els.map((e) => ({
 // The headline total is rendered outside .pl-track, so the breakdown's own last
 // row carrying a running total IS the final figure.
 const finalOf = (rs) => [...rs].reverse().find((r) => r.val && r.val !== "—")?.val || "";
+// Buff groups collapse like equipment slots, so a control that lives in one starts
+// hidden -- and `hidden` takes it out of the accessibility tree as well as off the
+// screen, so getByRole finds nothing and scrollIntoViewIfNeeded waits for an element
+// that will never be visible. A player opens the group once and the browser
+// remembers; a fresh context never has. Reaching the control is not what this test
+// is about.
+const expandBuffGroups = async (pg) => {
+  const btn = pg.locator('[data-panel="buffs"]').getByRole("button", { name: /expand all/i }).first();
+  if (await btn.count()) { await btn.click(); await pg.waitForTimeout(500); }
+};
+
+await expandBuffGroups(page);
+
 const ge = page.locator(".field", { has: page.locator("label", { hasText: /^Ground effect$/ }) }).locator("select").first();
 await ge.scrollIntoViewIfNeeded();
 

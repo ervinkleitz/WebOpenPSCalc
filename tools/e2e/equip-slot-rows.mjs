@@ -68,12 +68,19 @@ const page = await ctx.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 
+// SCOPED to the equipment panel. `.equip-slot` is no longer the equipment panel's
+// alone: buffs adopted it for their class groups and consumables for theirs, both
+// deliberately, so the three stay the same control. A bare `.equip-slot` therefore
+// sweeps in rows from two other panels -- which made this file count 17 slots where
+// it wanted 11, and pair "Ammo" against "Self buffs" when checking that the two
+// columns line up, two rows that are 1410px and two panels apart.
+const EQ = '[data-panel="equipment"]';
 const panel = () => page.locator(".panel", { has: page.locator(".panel-title", { hasText: /^Equipment$/ }) });
-const rows = () => page.evaluate(() => [...document.querySelectorAll(".equip-slot")].map((e) => ({
+const rows = () => page.evaluate((eq) => [...document.querySelectorAll(eq + " .equip-slot")].map((e) => ({
   label: e.querySelector(".equip-slot-label")?.textContent ?? "",
   value: e.querySelector(".equip-slot-value")?.textContent ?? null,
   open: e.querySelector(".equip-slot-head")?.getAttribute("aria-expanded") === "true",
-})));
+})), EQ);
 const panelH = () => panel().evaluate((e) => Math.round(e.getBoundingClientRect().height));
 const visibleControls = () => panel().locator("input:visible, select:visible, button:visible").count();
 
@@ -97,9 +104,9 @@ check(/^\+4 /.test(byLabel["Armor"] ?? ""), "so does the armour", byLabel["Armor
 check(byLabel["Garment"] === "Empty", "an empty slot says Empty, not nothing", byLabel["Garment"]);
 
 // ---- 2. the hidden controls are out of reach, not merely invisible --------------
-const reachable = await page.evaluate(() =>
-  [...document.querySelectorAll(".equip-slot-body input, .equip-slot-body select")]
-    .filter((e) => e.offsetParent !== null).length);
+const reachable = await page.evaluate((eq) =>
+  [...document.querySelectorAll(`${eq} .equip-slot-body input, ${eq} .equip-slot-body select`)]
+    .filter((e) => e.offsetParent !== null).length, EQ);
 check(reachable === 0,
   "nothing inside a closed slot is focusable — tabbing does not walk into it", reachable);
 
@@ -107,7 +114,7 @@ const closedH = await panelH();
 const closedControls = await visibleControls();
 
 // ---- 3. expand all / collapse all, and what it is worth -------------------------
-await page.locator(".equip-slot-actions button").first().click();   // Expand all
+await page.locator(`${EQ} .equip-slot-actions button`).first().click();   // Expand all
 await page.waitForTimeout(700);
 const openH = await panelH();
 const openControls = await visibleControls();
@@ -116,12 +123,12 @@ check(openH > closedH * 1.5 && closedControls < openControls / 2,
   `collapsing is worth the click (${closedH}px vs ${openH}px, ${closedControls} vs ${openControls} controls)`,
   { closedH, openH, closedControls, openControls });
 
-await page.locator(".equip-slot-actions button").nth(1).click();    // Collapse all
+await page.locator(`${EQ} .equip-slot-actions button`).nth(1).click();    // Collapse all
 await page.waitForTimeout(700);
 check((await rows()).every((x) => !x.open), "Collapse all shuts them again");
 
 // ---- 4. an open slot still edits, and does not print its name twice -------------
-const weapon = page.locator(".equip-slot").first();
+const weapon = page.locator(`${EQ} .equip-slot`).first();
 await weapon.locator(".equip-slot-head").click();
 await page.waitForTimeout(600);
 check((await rows())[0].open, "clicking a row opens that slot");
@@ -154,8 +161,8 @@ check(/^\+9 /.test((await rows())[0].value ?? ""),
 // narrow cell can wrap the LABEL on one side and the NAME on the other, which is
 // three lines either way but only equal in height because both are given a line
 // height expressed as a LENGTH rather than a multiplier.
-const tops = () => page.evaluate(() => {
-  const all = [...document.querySelectorAll(".equip-slot")]
+const tops = () => page.evaluate((eq) => {
+  const all = [...document.querySelectorAll(eq + " .equip-slot")]
     .map((e) => ({ label: e.querySelector(".equip-slot-label").textContent,
                    x: Math.round(e.getBoundingClientRect().left),
                    top: Math.round(e.getBoundingClientRect().top) }));
@@ -165,7 +172,7 @@ const tops = () => page.evaluate(() => {
     if (d > 2) bad.push(`${all[i].label} / ${all[i + 1].label}: ${d}px`);
   }
   return { all, bad };
-});
+}, EQ);
 
 for (const w of [1100, 1900]) {
   await page.setViewportSize({ width: w, height: 1200 });
@@ -185,7 +192,7 @@ await page.evaluate(() => document.documentElement.setAttribute("data-density", 
 // left its neighbour stranded on a row of its own. Nothing is pulled out now, so
 // every slot - the opened one included - keeps the column it started in.
 const colsBefore = (await tops()).all;
-const headMid = page.locator(".equip-slot").filter({ hasText: "Headgear (mid)" });
+const headMid = page.locator(`${EQ} .equip-slot`).filter({ hasText: "Headgear (mid)" });
 await headMid.locator(".equip-slot-head").click();
 await page.waitForTimeout(500);
 const colsAfter = (await tops()).all;
