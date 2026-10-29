@@ -546,7 +546,7 @@ function changelogPage(rows) {
 <header><nav><a href="/">Open PS Calc</a> › Changelog</nav></header>
 <span class="eyebrow">Payon Stories</span>
 <h1>Changelog</h1>
-<p class="lead">Every change to the <a href="/">Payon Stories damage calculator</a>, newest first — ${entries.length} of them across ${dates.length} days. Most come from a player reporting a number that did not match the game.</p>
+<p class="lead">Every change to the <a href="/">Payon Stories damage calculator</a>, newest first — ${entries.length} of them across ${dates.length} days.</p>
 ${body}
 <footer>Open PS Calc is an unofficial, fan-made <a href="/">Payon Stories damage calculator</a>.</footer>`,
   });
