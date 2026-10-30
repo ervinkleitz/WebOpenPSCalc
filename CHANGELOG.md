@@ -20,7 +20,10 @@ instead of release version. Dates are taken from actual git commit history.
   changed used to sit to the *left* of the step itself, naming the effect before its
   own cause, with a row of dots trailing off to the running total. The two columns of
   numbers never lined up, so you could not scan the changes against each other. They
-  are proper columns now, headed and aligned down the table.
+  are proper columns now, headed and aligned down the table. On a phone the three
+  columns stay, and the step name wraps rather than being cut short — the numbers
+  give up a little width instead, so even the widest breakdown (Grand Cross, which
+  runs to five figures a side) keeps its labels readable at 360px.
 
 - **Every step that has more to say now shows that it does.** A row with a note or a
   formula behind it carries a ⌄ you can open, and the engine's own name for the
