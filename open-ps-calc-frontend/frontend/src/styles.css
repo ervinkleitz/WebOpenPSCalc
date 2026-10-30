@@ -1443,10 +1443,23 @@ label {
 
 /* Damage breakdown card — same card treatment as the self-damage and survivability
    readouts, gold-accented since it's the offensive breakdown, with a large final total. */
+/* The card treatment belongs to this class generally: five other readouts use it
+   (Auto Spell, Auto Blitz, Triple Attack, Double Attack, card autocast) and each is
+   a separate object below the columns. Flattening was written here first, which
+   silently stripped the border, fill and padding off all five. */
 .breakdown-view {
   margin-top: 1rem;
-  padding: 0;
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg));
+  padding: 0.7rem 0.85rem;
 }
+/* Those readouts sit after the two columns. Left full width their step table
+   stretched the gap between STEP and CHANGE across the whole panel -- the dot
+   leader used to bridge that distance and the grid does not -- so they are held to
+   about the width of the column the main table lives in. */
+.ds-columns ~ .breakdown-view { max-width: 48rem; }
 /* The breakdown and the survivability readout are the panel's two columns, not two
    cards floating in it. Boxing each in a tinted, accent-striped card made the panel
    read as a stack of unrelated widgets and spent the border budget on saying
@@ -1486,8 +1499,10 @@ label {
   font-family: var(--mono); font-size: 1.25rem; font-weight: 600;
   color: var(--accent-text); text-align: right;
 }
-/* The per-hit shape sits under the total, right-aligned with it. */
-.breakdown-total-val .dw-per-hit {
+/* The per-hit shape sits under the total, right-aligned with it. Scoped to the
+   main column: DoubleAttackView nests .dw-per-hit inside its own total the same
+   way, and an unscoped rule moved its inline "(2 x 198)" onto a line by itself. */
+.ds-columns-main .breakdown-total-val .dw-per-hit {
   display: block; font-size: 0.76rem; font-weight: 400;
   color: var(--text-faint); margin-top: 0.1rem;
 }
@@ -1548,7 +1563,11 @@ label {
    from the gold offence breakdown and the red self-damage block. */
 .surv-view {
   margin-top: 1rem;
-  padding: 0;
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--link);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--link) 6%, var(--bg));
+  padding: 0.7rem 0.85rem;
 }
 .surv-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.55rem; }
 .surv-title { font-size: 1.02rem; font-weight: 600; color: var(--text); }
