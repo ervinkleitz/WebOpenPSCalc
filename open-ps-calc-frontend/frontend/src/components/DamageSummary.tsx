@@ -297,8 +297,9 @@ function PipelineView({ steps, hideFinal = false, legend = true, inputs = true }
             two numeric columns unlabelled except by a legend you had to look back at. */}
         {legend && (
           <div className="pl-legend">
-            <span className="pl-name">Step</span>
             <span className="pl-badge">Change</span>
+            <span className="pl-name">Step</span>
+            <span className="pl-dots" aria-hidden="true" />
             <span className="pl-val">Result</span>
             <span className="pl-caret" aria-hidden="true" />
           </div>
@@ -313,7 +314,9 @@ function PipelineView({ steps, hideFinal = false, legend = true, inputs = true }
           // row's `title`, which a touch device cannot show at all. It is part of what
           // the row has to say, so it goes in the disclosure with the note.
           const rawName = stepLabel(step.name) !== step.name ? step.name : "";
-          const hasDetail = !isFinal && (!!step.note || !!rawName);
+          // Only a note is worth opening a row for. The engine's own name for the
+          // step rides along in the tooltip, as it did before.
+          const hasDetail = !isFinal && !!step.note;
           const isOpen = open.has(i);
           return (
             <div className="pl-step" key={i}>
@@ -328,16 +331,14 @@ function PipelineView({ steps, hideFinal = false, legend = true, inputs = true }
                 aria-expanded={hasDetail ? isOpen : undefined}
                 title={[rawName, step.note && !isFinal ? step.note : ""].filter(Boolean).join(" — ") || undefined}
               >
-                <span className="pl-name">{stepLabel(step.name)}</span>
                 <span className={`pl-badge ${conn ? conn.cls : ""}`}>{conn ? conn.badge : ""}</span>
+                <span className="pl-name">{stepLabel(step.name)}</span>
+                <span className="pl-dots" aria-hidden="true" />
                 <span className="pl-val">{stepDisplayVal(step)}</span>
                 <span className="pl-caret" aria-hidden="true">{hasDetail ? (isOpen ? "⌃" : "⌄") : ""}</span>
               </div>
               {hasDetail && (
-                <div className={`pl-note${isOpen ? " open" : ""}`}>
-                  {step.note && <span className="pl-note-text">{step.note}</span>}
-                  {rawName && <span className="pl-note-engine">engine step: {rawName}</span>}
-                </div>
+                <div className={`pl-note${isOpen ? " open" : ""}`}>{step.note}</div>
               )}
             </div>
           );
@@ -1152,11 +1153,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             <div className="value">{Math.round(avgPerCycle!).toLocaleString()}</div>
           </div>
         )}
-        {/* DPS and Time to kill are the two the strip exists to deliver -- everything
-            else is an input to them. They carry the accent so the eye lands there;
-            the rest stay neutral. Nine figures in one weight and one colour had no
-            focal point at all. */}
-        <div className="metric metric--outcome" title={displayDpsValid
+        <div className="metric" title={displayDpsValid
           ? undefined
           : "No DPS for this branch: it has no repeat rate to quote. Killing Stroke drops you to 1 HP and cancels the Ninja Aura it needs; Fling spends your coins; Reflect Shield fires on the enemy's attacks, not yours. The per-hit damage is the meaningful number."}>
           <div className="label">DPS (est.)</div>
@@ -1196,7 +1193,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           </div>
         )}
         {timeToKill != null && (
-          <div className="metric metric--outcome" title={isInstaKill
+          <div className="metric" title={isInstaKill
             ? "Expected time to kill = expected casts (from the success chance) × cast + after-cast delay."
             : `Average time to kill = target HP ÷ estimated DPS (folds in ASPD, crit mix and procs; cast + after-cast delay for skills)${poisonDot > 0 ? ", plus the Poison DoT" : ""}.`}>
             <div className="label">Time to kill</div>

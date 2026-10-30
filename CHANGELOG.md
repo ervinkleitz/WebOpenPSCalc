@@ -26,13 +26,9 @@ instead of release version. Dates are taken from actual git commit history.
   away. Opening the panel used to lead with a block of instructions for a feature you
   had not asked for, above the build you had just calculated.
 
-- **The headline numbers are divided, and the two that matter stand out.** Hit chance,
-  ASPD, DPS and the rest sit in ruled columns. **DPS** and **Time to kill** carry the
-  accent, because they are what the row is for and the other seven are inputs to them.
-  Hit chance and crit chance used to be hard-coded green and red, which made those two
-  read as a pass and a warning whatever the numbers said — a 40% hit chance was green.
-  They read as plain figures now. Colour is left where it is earned: the change column
-  in the step table, where a multiplier really is a gain or a loss.
+- **The headline numbers sit in ruled columns.** Hit chance, ASPD, DPS and the rest are
+  divided from one another instead of running together across the top. They keep the
+  colours they had.
 
 - **The step table is headed *Damage calculation*,** with the two figures it starts from
   (*Status ATK*, *Weapon ATK*) beside the heading rather than on a chip row of their own.
@@ -54,15 +50,16 @@ instead of release version. Dates are taken from actual git commit history.
   changed used to sit to the *left* of the step itself, naming the effect before its
   own cause, with a row of dots trailing off to the running total. The two columns of
   numbers never lined up, so you could not scan the changes against each other. They
-  are proper columns now, headed and aligned down the table. On a phone the three
-  columns stay, and the step name wraps rather than being cut short — the numbers
-  give up a little width instead, so even the widest breakdown (Grand Cross, which
-  runs to five figures a side) keeps its labels readable at 360px.
+  are headed and aligned now, and the running total is right-justified so the figures
+  line up down the column instead of each ending wherever its own digits run out. On a
+  phone the same three columns stay and the step name wraps rather than being cut
+  short — the numbers give up a little width instead, so even the widest breakdown
+  (Grand Cross, which runs to five figures a side) keeps its labels readable at 360px.
 
-- **Every step that has more to say now shows that it does.** A row with a note or a
-  formula behind it carries a ⌄ you can open, and the engine's own name for the
-  step — *Attr Fix*, *Defense Fix* — is readable inside it. That name was
-  previously only a hover tooltip, which a phone or a tablet could not reach at all.
+- **Every step that has more to say now shows that it does.** A row with a note behind
+  it carries a ⌄ you can open. The note was there before but nothing announced it, so
+  on a phone — where there is no hover to discover it with — it may as well not have
+  existed.
 
 - **Survivability sits beside the breakdown** on a wide screen rather than below it.
   What you do to the monster and what it does back are the same question asked from

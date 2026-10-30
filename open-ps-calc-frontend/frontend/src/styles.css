@@ -1245,19 +1245,9 @@ label {
   width: 1px; background: var(--border-soft);
 }
 .metric .label { font-size: 0.78rem; color: var(--text-faint); }
-.metric .value { font-family: var(--mono); font-size: 1.45rem; color: var(--text); line-height: 1.25; font-variant-numeric: tabular-nums; }
-/* Hit chance and crit chance used to be hard-coded green and red, which made
-   those two read as a pass and a warning whatever the numbers were -- a 40% hit
-   chance was green. They are neutral now, like every other input to the result.
-   Semantic colour stays where it is earned: the change column in the step table,
-   where a multiplier really is a gain or a loss. */
-.metric .value.crit, .metric .value.good { color: var(--text); }
-
-/* Hierarchy instead of decoration. DPS and Time to kill are what the strip is
-   for; the other seven are inputs to them. One accent, used twice, gives the row
-   a focal point without turning it into a palette. */
-.metric--outcome .value { color: var(--accent-text); }
-.metric--outcome .label { color: var(--text-dim); }
+.metric .value { font-family: var(--mono); font-size: 1.45rem; color: var(--accent-text); line-height: 1.25; font-variant-numeric: tabular-nums; }
+.metric .value.crit { color: var(--crit); }
+.metric .value.good { color: var(--good); }
 .metric .unit { font-size: 0.85rem; color: var(--text-dim); margin-left: 0.2rem; }
 /* A derived figure carried on the value line (attacks/sec beside ASPD): same size as a
    real unit so it stays readable, and it keeps the metric one line tall — a second row
@@ -1316,9 +1306,7 @@ label {
    against each other -- and the "change" sat to the LEFT of the step that caused
    it, naming the effect before its own subject. */
 .pl-row, .pl-legend {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 5.4rem minmax(4.5rem, auto) 1.1rem;
-  align-items: baseline; gap: 0.5rem;
+  display: flex; align-items: baseline; gap: 0.5rem;
   padding: 0.3rem 0.35rem; border-radius: 5px;
 }
 .pl-legend {
@@ -1342,21 +1330,34 @@ label {
   outline: 2px solid var(--accent); outline-offset: -2px;
 }
 .pl-badge {
+  flex: 0 0 3.6rem; text-align: right;
   font-family: var(--mono); font-size: 0.74rem; white-space: nowrap; color: var(--text-faint);
 }
 .pl-badge.conn-boost, .pl-badge.conn-add { color: var(--good); }
 .pl-badge.conn-reduce, .pl-badge.conn-sub { color: var(--crit); }
-/* Wraps rather than truncates. An ellipsis here was actively wrong: the fixed
-   columns take ~200px, so on a 360px phone the label column was left with 48px and
-   every step read "Weapon dam…". A step name is the row's whole subject -- it is
-   the one thing that must survive a narrow screen, and two lines costs less than
-   a name you cannot read. */
-.pl-name { font-size: 0.82rem; color: var(--text); min-width: 0; }
-.pl-val { font-family: var(--mono); font-size: 0.88rem; color: var(--text); white-space: nowrap; }
+/* Wraps rather than truncates. An ellipsis here was actively wrong: a 360px phone
+   left the label about 48px and every step read "Weapon dam…". A step name is the
+   row's whole subject, so two lines costs less than a name you cannot read. */
+.pl-name { font-size: 0.82rem; color: var(--text); min-width: 0; flex: 0 1 auto; }
+/* The leader carries the eye from the step to its running total across the gap the
+   two columns leave between them. */
+.pl-dots {
+  flex: 1 1 auto; min-width: 0.8rem; height: 1px; align-self: center;
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 7px 1px; background-repeat: repeat-x; background-position: center;
+}
+/* Right-justified, with a floor wide enough that the figures line up down the
+   column instead of each ending wherever its own digits happen to run out. */
+.pl-val {
+  flex: 0 0 auto; min-width: 6rem; text-align: right;
+  font-family: var(--mono); font-size: 0.88rem; color: var(--text);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
 /* The disclosure marker. Only rows that have something to reveal carry one, so its
    presence is the signal that there is more here -- a `title` tooltip was not one,
    and on a touch device could not be reached at all. */
 .pl-caret {
+  flex: 0 0 1.1rem;
   font-family: var(--mono); font-size: 0.8rem; line-height: 1;
   color: var(--text-faint); text-align: center; user-select: none;
 }
@@ -1369,13 +1370,11 @@ label {
 .pl-row--final .pl-val { color: var(--accent-text); font-weight: 600; font-size: 0.98rem; }
 .pl-note {
   max-height: 0; overflow: hidden; opacity: 0;
-  display: flex; flex-direction: column; gap: 0.15rem;
   font-size: 0.71rem; color: var(--text-faint); line-height: 1.4;
   padding: 0 0.35rem 0 0.9rem;
   transition: max-height 0.16s ease, opacity 0.16s ease, padding 0.16s ease;
 }
 .pl-step:hover .pl-note, .pl-note.open { max-height: 8rem; opacity: 1; padding-top: 0.05rem; padding-bottom: 0.4rem; }
-.pl-note-engine { font-family: var(--mono); font-size: 0.66rem; opacity: 0.75; }
 
 /* The answer, before the working that produces it. */
 .ds-hero-row {
@@ -1423,10 +1422,9 @@ label {
    rather than stacked: stacking would leave the change and the result on a line
    of their own with no header above them to say which is which. */
 @media (max-width: 560px) {
-  .pl-row, .pl-legend {
-    grid-template-columns: minmax(0, 1fr) 3.2rem minmax(3.4rem, auto) 0.9rem;
-    gap: 0.32rem;
-  }
+  .pl-row, .pl-legend { gap: 0.3rem; }
+  .pl-badge { flex-basis: 2.9rem; }
+  .pl-val { min-width: 4.4rem; }
   .pl-badge { font-size: 0.7rem; }
   .pl-val { font-size: 0.8rem; }
   .pl-note { padding-left: 0.5rem; }
@@ -1440,10 +1438,9 @@ label {
    screen kept 130px. The numbers give up a little size so the widest breakdown is
    no worse off than the narrowest. */
 @media (max-width: 380px) {
-  .pl-row, .pl-legend {
-    grid-template-columns: minmax(0, 1fr) 2.7rem minmax(3rem, auto) 0.8rem;
-    gap: 0.24rem;
-  }
+  .pl-row, .pl-legend { gap: 0.24rem; }
+  .pl-badge { flex-basis: 2.5rem; }
+  .pl-val { min-width: 3.9rem; }
   .pl-badge { font-size: 0.64rem; }
   .pl-val { font-size: 0.72rem; }
   .ds-hero-total { font-size: 1.7rem; }
