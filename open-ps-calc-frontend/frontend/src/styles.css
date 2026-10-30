@@ -1338,14 +1338,8 @@ label {
 /* Wraps rather than truncates. An ellipsis here was actively wrong: a 360px phone
    left the label about 48px and every step read "Weapon dam…". A step name is the
    row's whole subject, so two lines costs less than a name you cannot read. */
-.pl-name { font-size: 0.82rem; color: var(--text); min-width: 0; flex: 0 1 auto; }
-/* The leader carries the eye from the step to its running total across the gap the
-   two columns leave between them. */
-.pl-dots {
-  flex: 1 1 auto; min-width: 0.8rem; height: 1px; align-self: center;
-  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
-  background-size: 7px 1px; background-repeat: repeat-x; background-position: center;
-}
+.pl-name { font-size: 0.82rem; color: var(--text); min-width: 0; flex: 1 1 auto; }
+
 /* Right-justified, with a floor wide enough that the figures line up down the
    column instead of each ending wherever its own digits happen to run out. */
 .pl-val {

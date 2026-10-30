@@ -299,7 +299,6 @@ function PipelineView({ steps, hideFinal = false, legend = true, inputs = true }
           <div className="pl-legend">
             <span className="pl-badge">Change</span>
             <span className="pl-name">Step</span>
-            <span className="pl-dots" aria-hidden="true" />
             <span className="pl-val">Result</span>
             <span className="pl-caret" aria-hidden="true" />
           </div>
@@ -333,7 +332,6 @@ function PipelineView({ steps, hideFinal = false, legend = true, inputs = true }
               >
                 <span className={`pl-badge ${conn ? conn.cls : ""}`}>{conn ? conn.badge : ""}</span>
                 <span className="pl-name">{stepLabel(step.name)}</span>
-                <span className="pl-dots" aria-hidden="true" />
                 <span className="pl-val">{stepDisplayVal(step)}</span>
                 <span className="pl-caret" aria-hidden="true">{hasDetail ? (isOpen ? "⌃" : "⌄") : ""}</span>
               </div>
