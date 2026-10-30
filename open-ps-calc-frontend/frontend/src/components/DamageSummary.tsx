@@ -1384,6 +1384,26 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             Katar 2nd hit
           </button>
         )}
+
+        {/* The extra readouts sit in this row too, after a divider: they are
+            buttons of the same kind, and a second row of them under the breakdown
+            read as a separate control that had drifted away from its siblings.
+            The divider keeps the two groups legible -- the buttons to its left
+            change WHICH attack the table below describes, the ones to its right
+            open an additional readout. */}
+        {extras.length > 0 && <span className="branch-divider" aria-hidden="true" />}
+        {extras.map((x) => (
+          <button
+            key={x.key}
+            className={`ds-extra-btn${openExtra === x.key ? " active" : ""}`}
+            aria-expanded={openExtra === x.key}
+            onClick={() => setOpenExtra(openExtra === x.key ? null : x.key)}
+            title={`${x.label} — a readout of its own; opens below`}
+          >
+            {x.label}
+            <span className="ds-extra-caret" aria-hidden="true">{openExtra === x.key ? "⌃" : "⌄"}</span>
+          </button>
+        ))}
       </div>
 
       {/* On a wide screen the step table and the survivability readout sit side by
@@ -1461,23 +1481,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         {aside && <div className="ds-columns-aside">{aside}</div>}
       </div>
 
-      {extras.length > 0 && (
-        <div className="ds-extras">
-          <div className="ds-extras-tabs" role="group" aria-label="Other readouts">
-            {extras.map((x) => (
-              <button
-                key={x.key}
-                className={`ds-extra-btn${openExtra === x.key ? " active" : ""}`}
-                aria-expanded={openExtra === x.key}
-                onClick={() => setOpenExtra(openExtra === x.key ? null : x.key)}
-              >
-                {x.label}
-                <span className="ds-extra-caret" aria-hidden="true">{openExtra === x.key ? "⌃" : "⌄"}</span>
-              </button>
-            ))}
-          </div>
-          {extras.find((x) => x.key === openExtra)?.node}
-        </div>
+      {openExtra && (
+        <div className="ds-extras">{extras.find((x) => x.key === openExtra)?.node}</div>
       )}
     </div>
   );

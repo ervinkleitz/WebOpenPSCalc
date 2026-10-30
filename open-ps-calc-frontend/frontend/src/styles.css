@@ -2987,7 +2987,12 @@ button:not(.pill-remove) { min-width: 28px; }
    card scrolled past three full step tables he had not asked for to reach the end
    of the panel. They are buttons now: one opens at a time, none by default. */
 .ds-extras { margin-top: 1.1rem; }
-.ds-extras-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+/* Separates the two kinds of button in the row: the ones before it change which
+   attack the table describes, the ones after it open a readout of their own. */
+.branch-divider {
+  width: 1px; align-self: stretch; min-height: 1.2rem;
+  background: var(--border); margin-inline: 0.3rem;
+}
 .ds-extra-btn {
   display: inline-flex; align-items: center; gap: 0.4rem;
   font-size: 0.8rem; padding: 0.35rem 0.8rem;
