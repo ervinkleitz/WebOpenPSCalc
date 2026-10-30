@@ -125,7 +125,12 @@ interface CalcResult {
   poison_dot_per_sec?: number | null; // Poison ailment damage-over-time (per second), folded into time-to-kill
   /** The incoming-damage payload the survivability panel renders. Only the target's
    *  name is read here, to say who the headline figure is against. */
-  incoming?: { mob_name?: string | null } | null;
+  incoming?: {
+    mob_name?: string | null;
+    /** One line per attack element; the first is the monster's basic melee. The
+     *  narrow layout condenses this to "hits to die / damage taken per hit". */
+    elements?: { taken?: { status?: { max_hp?: number }; result?: { avg_damage?: number } } }[];
+  } | null;
 }
 
 interface Props {
@@ -143,6 +148,9 @@ interface Props {
    *  me" are the same question asked twice, and stacking them put a screenful of
    *  breakdown between the two halves of the answer. */
   aside?: ReactNode;
+  /** Pin / compare controls, shown on the headline row. They belong beside the
+   *  number they act on, not in a panel of their own above it. */
+  actions?: ReactNode;
 }
 
 type Branch = "skill" | "normal" | "crit" | "falcon" | "katar";
@@ -241,7 +249,25 @@ function stepLabel(name: string): string {
   return STEP_LABELS[name] ?? name;
 }
 
-function PipelineView({ steps, hideFinal = false, legend = true }: { steps: Step[]; hideFinal?: boolean; legend?: boolean }) {
+// Status ATK / Weapon ATK — the figures the table starts from. Shown beside the
+// column heading, the way the design states them: "Damage calculation · Status ATK
+// 27 · Weapon ATK 0".
+function InputFigures({ steps }: { steps: Step[] }) {
+  const chips = steps.filter((s) => s.info);
+  if (!chips.length) return null;
+  return (
+    <span className="breakdown-inputs">
+      {chips.map((s, i) => (
+        <span key={i} className="breakdown-input" title={stepLabel(s.name) !== s.name ? s.name : undefined}>
+          <span className="breakdown-input-label">{stepLabel(s.name)}</span>{" "}
+          <span className="breakdown-input-val">{stepDisplayVal(s)}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function PipelineView({ steps, hideFinal = false, legend = true, inputs = true }: { steps: Step[]; hideFinal?: boolean; legend?: boolean; inputs?: boolean }) {
   // Notes are hidden by default (hover reveals, tap pins) to keep the breakdown compact.
   const [open, setOpen] = useState<Set<number>>(() => new Set());
   const toggle = (i: number) => setOpen((prev) => {
@@ -263,16 +289,7 @@ function PipelineView({ steps, hideFinal = false, legend = true }: { steps: Step
   }).filter((s) => !(hideFinal && s.name === "Final Damage")); // final shown separately as a prominent total
   return (
     <div className="pipeline-view">
-      {chips.length > 0 && (
-        <div className="pipeline-inputs">
-          {chips.map((s, i) => (
-            <span key={i} className="pipeline-chip" title={[stepLabel(s.name) !== s.name ? s.name : "", s.note].filter(Boolean).join(" — ") || undefined}>
-              <span className="pipeline-chip-label">{stepLabel(s.name)}</span>
-              <span className="pipeline-chip-val">{stepDisplayVal(s)}</span>
-            </span>
-          ))}
-        </div>
-      )}
+      {inputs && chips.length > 0 && <InputFigures steps={steps} />}
       <div className="pl-track">
         {/* Column header. The order is the order the arithmetic happens in: what the
             step IS, what it DID, what you are left with. The middle column used to sit
@@ -678,7 +695,7 @@ function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit, psBonusPct }: {
   );
 }
 
-export default function DamageSummary({ calcResult, calculating, error, forceProcs, onToggleForceProcs, tuAttempt = 0, onTuAttempt, aside }: Props) {
+export default function DamageSummary({ calcResult, calculating, error, forceProcs, onToggleForceProcs, tuAttempt = 0, onTuAttempt, aside, actions }: Props) {
   const [branch, setBranch] = useState<Branch>("skill");
   const [dwMode, setDwMode] = useState<DwMode>("ps");
   const [showExp, setShowExp] = useState(false);
@@ -973,18 +990,71 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
     : finalRange ? `${nfmt(killMin!)}–${nfmt(killMax!)}` : nfmt(killAvg);
   const heroTargetName = calcResult.incoming?.mob_name ?? null;
 
+  // --- figures the narrow layout adds -------------------------------------------
+  // How big your biggest hit is against what the target actually has. On a phone the
+  // panel is read in one scroll and this is the one proportion that says whether the
+  // fight is realistic at all; a bare damage figure does not.
+  const hpShare = (killMax != null && target_hp != null && target_hp > 0)
+    ? Math.min(100, (killMax / target_hp) * 100) : null;
+  const hpSharePct = hpShare == null ? null
+    : hpShare >= 10 ? hpShare.toFixed(0) : hpShare.toFixed(1);
+  const eleStep = activeDamage?.steps?.find((st) => /^Attr Fix$/.test(st.name));
+  const eleMult = eleStep?.multiplier ?? null;
+  const hitsPill = hitsAvg != null && !isInstaKill
+    ? `${hitsAvg} ${noRateHit ? "casts" : "hits"} to kill` : null;
+  // Survivability, condensed: the two numbers the design keeps.
+  const incomingBasic = calcResult.incoming?.elements?.[0]?.taken;
+  const takenPerHit = incomingBasic?.result?.avg_damage ?? null;
+  const myMaxHp = incomingBasic?.status?.max_hp ?? null;
+  const hitsToDie = (takenPerHit != null && takenPerHit > 0 && myMaxHp != null)
+    ? Math.ceil(myMaxHp / takenPerHit) : null;
+
   return (
     <div>
-      {heroTotal && (
-        <div className="ds-hero">
-          <div className="ds-hero-figure">
-            <span className="ds-hero-total">{heroTotal}</span>
-            <span className="ds-hero-unit">total damage</span>
-          </div>
-          <div className="ds-hero-sub">
-            {breakdownLabel}
-            {heroTargetName && <span className="ds-hero-vs"> → {heroTargetName}</span>}
-          </div>
+      {/* Narrow layout only (CSS). The wide layout is titled by the panel header
+          and does not need naming twice. */}
+      <div className="ds-mobile-head">
+        <span className="ds-mobile-eyebrow">Battle results</span>
+        {hitsPill && <span className="ds-mobile-pill">{hitsPill}</span>}
+      </div>
+      {(heroTotal || actions) && (
+        <div className="ds-hero-row">
+          {heroTotal && (
+            <div className="ds-hero">
+              <div className="ds-hero-figure">
+                <span className="ds-hero-total">{heroTotal}</span>
+                <span className="ds-hero-unit">total damage</span>
+              </div>
+              {/* The two layouts caption the figure differently -- wide reads
+                  "Skill -> Target", narrow reads "damage vs Target . Skill", which
+                  is the fuller sentence a phone has room for under a centred
+                  number. Both are rendered; CSS picks one. */}
+              <div className="ds-hero-sub">
+                <span className="ds-hero-sub-wide">
+                  {breakdownLabel}
+                  {heroTargetName && <span className="ds-hero-vs"> → {heroTargetName}</span>}
+                </span>
+                <span className="ds-hero-sub-narrow">
+                  {heroTargetName ? <>damage vs {heroTargetName} · {breakdownLabel}</> : breakdownLabel}
+                </span>
+              </div>
+              {hpSharePct != null && (
+                <div className="ds-hpbar">
+                  <div className="ds-hpbar-row">
+                    <div className="ds-hpbar-track">
+                      <span className="ds-hpbar-fill" style={{ width: `${Math.max(1, Number(hpSharePct))}%` }} />
+                    </div>
+                    <span className="ds-hpbar-pct">{hpSharePct}%</span>
+                  </div>
+                  <p className="ds-hpbar-note">
+                    Max hit = {hpSharePct}% of {nfmt(target_hp!)} HP
+                    {eleMult != null && eleMult !== 1 ? ` · Element ×${eleMult}` : ""}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          {actions && <div className="ds-hero-actions">{actions}</div>}
         </div>
       )}
       <div className="summary-headline">
@@ -1287,8 +1357,12 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         {!notImplemented && (activeDamage || (activeBranch === "falcon" && falcon)) && (
           <div className="breakdown-view">
             <div className="breakdown-head">
-              <span className="breakdown-title">Damage breakdown</span>
-              <span className="breakdown-sub">{breakdownLabel}</span>
+              {/* "Damage calculation" -- the panel is already titled Damage
+                  breakdown, so repeating it named the column after its container.
+                  The skill is on the tab and in the headline; what belongs here is
+                  what the table starts FROM. */}
+              <span className="breakdown-title">Damage calculation</span>
+              {activeDamage && <InputFigures steps={activeDamage.steps} />}
             </div>
             {activeBranch === "falcon" && falcon ? (
               <FalconView falcon={falcon} />
@@ -1302,24 +1376,25 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
                 psBonusPct={dwPsBonusPct}
               />
             ) : activeDamage ? (
-              <PipelineView steps={activeDamage.steps} hideFinal />
+              <PipelineView steps={activeDamage.steps} hideFinal inputs={false} />
             ) : null}
             {activeBranch !== "falcon" && killAvg != null && (
               <div className="breakdown-total">
                 <span className="breakdown-total-label">Final damage</span>
                 <span className="breakdown-total-val">
                   {finalRange ? `${nfmt(killMin!)}–${nfmt(killMax!)}` : nfmt(killAvg)}
-                  {/* Multi-hit skills land as N popups of total/N each — say so in the
-                      "total (N x per-hit)" form a player suggested, instead of leaving the
-                      total to be mistaken for a single hit. */}
+                  {/* Multi-hit skills land as N popups of total/N each, so say so --
+                      a total left bare is read as one hit. On its own line under the
+                      figure rather than in brackets beside it: it is a second fact
+                      about the same number, and inline it read as part of it. */}
                   {(activeDamage?.num_hits ?? 1) > 1 && (
                     finalRange ? (
                       <span className="dw-per-hit">
-                        {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killMin! / activeDamage!.num_hits))}–{nfmt(Math.floor(killMax! / activeDamage!.num_hits))})
+                        {activeDamage!.num_hits} hits × {nfmt(Math.floor(killMin! / activeDamage!.num_hits))}–{nfmt(Math.floor(killMax! / activeDamage!.num_hits))}
                       </span>
                     ) : (
                       <span className="dw-per-hit">
-                        {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killAvg / activeDamage!.num_hits))})
+                        {activeDamage!.num_hits} hits × {nfmt(Math.floor(killAvg / activeDamage!.num_hits))}
                       </span>
                     )
                   )}

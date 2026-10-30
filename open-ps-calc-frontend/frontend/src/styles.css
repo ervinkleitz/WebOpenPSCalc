@@ -1235,12 +1235,21 @@ label {
 .cl-line strong { font-weight: 600; color: var(--text); }
 
 /* ---------------- Summary ---------------- */
-.summary-headline { display: flex; gap: 1.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
-.metric { min-width: 100px; }
-.metric .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); }
-.metric .value { font-family: var(--mono); font-size: 1.7rem; color: var(--accent-text); line-height: 1.2; }
-.metric .value.crit { color: var(--crit); }
-.metric .value.good { color: var(--good); }
+.summary-headline { display: flex; gap: 0; flex-wrap: wrap; margin-bottom: 1rem; row-gap: 0.6rem; }
+/* Divided columns, as the design has them. The divider is drawn with a ::before so
+   an item that wraps onto a second row does not start with a dangling rule. */
+.metric { min-width: 100px; padding-inline: 1.15rem; position: relative; }
+.metric:first-child { padding-left: 0; }
+.metric + .metric::before {
+  content: ""; position: absolute; left: 0; top: 0.1rem; bottom: 0.1rem;
+  width: 1px; background: var(--border-soft);
+}
+.metric .label { font-size: 0.78rem; color: var(--text-faint); }
+.metric .value { font-family: var(--mono); font-size: 1.45rem; color: var(--text); line-height: 1.25; font-variant-numeric: tabular-nums; }
+/* The strip reads as one row of facts; colouring two of them made those two
+   look like warnings. Semantic colour stays where it means something -- the
+   change column in the step table. */
+.metric .value.crit, .metric .value.good { color: var(--text); }
 .metric .unit { font-size: 0.85rem; color: var(--text-dim); margin-left: 0.2rem; }
 /* A derived figure carried on the value line (attacks/sec beside ASPD): same size as a
    real unit so it stays readable, and it keeps the metric one line tall — a second row
@@ -1361,7 +1370,19 @@ label {
 .pl-note-engine { font-family: var(--mono); font-size: 0.66rem; opacity: 0.75; }
 
 /* The answer, before the working that produces it. */
-.ds-hero { margin-bottom: 1.1rem; }
+.ds-hero-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 0.6rem 1.2rem; margin-bottom: 1.1rem;
+}
+.ds-hero { min-width: 0; }
+.ds-hero-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.ds-compare-toggle {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: none; border: 0; cursor: pointer;
+  font-size: 0.84rem; color: var(--text-dim); padding: 0.3rem 0.2rem;
+}
+.ds-compare-toggle:hover { color: var(--text); }
+.ds-compare-caret { font-family: var(--mono); font-size: 0.78rem; }
 .ds-hero-figure { display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; }
 .ds-hero-total {
   font-family: var(--mono); font-size: 2.6rem; font-weight: 600;
@@ -1370,6 +1391,7 @@ label {
 .ds-hero-unit { font-size: 1rem; color: var(--text-dim); }
 .ds-hero-sub { margin-top: 0.2rem; font-size: 0.8rem; color: var(--text-faint); }
 .ds-hero-vs { color: var(--text-dim); }
+.ds-hero-sub-narrow { display: none; }
 
 /* Step table beside the survivability readout. One column until there is genuinely
    room for two -- below this the step rows start wrapping their labels, which costs
@@ -1423,21 +1445,52 @@ label {
    readouts, gold-accented since it's the offensive breakdown, with a large final total. */
 .breakdown-view {
   margin-top: 1rem;
-  border: 1px solid var(--border-soft);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--accent) 5%, var(--bg));
-  padding: 0.7rem 0.85rem;
+  padding: 0;
 }
-.breakdown-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
-.breakdown-title { font-size: 0.9rem; font-weight: 600; color: var(--accent-text); }
+/* The breakdown and the survivability readout are the panel's two columns, not two
+   cards floating in it. Boxing each in a tinted, accent-striped card made the panel
+   read as a stack of unrelated widgets and spent the border budget on saying
+   "separate object" twice over. One hairline between them says it once. */
+.ds-columns-main > .breakdown-view,
+.ds-columns-aside > .surv-view {
+  border: 0; border-radius: 0; background: none; padding: 0;
+}
+@media (min-width: 1100px) {
+  .ds-columns--split > .ds-columns-aside {
+    border-left: 1px solid var(--border-soft); padding-left: 1.4rem;
+  }
+}
+.breakdown-head {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.3rem 0.7rem;
+  margin-bottom: 0.6rem;
+}
+.breakdown-title { font-size: 1.02rem; font-weight: 600; color: var(--text); }
 .breakdown-sub { font-size: 0.74rem; color: var(--text-faint); }
-.breakdown-total {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.6rem;
-  margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-soft);
+/* Status ATK / Weapon ATK: what the table is computed FROM, so they caption the
+   heading rather than forming a row of chips that competes with the steps. */
+.breakdown-inputs {
+  display: inline-flex; flex-wrap: wrap; gap: 0.1rem 0.75rem;
+  font-size: 0.78rem; color: var(--text-faint);
 }
-.breakdown-total-label { font-size: 0.82rem; font-weight: 600; color: var(--text); flex: 1; }
-.breakdown-total-val { font-family: var(--mono); font-size: 1.05rem; font-weight: 600; color: var(--accent-text); }
+.breakdown-input + .breakdown-input::before {
+  content: "·"; margin-right: 0.75rem; color: var(--border);
+}
+.breakdown-input-val { font-family: var(--mono); color: var(--text-dim); }
+.breakdown-total {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline;
+  gap: 0.1rem 0.6rem;
+  margin-top: 0.5rem; padding-top: 0.55rem; border-top: 1px solid var(--border-soft);
+}
+.breakdown-total-label { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.breakdown-total-val {
+  font-family: var(--mono); font-size: 1.25rem; font-weight: 600;
+  color: var(--accent-text); text-align: right;
+}
+/* The per-hit shape sits under the total, right-aligned with it. */
+.breakdown-total-val .dw-per-hit {
+  display: block; font-size: 0.76rem; font-weight: 400;
+  color: var(--text-faint); margin-top: 0.1rem;
+}
 .breakdown-total-avg { font-size: 0.78rem; color: var(--text-faint); font-weight: 400; font-family: var(--mono); }
 
 .falcon-section { margin-top: 1.2rem; }
@@ -1495,14 +1548,10 @@ label {
    from the gold offence breakdown and the red self-damage block. */
 .surv-view {
   margin-top: 1rem;
-  border: 1px solid var(--border-soft);
-  border-left: 3px solid var(--link);
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--link) 6%, var(--bg));
-  padding: 0.7rem 0.85rem;
+  padding: 0;
 }
 .surv-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.55rem; }
-.surv-title { font-size: 0.9rem; font-weight: 600; color: var(--link); }
+.surv-title { font-size: 1.02rem; font-weight: 600; color: var(--text); }
 .surv-sub { font-size: 0.74rem; color: var(--text-faint); font-family: var(--mono); }
 .surv-line { padding: 0.4rem 0; border-top: 1px dashed var(--border-soft); }
 .surv-line:first-of-type { border-top: none; padding-top: 0; }
@@ -2811,3 +2860,103 @@ button:not(.pill-remove) { min-width: 28px; }
 .equip-slot--invalid .equip-slot-value { color: var(--crit); }
 /* With the value hidden on an open row, nothing is left to push the chevron over. */
 .equip-slot--open .equip-slot-label { flex: 1 1 auto; min-width: 0; }
+
+/* ===========================================================================
+   NARROW LAYOUT — the results panel on a phone.
+
+   A different shape, not a squeezed version of the wide one. The wide layout
+   reads across: columns of figures, two panels side by side. A phone reads DOWN,
+   one thing at a time, so the panel becomes a stack of cards with the headline
+   figure set as a display number at the top and everything else captioned under
+   gold section labels.
+
+   Nothing is removed. The step table, the survivability readout and every extra
+   section are the same components the wide layout uses -- they are re-dressed,
+   not replaced -- so a phone keeps the disclosure rows, the monster's cast kit
+   and the rest instead of getting a summary with the detail amputated.
+   =========================================================================== */
+.ds-mobile-head, .ds-hpbar { display: none; }
+
+@media (max-width: 560px) {
+  .ds-mobile-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 0.6rem; margin-bottom: 0.9rem;
+  }
+  .ds-mobile-eyebrow {
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.13em; color: var(--accent-text);
+  }
+  .ds-mobile-pill {
+    font-size: 0.74rem; color: var(--text-dim);
+    border: 1px solid var(--border-soft); border-radius: 999px;
+    padding: 0.2rem 0.7rem; white-space: nowrap;
+  }
+
+  /* The figure, set as a display number. */
+  .ds-hero-row { display: block; margin-bottom: 1rem; }
+  .ds-hero { text-align: center; }
+  .ds-hero-figure { justify-content: center; gap: 0.4rem; }
+  .ds-hero-total {
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    font-size: clamp(2.6rem, 15vw, 3.6rem); font-weight: 600;
+    letter-spacing: 0.01em; color: var(--text);
+  }
+  .ds-hero-unit { display: none; }
+  .ds-hero-sub { font-size: 0.86rem; color: var(--text-dim); margin-top: 0.1rem; }
+  .ds-hero-sub-wide { display: none; }
+  .ds-hero-sub-narrow { display: inline; }
+  .ds-hero-actions { justify-content: center; margin-top: 0.8rem; }
+
+  /* How big your biggest hit is against what the target actually has. */
+  .ds-hpbar { display: block; margin-top: 0.8rem; }
+  .ds-hpbar-row { display: flex; align-items: center; gap: 0.6rem; }
+  .ds-hpbar-track {
+    flex: 1 1 auto; min-width: 0; height: 0.65rem; border-radius: 999px;
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+    border: 1px solid var(--border-soft); overflow: hidden;
+  }
+  .ds-hpbar-fill { display: block; height: 100%; background: var(--accent); }
+  .ds-hpbar-pct {
+    font-family: var(--mono); font-size: 0.82rem; color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .ds-hpbar-note {
+    margin: 0.35rem 0 0; font-size: 0.72rem; color: var(--text-faint);
+  }
+
+  /* Metrics become cards, two to a row. */
+  .summary-headline {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; margin-bottom: 1rem;
+  }
+  .metric {
+    min-width: 0; padding: 0.6rem 0.7rem;
+    border: 1px solid var(--border-soft); border-radius: 12px;
+  }
+  .metric:first-child { padding-left: 0.7rem; }
+  .metric + .metric::before { display: none; }
+  .metric .label {
+    font-size: 0.64rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--accent-text);
+  }
+  .metric .value { font-size: 1.3rem; margin-top: 0.15rem; overflow-wrap: anywhere; }
+  /* In a card half the screen wide these two overran their own box: the ASPD
+     card's trailing rate spilled across the one beside it, and the damage range
+     is pinned nowrap for the wide strip. Both get their own line here instead. */
+  .metric .unit-rate { display: block; margin-left: 0; font-size: 0.7rem; }
+  .metric-range .value.range { white-space: normal; font-size: 1.02rem; }
+  .metric { overflow: hidden; }
+
+  /* The two readouts become cards with their own section labels. */
+  .ds-columns { gap: 0.7rem; margin-top: 0.7rem; }
+  .ds-columns-main > .breakdown-view,
+  .ds-columns-aside > .surv-view,
+  .ds-columns-aside > .surv-empty {
+    border: 1px solid var(--border-soft); border-radius: 12px;
+    padding: 0.8rem 0.85rem;
+  }
+  .breakdown-title, .surv-title {
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.11em; color: var(--accent-text);
+  }
+  .breakdown-head, .surv-head { margin-bottom: 0.6rem; }
+}

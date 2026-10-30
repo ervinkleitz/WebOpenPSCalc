@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import DamageSummary from "./DamageSummary";
 import CompareView, { summaryMetrics, type ComparePin } from "./CompareView";
 import SurvivabilityView from "./SurvivabilityView";
@@ -24,6 +24,10 @@ interface Props {
 
 const ResultsPanel = forwardRef<HTMLDivElement, Props>(
   ({ open, onClose, calcResult, calculating, error, forceProcs, onToggleForceProcs, pins, onPin, onRemovePin, onLoadPin, onClearPins, onOpenTip, tuAttempt, onTuAttempt }, ref) => {
+    // Comparison starts folded away. It used to open the panel with a block of
+    // instructions above the build you had just calculated, so the first thing you
+    // read was how to use a feature you had not asked for.
+    const [compareOpen, setCompareOpen] = useState(false);
     if (!open) return null;
     const live = summaryMetrics(calcResult);
     return (
@@ -33,14 +37,6 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
           <button onClick={onClose} aria-label="Close">×</button>
         </div>
         <div className="results-panel-body">
-          {(live || pins.length > 0) && (
-            <CompareView live={live} pins={pins} canPin={!!live} onPin={onPin} onRemove={onRemovePin} onLoad={onLoadPin} onClear={onClearPins} />
-          )}
-          {live && (
-            <div className="results-section-head">
-              <span className="results-section-title">Current build — full breakdown</span>
-            </div>
-          )}
           {/* Handed to DamageSummary rather than rendered after it, so it can sit
               BESIDE the step table on a wide screen. The two read as one answer:
               what you do to it, and what it does back. */}
@@ -65,7 +61,23 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
                 </div>
               ) : null
             ) : null}
+            actions={(live || pins.length > 0) && !calculating && !error ? (
+              <>
+                <button className="cmp-pin-btn" onClick={onPin} disabled={!live}>Pin build</button>
+                <button
+                  className="ds-compare-toggle"
+                  aria-expanded={compareOpen}
+                  onClick={() => setCompareOpen((o) => !o)}
+                >
+                  Compare builds ({pins.length})
+                  <span className="ds-compare-caret" aria-hidden="true">{compareOpen ? "⌃" : "⌄"}</span>
+                </button>
+              </>
+            ) : null}
           />
+          {compareOpen && (live || pins.length > 0) && (
+            <CompareView live={live} pins={pins} canPin={!!live} hidePin onPin={onPin} onRemove={onRemovePin} onLoad={onLoadPin} onClear={onClearPins} />
+          )}
           {calcResult && !calculating && !error && (
             <div className="support-card">
               <span className="support-card-emoji">🍵</span>

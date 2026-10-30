@@ -5,6 +5,37 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-30
+
+### Changed
+
+- **The results panel has a layout of its own on a phone.** It used to be the wide
+  layout with the columns stacked — a shape meant to be read across, delivered to a
+  screen that is read down. On a phone it is now a stack of cards: the damage set as a
+  display figure at the top, a bar showing how much of the target's HP your biggest hit
+  actually takes (*max hit = 5.6% of 8,613 HP*), the headline numbers two to a card, and
+  the step table and survivability under their own labels. Nothing was dropped to get
+  there — the step rows, the monster's cast kit and every other section are the same
+  ones the wide layout shows.
+
+- **The breakdown and survivability are columns, not cards.** Each used to sit in its
+  own tinted, accent-striped box, which made one panel read as a stack of unrelated
+  widgets. They now share a single hairline between them.
+
+- **Pin and Compare moved up beside the damage figure**, and comparison starts folded
+  away. Opening the panel used to lead with a block of instructions for a feature you
+  had not asked for, above the build you had just calculated.
+
+- **The headline numbers are divided and quiet.** Hit chance, ASPD, DPS and the rest sit
+  in ruled columns; two of them used to be coloured green and red, which made those two
+  read as warnings rather than facts. Colour stays where it means something — the
+  change column in the step table.
+
+- **The step table is headed *Damage calculation*,** with the two figures it starts from
+  (*Status ATK*, *Weapon ATK*) beside the heading rather than on a chip row of their own.
+  For a multi-hit skill the shape of the hit — *2 hits × 224–243* — now sits under the
+  total instead of in brackets beside it.
+
 ## 2026-10-29
 
 ### Changed

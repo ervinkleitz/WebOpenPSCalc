@@ -104,6 +104,33 @@ for (const [width, device] of [[360, "small phone"], [390, "iPhone"], [430, "lar
     });
     check(cols === 0, `${where}: name, change and result stay on one line each`, cols);
 
+    // Metric cards: content must stay inside its own card. The page-level check
+    // below does NOT catch this -- a card whose text overruns spills across the
+    // card beside it without ever widening the document. That is how the ASPD
+    // card's trailing "1.77 casts/s" came to sit on the damage-range card at
+    // 390px while every overflow assertion passed.
+    //
+    // Measured with scrollWidth against clientWidth, on the card AND on its value.
+    // The first version of this check compared child bounding boxes and caught
+    // nothing: a nowrap run overflows the TEXT out of the value div, whose own box
+    // stays exactly as wide as the card.
+    const spilled = await page.$$eval(".results-panel .metric", (els) => {
+      const out = [];
+      for (const e of els) {
+        const label = (e.querySelector(".label")?.textContent || "").trim();
+        const probes = [e, e.querySelector(".value")].filter(Boolean);
+        for (const el of probes) {
+          if (el.scrollWidth > el.clientWidth + 1) {
+            out.push({ label, on: el === e ? "card" : "value",
+                       needs: el.scrollWidth, has: el.clientWidth });
+            break;
+          }
+        }
+      }
+      return out;
+    });
+    check(spilled.length === 0, `${where}: no metric card overflows itself`, spilled.slice(0, 3));
+
     const over = await page.evaluate(() => ({
       scrollW: document.documentElement.scrollWidth,
       clientW: document.documentElement.clientWidth,

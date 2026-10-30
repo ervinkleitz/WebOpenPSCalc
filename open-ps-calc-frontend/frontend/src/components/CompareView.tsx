@@ -121,13 +121,15 @@ interface Props {
   live: CompareMetrics | null;
   pins: ComparePin[];
   canPin: boolean;
+  /** Suppress this panel's own Pin button when the caller shows one. */
+  hidePin?: boolean;
   onPin: () => void;
   onRemove: (id: string) => void;
   onLoad: (pin: ComparePin) => void;
   onClear: () => void;
 }
 
-export default function CompareView({ live, pins, canPin, onPin, onRemove, onLoad, onClear }: Props) {
+export default function CompareView({ live, pins, canPin, hidePin = false, onPin, onRemove, onLoad, onClear }: Props) {
   // The Load button used to give no acknowledgement of any kind. The editor is off
   // the top of the screen from here, so "did that work?" had no answer.
   const [justLoaded, setJustLoaded] = useState<string | null>(null);
@@ -155,7 +157,9 @@ export default function CompareView({ live, pins, canPin, onPin, onRemove, onLoa
           </InfoTooltip>
         </h3>
         {pins.length > 0 && <span className="compare-count">{pins.length} pinned</span>}
-        <button className="cmp-pin-btn" onClick={onPin} disabled={!canPin}>Pin current</button>
+        {/* The headline row already carries a Pin button when the caller puts one
+            there; two of them on screen is one too many. */}
+        {!hidePin && <button className="cmp-pin-btn" onClick={onPin} disabled={!canPin}>Pin current</button>}
         {pins.length > 0 && (
           <button className="cmp-clear-btn" onClick={onClear} title="Remove all pinned builds">Clear all</button>
         )}
