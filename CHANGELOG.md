@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-29
+
+### Fixed
+
+- **Monsters read as “undefined”, and hits to kill and time to kill disappeared.**
+  Picking a target stopped working for everyone: its name, level, HP, race and element
+  came up blank or *undefined*, and both kill readouts vanished with them. The editor
+  looks the monster up with its own request, and that one request had been left out
+  when access to the data was tightened earlier the same day — so it was turned
+  away. Because the refusal came back as a perfectly readable reply rather than as an
+  error, the calculator filed it as though it were the monster. Reported by a player
+  and fixed the same evening; every target works again.
+
 ## 2026-10-28
 
 ### Changed
