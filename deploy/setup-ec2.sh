@@ -40,12 +40,28 @@ if [[ "$DEPLOY_PATH" == "$HOME"* ]]; then
 fi
 
 if [ ! -f "$DEPLOY_PATH/backend/.env" ]; then
-  GENERATED_KEY="$(node -e 'console.log(require("crypto").randomBytes(24).toString("hex"))' 2>/dev/null || true)"
-  cat > "$DEPLOY_PATH/backend/.env" <<ENVEOF
+  cat > "$DEPLOY_PATH/backend/.env" <<'ENVEOF'
 PORT=4000
-API_KEY=${GENERATED_KEY}
 ENVEOF
-  echo "==> Wrote $DEPLOY_PATH/backend/.env with a generated API_KEY (deploys never overwrite this file — it's excluded from rsync)."
+  echo "==> Wrote $DEPLOY_PATH/backend/.env (API_KEY and STATS_PASSWORD are injected by each deploy)."
+fi
+
+# A key to paste into the API_KEY GitHub secret, which is the only place it is
+# configured — the deploy writes it into backend/.env and bakes it into the
+# frontend build from that one value. This script used to write the key into
+# .env itself and ask you to copy it into the secret by hand; the two drifted,
+# the backend ended up with no key, and its gate silently let everything
+# through. Nothing is written here now, so there is nothing to drift from.
+#
+# Fails loudly rather than printing an empty string: an empty key is how the
+# original went wrong, and `|| true` is what hid it.
+GENERATED_KEY="$(node -e 'console.log(require("crypto").randomBytes(24).toString("hex"))' 2>/dev/null \
+  || openssl rand -hex 24 2>/dev/null \
+  || true)"
+if [ -z "$GENERATED_KEY" ]; then
+  echo "!! Could not generate a key (no working node or openssl). Generate 48 hex" >&2
+  echo "!! characters yourself and use that as the API_KEY secret." >&2
+  GENERATED_KEY="<generate-48-hex-chars-yourself>"
 fi
 
 cat <<EOF
@@ -67,9 +83,13 @@ Next steps:
      EC2_USER         = $(whoami)
      EC2_SSH_KEY      = the private key (PEM) that can SSH in as that user
      EC2_DEPLOY_PATH  = $DEPLOY_PATH
-     API_KEY          = $(cat "$DEPLOY_PATH/backend/.env" 2>/dev/null | grep API_KEY | cut -d= -f2)
-                         (must exactly match $DEPLOY_PATH/backend/.env's API_KEY — the
-                         workflow bakes this into the frontend build as VITE_API_KEY)
+     API_KEY          = $GENERATED_KEY
+                         (paste JUST that value — not an "API_KEY=..." line. Each
+                         deploy writes it to backend/.env and bakes it into the
+                         frontend build as VITE_API_KEY, so this secret is the
+                         only place it lives. Leave it unset to keep the gate off.)
+     STATS_PASSWORD   = any password you choose, for the /stats page
+                         (that endpoint fails closed — unset takes stats down)
 
 4. Push to main — .github/workflows/deploy.yml will build and deploy automatically.
 EOF

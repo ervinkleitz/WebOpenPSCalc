@@ -9,7 +9,30 @@ const { logCalculate } = require("./middleware/statsLogger");
 
 const app = express();
 
-app.use(cors());
+// The app and the API are served from ONE origin in both environments — Vite
+// proxies /api to the backend in dev, nginx proxies it in production — so no
+// browser this project controls ever makes a cross-origin API call. Bare
+// `cors()` answered every origin with `Access-Control-Allow-Origin: *`, which
+// bought our own pages nothing and bought everyone else a free backend: any
+// site could point a front end at this one and serve our engine as its own.
+//
+// This is NOT a defence against scripts, and must not be mistaken for one. A
+// request with no Origin header — curl, another server, anything that isn't a
+// browser — is not a cross-origin request and is allowed through exactly as
+// before. The only thing this stops is OTHER WEBSITES' browser code reading
+// our responses.
+//
+// Override with ALLOWED_ORIGINS (comma-separated) to add a staging host. The
+// dev server needs no entry here precisely because it proxies.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS
+  || "https://openpscalc.com,https://www.openpscalc.com")
+  .split(",").map((s) => s.trim()).filter(Boolean);
+app.use(cors({
+  origin(origin, cb) {
+    if (!origin) return cb(null, true);
+    cb(null, ALLOWED_ORIGINS.includes(origin));
+  },
+}));
 app.use(express.json({ limit: "1mb" }));
 
 // Stats routes are outside the API key gate and use their own password.

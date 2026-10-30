@@ -53,6 +53,11 @@ const check = (c, m, extra) => {
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const ctx = await browser.newContext({ viewport: { width: 1500, height: 1500 } });
 const page = await ctx.newPage();
+// The raw in-page fetch below bypasses the app's own API client, so it carries no
+// X-API-Key of its own and 401s against a deployment whose key gate is on. That
+// surfaced as a confusing null rather than an error, so set the header once here:
+// export OPSCALC_API_KEY to the deployed key when running this against production.
+if (process.env.OPSCALC_API_KEY) await page.setExtraHTTPHeaders({ "X-API-Key": process.env.OPSCALC_API_KEY });
 
 // Hold the passive-list request open, which is all a slow connection is.
 let delaying = false;

@@ -47,6 +47,11 @@ const BUILD = {
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const page = await (await browser.newContext({ viewport: { width: 1500, height: 1500 } })).newPage();
+// The raw in-page fetch below bypasses the app's own API client, so it carries no
+// X-API-Key of its own and 401s against a deployment whose key gate is on. That
+// surfaced as a confusing null rather than an error, so set the header once here:
+// export OPSCALC_API_KEY to the deployed key when running this against production.
+if (process.env.OPSCALC_API_KEY) await page.setExtraHTTPHeaders({ "X-API-Key": process.env.OPSCALC_API_KEY });
 let ok = true;
 const check = (c, m) => { if (!c) { console.error("FAIL: " + m); ok = false; } };
 

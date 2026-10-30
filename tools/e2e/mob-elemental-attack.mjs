@@ -36,6 +36,11 @@ const check = (cond, msg) => { if (!cond) { console.error("FAIL: " + msg); ok = 
 const num = (s) => Number(String(s).replace(/,/g, ""));
 
 const page = await (await b.newContext({ viewport: { width: 1500, height: 1400 } })).newPage();
+// The raw in-page fetch below bypasses the app's own API client, so it carries no
+// X-API-Key of its own and 401s against a deployment whose key gate is on. That
+// surfaced as a confusing null rather than an error, so set the header once here:
+// export OPSCALC_API_KEY to the deployed key when running this against production.
+if (process.env.OPSCALC_API_KEY) await page.setExtraHTTPHeaders({ "X-API-Key": process.env.OPSCALC_API_KEY });
 const incoming = [];
 page.on("response", async (r) => {
   if (!/\/calculate\/incoming$/.test(new URL(r.url()).pathname) || r.request().method() !== "POST") return;
