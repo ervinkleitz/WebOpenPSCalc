@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import HoverNote from "./HoverNote";
 import AttackRateNote from "./AttackRateNote";
 import { swingDamage, killMetrics, type Range } from "../lib/killMetrics";
@@ -123,6 +123,9 @@ interface CalcResult {
   target_exp?: number | null; // base EXP the kill awards (monster mode) — divided by hits-to-kill
   target_job_exp?: number | null; // job EXP the kill awards (monster mode)
   poison_dot_per_sec?: number | null; // Poison ailment damage-over-time (per second), folded into time-to-kill
+  /** The incoming-damage payload the survivability panel renders. Only the target's
+   *  name is read here, to say who the headline figure is against. */
+  incoming?: { mob_name?: string | null } | null;
 }
 
 interface Props {
@@ -135,6 +138,11 @@ interface Props {
   error: string;
   forceProcs: boolean;
   onToggleForceProcs: () => void;
+  /** Rendered beside the step table on a wide screen, below it on a narrow one.
+   *  The survivability readout goes here: "what I do to it" and "what it does to
+   *  me" are the same question asked twice, and stacking them put a screenful of
+   *  breakdown between the two halves of the answer. */
+  aside?: ReactNode;
 }
 
 type Branch = "skill" | "normal" | "crit" | "falcon" | "katar";
@@ -266,14 +274,16 @@ function PipelineView({ steps, hideFinal = false, legend = true }: { steps: Step
         </div>
       )}
       <div className="pl-track">
-        {/* Column legend — the left badge is what the step CHANGED, the right number
-            is the running damage total after it (a range when the roll isn't fixed). */}
+        {/* Column header. The order is the order the arithmetic happens in: what the
+            step IS, what it DID, what you are left with. The middle column used to sit
+            on the far left, which put the cause before its own subject and left the
+            two numeric columns unlabelled except by a legend you had to look back at. */}
         {legend && (
           <div className="pl-legend">
-            <span className="pl-badge">change</span>
-            <span className="pl-name">step</span>
-            <span className="pl-dots" aria-hidden="true" />
-            <span className="pl-val">running total</span>
+            <span className="pl-name">Step</span>
+            <span className="pl-badge">Change</span>
+            <span className="pl-val">Result</span>
+            <span className="pl-caret" aria-hidden="true" />
           </div>
         )}
         {nodes.map((step, i) => {
@@ -282,24 +292,36 @@ function PipelineView({ steps, hideFinal = false, legend = true }: { steps: Step
           const prev = nodes.slice(0, i).filter(hasRunningTotal).pop();
           const conn = i > 0 ? connectorInfo(step, prev) : null;
           const isFinal = step.name === "Final Damage";
-          const hasNote = !!step.note && !isFinal;
+          // The engine's own step name (Attr Fix, Defense Fix, …) was only ever in the
+          // row's `title`, which a touch device cannot show at all. It is part of what
+          // the row has to say, so it goes in the disclosure with the note.
+          const rawName = stepLabel(step.name) !== step.name ? step.name : "";
+          const hasDetail = !isFinal && (!!step.note || !!rawName);
           const isOpen = open.has(i);
           return (
             <div className="pl-step" key={i}>
               <div
-                className={`pl-row${isFinal ? " pl-row--final" : ""}${hasNote ? " pl-row--note" : ""}`}
-                onClick={hasNote ? () => toggle(i) : undefined}
-                // The engine's own step name rides along in the tooltip, so the
-                // friendlier label never costs you the ability to match a row
-                // against the formula it ports.
-                title={[stepLabel(step.name) !== step.name ? step.name : "", hasNote ? step.note : ""].filter(Boolean).join(" — ") || undefined}
+                className={`pl-row${isFinal ? " pl-row--final" : ""}${hasDetail ? " pl-row--note" : ""}`}
+                onClick={hasDetail ? () => toggle(i) : undefined}
+                onKeyDown={hasDetail ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(i); }
+                } : undefined}
+                role={hasDetail ? "button" : undefined}
+                tabIndex={hasDetail ? 0 : undefined}
+                aria-expanded={hasDetail ? isOpen : undefined}
+                title={[rawName, step.note && !isFinal ? step.note : ""].filter(Boolean).join(" — ") || undefined}
               >
-                <span className={`pl-badge ${conn ? conn.cls : ""}`}>{conn ? conn.badge : ""}</span>
                 <span className="pl-name">{stepLabel(step.name)}</span>
-                <span className="pl-dots" aria-hidden="true" />
+                <span className={`pl-badge ${conn ? conn.cls : ""}`}>{conn ? conn.badge : ""}</span>
                 <span className="pl-val">{stepDisplayVal(step)}</span>
+                <span className="pl-caret" aria-hidden="true">{hasDetail ? (isOpen ? "⌃" : "⌄") : ""}</span>
               </div>
-              {hasNote && <div className={`pl-note${isOpen ? " open" : ""}`}>{step.note}</div>}
+              {hasDetail && (
+                <div className={`pl-note${isOpen ? " open" : ""}`}>
+                  {step.note && <span className="pl-note-text">{step.note}</span>}
+                  {rawName && <span className="pl-note-engine">engine step: {rawName}</span>}
+                </div>
+              )}
             </div>
           );
         })}
@@ -656,7 +678,7 @@ function DualWieldStepList({ rh, lh, rhFactor, lhFactor, isCrit, psBonusPct }: {
   );
 }
 
-export default function DamageSummary({ calcResult, calculating, error, forceProcs, onToggleForceProcs, tuAttempt = 0, onTuAttempt }: Props) {
+export default function DamageSummary({ calcResult, calculating, error, forceProcs, onToggleForceProcs, tuAttempt = 0, onTuAttempt, aside }: Props) {
   const [branch, setBranch] = useState<Branch>("skill");
   const [dwMode, setDwMode] = useState<DwMode>("ps");
   const [showExp, setShowExp] = useState(false);
@@ -942,8 +964,29 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
     : "Auto attack";
   const finalRange = killMin != null && killMax != null && Math.round(killMin) !== Math.round(killMax);
 
+  // The answer, stated first. It was only ever available at the BOTTOM of the step
+  // table, under every intermediate figure that produced it -- so the one number
+  // everybody opens this panel for was the last one they reached, and on a long
+  // breakdown it was below the fold. The steps explain the number; they should not
+  // have to be read to find it.
+  const heroTotal = killAvg == null ? null
+    : finalRange ? `${nfmt(killMin!)}–${nfmt(killMax!)}` : nfmt(killAvg);
+  const heroTargetName = calcResult.incoming?.mob_name ?? null;
+
   return (
     <div>
+      {heroTotal && (
+        <div className="ds-hero">
+          <div className="ds-hero-figure">
+            <span className="ds-hero-total">{heroTotal}</span>
+            <span className="ds-hero-unit">total damage</span>
+          </div>
+          <div className="ds-hero-sub">
+            {breakdownLabel}
+            {heroTargetName && <span className="ds-hero-vs"> → {heroTargetName}</span>}
+          </div>
+        </div>
+      )}
       <div className="summary-headline">
         <div className="metric">
           <div className="label">Hit chance</div>
@@ -1235,66 +1278,75 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         )}
       </div>
 
-      {!notImplemented && (activeDamage || (activeBranch === "falcon" && falcon)) && (
-        <div className="breakdown-view">
-          <div className="breakdown-head">
-            <span className="breakdown-title">Damage breakdown</span>
-            <span className="breakdown-sub">{breakdownLabel}</span>
-          </div>
-          {activeBranch === "falcon" && falcon ? (
-            <FalconView falcon={falcon} />
-          ) : showDwCombined && dwRhBranch && dwLhBranch ? (
-            <DualWieldStepList
-              rh={dwRhBranch}
-              lh={dwLhBranch}
-              rhFactor={dwRhFactor}
-              lhFactor={dwLhFactor}
-              isCrit={activeBranch === "crit"}
-              psBonusPct={dwPsBonusPct}
-            />
-          ) : activeDamage ? (
-            <PipelineView steps={activeDamage.steps} hideFinal />
-          ) : null}
-          {activeBranch !== "falcon" && killAvg != null && (
-            <div className="breakdown-total">
-              <span className="breakdown-total-label">Final damage</span>
-              <span className="breakdown-total-val">
-                {finalRange ? `${nfmt(killMin!)}–${nfmt(killMax!)}` : nfmt(killAvg)}
-                {/* Multi-hit skills land as N popups of total/N each — say so in the
-                    "total (N x per-hit)" form a player suggested, instead of leaving the
-                    total to be mistaken for a single hit. */}
-                {(activeDamage?.num_hits ?? 1) > 1 && (
-                  finalRange ? (
-                    <span className="dw-per-hit">
-                      {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killMin! / activeDamage!.num_hits))}–{nfmt(Math.floor(killMax! / activeDamage!.num_hits))})
-                    </span>
-                  ) : (
-                    <span className="dw-per-hit">
-                      {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killAvg / activeDamage!.num_hits))})
-                    </span>
-                  )
-                )}
-              </span>
+      {/* On a wide screen the step table and the survivability readout sit side by
+          side: they answer the same question from both ends, and stacking them put a
+          screenful of arithmetic between the two halves. Collapses to one column
+          under 1100px. */}
+      <div className={`ds-columns${aside ? " ds-columns--split" : ""}`}>
+        <div className="ds-columns-main">
+        {!notImplemented && (activeDamage || (activeBranch === "falcon" && falcon)) && (
+          <div className="breakdown-view">
+            <div className="breakdown-head">
+              <span className="breakdown-title">Damage breakdown</span>
+              <span className="breakdown-sub">{breakdownLabel}</span>
             </div>
-          )}
-          {critHeal && (
-            <>
+            {activeBranch === "falcon" && falcon ? (
+              <FalconView falcon={falcon} />
+            ) : showDwCombined && dwRhBranch && dwLhBranch ? (
+              <DualWieldStepList
+                rh={dwRhBranch}
+                lh={dwLhBranch}
+                rhFactor={dwRhFactor}
+                lhFactor={dwLhFactor}
+                isCrit={activeBranch === "crit"}
+                psBonusPct={dwPsBonusPct}
+              />
+            ) : activeDamage ? (
+              <PipelineView steps={activeDamage.steps} hideFinal />
+            ) : null}
+            {activeBranch !== "falcon" && killAvg != null && (
               <div className="breakdown-total">
-                <span className="breakdown-total-label">HP healed on this crit</span>
+                <span className="breakdown-total-label">Final damage</span>
                 <span className="breakdown-total-val">
-                  +{critHeal.min !== critHeal.max ? `${nfmt(critHeal.min)}–${nfmt(critHeal.max)}` : nfmt(critHeal.avg)}
+                  {finalRange ? `${nfmt(killMin!)}–${nfmt(killMax!)}` : nfmt(killAvg)}
+                  {/* Multi-hit skills land as N popups of total/N each — say so in the
+                      "total (N x per-hit)" form a player suggested, instead of leaving the
+                      total to be mistaken for a single hit. */}
+                  {(activeDamage?.num_hits ?? 1) > 1 && (
+                    finalRange ? (
+                      <span className="dw-per-hit">
+                        {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killMin! / activeDamage!.num_hits))}–{nfmt(Math.floor(killMax! / activeDamage!.num_hits))})
+                      </span>
+                    ) : (
+                      <span className="dw-per-hit">
+                        {" "}({activeDamage!.num_hits} × {nfmt(Math.floor(killAvg / activeDamage!.num_hits))})
+                      </span>
+                    )
+                  )}
                 </span>
               </div>
-              <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
-                <span className="self-damage-chip muted">
-                  {(critHeal.permille / 10).toFixed(1)}% of the damage dealt (0.1% per refine)
-                </span>
-                <span className="self-damage-chip muted">healing, not damage — not in the total or DPS</span>
-              </div>
-            </>
-          )}
+            )}
+            {critHeal && (
+              <>
+                <div className="breakdown-total">
+                  <span className="breakdown-total-label">HP healed on this crit</span>
+                  <span className="breakdown-total-val">
+                    +{critHeal.min !== critHeal.max ? `${nfmt(critHeal.min)}–${nfmt(critHeal.max)}` : nfmt(critHeal.avg)}
+                  </span>
+                </div>
+                <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
+                  <span className="self-damage-chip muted">
+                    {(critHeal.permille / 10).toFixed(1)}% of the damage dealt (0.1% per refine)
+                  </span>
+                  <span className="self-damage-chip muted">healing, not damage — not in the total or DPS</span>
+                </div>
+              </>
+            )}
+          </div>
+        )}
         </div>
-      )}
+        {aside && <div className="ds-columns-aside">{aside}</div>}
+      </div>
 
       {selfDamage && <SelfDamageView sd={selfDamage} />}
 

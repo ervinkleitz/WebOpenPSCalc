@@ -41,6 +41,9 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
               <span className="results-section-title">Current build — full breakdown</span>
             </div>
           )}
+          {/* Handed to DamageSummary rather than rendered after it, so it can sit
+              BESIDE the step table on a wide screen. The two read as one answer:
+              what you do to it, and what it does back. */}
           <DamageSummary
             calcResult={calcResult}
             calculating={calculating}
@@ -49,19 +52,20 @@ const ResultsPanel = forwardRef<HTMLDivElement, Props>(
             onToggleForceProcs={onToggleForceProcs}
             tuAttempt={tuAttempt}
             onTuAttempt={onTuAttempt}
+            aside={!calculating && !error ? (
+              calcResult?.incoming ? (
+                <SurvivabilityView incoming={calcResult.incoming} />
+              ) : calcResult?.incoming_note ? (
+                /* No incoming lines, but we know why — say it rather than rendering
+                   nothing. A silently missing panel is what made copying a monster
+                   into a custom target feel broken. */
+                <div className="surv-empty">
+                  <span className="surv-empty-title">Survivability</span>
+                  <span className="surv-empty-msg">{calcResult.incoming_note}</span>
+                </div>
+              ) : null
+            ) : null}
           />
-          {calcResult?.incoming && !calculating && !error && (
-            <SurvivabilityView incoming={calcResult.incoming} />
-          )}
-          {/* No incoming lines, but we know why — say it rather than rendering nothing.
-              A silently missing panel is what made copying a monster into a custom
-              target feel broken. */}
-          {!calcResult?.incoming && calcResult?.incoming_note && !calculating && !error && (
-            <div className="surv-empty">
-              <span className="surv-empty-title">Survivability</span>
-              <span className="surv-empty-msg">{calcResult.incoming_note}</span>
-            </div>
-          )}
           {calcResult && !calculating && !error && (
             <div className="support-card">
               <span className="support-card-emoji">🍵</span>

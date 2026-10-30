@@ -5,6 +5,33 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-29
+
+### Changed
+
+- **The damage breakdown leads with the answer.** The total used to be the last
+  thing on the list, underneath every figure that produced it — on a long
+  breakdown it sat below the fold, so the one number you opened the panel for was
+  the last one you reached. It is now the first thing in the panel, at full size,
+  with the skill and the target beside it: *448–486 total damage · Double
+  Strafing Lv 10 → Raydric*. The steps still follow, and still add up to it.
+
+- **The step table reads in three columns — step, change, result.** What a step
+  changed used to sit to the *left* of the step itself, naming the effect before its
+  own cause, with a row of dots trailing off to the running total. The two columns of
+  numbers never lined up, so you could not scan the changes against each other. They
+  are proper columns now, headed and aligned down the table.
+
+- **Every step that has more to say now shows that it does.** A row with a note or a
+  formula behind it carries a ⌄ you can open, and the engine's own name for the
+  step — *Attr Fix*, *Defense Fix* — is readable inside it. That name was
+  previously only a hover tooltip, which a phone or a tablet could not reach at all.
+
+- **Survivability sits beside the breakdown** on a wide screen rather than below it.
+  What you do to the monster and what it does back are the same question asked from
+  two ends, and there used to be a screenful of arithmetic between the two halves of
+  the answer. On narrower screens they stack as before.
+
 ## 2026-10-28
 
 ### Changed

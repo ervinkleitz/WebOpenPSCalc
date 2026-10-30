@@ -1291,48 +1291,99 @@ label {
 /* Compact damage breakdown — one row per step, notes revealed on hover/tap. */
 .pl-track { display: flex; flex-direction: column; }
 .pl-step { display: flex; flex-direction: column; }
-.pl-row {
-  display: flex; align-items: baseline; gap: 0.5rem;
-  padding: 0.24rem 0.35rem; border-radius: 5px;
+
+/* STEP | CHANGE | RESULT | disclosure.
+   One grid shared by the header row and every step row, so the three columns line
+   up down the table. They used to be laid out with flex and a dot leader, which
+   meant the two numeric columns were ragged -- you could not scan the changes
+   against each other -- and the "change" sat to the LEFT of the step that caused
+   it, naming the effect before its own subject. */
+.pl-row, .pl-legend {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.4rem minmax(4.5rem, auto) 1.1rem;
+  align-items: baseline; gap: 0.5rem;
+  padding: 0.3rem 0.35rem; border-radius: 5px;
 }
-/* Column legend: the breakdown's two numeric columns mean different things
-   (what the step changed vs. the running total after it) — say so once. */
 .pl-legend {
-  display: flex; align-items: baseline; gap: 0.5rem;
-  padding: 0 0.35rem 0.2rem; font-size: 0.66rem; letter-spacing: 0.03em;
+  padding-top: 0; padding-bottom: 0.32rem; margin-bottom: 0.1rem;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 0.64rem; letter-spacing: 0.07em;
   text-transform: uppercase; color: var(--text-faint);
 }
-.pl-legend .pl-name, .pl-legend .pl-val { font-size: inherit; color: inherit; font-family: inherit; }
-.pl-legend .pl-badge { font-size: inherit; font-family: inherit; }
+.pl-legend .pl-name, .pl-legend .pl-val, .pl-legend .pl-badge {
+  font-size: inherit; color: inherit; font-family: inherit; font-weight: inherit;
+}
+/* A hairline per step, so a long breakdown reads as rows rather than as a block of
+   text. inset rather than border-top: no layout shift, and it stays inside the
+   rounded hover background. */
+.pl-step + .pl-step > .pl-row:not(.pl-row--final) {
+  box-shadow: inset 0 1px 0 var(--border-soft);
+}
 .pl-row--note { cursor: pointer; }
 .pl-row--note:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.pl-row--note:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: -2px;
+}
 .pl-badge {
-  flex: 0 0 3.4rem; text-align: right;
   font-family: var(--mono); font-size: 0.74rem; white-space: nowrap; color: var(--text-faint);
 }
 .pl-badge.conn-boost, .pl-badge.conn-add { color: var(--good); }
 .pl-badge.conn-reduce, .pl-badge.conn-sub { color: var(--crit); }
-.pl-name { font-size: 0.82rem; color: var(--text); white-space: nowrap; flex-shrink: 0; }
-.pl-dots {
-  flex: 1 1 auto; min-width: 0.8rem; height: 1px; align-self: center;
-  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
-  background-size: 7px 1px; background-repeat: repeat-x; background-position: center;
+.pl-name {
+  font-size: 0.82rem; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.pl-val { font-family: var(--mono); font-size: 0.88rem; color: var(--text); flex-shrink: 0; }
-.pl-info { font-size: 0.68rem; color: var(--text-faint); flex-shrink: 0; }
+.pl-val { font-family: var(--mono); font-size: 0.88rem; color: var(--text); white-space: nowrap; }
+/* The disclosure marker. Only rows that have something to reveal carry one, so its
+   presence is the signal that there is more here -- a `title` tooltip was not one,
+   and on a touch device could not be reached at all. */
+.pl-caret {
+  font-family: var(--mono); font-size: 0.8rem; line-height: 1;
+  color: var(--text-faint); text-align: center; user-select: none;
+}
+.pl-row--note:hover .pl-caret { color: var(--accent-text); }
+.pl-info { font-size: 0.68rem; color: var(--text-faint); }
 .pl-row--final {
   border-top: 1px solid var(--border-soft); margin-top: 0.2rem; padding-top: 0.4rem;
 }
 .pl-row--final .pl-name { color: var(--accent-text); font-weight: 600; }
 .pl-row--final .pl-val { color: var(--accent-text); font-weight: 600; font-size: 0.98rem; }
-.pl-row--final .pl-dots { display: none; }
 .pl-note {
   max-height: 0; overflow: hidden; opacity: 0;
+  display: flex; flex-direction: column; gap: 0.15rem;
   font-size: 0.71rem; color: var(--text-faint); line-height: 1.4;
-  padding: 0 0.35rem 0 3.9rem;
+  padding: 0 0.35rem 0 0.9rem;
   transition: max-height 0.16s ease, opacity 0.16s ease, padding 0.16s ease;
 }
-.pl-step:hover .pl-note, .pl-note.open { max-height: 6rem; opacity: 1; padding-top: 0.05rem; padding-bottom: 0.35rem; }
+.pl-step:hover .pl-note, .pl-note.open { max-height: 8rem; opacity: 1; padding-top: 0.05rem; padding-bottom: 0.4rem; }
+.pl-note-engine { font-family: var(--mono); font-size: 0.66rem; opacity: 0.75; }
+
+/* The answer, before the working that produces it. */
+.ds-hero { margin-bottom: 1.1rem; }
+.ds-hero-figure { display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; }
+.ds-hero-total {
+  font-family: var(--mono); font-size: 2.6rem; font-weight: 600;
+  line-height: 1.05; color: var(--accent-text);
+}
+.ds-hero-unit { font-size: 1rem; color: var(--text-dim); }
+.ds-hero-sub { margin-top: 0.2rem; font-size: 0.8rem; color: var(--text-faint); }
+.ds-hero-vs { color: var(--text-dim); }
+
+/* Step table beside the survivability readout. One column until there is genuinely
+   room for two -- below this the step rows start wrapping their labels, which costs
+   more than the stacking saves. */
+.ds-columns {
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  gap: 1rem; align-items: start; margin-top: 1rem;
+}
+@media (min-width: 1100px) {
+  .ds-columns--split { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+}
+/* Both cards carry a top margin for the stacked case; inside the grid the gap does
+   that job, so the two column heads line up instead of stepping down. */
+.ds-columns-main > .breakdown-view,
+.ds-columns-aside > .surv-view,
+.ds-columns-aside > .surv-empty { margin-top: 0; }
 
 /* Damage breakdown card — same card treatment as the self-damage and survivability
    readouts, gold-accented since it's the offensive breakdown, with a large final total. */
@@ -2396,6 +2447,16 @@ html[data-density="compact"] .perf-stat-card input[type="number"] { padding: 0.1
 html[data-density="compact"] .breakdown-view,
 html[data-density="compact"] .surv-line,
 html[data-density="compact"] .step-row { line-height: 1.35; }
+
+/* The breakdown table is the longest list on the results side, so it gives up the
+   most row padding. The header's padding-top is already 0 at both densities, so
+   only its bottom is tightened -- compact must never end up LOOSER than
+   comfortable, which is exactly what happened the last time a rule here set a
+   property the comfortable one had left alone. */
+html[data-density="compact"] .pl-row { padding-top: 0.16rem; padding-bottom: 0.16rem; }
+html[data-density="compact"] .pl-legend { padding-bottom: 0.22rem; }
+html[data-density="compact"] .ds-hero { margin-bottom: 0.7rem; }
+html[data-density="compact"] .ds-hero-total { font-size: 2.05rem; }
 
 /* ===========================================================================
    TAP TARGETS — a floor that density does not get to lower.
