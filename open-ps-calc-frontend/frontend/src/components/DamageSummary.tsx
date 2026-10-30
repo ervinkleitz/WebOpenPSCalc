@@ -1152,7 +1152,11 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             <div className="value">{Math.round(avgPerCycle!).toLocaleString()}</div>
           </div>
         )}
-        <div className="metric" title={displayDpsValid
+        {/* DPS and Time to kill are the two the strip exists to deliver -- everything
+            else is an input to them. They carry the accent so the eye lands there;
+            the rest stay neutral. Nine figures in one weight and one colour had no
+            focal point at all. */}
+        <div className="metric metric--outcome" title={displayDpsValid
           ? undefined
           : "No DPS for this branch: it has no repeat rate to quote. Killing Stroke drops you to 1 HP and cancels the Ninja Aura it needs; Fling spends your coins; Reflect Shield fires on the enemy's attacks, not yours. The per-hit damage is the meaningful number."}>
           <div className="label">DPS (est.)</div>
@@ -1192,7 +1196,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           </div>
         )}
         {timeToKill != null && (
-          <div className="metric" title={isInstaKill
+          <div className="metric metric--outcome" title={isInstaKill
             ? "Expected time to kill = expected casts (from the success chance) × cast + after-cast delay."
             : `Average time to kill = target HP ÷ estimated DPS (folds in ASPD, crit mix and procs; cast + after-cast delay for skills)${poisonDot > 0 ? ", plus the Poison DoT" : ""}.`}>
             <div className="label">Time to kill</div>

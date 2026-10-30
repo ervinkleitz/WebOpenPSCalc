@@ -26,10 +26,13 @@ instead of release version. Dates are taken from actual git commit history.
   away. Opening the panel used to lead with a block of instructions for a feature you
   had not asked for, above the build you had just calculated.
 
-- **The headline numbers are divided and quiet.** Hit chance, ASPD, DPS and the rest sit
-  in ruled columns; two of them used to be coloured green and red, which made those two
-  read as warnings rather than facts. Colour stays where it means something — the
-  change column in the step table.
+- **The headline numbers are divided, and the two that matter stand out.** Hit chance,
+  ASPD, DPS and the rest sit in ruled columns. **DPS** and **Time to kill** carry the
+  accent, because they are what the row is for and the other seven are inputs to them.
+  Hit chance and crit chance used to be hard-coded green and red, which made those two
+  read as a pass and a warning whatever the numbers said — a 40% hit chance was green.
+  They read as plain figures now. Colour is left where it is earned: the change column
+  in the step table, where a multiplier really is a gain or a loss.
 
 - **The step table is headed *Damage calculation*,** with the two figures it starts from
   (*Status ATK*, *Weapon ATK*) beside the heading rather than on a chip row of their own.

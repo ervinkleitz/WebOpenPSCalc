@@ -1246,10 +1246,18 @@ label {
 }
 .metric .label { font-size: 0.78rem; color: var(--text-faint); }
 .metric .value { font-family: var(--mono); font-size: 1.45rem; color: var(--text); line-height: 1.25; font-variant-numeric: tabular-nums; }
-/* The strip reads as one row of facts; colouring two of them made those two
-   look like warnings. Semantic colour stays where it means something -- the
-   change column in the step table. */
+/* Hit chance and crit chance used to be hard-coded green and red, which made
+   those two read as a pass and a warning whatever the numbers were -- a 40% hit
+   chance was green. They are neutral now, like every other input to the result.
+   Semantic colour stays where it is earned: the change column in the step table,
+   where a multiplier really is a gain or a loss. */
 .metric .value.crit, .metric .value.good { color: var(--text); }
+
+/* Hierarchy instead of decoration. DPS and Time to kill are what the strip is
+   for; the other seven are inputs to them. One accent, used twice, gives the row
+   a focal point without turning it into a palette. */
+.metric--outcome .value { color: var(--accent-text); }
+.metric--outcome .label { color: var(--text-dim); }
 .metric .unit { font-size: 0.85rem; color: var(--text-dim); margin-left: 0.2rem; }
 /* A derived figure carried on the value line (attacks/sec beside ASPD): same size as a
    real unit so it stays readable, and it keeps the metric one line tall — a second row
