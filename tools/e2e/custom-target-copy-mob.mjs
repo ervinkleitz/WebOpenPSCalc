@@ -15,7 +15,13 @@ import { createRequire } from "module";
 import { readFileSync } from "fs";
 
 const URL_BASE = process.argv[2] || "http://localhost:5173/";
-const API_BASE = process.argv[3] || "http://localhost:4000";
+// Derived from the app's own URL, not pinned to the dev backend. /api is proxied at
+// the app's origin in BOTH environments -- Vite in dev, nginx in production -- so
+// the app's base is always the right place to ask. It used to default to
+// localhost:4000 and the runner never passed anything else, so this script could
+// only ever run against a local backend; against production it died on
+// ECONNREFUSED. Still overridable for a backend on its own host.
+const API_BASE = process.argv[3] || URL_BASE.replace(/\/$/, "");
 // Resolved from this script's own location, so the suite runs from any checkout on
 // any OS. It used to be an absolute path to one developer's machine.
 const FE = new URL("../../open-ps-calc-frontend/frontend/", import.meta.url);
@@ -46,7 +52,19 @@ let ok = true;
 const check = (c, m) => { if (!c) { console.error("FAIL: " + m); ok = false; } else console.log("ok  " + m); };
 
 // What the monster actually is, straight from the API the editor itself reads.
-const mob = await (await fetch(`${API_BASE}/api/data/mobs/${ORC_WARRIOR}?server=payon_stories`)).json();
+// Carries the key, and checks the status: a deployment with the X-API-Key gate on
+// answers 401 with a perfectly parseable body, so the unchecked .json() here used
+// to hand {error:"Unauthorized"} straight on and die three lines later reading
+// `undefined.vit` -- the same silent-401-as-data failure that put "undefined" in
+// front of every player on 2026-10-29. Set OPSCALC_API_KEY to the deployed key.
+const mobRes = await fetch(`${API_BASE}/api/data/mobs/${ORC_WARRIOR}?server=payon_stories`,
+  process.env.OPSCALC_API_KEY ? { headers: { "X-API-Key": process.env.OPSCALC_API_KEY } } : undefined);
+if (!mobRes.ok) {
+  console.error(`FAIL: ${API_BASE}/api/data/mobs/${ORC_WARRIOR} answered ${mobRes.status}.`
+    + (mobRes.status === 401 ? " The API key gate is on — set OPSCALC_API_KEY to the deployed key." : ""));
+  process.exit(1);
+}
+const mob = await mobRes.json();
 console.log(`${mob.name}: lvl ${mob.level}, DEF ${mob.def_}, MDEF ${mob.mdef}, ${mob.size} ${mob.race}, `
   + `ele ${mob.element}/${mob.element_level}, VIT ${mob.stats.vit} AGI ${mob.stats.agi} LUK ${mob.stats.luk} INT ${mob.stats.int}\n`);
 

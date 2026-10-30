@@ -55,6 +55,37 @@ for (const file of walk(SRC)) {
 check(offenders.length === 0,
   "no source file outside api/client.ts fetches /api/ directly", offenders);
 
+// ---- 1b. static: e2e scripts that call /api must carry the key too --------------
+// The app rule above scans frontend/src, so it says nothing about THIS directory --
+// and that is where the gap was. After the gate went live the audit for stray API
+// calls looked for `fetch(`/api` and `fetch(`http…/api`, and missed
+// custom-target-copy-mob's `fetch(`${API_BASE}/api/…`) because the line starts with
+// a template substitution. It was reported clean and was not.
+//
+// So the rule is about the KEY, not the shape of the URL: any script here that
+// fetches /api at all must mention OPSCALC_API_KEY, whether it sends the header
+// itself (node-side) or installs it on the page (setExtraHTTPHeaders). That holds
+// however the URL is spelled.
+//
+// This file is exempt: the patterns it searches for are written out in it.
+const HERE = fileURLToPath(new URL(".", import.meta.url));
+const SELF = fileURLToPath(import.meta.url);
+const unkeyed = [];
+for (const f of readdirSync(HERE)) {
+  if (!f.endsWith(".mjs") || f.startsWith("_")) continue;
+  const p = path.join(HERE, f);
+  if (path.resolve(p) === path.resolve(SELF)) continue;
+  const text = readFileSync(p, "utf8");
+  const hits = text.split(/\r?\n/)
+    .map((line, i) => ({ line: i + 1, code: line.trim() }))
+    .filter(({ code }) => /\bfetch\s*\(/.test(code) && code.includes("/api"));
+  if (hits.length && !text.includes("OPSCALC_API_KEY")) {
+    unkeyed.push({ file: f, line: hits[0].line, code: hits[0].code.slice(0, 80) });
+  }
+}
+check(unkeyed.length === 0,
+  "every e2e script that fetches /api also carries the key", unkeyed);
+
 // ---- 2. live: the key actually reaches every request ----------------------------
 const frontend = new URL("../../open-ps-calc-frontend/frontend/", import.meta.url);
 const LZ = createRequire(new URL("package.json", frontend))("lz-string");
