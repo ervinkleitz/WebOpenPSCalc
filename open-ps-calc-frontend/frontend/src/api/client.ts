@@ -54,6 +54,12 @@ export const api = {
     request(`/data/items/${id}?server=${server}`) as Promise<any>,
   searchMobs: (params: Record<string, unknown>) =>
     request(`/data/mobs?${new URLSearchParams(params as any)}`) as Promise<{ items: any[]; total: number }>,
+  // The editor resolved the chosen monster with a bare fetch() of this path, which
+  // skipped the API key this helper attaches -- invisible until the key gate was
+  // actually switched on, at which point every target in the calculator went to
+  // "undefined". See the regression note in the e2e test of the same name.
+  getMob: (id: number, server: string) =>
+    request(`/data/mobs/${id}?server=${server}`) as Promise<any>,
   searchSkills: (params: Record<string, unknown>) =>
     request(`/data/skills?${new URLSearchParams(params as any)}`) as Promise<{ items: any[]; total: number }>,
   // `job` only ever widens max_level: a Rogue/Stalker can hold a copied skill at a

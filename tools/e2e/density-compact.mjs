@@ -192,7 +192,11 @@ if (persisted.d !== "compact" || persisted.f !== "14px") { console.error("FAIL: 
 // verify compact never widens the page at phone/tablet widths.
 for (const [w, h, label] of [[390, 844, "iPhone"], [820, 1180, "tablet"]]) {
   const page = await b.newPage({ viewport: { width: w, height: h } });
-  await page.goto("http://localhost:5173/", { waitUntil: "networkidle" });
+  // URL, not a hardcoded localhost. This section was pinned to the dev server, so
+  // the whole script failed against any other target AFTER every assertion above it
+  // had already passed -- a run against production read as a failure with nothing
+  // actually wrong.
+  await page.goto(URL, { waitUntil: "networkidle" });
   // Each newPage gets its own context, so the collapsed sections have to be
   // opened again here.
   await page.evaluate(() => { try { localStorage.setItem("manualStatsOpen", "1"); localStorage.setItem("density", "compact"); } catch (e) {} });

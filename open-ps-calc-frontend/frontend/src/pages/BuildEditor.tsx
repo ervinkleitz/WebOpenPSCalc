@@ -2057,8 +2057,13 @@ export default function BuildEditor() {
   // Resolve mob display info
   useEffect(() => {
     if (!data.target_mob_id) { setMobInfo(null); return; }
-    fetch(`/api/data/mobs/${data.target_mob_id}?server=${data.server}`)
-      .then((r) => r.json())
+    // Through the api client, NOT a bare fetch: the client attaches the X-API-Key
+    // header and throws on a non-2xx. The bare fetch this replaces did neither, so
+    // when the key gate was switched on it parsed the 401 body and handed
+    // {error:"Unauthorized"} to setMobInfo as though it were a monster -- every
+    // target name in the calculator read "undefined", and with no hp on the object
+    // the hits-to-kill and time-to-kill readouts disappeared.
+    api.getMob(data.target_mob_id, data.server)
       .then(setMobInfo)
       .catch(() => setMobInfo(null));
   }, [data.target_mob_id, data.server]);
