@@ -26,6 +26,13 @@ instead of release version. Dates are taken from actual git commit history.
   away. Opening the panel used to lead with a block of instructions for a feature you
   had not asked for, above the build you had just calculated.
 
+- **Procs, autocasts and Grand Cross' self-damage sit behind their own buttons.**
+  They used to be appended under the breakdown — all of them, every time — so a Monk
+  carrying an autocast card scrolled past three full step tables he had not asked for
+  to reach the end of the panel. There is a row of buttons now: *Triple Attack Lv10*,
+  *Self-damage*, *Auto Blitz Beat*, whatever the build actually has. One opens at a
+  time and none is open to begin with.
+
 - **The headline numbers sit in ruled columns.** Hit chance, ASPD, DPS and the rest are
   divided from one another instead of running together across the top. They keep the
   colours they had.

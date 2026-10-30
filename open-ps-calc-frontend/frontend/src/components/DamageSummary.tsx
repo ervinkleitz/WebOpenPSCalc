@@ -698,6 +698,12 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   const [branch, setBranch] = useState<Branch>("skill");
   const [dwMode, setDwMode] = useState<DwMode>("ps");
   const [showExp, setShowExp] = useState(false);
+  // Which extra readout is open. The procs, the autocasts and Grand Cross'
+  // self-damage used to be APPENDED, all of them, under the breakdown -- a Monk
+  // with an autocast card got three full step tables stacked below the one he
+  // asked for. They sit behind their own buttons now, one at a time, closed by
+  // default.
+  const [openExtra, setOpenExtra] = useState<string | null>(null);
 
   if (error) return <div className="notice warn">{error}</div>;
   if (calculating) return <p className="spinner-text">Calculating…</p>;
@@ -979,6 +985,39 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
     : hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}`
     : "Auto attack";
   const finalRange = killMin != null && killMax != null && Math.round(killMin) !== Math.round(killMax);
+
+  // Everything that is a readout in its own right rather than part of the headline
+  // calculation: the procs, the card autocasts, and the self-damage a Grand Cross
+  // does to its own caster. Each gets a button; one opens at a time.
+  const extras: { key: string; label: string; node: ReactNode }[] = [];
+  if (selfDamage) extras.push({ key: "self", label: "Self-damage", node: <SelfDamageView sd={selfDamage} /> });
+  if (autoSpell) extras.push({ key: "autospell", label: "Auto Spell",
+    node: <AutoSpellView branch={autoSpell.branch} chance={autoSpell.chance} label={autoSpell.label} /> });
+  if (autoBlitz) extras.push({ key: "autoblitz", label: "Auto Blitz Beat",
+    node: <AutoBlitzView branch={autoBlitz.branch} chance={autoBlitz.chance} dpsAdded={autoBlitz.dpsAdded} /> });
+  if (doubleHit) extras.push({ key: "double", label: doubleHit.label,
+    node: (
+      <DoubleAttackView
+        branch={doubleHit.branch}
+        chance={doubleHit.chance}
+        label={doubleHit.label}
+        taChance={normal_attack.result.ta_proc_chance ?? 0}
+        baseHit={normal_attack.result.hit_chance}
+        procHit={normal_attack.result.double_hit_chance ?? null}
+        hitBonus={normal_attack.result.double_hit_bonus ?? 0}
+      />
+    ) });
+  if (tripleAttack) extras.push({ key: "triple", label: tripleAttack.label,
+    node: <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label}
+      crit={tripleAttack.crit} critChance={tripleAttack.critChance} /> });
+  if (holyStrike) extras.push({ key: "holy", label: "Holy Strike",
+    node: <CardAutocastView title="Proc" label="Holy Strike" per="melee attack"
+      branch={holyStrike.branch} chance={holyStrike.chance} dpsAdded={holyStrike.dpsAdded}
+      critBranch={holyStrike.critBranch} critChance={holyStrike.critChance} /> });
+  for (const ac of cardAutocasts) {
+    extras.push({ key: `ac-${ac.key}`, label: ac.label,
+      node: <CardAutocastView branch={ac.branch} chance={ac.chance} label={ac.label} dpsAdded={ac.dpsAdded} /> });
+  }
 
   // The answer, stated first. It was only ever available at the BOTTOM of the step
   // table, under every intermediate figure that produced it -- so the one number
@@ -1422,36 +1461,24 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         {aside && <div className="ds-columns-aside">{aside}</div>}
       </div>
 
-      {selfDamage && <SelfDamageView sd={selfDamage} />}
-
-      {autoSpell && <AutoSpellView branch={autoSpell.branch} chance={autoSpell.chance} label={autoSpell.label} />}
-
-      {autoBlitz && <AutoBlitzView branch={autoBlitz.branch} chance={autoBlitz.chance} dpsAdded={autoBlitz.dpsAdded} />}
-
-      {doubleHit && (
-        <DoubleAttackView
-          branch={doubleHit.branch}
-          chance={doubleHit.chance}
-          label={doubleHit.label}
-          taChance={normal_attack.result.ta_proc_chance ?? 0}
-          baseHit={normal_attack.result.hit_chance}
-          procHit={normal_attack.result.double_hit_chance ?? null}
-          hitBonus={normal_attack.result.double_hit_bonus ?? 0}
-        />
+      {extras.length > 0 && (
+        <div className="ds-extras">
+          <div className="ds-extras-tabs" role="group" aria-label="Other readouts">
+            {extras.map((x) => (
+              <button
+                key={x.key}
+                className={`ds-extra-btn${openExtra === x.key ? " active" : ""}`}
+                aria-expanded={openExtra === x.key}
+                onClick={() => setOpenExtra(openExtra === x.key ? null : x.key)}
+              >
+                {x.label}
+                <span className="ds-extra-caret" aria-hidden="true">{openExtra === x.key ? "⌃" : "⌄"}</span>
+              </button>
+            ))}
+          </div>
+          {extras.find((x) => x.key === openExtra)?.node}
+        </div>
       )}
-
-      {tripleAttack && <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label}
-        crit={tripleAttack.crit} critChance={tripleAttack.critChance} />}
-
-      {holyStrike && (
-        <CardAutocastView title="Proc" label="Holy Strike" per="melee attack"
-          branch={holyStrike.branch} chance={holyStrike.chance} dpsAdded={holyStrike.dpsAdded}
-          critBranch={holyStrike.critBranch} critChance={holyStrike.critChance} />
-      )}
-
-      {cardAutocasts.map((ac) => (
-        <CardAutocastView key={ac.key} branch={ac.branch} chance={ac.chance} label={ac.label} dpsAdded={ac.dpsAdded} />
-      ))}
     </div>
   );
 }

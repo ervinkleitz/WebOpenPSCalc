@@ -1454,10 +1454,12 @@ label {
   background: color-mix(in srgb, var(--accent) 5%, var(--bg));
   padding: 0.7rem 0.85rem;
 }
-/* Those readouts sit after the two columns. Left full width their step table
-   stretched the gap between STEP and CHANGE across the whole panel -- the dot
-   leader used to bridge that distance and the grid does not -- so they are held to
-   about the width of the column the main table lives in. */
+/* Those readouts sit below the two columns, behind their buttons. Left full width
+   their step table stretched the gap between the step and its running total across
+   the whole panel, so they are held to about the width of the column the main
+   table lives in. Matched on the container rather than as a sibling of
+   .ds-columns: moving them inside .ds-extras silently dropped a sibling rule. */
+.ds-extras .breakdown-view,
 .ds-columns ~ .breakdown-view { max-width: 48rem; }
 /* The breakdown and the survivability readout are the panel's two columns, not two
    cards floating in it. Boxing each in a tinted, accent-striped card made the panel
@@ -2978,3 +2980,20 @@ button:not(.pill-remove) { min-width: 28px; }
   }
   .breakdown-head, .surv-head { margin-bottom: 0.6rem; }
 }
+
+/* Extra readouts, behind their own buttons.
+   The procs, the card autocasts and Grand Cross' self-damage used to be appended
+   under the breakdown -- all of them, every time -- so a Monk carrying an autocast
+   card scrolled past three full step tables he had not asked for to reach the end
+   of the panel. They are buttons now: one opens at a time, none by default. */
+.ds-extras { margin-top: 1.1rem; }
+.ds-extras-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.ds-extra-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; padding: 0.35rem 0.8rem;
+}
+.ds-extra-btn.active { border-color: var(--accent); color: var(--accent-text); }
+.ds-extra-caret { font-family: var(--mono); font-size: 0.75rem; line-height: 1; }
+/* The open panel is already a card; it does not need the gap a stacked one had. */
+.ds-extras > .breakdown-view,
+.ds-extras > .self-damage { margin-top: 0.7rem; }

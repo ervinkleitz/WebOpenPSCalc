@@ -86,6 +86,13 @@ for (const [name, state] of Object.entries(BUILDS)) {
     await page.waitForTimeout(9000);
     const where = `${name} @ ${device}`;
 
+    // These readouts live behind their own buttons now, closed by default, so a
+    // check of their chrome has to open one first. Before that they were all
+    // appended under the breakdown at once.
+    const buttons = await page.locator(".ds-extra-btn").count();
+    check(buttons > 0, `${where}: the readout has a button`, buttons);
+    if (buttons) { await page.locator(".ds-extra-btn").first().click(); await page.waitForTimeout(800); }
+
     const views = await page.$$eval(".results-panel .breakdown-view", (els) => els.map((e) => {
       const cs = getComputedStyle(e);
       const transparent = (c) => !c || c === "transparent" || /rgba\(0, 0, 0, 0\)/.test(c);
