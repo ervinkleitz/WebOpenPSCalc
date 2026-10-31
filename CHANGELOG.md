@@ -5,6 +5,19 @@ follows [Keep a Changelog](https://keepachangelog.com/). This project
 deploys continuously (no version numbers), so entries are grouped by date
 instead of release version. Dates are taken from actual git commit history.
 
+## 2026-10-30
+
+### Changed
+
+- **Weapon endow has a section of its own.** It used to sit inside the **Priest**
+  group, which named it after one of its four owners: the four *Endow* elements are a
+  **Sage's** skills, *Aspersio* is the Priest's, *Enchant Poison* is an **Assassin's**,
+  and *Cursed Water* is a bottle you throw on yourself. The one control in the panel
+  that changes what your attacks count as was filed under a class most of its options
+  do not belong to, and buried among that class's buffs. It is now a **Weapon element**
+  section with its own row — closed it reads *Endow Fire*, and the Priest row no longer
+  claims it.
+
 ## 2026-10-29
 
 ### Fixed

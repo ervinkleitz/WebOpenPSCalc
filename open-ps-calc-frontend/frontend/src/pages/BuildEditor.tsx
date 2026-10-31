@@ -77,7 +77,12 @@ const ENDOW_LABELS: Record<string, string> = {
   SC_PROPERTYWIND: "Endow Wind", SC_PROPERTYGROUND: "Endow Ground",
   SC_ENCHANTPOISON: "Enchant Poison", SC_ENCHANTARMS: "Cursed Water",
 };
-const BUFF_GROUP_KEYS = ["self", "priest", "blacksmith", "merchant", "sage", "songs"];
+// "endow" is its own group rather than part of "priest": the four Endow
+// elements are a SAGE's skills, Aspersio is the Priest's, Enchant Poison is an
+// Assassin's and Cursed Water is a bottle you throw on yourself. Filing the one
+// control that changes your attack's element under a single one of its four
+// owners named it wrongly and buried it.
+const BUFF_GROUP_KEYS = ["self", "endow", "priest", "blacksmith", "merchant", "sage", "songs"];
 // Consumable groups, prefixed so they share one open-state map with the buff
 // groups above without either panel being able to collide with the other.
 const CONSUMABLE_GROUP_KEYS = ["cons.aspd", "cons.stat", "cons.boxes", "cons.proof"];
@@ -4564,6 +4569,51 @@ export default function BuildEditor() {
                     </>
                   )}
 
+                  {/* Weapon element -- its own section. It is one control, but it is the
+                      only one in this panel that changes what your attacks COUNT as,
+                      and its sources are four different classes. */}
+                  <div className="buff-section-header buff-section-header--flush">
+                    Weapon element
+                    <InfoTooltip>
+                      What your weapon's attacks count as. One at a time — taking a
+                      second endow replaces the first — and an active endow overrides
+                      the element of a forged weapon.
+                      <div className="tooltip-row"><span>Sage</span><span>Endow Fire / Water / Wind / Ground</span></div>
+                      <div className="tooltip-row"><span>Priest</span><span>Aspersio (Holy)</span></div>
+                      <div className="tooltip-row"><span>Assassin</span><span>Enchant Poison</span></div>
+                      <div className="tooltip-row"><span>Consumable</span><span>Cursed Water (Shadow)</span></div>
+                    </InfoTooltip>
+                  </div>
+
+                  <div className="equip-grid equip-grid--single">
+                  {groupSlot("endow", "Weapon endow",
+                    endowValue && !gsNoEndow ? [ENDOW_LABELS[endowValue] ?? "Endow"] : [],
+                    // No label inside: the slot head already says Weapon endow.
+                    <div className="field">
+                      <select
+                        aria-label="Weapon endow"
+                        value={gsNoEndow ? "" : endowValue}
+                        disabled={gsNoEndow}
+                        onChange={(e) => updateWeaponEndow(e.target.value)}
+                      >
+                        <option value="">{gsNoEndow ? "Not available to Gunslingers" : "None"}</option>
+                        <option value="SC_ASPERSIO">Aspersio (Holy)</option>
+                        <option value="SC_PROPERTYFIRE">Endow Fire</option>
+                        <option value="SC_PROPERTYWATER">Endow Water</option>
+                        <option value="SC_PROPERTYWIND">Endow Wind</option>
+                        <option value="SC_PROPERTYGROUND">Endow Ground</option>
+                        <option value="SC_ENCHANTPOISON">Enchant Poison</option>
+                        <option value="SC_ENCHANTARMS">Cursed Water (Shadow)</option>
+                      </select>
+                    </div>,
+                    /* PS Gunslinger release notes: "Gunslingers are no longer able to be
+                       endowed, nor can they gain the effect of element converters." The
+                       engine refuses it either way; saying so beats ignoring the pick. */
+                    gsNoEndow
+                      ? "Gunslingers cannot be endowed on Payon Stories, and element converters do not work on them either — their attack element comes from their ammunition."
+                      : undefined)}
+                  </div>
+
                   <div className="buff-section-header buff-section-header--flush">
                     Party buffs
                     <InfoTooltip>
@@ -4578,29 +4628,9 @@ export default function BuildEditor() {
 
                   <div className="equip-grid">
                   {groupSlot("priest", "Priest",
-                    [...chosenFrom(partyBuffsFrom("Priest", data.job_id), data.support_buffs as Record<string, unknown>),
-                     ...(endowValue && !gsNoEndow ? [ENDOW_LABELS[endowValue] ?? "Endow"] : [])],
+                    chosenFrom(partyBuffsFrom("Priest", data.job_id), data.support_buffs as Record<string, unknown>),
                     <div className="passive-grid">
                       {partyBuffsFrom("Priest", data.job_id).map(partyBuffField)}
-                      {/* PS Gunslinger release notes: "Gunslingers are no longer able to be
-                          endowed, nor can they gain the effect of element converters." The
-                          engine refuses it either way; disabling the control says why instead
-                          of silently ignoring the pick. Their element comes from ammunition. */}
-                      <div className="field">
-                        <label title={gsNoEndow
-                          ? "Gunslingers cannot be endowed on Payon Stories, and element converters do not work on them either — their attack element comes from their ammunition."
-                          : "Priest weapon endow / Aspersio, plus Enchant Poison and Cursed Water"}>Weapon endow</label>
-                        <select value={gsNoEndow ? "" : endowValue} disabled={gsNoEndow} onChange={(e) => updateWeaponEndow(e.target.value)}>
-                          <option value="">{gsNoEndow ? "Not available to Gunslingers" : "None"}</option>
-                          <option value="SC_ASPERSIO">Aspersio (Holy)</option>
-                          <option value="SC_PROPERTYFIRE">Endow Fire</option>
-                          <option value="SC_PROPERTYWATER">Endow Water</option>
-                          <option value="SC_PROPERTYWIND">Endow Wind</option>
-                          <option value="SC_PROPERTYGROUND">Endow Ground</option>
-                          <option value="SC_ENCHANTPOISON">Enchant Poison</option>
-                          <option value="SC_ENCHANTARMS">Cursed Water (Shadow)</option>
-                        </select>
-                      </div>
                     </div>)}
 
                   {groupSlot("blacksmith", "Blacksmith",
