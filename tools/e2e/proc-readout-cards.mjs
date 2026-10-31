@@ -83,6 +83,21 @@ const BUILDS = {
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 
+// Which button LOOKS current, measured rather than inferred from a class name.
+// The class check below passed for a release in which the deselected "Normal
+// attack" kept an accent fill, an accent border and 600 weight while the button
+// that actually was selected had only a thin border -- the deselected one read as
+// the louder of the two. A class is what the code believes; this is what is on
+// screen.
+const selectionLook = (page) => page.$$eval(".branch-toggle button", (els) => els.map((e) => {
+  const cs = getComputedStyle(e);
+  return {
+    text: e.textContent.replace(/\s+/g, " ").trim().slice(0, 24),
+    active: e.classList.contains("active"),
+    paint: `${cs.backgroundColor}|${cs.borderColor}`,
+  };
+}));
+
 for (const [name, state] of Object.entries(BUILDS)) {
   for (const [width, device] of [[1500, "desktop"], [390, "phone"]]) {
     const ctx = await browser.newContext({
@@ -129,6 +144,15 @@ for (const [name, state] of Object.entries(BUILDS)) {
       (els) => els.map((e) => e.textContent.replace(/\s+/g, " ").trim()));
     check(now.length === 1 && /\d/.test(now[0]),
       `${where}: and it is the only one current`, now);
+
+    // ...and it is the only one that LOOKS current. No inactive button may share
+    // the selected button's paint.
+    const look = await selectionLook(page);
+    const sel = look.find((b) => b.active);
+    const impostors = look.filter((b) => !b.active && sel && b.paint === sel.paint);
+    check(impostors.length === 0,
+      `${where}: no deselected button still looks selected`,
+      { selected: sel && sel.text, impostors: impostors.map((b) => b.text) });
 
     // Sized by its column, not the panel — the rule a sibling selector dropped once.
     const widths = await page.evaluate(() => {

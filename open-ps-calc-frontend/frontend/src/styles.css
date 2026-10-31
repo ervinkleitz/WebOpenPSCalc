@@ -1261,11 +1261,24 @@ label {
 
 .branch-toggle { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; flex-wrap: wrap; align-items: center; }
 .branch-toggle button { font-size: 0.8rem; padding: 0.35rem 0.8rem; }
-.branch-toggle button.active { border-color: var(--accent); color: var(--accent-text); }
-.branch-skill-pill { background: var(--accent-soft); border-color: var(--accent) !important; font-weight: 600; }
-.branch-skill-pill.active { background: var(--accent-soft); }
-.branch-falcon-pill { border-color: var(--good) !important; color: var(--good); }
-.branch-falcon-pill.active { background: rgba(104,211,145,0.12); }
+/* Selection is a FILL. Colour on its own says what a button IS -- the skill, the
+   falcon -- and never whether it is the current one.
+   This was the other way round: .branch-skill-pill carried the accent fill, the
+   accent border and 600 weight UNCONDITIONALLY, and its .active rule set the same
+   background again, so active and inactive were pixel-identical for that button.
+   Picking another view left it looking selected while the view that actually WAS
+   selected had only a thin border and normal weight -- the deselected button read
+   as the louder of the two. */
+.branch-toggle button.active {
+  border-color: var(--accent); color: var(--accent-text);
+  background: var(--accent-soft);
+}
+.branch-skill-pill { font-weight: 600; }
+.branch-falcon-pill { color: var(--good); }
+.branch-falcon-pill.active {
+  border-color: var(--good); color: var(--good);
+  background: rgba(104, 211, 145, 0.12);
+}
 
 .step-list { display: flex; flex-direction: column; gap: 0.35rem; max-height: 480px; overflow-y: auto; }
 .step-row {
@@ -1286,14 +1299,6 @@ label {
 
 /* ---- Pipeline view ---- */
 .pipeline-view { display: flex; flex-direction: column; }
-.pipeline-inputs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.55rem; }
-.pipeline-chip {
-  display: inline-flex; align-items: center; gap: 0.3rem;
-  background: var(--bg-panel-raised); border: 1px solid var(--border-soft);
-  border-radius: var(--radius); padding: 0.15rem 0.5rem; font-size: 0.73rem;
-}
-.pipeline-chip-label { color: var(--text-dim); font-style: italic; }
-.pipeline-chip-val { font-family: var(--mono); color: var(--text-dim); }
 
 /* Compact damage breakdown — one row per step, notes revealed on hover/tap. */
 .pl-track { display: flex; flex-direction: column; }
@@ -1479,13 +1484,17 @@ label {
 .breakdown-sub { font-size: 0.74rem; color: var(--text-faint); }
 /* Status ATK / Weapon ATK: what the table is computed FROM, so they caption the
    heading rather than forming a row of chips that competes with the steps. */
-.breakdown-inputs {
-  display: inline-flex; flex-wrap: wrap; gap: 0.1rem 0.75rem;
-  font-size: 0.78rem; color: var(--text-faint);
+/* Status ATK / Weapon ATK keep the badge they always had. Moving them up beside
+   the heading was the intended change; flattening them into dim text separated by
+   a middot was not -- they stopped reading as the two FIGURES the table starts
+   from and became part of the heading's own subtitle. */
+.breakdown-inputs { display: inline-flex; flex-wrap: wrap; gap: 0.35rem; }
+.breakdown-input {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: var(--bg-panel-raised); border: 1px solid var(--border-soft);
+  border-radius: var(--radius); padding: 0.15rem 0.5rem; font-size: 0.73rem;
 }
-.breakdown-input + .breakdown-input::before {
-  content: "·"; margin-right: 0.75rem; color: var(--border);
-}
+.breakdown-input-label { color: var(--text-dim); font-style: italic; }
 .breakdown-input-val { font-family: var(--mono); color: var(--text-dim); }
 .breakdown-total {
   display: grid; grid-template-columns: 1fr auto; align-items: baseline;
