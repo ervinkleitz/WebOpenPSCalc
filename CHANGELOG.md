@@ -9,6 +9,15 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **Weapon endow has a section of its own.** It used to sit inside the **Priest**
+  group, which named it after one of its four owners: the four *Endow* elements are a
+  **Sage's** skills, *Aspersio* is the Priest's, *Enchant Poison* is an **Assassin's**,
+  and *Cursed Water* is a bottle you throw on yourself. The one control in the panel
+  that changes what your attacks count as was filed under a class most of its options
+  do not belong to, and buried among that class's buffs. It is now a **Weapon element**
+  section with its own row — closed it reads *Endow Fire*, and the Priest row no longer
+  claims it.
+
 - **The results panel has a layout of its own on a phone.** It used to be the wide
   layout with the columns stacked — a shape meant to be read across, delivered to a
   screen that is read down. On a phone it is now a stack of cards: the damage set as a
