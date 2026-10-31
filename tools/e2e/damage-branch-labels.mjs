@@ -14,9 +14,19 @@
 // Sonic Blow Lv10: skill 2936, "Normal hit" 296, "Critical hit" 2936.
 //
 // Nothing was miscalculated — every number was right for what it computed. The label
-// was wrong, so it is "Auto attack" now, in both states (it used to be "Normal
-// Attack" with no skill selected and "Normal hit" with one: the same thing, two
-// names).
+// was wrong: it used to be "Normal Attack" with no skill selected and "Normal hit"
+// with one — the same thing under two names, and the second of them reading as the
+// skill's own non-crit hit.
+//
+// It became "Auto attack", and is now "Normal attack" by request (2026-10-30), in
+// BOTH states. The half of the original fault that mattered most is still fixed:
+// one name, not two. The other half is a judgement call that has now been made the
+// other way — "Normal attack" sits next to "Critical hit" again, which is the
+// adjacency that made "Normal hit" read as the skill's non-crit hit. If that report
+// comes back, this is the line to revisit.
+//
+// Either way the assertion below is the one that matters and does not care what the
+// button is called: the button must show the AUTO-ATTACK damage, not the skill's.
 import { chromium } from "playwright-core";
 import { createRequire } from "module";
 import { readFileSync } from "fs";
@@ -78,7 +88,7 @@ const shownDamage = () => page.evaluate(() => {
 // --- with no skill: one button, named for what it is ------------------------
 await open({ id: 0, level: 1, label: "Normal Attack" });
 const noSkill = await branchButtons();
-check(noSkill[0] === "Auto attack", `with no skill the first branch is "Auto attack" (got ${JSON.stringify(noSkill)})`);
+check(noSkill[0] === "Normal attack", `with no skill the first branch is "Normal attack" (got ${JSON.stringify(noSkill)})`);
 const autoAlone = await shownDamage();
 console.log(`    auto attack on its own: ${autoAlone}`);
 
@@ -86,17 +96,22 @@ console.log(`    auto attack on its own: ${autoAlone}`);
 await open({ id: 136, level: 10, label: "Sonic Blow" });
 const withSkill = await branchButtons();
 console.log(`    branches with a skill: ${JSON.stringify(withSkill)}`);
-check(withSkill.includes("Auto attack"),
-  "with a skill selected it is still called \"Auto attack\", not renamed");
-check(!withSkill.some((b) => /normal/i.test(b)),
-  "nothing is called \"Normal hit\" or \"Normal Attack\" any more");
+check(withSkill.includes("Normal attack"),
+  "with a skill selected it is called \"Normal attack\" too — one name, not two");
+// "Normal hit" specifically is what read as the skill's own non-crit hit, and it is
+// also the name that differed between the two states. Neither may come back.
+check(!withSkill.some((b) => /normal\s+hit/i.test(b)),
+  "nothing is called \"Normal hit\"");
+check(withSkill.filter((b) => /normal/i.test(b)).length === 1,
+  "and only one button carries the word at all — two names for one attack is the fault this file exists for",
+  withSkill);
 
-// The assertion that makes the label honest: the button called "Auto attack" must
+// The assertion that makes the label honest: the button called "Normal attack" must
 // show the auto attack's damage, the same number you get with no skill selected.
-await page.getByRole("button", { name: "Auto attack", exact: true }).first().click();
+await page.getByRole("button", { name: "Normal attack", exact: true }).first().click();
 await page.waitForTimeout(1500);
 const autoBeside = await shownDamage();
-console.log(`    "Auto attack" while Sonic Blow is selected: ${autoBeside}`);
+console.log(`    "Normal attack" while Sonic Blow is selected: ${autoBeside}`);
 check(autoBeside === autoAlone,
   `and it really is the auto attack \u2014 same damage as with no skill selected (${autoAlone} vs ${autoBeside})`);
 

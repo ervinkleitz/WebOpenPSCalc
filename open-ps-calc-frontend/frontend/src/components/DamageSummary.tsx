@@ -242,7 +242,7 @@ const STEP_LABELS: Record<string, string> = {
   "Final Damage": "Final damage",
 };
 // "Skill Ratio (Bash Lv10)" → "Skill ratio — Bash Lv10". The engine already puts
-// the skill's display name (or "Auto attack") in the brackets.
+// the skill's display name (or the engine's own "Auto attack") in the brackets.
 function stepLabel(name: string): string {
   const m = /^Skill Ratio \((.+)\)$/.exec(name);
   if (m) return `Skill ratio — ${m[1]}`;
@@ -981,9 +981,9 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
     activeBranch === "crit" ? "Critical hit"
     : activeBranch === "katar" ? "Katar 2nd hit"
     : activeBranch === "falcon" ? "Falcon"
-    : activeBranch === "normal" ? "Auto attack"
+    : activeBranch === "normal" ? "Normal attack"
     : hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}`
-    : "Auto attack";
+    : "Normal attack";
   const finalRange = killMin != null && killMax != null && Math.round(killMin) !== Math.round(killMax);
 
   // Everything that is a readout in its own right rather than part of the headline
@@ -1344,7 +1344,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             ? `${selected_skill.label} Lv ${selected_skill.level} — one cast that does not crit`
             : "Your weapon's ordinary swing, no skill"}
         >
-          {hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}` : "Auto attack"}
+          {hasSkill ? `${selected_skill.label} Lv ${selected_skill.level}` : "Normal attack"}
         </button>
 
         {/* The auto attack, offered alongside the skill so you can see whether the
@@ -1358,7 +1358,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             onClick={() => pickBranch("normal")}
             title="Your weapon's ordinary swing, with no skill — a different attack, so the skill's damage multiplier does not apply here. For comparison against the skill."
           >
-            Auto attack
+            Normal attack
           </button>
         )}
 

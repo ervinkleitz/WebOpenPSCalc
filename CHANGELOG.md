@@ -9,6 +9,9 @@ instead of release version. Dates are taken from actual git commit history.
 
 ### Changed
 
+- **The *Auto attack* button is called *Normal attack*.** Same button, same number,
+  same comparison against your skill — only the name changed.
+
 - **Weapon endow has a section of its own.** It used to sit inside the **Priest**
   group, which named it after one of its four owners: the four *Endow* elements are a
   **Sage's** skills, *Aspersio* is the Priest's, *Enchant Poison* is an **Assassin's**,

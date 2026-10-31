@@ -8,7 +8,7 @@ import { swingDamage, killMetrics } from "../lib/killMetrics";
 // straight off the calc result the backend already returns.
 
 export interface CompareMetrics {
-  label: string;        // the output being compared: skill name or "Auto attack"
+  label: string;        // the output being compared: skill name or "Normal attack"
   dps: number | null;   // effective DPS (null when the skill has no valid DPS)
   avg: number;          // average damage per hit
   min: number;
@@ -70,7 +70,7 @@ export function summaryMetrics(cr: any): CompareMetrics | null {
     ? cr.target_hp / kill.timeToKill
     : rawDps;
   return {
-    label: usingSkill ? (cr.selected_skill.label || "Skill") : "Auto attack",
+    label: usingSkill ? (cr.selected_skill.label || "Skill") : "Normal attack",
     dps,
     avg: swing?.avg ?? 0,
     min: swing?.min ?? 0,
