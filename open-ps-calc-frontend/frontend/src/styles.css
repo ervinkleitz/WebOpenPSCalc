@@ -1454,12 +1454,9 @@ label {
   background: color-mix(in srgb, var(--accent) 5%, var(--bg));
   padding: 0.7rem 0.85rem;
 }
-/* Those readouts sit below the two columns, behind their buttons. Left full width
-   their step table stretched the gap between the step and its running total across
-   the whole panel, so they are held to about the width of the column the main
-   table lives in. Matched on the container rather than as a sibling of
-   .ds-columns: moving them inside .ds-extras silently dropped a sibling rule. */
-.ds-extras .breakdown-view,
+/* A readout picked from the row renders AS the main column, so the column sizes it
+   and no width cap is needed. This rule is what is left for any .breakdown-view
+   that still sits outside the columns. */
 .ds-columns ~ .breakdown-view { max-width: 48rem; }
 /* The breakdown and the survivability readout are the panel's two columns, not two
    cards floating in it. Boxing each in a tinted, accent-striped card made the panel
@@ -1501,9 +1498,11 @@ label {
   color: var(--accent-text); text-align: right;
 }
 /* The per-hit shape sits under the total, right-aligned with it. Scoped to the
-   main column: DoubleAttackView nests .dw-per-hit inside its own total the same
-   way, and an unscoped rule moved its inline "(2 x 198)" onto a line by itself. */
-.ds-columns-main .breakdown-total-val .dw-per-hit {
+   FINAL DAMAGE row by class, not by which container it is in: DoubleAttackView
+   nests .dw-per-hit inside its own total exactly the same way, and once its
+   readout started rendering in the main column a container-scoped rule caught it
+   again and put its inline "(2 x 175)" on a line of its own. */
+.breakdown-total--final .breakdown-total-val .dw-per-hit {
   display: block; font-size: 0.76rem; font-weight: 400;
   color: var(--text-faint); margin-top: 0.1rem;
 }
@@ -2986,7 +2985,6 @@ button:not(.pill-remove) { min-width: 28px; }
    under the breakdown -- all of them, every time -- so a Monk carrying an autocast
    card scrolled past three full step tables he had not asked for to reach the end
    of the panel. They are buttons now: one opens at a time, none by default. */
-.ds-extras { margin-top: 1.1rem; }
 /* Separates the two kinds of button in the row: the ones before it change which
    attack the table describes, the ones after it open a readout of their own. */
 .branch-divider {
@@ -2998,7 +2996,10 @@ button:not(.pill-remove) { min-width: 28px; }
   font-size: 0.8rem; padding: 0.35rem 0.8rem;
 }
 .ds-extra-btn.active { border-color: var(--accent); color: var(--accent-text); }
-.ds-extra-caret { font-family: var(--mono); font-size: 0.75rem; line-height: 1; }
-/* The open panel is already a card; it does not need the gap a stacked one had. */
-.ds-extras > .breakdown-view,
-.ds-extras > .self-damage { margin-top: 0.7rem; }
+/* The figure on the button. Monospaced and tabular so a row of them can be
+   compared down the digits rather than by eye. */
+.ds-extra-range {
+  font-family: var(--mono); font-size: 0.74rem; font-variant-numeric: tabular-nums;
+  color: var(--text-dim); padding-left: 0.1rem;
+}
+.ds-extra-btn.active .ds-extra-range { color: var(--accent-text); }

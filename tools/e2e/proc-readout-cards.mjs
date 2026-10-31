@@ -1,21 +1,24 @@
-// The proc and autocast readouts are still cards.
+// A proc readout replaces the step table, and its button carries its figure.
 //
-// WHY THIS EXISTS: six components render .breakdown-view -- the main step table
-// plus Auto Spell, Auto Blitz, Triple Attack, Double Attack and card autocast. The
-// breakdown redesign flattened the main one into a column and wrote that rule on
-// the bare class, which stripped the border, fill and padding off the other five.
-// A Monk's Triple Attack readout and a Thief's Double Attack readout became
-// unseparated blocks running into the page.
+// WHY THIS EXISTS: these readouts — Triple Attack, Double Attack, Auto Spell,
+// Auto Blitz, card autocast, and Grand Cross' recoil onto its own caster — have
+// lived in three places. They were APPENDED under the breakdown, all of them at
+// once, so a Monk with an autocast card scrolled past three full step tables he
+// had not asked for. Then they went behind buttons below the panel. They now sit
+// in the attack row and REPLACE the step table when picked, because they answer
+// the same question the table does, and showing two at once left the reader
+// working out which one the headline belonged to.
 //
-// It was worse than a missing border. Those sections are full width, so their step
-// table stretched the gap between STEP and CHANGE across the whole panel -- the old
-// dot leader bridged that distance and the grid does not -- which put the numbers
-// roughly 900px from the labels they belong to.
+// Each move broke something a numbers test could not see. Flattening the main
+// table into a column was written on the shared .breakdown-view class and took the
+// border off all five proc panels. Moving them into a container dropped a
+// `.ds-columns ~` SIBLING rule and they stretched to 1389px of a 1436px panel.
+// Twelve suite scripts drive these exact builds and passed through both, because
+// they assert damage figures and the figures were never wrong.
 //
-// Twelve suite scripts drive these exact builds and every one of them passed
-// throughout, because they all assert numbers and none of them asserts that a
-// readout still looks like a readout. Hence this file: it checks the CHROME, which
-// is the thing a shared class can take away from five components at once.
+// So this checks the shape: the button exists and states its damage, picking it
+// swaps the table rather than adding to it, one view is current at a time, and the
+// readout is sized by the column it now occupies rather than by the panel.
 //
 // Run: node tools/e2e/proc-readout-cards.mjs [baseUrl]
 import { chromium } from "playwright-core";
@@ -45,7 +48,6 @@ const ren = (v) => Array.isArray(v) ? v.map(ren) : (v && typeof v === "object")
   ? Object.fromEntries(Object.entries(v).map(([k, x]) => [enc[k] ?? k, ren(x)])) : v;
 const link = (state) => `${URL_BASE}?b=z3_` + LZ.compressToEncodedURIComponent(JSON.stringify(ren(state)));
 
-// One build per proc component that is reachable from a share link alone.
 const BUILDS = {
   "Monk · Triple Attack": {
     build: {
@@ -56,8 +58,8 @@ const BUILDS = {
     },
     skill: { id: 0, level: 1, label: "Normal Attack" }, targetMode: "monster",
   },
-  // Double Attack also renders .dw-per-hit inside its own total, nested exactly as
-  // the main Final damage row does -- which is how a rule meant for the main row
+  // Double Attack renders .dw-per-hit inside its own total, nested exactly as the
+  // main Final damage row does — which is how a rule meant for that row once
   // pushed this one's inline "(2 x 198)" onto a line of its own.
   "Thief · Double Attack": {
     build: {
@@ -67,6 +69,15 @@ const BUILDS = {
       target_mob_id: 1002,
     },
     skill: { id: 0, level: 1, label: "Normal Attack" }, targetMode: "monster",
+  },
+  // Not a proc, but it shares the row and the mechanism.
+  "Crusader · Grand Cross recoil": {
+    build: {
+      job_id: 14, base_level: 99, job_level: 50,
+      base_stats: { str: 33, agi: 1, vit: 44, int: 99, dex: 75, luk: 1 },
+      equipped: { right_hand: 1127 }, target_mob_id: 1219,
+    },
+    skill: { id: 254, level: 10, label: "Grand Cross" }, targetMode: "monster",
   },
 };
 
@@ -85,59 +96,67 @@ for (const [name, state] of Object.entries(BUILDS)) {
     await page.getByRole("button", { name: /calculate damage/i }).first().click();
     await page.waitForTimeout(9000);
     const where = `${name} @ ${device}`;
+    // Case-insensitive: the narrow layout uppercases these headings in CSS, and
+    // innerText reports the transformed text.
+    const mainText = () => page.locator(".ds-columns-main").first().innerText()
+      .then((t) => t.replace(/\s+/g, " "));
 
-    // These readouts live behind their own buttons now, closed by default, so a
-    // check of their chrome has to open one first. Before that they were all
-    // appended under the breakdown at once.
-    const buttons = await page.locator(".ds-extra-btn").count();
-    check(buttons > 0, `${where}: the readout has a button`, buttons);
-    if (buttons) { await page.locator(".ds-extra-btn").first().click(); await page.waitForTimeout(800); }
+    const buttons = page.locator(".branch-toggle .ds-extra-btn");
+    const n = await buttons.count();
+    check(n > 0, `${where}: the readout has a button in the attack row`, n);
+    if (!n) { await ctx.close(); continue; }
 
-    const views = await page.$$eval(".results-panel .breakdown-view", (els) => els.map((e) => {
-      const cs = getComputedStyle(e);
-      const transparent = (c) => !c || c === "transparent" || /rgba\(0, 0, 0, 0\)/.test(c);
+    // The figure ON the button: the row cannot be compared without opening things
+    // if the buttons are bare labels.
+    const label = (await buttons.first().innerText()).replace(/\s+/g, " ").trim();
+    check(/\d/.test(label), `${where}: the button states its damage`, label);
+
+    check(/damage calculation/i.test(await mainText()),
+      `${where}: the step table is what shows to begin with`);
+    const current = await page.$$eval(".branch-toggle button.active",
+      (els) => els.map((e) => e.textContent.replace(/\s+/g, " ").trim()));
+    check(current.length === 1, `${where}: exactly one view is current`, current);
+
+    await buttons.first().click();
+    await page.waitForTimeout(900);
+
+    const after = await mainText();
+    check(!/damage calculation/i.test(after),
+      `${where}: picking it replaces the step table`, after.slice(0, 50));
+    check(await page.locator(".ds-columns-aside").count() === 1,
+      `${where}: survivability stays beside it`);
+    const now = await page.$$eval(".branch-toggle button.active",
+      (els) => els.map((e) => e.textContent.replace(/\s+/g, " ").trim()));
+    check(now.length === 1 && /\d/.test(now[0]),
+      `${where}: and it is the only one current`, now);
+
+    // Sized by its column, not the panel — the rule a sibling selector dropped once.
+    const widths = await page.evaluate(() => {
+      const col = document.querySelector(".ds-columns-main");
+      const panel = document.querySelector(".results-panel");
+      const body = col && col.firstElementChild;
       return {
-        title: (e.querySelector(".breakdown-title")?.textContent || "(untitled)").trim().slice(0, 28),
-        isMainColumn: !!e.closest(".ds-columns-main"),
-        borderPx: parseFloat(cs.borderLeftWidth) || 0,
-        padPx: parseFloat(cs.paddingLeft) || 0,
-        filled: !transparent(cs.backgroundColor),
-        width: Math.round(e.getBoundingClientRect().width),
+        panel: panel ? Math.round(panel.getBoundingClientRect().width) : 0,
+        readout: body ? Math.round(body.getBoundingClientRect().width) : 0,
       };
-    }));
+    });
+    check(widths.readout > 0 && (widths.panel < 900 || widths.readout < widths.panel * 0.95),
+      `${where}: the readout is sized by its column, not the panel`, widths);
 
-    const procs = views.filter((v) => !v.isMainColumn);
-    check(procs.length > 0, `${where}: the proc readout rendered at all`, views.map((v) => v.title));
-    // THE REGRESSION: chrome, on everything that is not the main column.
-    const stripped = procs.filter((v) => v.borderPx < 1 || v.padPx < 1 || !v.filled);
-    check(stripped.length === 0,
-      `${where}: every proc readout still has its border, fill and padding`, stripped);
-
-    // And it must not stretch: a full-width step table strands CHANGE and RESULT
-    // far from the labels they belong to.
-    const panelW = await page.locator(".results-panel").first()
-      .evaluate((e) => Math.round(e.getBoundingClientRect().width));
-    const tooWide = procs.filter((v) => v.width > panelW * 0.95 && panelW > 900);
-    check(tooWide.length === 0,
-      `${where}: the proc readout is not stretched across the whole panel`,
-      { panelW, procWidths: procs.map((v) => v.width) });
-
-    // The main column keeps the opposite treatment on a wide screen: it IS the
-    // column, so it carries no card of its own.
-    const main = views.find((v) => v.isMainColumn);
-    if (main && device === "desktop") {
-      check(main.borderPx < 1 && main.padPx < 1,
-        `${where}: the main step table stays flat, as its own column`, main);
-    }
-
-    // The per-hit figure inside a proc total stays where it was written: inline.
-    const perHit = await page.$$eval(
-      ".results-panel .breakdown-view:not(.ds-columns-main *) .breakdown-total-val .dw-per-hit",
+    const perHit = await page.$$eval(".ds-columns-main .breakdown-total-val .dw-per-hit",
       (els) => els.map((e) => ({ text: e.textContent.trim().slice(0, 20), display: getComputedStyle(e).display })));
     for (const ph of perHit) {
       check(ph.display === "inline", `${where}: a proc total's per-hit figure stays inline`, ph);
     }
 
+    await page.locator(".branch-toggle button").first().click();
+    await page.waitForTimeout(900);
+    check(/damage calculation/i.test(await mainText()),
+      `${where}: an attack button brings the step table back`);
+
+    const over = await page.evaluate(() => document.documentElement.scrollWidth
+      > document.documentElement.clientWidth + 1);
+    check(!over, `${where}: no horizontal overflow`);
     check(errors.length === 0, `${where}: no page errors`, errors);
     await ctx.close();
   }

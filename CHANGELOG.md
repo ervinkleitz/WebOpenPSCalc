@@ -39,9 +39,10 @@ instead of release version. Dates are taken from actual git commit history.
   They used to be appended under the breakdown — all of them, every time — so a Monk
   carrying an autocast card scrolled past three full step tables he had not asked for
   to reach the end of the panel. They are buttons now, sitting in the same row as
-  *Auto attack* and the skill — *Triple Attack Lv10*, *Self-damage*, *Auto Blitz
-  Beat*, whatever the build actually has, after a divider. One opens at a time and
-  none is open to begin with.
+  *Auto attack* and the skill — and each states its own damage, so *Triple Attack
+  Lv10 1,062* beside *Auto attack* answers which is worth having without opening
+  anything. Picking one **replaces** the step table rather than adding to it, the
+  way the attack buttons already did.
 
 - **The headline numbers sit in ruled columns.** Hit chance, ASPD, DPS and the rest are
   divided from one another instead of running together across the top. They keep the

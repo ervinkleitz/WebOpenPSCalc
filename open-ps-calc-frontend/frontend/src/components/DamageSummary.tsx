@@ -989,13 +989,29 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
   // Everything that is a readout in its own right rather than part of the headline
   // calculation: the procs, the card autocasts, and the self-damage a Grand Cross
   // does to its own caster. Each gets a button; one opens at a time.
-  const extras: { key: string; label: string; node: ReactNode }[] = [];
-  if (selfDamage) extras.push({ key: "self", label: "Self-damage", node: <SelfDamageView sd={selfDamage} /> });
-  if (autoSpell) extras.push({ key: "autospell", label: "Auto Spell",
+  // The range goes ON the button, so the row can be compared without opening
+  // anything: "Triple Attack Lv10 1,062" beside "Auto attack 212" answers which is
+  // worth having at a glance, which was previously four clicks.
+  const rangeOf = (br: { min_damage: number; max_damage: number } | null | undefined) => {
+    if (!br) return null;
+    const lo = Math.round(br.min_damage), hi = Math.round(br.max_damage);
+    return lo === hi ? nfmt(lo) : `${nfmt(lo)}–${nfmt(hi)}`;
+  };
+  // With a readout open the table is no longer showing the selected attack, so no
+  // attack button is current. Two lit buttons meaning two different things is how
+  // the row would otherwise read.
+  const shownBranch = openExtra ? null : activeBranch;
+  const pickBranch = (b: Branch) => { setOpenExtra(null); setBranch(b); };
+  const extras: { key: string; label: string; range: string | null; node: ReactNode }[] = [];
+  if (selfDamage) extras.push({ key: "self", label: "Self-damage",
+    range: Math.round(selfDamage.total.min) === Math.round(selfDamage.total.max)
+      ? nfmt(selfDamage.total.min) : `${nfmt(selfDamage.total.min)}–${nfmt(selfDamage.total.max)}`,
+    node: <SelfDamageView sd={selfDamage} /> });
+  if (autoSpell) extras.push({ key: "autospell", label: "Auto Spell", range: rangeOf(autoSpell.branch),
     node: <AutoSpellView branch={autoSpell.branch} chance={autoSpell.chance} label={autoSpell.label} /> });
-  if (autoBlitz) extras.push({ key: "autoblitz", label: "Auto Blitz Beat",
+  if (autoBlitz) extras.push({ key: "autoblitz", label: "Auto Blitz Beat", range: rangeOf(autoBlitz.branch),
     node: <AutoBlitzView branch={autoBlitz.branch} chance={autoBlitz.chance} dpsAdded={autoBlitz.dpsAdded} /> });
-  if (doubleHit) extras.push({ key: "double", label: doubleHit.label,
+  if (doubleHit) extras.push({ key: "double", label: doubleHit.label, range: rangeOf(doubleHit.branch),
     node: (
       <DoubleAttackView
         branch={doubleHit.branch}
@@ -1007,15 +1023,15 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
         hitBonus={normal_attack.result.double_hit_bonus ?? 0}
       />
     ) });
-  if (tripleAttack) extras.push({ key: "triple", label: tripleAttack.label,
+  if (tripleAttack) extras.push({ key: "triple", label: tripleAttack.label, range: rangeOf(tripleAttack.branch),
     node: <TripleAttackView branch={tripleAttack.branch} chance={tripleAttack.chance} label={tripleAttack.label}
       crit={tripleAttack.crit} critChance={tripleAttack.critChance} /> });
-  if (holyStrike) extras.push({ key: "holy", label: "Holy Strike",
+  if (holyStrike) extras.push({ key: "holy", label: "Holy Strike", range: rangeOf(holyStrike.branch),
     node: <CardAutocastView title="Proc" label="Holy Strike" per="melee attack"
       branch={holyStrike.branch} chance={holyStrike.chance} dpsAdded={holyStrike.dpsAdded}
       critBranch={holyStrike.critBranch} critChance={holyStrike.critChance} /> });
   for (const ac of cardAutocasts) {
-    extras.push({ key: `ac-${ac.key}`, label: ac.label,
+    extras.push({ key: `ac-${ac.key}`, label: ac.label, range: rangeOf(ac.branch),
       node: <CardAutocastView branch={ac.branch} chance={ac.chance} label={ac.label} dpsAdded={ac.dpsAdded} /> });
   }
 
@@ -1322,8 +1338,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
 
       <div className="branch-toggle">
         <button
-          className={`branch-skill-pill${activeBranch === "skill" && hasSkill ? " active" : ""}${!hasSkill && activeBranch === "normal" ? " active" : ""}`}
-          onClick={() => { setBranch(hasSkill ? "skill" : "normal"); if (tuAttempt > 0) onTuAttempt?.(0); }}
+          className={`branch-skill-pill${shownBranch === "skill" && hasSkill ? " active" : ""}${!hasSkill && shownBranch === "normal" ? " active" : ""}`}
+          onClick={() => { pickBranch(hasSkill ? "skill" : "normal"); if (tuAttempt > 0) onTuAttempt?.(0); }}
           title={hasSkill
             ? `${selected_skill.label} Lv ${selected_skill.level} — one cast that does not crit`
             : "Your weapon's ordinary swing, no skill"}
@@ -1338,8 +1354,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             Reported 2026-10-10. */}
         {hasSkill && (
           <button
-            className={activeBranch === "normal" ? "active" : ""}
-            onClick={() => setBranch("normal")}
+            className={shownBranch === "normal" ? "active" : ""}
+            onClick={() => pickBranch("normal")}
             title="Your weapon's ordinary swing, with no skill — a different attack, so the skill's damage multiplier does not apply here. For comparison against the skill."
           >
             Auto attack
@@ -1357,8 +1373,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
 
         {hasCrit && (
           <button
-            className={activeBranch === "crit" ? "active" : ""}
-            onClick={() => setBranch("crit")}
+            className={shownBranch === "crit" ? "active" : ""}
+            onClick={() => pickBranch("crit")}
             title={hasSkill
               ? `${selected_skill.label} Lv ${selected_skill.level} when it lands a critical — the same attack as the skill, so its damage multiplier still applies`
               : "Your auto attack when it lands a critical"}
@@ -1369,8 +1385,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
 
         {hasFalcon && (
           <button
-            className={`branch-falcon-pill${activeBranch === "falcon" ? " active" : ""}`}
-            onClick={() => setBranch("falcon")}
+            className={`branch-falcon-pill${shownBranch === "falcon" ? " active" : ""}`}
+            onClick={() => pickBranch("falcon")}
           >
             Falcon
           </button>
@@ -1378,8 +1394,8 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
 
         {hasKatar && (
           <button
-            className={activeBranch === "katar" ? "active" : ""}
-            onClick={() => setBranch("katar")}
+            className={shownBranch === "katar" ? "active" : ""}
+            onClick={() => pickBranch("katar")}
           >
             Katar 2nd hit
           </button>
@@ -1401,7 +1417,7 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
             title={`${x.label} — a readout of its own; opens below`}
           >
             {x.label}
-            <span className="ds-extra-caret" aria-hidden="true">{openExtra === x.key ? "⌃" : "⌄"}</span>
+            {x.range && <span className="ds-extra-range">{x.range}</span>}
           </button>
         ))}
       </div>
@@ -1412,78 +1428,82 @@ export default function DamageSummary({ calcResult, calculating, error, forcePro
           under 1100px. */}
       <div className={`ds-columns${aside ? " ds-columns--split" : ""}`}>
         <div className="ds-columns-main">
-        {!notImplemented && (activeDamage || (activeBranch === "falcon" && falcon)) && (
-          <div className="breakdown-view">
-            <div className="breakdown-head">
-              {/* "Damage calculation" -- the panel is already titled Damage
-                  breakdown, so repeating it named the column after its container.
-                  The skill is on the tab and in the headline; what belongs here is
-                  what the table starts FROM. */}
-              <span className="breakdown-title">Damage calculation</span>
-              {activeDamage && <InputFigures steps={activeDamage.steps} />}
-            </div>
-            {activeBranch === "falcon" && falcon ? (
-              <FalconView falcon={falcon} />
-            ) : showDwCombined && dwRhBranch && dwLhBranch ? (
-              <DualWieldStepList
-                rh={dwRhBranch}
-                lh={dwLhBranch}
-                rhFactor={dwRhFactor}
-                lhFactor={dwLhFactor}
-                isCrit={activeBranch === "crit"}
-                psBonusPct={dwPsBonusPct}
-              />
-            ) : activeDamage ? (
-              <PipelineView steps={activeDamage.steps} hideFinal inputs={false} />
-            ) : null}
-            {activeBranch !== "falcon" && killAvg != null && (
-              <div className="breakdown-total">
-                <span className="breakdown-total-label">Final damage</span>
-                <span className="breakdown-total-val">
-                  {finalRange ? `${nfmt(killMin!)}–${nfmt(killMax!)}` : nfmt(killAvg)}
-                  {/* Multi-hit skills land as N popups of total/N each, so say so --
-                      a total left bare is read as one hit. On its own line under the
-                      figure rather than in brackets beside it: it is a second fact
-                      about the same number, and inline it read as part of it. */}
-                  {(activeDamage?.num_hits ?? 1) > 1 && (
-                    finalRange ? (
-                      <span className="dw-per-hit">
-                        {activeDamage!.num_hits} hits × {nfmt(Math.floor(killMin! / activeDamage!.num_hits))}–{nfmt(Math.floor(killMax! / activeDamage!.num_hits))}
-                      </span>
-                    ) : (
-                      <span className="dw-per-hit">
-                        {activeDamage!.num_hits} hits × {nfmt(Math.floor(killAvg / activeDamage!.num_hits))}
-                      </span>
-                    )
-                  )}
-                </span>
+          {/* A proc or the self-damage REPLACES the step table rather than being
+              appended under it. They are all answers to the same question -- what
+              does this hit do -- so showing two at once asked the reader to work out
+              which one the headline belonged to. The buttons above pick one. */}
+          {openExtra ? extras.find((x) => x.key === openExtra)?.node : (<>
+          {!notImplemented && (activeDamage || (activeBranch === "falcon" && falcon)) && (
+            <div className="breakdown-view">
+              <div className="breakdown-head">
+                {/* "Damage calculation" -- the panel is already titled Damage
+                    breakdown, so repeating it named the column after its container.
+                    The skill is on the tab and in the headline; what belongs here is
+                    what the table starts FROM. */}
+                <span className="breakdown-title">Damage calculation</span>
+                {activeDamage && <InputFigures steps={activeDamage.steps} />}
               </div>
-            )}
-            {critHeal && (
-              <>
-                <div className="breakdown-total">
-                  <span className="breakdown-total-label">HP healed on this crit</span>
+              {activeBranch === "falcon" && falcon ? (
+                <FalconView falcon={falcon} />
+              ) : showDwCombined && dwRhBranch && dwLhBranch ? (
+                <DualWieldStepList
+                  rh={dwRhBranch}
+                  lh={dwLhBranch}
+                  rhFactor={dwRhFactor}
+                  lhFactor={dwLhFactor}
+                  isCrit={activeBranch === "crit"}
+                  psBonusPct={dwPsBonusPct}
+                />
+              ) : activeDamage ? (
+                <PipelineView steps={activeDamage.steps} hideFinal inputs={false} />
+              ) : null}
+              {activeBranch !== "falcon" && killAvg != null && (
+                <div className="breakdown-total breakdown-total--final">
+                  <span className="breakdown-total-label">Final damage</span>
                   <span className="breakdown-total-val">
-                    +{critHeal.min !== critHeal.max ? `${nfmt(critHeal.min)}–${nfmt(critHeal.max)}` : nfmt(critHeal.avg)}
+                    {finalRange ? `${nfmt(killMin!)}–${nfmt(killMax!)}` : nfmt(killAvg)}
+                    {/* Multi-hit skills land as N popups of total/N each, so say so --
+                        a total left bare is read as one hit. On its own line under the
+                        figure rather than in brackets beside it: it is a second fact
+                        about the same number, and inline it read as part of it. */}
+                    {(activeDamage?.num_hits ?? 1) > 1 && (
+                      finalRange ? (
+                        <span className="dw-per-hit">
+                          {activeDamage!.num_hits} hits × {nfmt(Math.floor(killMin! / activeDamage!.num_hits))}–{nfmt(Math.floor(killMax! / activeDamage!.num_hits))}
+                        </span>
+                      ) : (
+                        <span className="dw-per-hit">
+                          {activeDamage!.num_hits} hits × {nfmt(Math.floor(killAvg / activeDamage!.num_hits))}
+                        </span>
+                      )
+                    )}
                   </span>
                 </div>
-                <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
-                  <span className="self-damage-chip muted">
-                    {(critHeal.permille / 10).toFixed(1)}% of the damage dealt (0.1% per refine)
-                  </span>
-                  <span className="self-damage-chip muted">healing, not damage — not in the total or DPS</span>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+              )}
+              {critHeal && (
+                <>
+                  <div className="breakdown-total">
+                    <span className="breakdown-total-label">HP healed on this crit</span>
+                    <span className="breakdown-total-val">
+                      +{critHeal.min !== critHeal.max ? `${nfmt(critHeal.min)}–${nfmt(critHeal.max)}` : nfmt(critHeal.avg)}
+                    </span>
+                  </div>
+                  <div className="self-damage-resists" style={{ marginTop: "0.5rem" }}>
+                    <span className="self-damage-chip muted">
+                      {(critHeal.permille / 10).toFixed(1)}% of the damage dealt (0.1% per refine)
+                    </span>
+                    <span className="self-damage-chip muted">healing, not damage — not in the total or DPS</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          </>)}
         </div>
         {aside && <div className="ds-columns-aside">{aside}</div>}
       </div>
 
-      {openExtra && (
-        <div className="ds-extras">{extras.find((x) => x.key === openExtra)?.node}</div>
-      )}
+
     </div>
   );
 }
